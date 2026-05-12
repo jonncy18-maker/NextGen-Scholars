@@ -28,6 +28,7 @@
     --amber:      #F59E0B;
     --amber-dim:  rgba(245, 158, 11, 0.12);
     --slate:      rgba(255,255,255,0.12);
+    --header-h:   64px;
   }
 
   html { scroll-behavior: smooth; }
@@ -66,32 +67,37 @@
     z-index: 0;
   }
 
-  .page-wrap {
-    position: relative;
-    z-index: 1;
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 0 24px 80px;
+  /* ── STICKY HEADER ── */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    background: rgba(10, 22, 40, 0.85);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
   }
 
-  /* ── NAV ── */
-  nav {
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 28px 0 0;
-    margin-bottom: 72px;
+    height: var(--header-h);
   }
 
   .nav-logo {
     display: flex;
     align-items: center;
     gap: 12px;
+    text-decoration: none;
   }
 
   .logo-icon {
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
     background: linear-gradient(135deg, var(--blue), var(--blue-light));
     border-radius: 10px;
     display: flex;
@@ -99,7 +105,7 @@
     justify-content: center;
     font-family: 'Syne', sans-serif;
     font-weight: 800;
-    font-size: 14px;
+    font-size: 13px;
     letter-spacing: -0.02em;
     color: var(--white);
     box-shadow: 0 4px 16px var(--blue-glow);
@@ -121,6 +127,12 @@
     font-weight: 400;
   }
 
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
   .nav-badge {
     font-size: 11px;
     font-weight: 600;
@@ -131,6 +143,35 @@
     border-radius: 20px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
+  }
+
+  .nav-link {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--blue-light);
+    background: rgba(26,92,219,0.15);
+    border: 1px solid rgba(26,92,219,0.25);
+    padding: 5px 12px;
+    border-radius: 20px;
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .nav-link:hover {
+    background: rgba(26,92,219,0.28);
+    border-color: rgba(26,92,219,0.45);
+    color: var(--white);
+  }
+
+  /* ── PAGE WRAP ── */
+  .page-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 72px 24px 80px;
   }
 
   /* ── HERO ── */
@@ -184,7 +225,63 @@
     font-weight: 300;
     font-style: italic;
     letter-spacing: 0.01em;
-    margin-bottom: 48px;
+    margin-bottom: 36px;
+  }
+
+  /* ── HERO CTA ── */
+  .hero-cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--blue);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 11px 26px;
+    border-radius: 10px;
+    text-decoration: none;
+    letter-spacing: 0.02em;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 20px var(--blue-glow);
+  }
+
+  .btn-primary:hover {
+    background: var(--blue-mid);
+    box-shadow: 0 8px 30px rgba(26,92,219,0.45);
+    transform: translateY(-1px);
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    color: var(--white-70);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 11px 26px;
+    border-radius: 10px;
+    text-decoration: none;
+    border: 1px solid var(--slate);
+    letter-spacing: 0.02em;
+    transition: all 0.2s ease;
+  }
+
+  .btn-ghost:hover {
+    color: var(--white);
+    border-color: rgba(255,255,255,0.28);
+    background: var(--white-15);
+    transform: translateY(-1px);
   }
 
   /* ── STATS ROW ── */
@@ -217,9 +314,15 @@
     margin-bottom: 4px;
   }
 
-  .stat-number.blue { color: var(--blue-light); }
-  .stat-number.gold { color: var(--gold); }
+  .stat-number.blue  { color: var(--blue-light); }
+  .stat-number.gold  { color: var(--gold); }
   .stat-number.green { color: var(--green); }
+
+  .stat-flag {
+    font-size: 28px;
+    line-height: 1.1;
+    margin-bottom: 6px;
+  }
 
   .stat-label {
     font-size: 11px;
@@ -244,6 +347,7 @@
     color: var(--white-40);
     letter-spacing: 0.12em;
     text-transform: uppercase;
+    white-space: nowrap;
   }
 
   .section-line {
@@ -253,6 +357,8 @@
   }
 
   /* ── SCHOLAR CARDS ── */
+  #scholars { scroll-margin-top: calc(var(--header-h) + 16px); }
+
   .scholars-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -267,7 +373,7 @@
     padding: 28px;
     position: relative;
     overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
     cursor: pointer;
     text-decoration: none;
     display: block;
@@ -275,8 +381,8 @@
   }
 
   .scholar-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(26,92,219,0.3);
+    transform: translateY(-5px);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.45), 0 0 0 1px rgba(26,92,219,0.35);
     border-color: rgba(26,92,219,0.4);
   }
 
@@ -287,14 +393,14 @@
     height: 2px;
     background: linear-gradient(90deg, var(--blue), var(--blue-light));
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: opacity 0.22s;
   }
 
   .scholar-card:hover::before { opacity: 1; }
 
   /* Paused card style */
   .scholar-card.paused {
-    opacity: 0.65;
+    opacity: 0.60;
     cursor: default;
   }
   .scholar-card.paused:hover {
@@ -353,10 +459,16 @@
     flex-shrink: 0;
   }
 
+  @keyframes activePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.35); }
+    50%       { box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+  }
+
   .status-active {
     background: var(--green-dim);
     color: var(--green);
-    border: 1px solid rgba(34,197,94,0.2);
+    border: 1px solid rgba(34,197,94,0.25);
+    animation: activePulse 2.8s ease infinite;
   }
 
   .status-trial {
@@ -621,7 +733,7 @@
     line-height: 1.3;
   }
 
-  .step-label.done { color: var(--blue-light); }
+  .step-label.done    { color: var(--blue-light); }
   .step-label.current { color: var(--gold); }
 
   .step-connector {
@@ -652,6 +764,14 @@
     border: 1px solid var(--slate);
     border-radius: 12px;
     padding: 18px;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    cursor: default;
+  }
+
+  .value-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(26,92,219,0.35);
+    box-shadow: 0 14px 36px rgba(0,0,0,0.35), 0 0 0 1px rgba(26,92,219,0.15);
   }
 
   .value-icon {
@@ -707,39 +827,46 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  .hero        { animation: fadeUp 0.6s ease both; }
-  .stats-row   { animation: fadeUp 0.6s 0.1s ease both; }
-  .scholars-grid { animation: fadeUp 0.6s 0.2s ease both; }
-  .pathway-section { animation: fadeUp 0.6s 0.3s ease both; }
-  .values-grid { animation: fadeUp 0.6s 0.4s ease both; }
+  .hero           { animation: fadeUp 0.6s ease both; }
+  .stats-row      { animation: fadeUp 0.6s 0.1s ease both; }
+  .scholars-grid  { animation: fadeUp 0.6s 0.2s ease both; }
+  .pathway-section{ animation: fadeUp 0.6s 0.3s ease both; }
+  .values-grid    { animation: fadeUp 0.6s 0.4s ease both; }
 
   /* ── RESPONSIVE ── */
   @media (max-width: 600px) {
+    .page-wrap { padding-top: 48px; }
     .stat-item { padding: 0 20px; }
     .stats-row { gap: 16px; }
-    nav { margin-bottom: 48px; }
     .hero { margin-bottom: 48px; }
+    .hero-cta { flex-direction: column; align-items: stretch; }
+    .btn-primary, .btn-ghost { justify-content: center; }
     .pathway-steps { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 8px; }
+    .values-grid { grid-template-columns: repeat(2, 1fr); }
+    .nav-badge { display: none; }
   }
 </style>
 </head>
 <body>
-<div class="page-wrap">
 
-  <!-- NAV -->
-  <nav>
-    <div class="nav-logo">
+<!-- STICKY HEADER -->
+<header class="site-header">
+  <div class="header-inner">
+    <a href="#" class="nav-logo">
       <div class="logo-icon">NGS</div>
       <div>
         <div class="logo-text">NextGen Scholars</div>
         <div class="logo-sub">Philippines</div>
       </div>
-    </div>
-    <div style="display:flex; align-items:center; gap:10px;">
-      <a href="calculator.html" style="font-size:11px; font-weight:600; color:var(--blue-light); background:rgba(26,92,219,0.15); border:1px solid rgba(26,92,219,0.25); padding:5px 12px; border-radius:20px; text-decoration:none; letter-spacing:0.05em; text-transform:uppercase; transition:all 0.2s;">🧮 Grade Calc</a>
+    </a>
+    <div class="nav-right">
+      <a href="calculator.html" class="nav-link">🧮 Grade Calc</a>
       <div class="nav-badge">Est. 2023</div>
     </div>
-  </nav>
+  </div>
+</header>
+
+<div class="page-wrap">
 
   <!-- HERO -->
   <section class="hero">
@@ -748,6 +875,10 @@
       One generation<br><span>lifts another.</span>
     </h1>
     <p class="hero-tagline">"How you live matters more than what you achieve."</p>
+    <div class="hero-cta">
+      <a href="#scholars" class="btn-primary">Meet Our Scholars ↓</a>
+      <a href="calculator.html" class="btn-ghost">🧮 Grade Calculator</a>
+    </div>
   </section>
 
   <!-- STATS -->
@@ -765,17 +896,17 @@
       <div class="stat-label">NGN Graduation</div>
     </div>
     <div class="stat-item">
-      <div class="stat-number blue">🇦🇺</div>
+      <div class="stat-flag">🇦🇺</div>
       <div class="stat-label">Primary Destination</div>
     </div>
     <div class="stat-item">
-      <div class="stat-number blue">🇺🇸</div>
+      <div class="stat-flag">🇺🇸</div>
       <div class="stat-label">Potential Destination</div>
     </div>
   </div>
 
   <!-- SCHOLARS -->
-  <div class="section-header">
+  <div id="scholars" class="section-header">
     <div class="section-title">Scholars</div>
     <div class="section-line"></div>
   </div>
