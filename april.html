@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>April — NextGen Nurses</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:       #0A1628;
+    --navy-mid:   #0F2040;
+    --navy-card:  #132038;
+    --blue:       #1A5CDB;
+    --blue-light: #4A90F5;
+    --blue-glow:  rgba(26, 92, 219, 0.25);
+    --gold:       #F5C842;
+    --gold-dim:   rgba(245, 200, 66, 0.15);
+    --white:      #FFFFFF;
+    --white-70:   rgba(255,255,255,0.70);
+    --white-40:   rgba(255,255,255,0.40);
+    --white-15:   rgba(255,255,255,0.08);
+    --white-8:    rgba(255,255,255,0.05);
+    --green:      #22C55E;
+    --green-dim:  rgba(34, 197, 94, 0.12);
+    --amber:      #F59E0B;
+    --amber-dim:  rgba(245, 158, 11, 0.12);
+    --slate:      rgba(255,255,255,0.12);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 15% 10%, rgba(245,158,11,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 85% 80%, rgba(26,92,219,0.10) 0%, transparent 55%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* ── NAV ── */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 0 0;
+    margin-bottom: 48px;
+  }
+
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+  }
+
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--blue), var(--blue-light));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    color: var(--white);
+    box-shadow: 0 4px 16px var(--blue-glow);
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .logo-sub { font-size: 11px; color: var(--white-40); margin-top: 1px; }
+
+  .back-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--white-40);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .back-link:hover { color: var(--white-70); }
+  .back-link svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
+
+  /* ── TRIAL BANNER ── */
+  .trial-banner {
+    background: linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(245,158,11,0.05) 100%);
+    border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .trial-banner-icon { font-size: 20px; flex-shrink: 0; }
+
+  .trial-banner-text {
+    font-size: 13px;
+    color: var(--white-70);
+    line-height: 1.5;
+  }
+
+  .trial-banner-text strong { color: var(--gold); }
+
+  /* ── PROFILE ── */
+  .profile-hero {
+    display: flex;
+    align-items: flex-start;
+    gap: 28px;
+    margin-bottom: 48px;
+    padding-bottom: 48px;
+    border-bottom: 1px solid var(--slate);
+    flex-wrap: wrap;
+  }
+
+  .profile-avatar {
+    width: 72px; height: 72px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #92400E, #F59E0B);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--white);
+    box-shadow: 0 8px 32px rgba(245,158,11,0.2);
+    flex-shrink: 0;
+  }
+
+  .profile-info { flex: 1; min-width: 200px; }
+
+  .profile-track {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--amber);
+    background: var(--amber-dim);
+    border: 1px solid rgba(245,158,11,0.25);
+    padding: 4px 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    letter-spacing: 0.04em;
+  }
+
+  .profile-name {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 5vw, 48px);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .profile-school { font-size: 14px; color: var(--white-40); margin-bottom: 16px; }
+
+  .profile-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--amber);
+    background: var(--amber-dim);
+    border: 1px solid rgba(245,158,11,0.2);
+    padding: 5px 12px;
+    border-radius: 20px;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--amber);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .profile-stats {
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+
+  .pstat { text-align: center; }
+
+  .pstat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .pstat-label {
+    font-size: 10px;
+    color: var(--white-40);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ── SECTION HEADER ── */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--white-40);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .section-line { flex: 1; height: 1px; background: var(--slate); }
+
+  /* ── TWO-COL ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--navy-card);
+    border: 1px solid var(--slate);
+    border-radius: 16px;
+    padding: 24px;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--white-70);
+    margin-bottom: 16px;
+  }
+
+  /* ── TRIAL PROGRESS ── */
+  .trial-progress-card {
+    background: var(--navy-card);
+    border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 32px;
+  }
+
+  .trial-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .trial-progress-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .trial-progress-sub { font-size: 12px; color: var(--white-40); }
+
+  .trial-semesters {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .trial-sem {
+    background: var(--white-8);
+    border: 1px solid var(--slate);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .trial-sem.active {
+    background: var(--amber-dim);
+    border-color: rgba(245,158,11,0.3);
+  }
+
+  .trial-sem.future { opacity: 0.5; }
+
+  .trial-sem-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--white-40);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .trial-sem.active .trial-sem-label { color: var(--amber); }
+
+  .trial-sem-grade {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--white);
+    margin-bottom: 4px;
+  }
+
+  .trial-sem-grade.pass { color: var(--green); }
+  .trial-sem-grade.active { color: var(--amber); }
+  .trial-sem-grade.future { color: var(--white-40); }
+
+  .trial-sem-status {
+    font-size: 10px;
+    color: var(--white-40);
+  }
+
+  .trial-floor {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    background: var(--white-8);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--white-40);
+  }
+
+  .trial-floor strong { color: var(--gold); }
+
+  /* ── CURRENT SEMESTER ── */
+  .sem-stat {
+    background: var(--white-8);
+    border: 1px solid var(--slate);
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .sem-stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.03em;
+    margin-bottom: 3px;
+  }
+
+  .sem-stat-value.amber { color: var(--amber); }
+
+  .sem-stat-label {
+    font-size: 10px;
+    color: var(--white-40);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .semester-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .subjects-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .subject-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--white-70);
+    padding: 8px 10px;
+    background: var(--white-8);
+    border-radius: 8px;
+    border: 1px solid var(--slate);
+  }
+
+  .subject-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--amber);
+    flex-shrink: 0;
+  }
+
+  /* ── MILESTONES ── */
+  .milestones-section { margin-bottom: 32px; }
+
+  .milestone-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .milestone-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    background: var(--navy-card);
+    border: 1px solid var(--slate);
+    border-radius: 12px;
+  }
+
+  .milestone-item.done { border-color: rgba(34,197,94,0.2); }
+  .milestone-item.upcoming { border-color: rgba(245,158,11,0.15); }
+
+  .milestone-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .milestone-icon.done { background: var(--green-dim); }
+  .milestone-icon.upcoming { background: var(--amber-dim); }
+  .milestone-icon.future { background: var(--white-8); }
+
+  .milestone-info { flex: 1; }
+
+  .milestone-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 2px;
+  }
+
+  .milestone-detail { font-size: 11px; color: var(--white-40); }
+
+  .milestone-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+
+  .badge-done { background: var(--green-dim); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+  .badge-upcoming { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+  .badge-future { background: var(--white-8); color: var(--white-40); border: 1px solid var(--slate); }
+
+  /* ── PATHWAY ── */
+  .pathway-section { margin-bottom: 32px; }
+
+  .pathway-card {
+    background: var(--navy-card);
+    border: 1px solid var(--slate);
+    border-radius: 16px;
+    padding: 28px;
+    overflow: hidden;
+  }
+
+  .pathway-steps {
+    display: flex;
+    align-items: flex-start;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .pathway-step {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 80px;
+  }
+
+  .step-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .step-circle {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 2px solid var(--slate);
+    background: var(--navy-mid);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--white-40);
+    flex-shrink: 0;
+  }
+
+  .step-circle.active {
+    background: var(--amber-dim);
+    border-color: var(--amber);
+    color: var(--amber);
+    box-shadow: 0 0 12px rgba(245,158,11,0.2);
+  }
+
+  .step-label {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--white-40);
+    letter-spacing: 0.03em;
+    text-align: center;
+    white-space: nowrap;
+    max-width: 68px;
+    line-height: 1.3;
+  }
+
+  .step-label.active { color: var(--amber); }
+
+  .step-connector {
+    flex: 1;
+    height: 2px;
+    background: var(--slate);
+    min-width: 16px;
+    position: relative;
+    top: -16px;
+  }
+
+  .step-connector.dashed {
+    background: none;
+    border-top: 2px dashed rgba(255,255,255,0.2);
+    height: 0;
+    top: -20px;
+  }
+
+  /* ── ENGLISH ── */
+  .english-section { margin-bottom: 32px; }
+
+  .english-card {
+    background: var(--navy-card);
+    border: 1px solid var(--slate);
+    border-radius: 16px;
+    padding: 24px;
+  }
+
+  .english-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .english-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .english-target { font-size: 11px; color: var(--white-40); }
+
+  .english-stages { display: flex; flex-direction: column; gap: 10px; }
+
+  .english-stage {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    background: var(--white-8);
+    border-radius: 10px;
+    border: 1px solid var(--slate);
+  }
+
+  .english-stage.active {
+    background: var(--amber-dim);
+    border-color: rgba(245,158,11,0.3);
+  }
+
+  .stage-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .stage-dot.active { background: var(--amber); }
+  .stage-dot.future { background: var(--white-15); }
+
+  .stage-label { flex: 1; font-size: 12px; color: var(--white-70); }
+  .stage-label.future { color: var(--white-40); }
+
+  .stage-tag {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--white-40);
+  }
+
+  .stage-tag.active { color: var(--amber); }
+
+  /* ── INVESTMENT ── */
+  .budget-section { margin-bottom: 32px; }
+
+  .budget-note-card {
+    background: var(--navy-card);
+    border: 1px solid var(--slate);
+    border-radius: 16px;
+    padding: 24px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .budget-note-icon { font-size: 24px; flex-shrink: 0; }
+
+  .budget-note-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+
+  .budget-note-text { font-size: 13px; color: var(--white-40); line-height: 1.6; }
+
+  .budget-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--slate);
+    font-size: 13px;
+  }
+
+  .budget-item:last-child { border-bottom: none; }
+  .budget-item-label { color: var(--white-70); }
+
+  .budget-item-value {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    color: var(--white);
+    font-size: 14px;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--slate);
+    padding-top: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .footer-left { font-size: 12px; color: var(--white-40); }
+  .footer-left strong { color: var(--white-70); font-weight: 600; }
+  .footer-right { font-size: 11px; color: var(--white-40); font-style: italic; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .profile-hero       { animation: fadeUp 0.5s ease both; }
+  .trial-banner       { animation: fadeUp 0.5s 0.05s ease both; }
+  .trial-progress-card { animation: fadeUp 0.5s 0.1s ease both; }
+  .two-col            { animation: fadeUp 0.5s 0.15s ease both; }
+  .milestones-section { animation: fadeUp 0.5s 0.2s ease both; }
+  .english-section    { animation: fadeUp 0.5s 0.25s ease both; }
+  .pathway-section    { animation: fadeUp 0.5s 0.3s ease both; }
+  .budget-section     { animation: fadeUp 0.5s 0.35s ease both; }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- NAV -->
+  <nav>
+    <a href="index.html" class="nav-logo">
+      <div class="logo-icon">NGS</div>
+      <div>
+        <div class="logo-text">NextGen Scholars</div>
+        <div class="logo-sub">Philippines</div>
+      </div>
+    </a>
+    <a href="index.html" class="back-link">
+      <svg viewBox="0 0 24 24" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      All Scholars
+    </a>
+  </nav>
+
+  <!-- PROFILE HERO -->
+  <div class="profile-hero">
+    <div class="profile-avatar">AP</div>
+    <div class="profile-info">
+      <div class="profile-track">NextGen Nurses · Trial Period</div>
+      <div class="profile-name">April</div>
+      <div class="profile-school">Senior High School · Grade 11 · Cebu</div>
+      <div class="profile-status">
+        <div class="status-dot"></div>
+        Trial Scholar · G11
+      </div>
+    </div>
+    <div class="profile-stats">
+      <div class="pstat">
+        <div class="pstat-value" style="color: var(--amber);">G11</div>
+        <div class="pstat-label">Current Year</div>
+      </div>
+      <div class="pstat">
+        <div class="pstat-value" style="color: var(--gold);">2 yrs</div>
+        <div class="pstat-label">Trial Period</div>
+      </div>
+      <div class="pstat">
+        <div class="pstat-value" style="color: var(--white-40);">2030</div>
+        <div class="pstat-label">BSN Target</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRIAL BANNER -->
+  <div class="trial-banner">
+    <div class="trial-banner-icon">⏳</div>
+    <div class="trial-banner-text">
+      April is currently in her <strong>2-year trial period</strong> (Grade 11–12). Full NGN scholarship begins upon successful completion of Senior High School with a minimum <strong>85% average</strong>. Trial started May/June 2025.
+    </div>
+  </div>
+
+  <!-- TRIAL PROGRESS -->
+  <div class="trial-progress-card">
+    <div class="trial-progress-header">
+      <div class="trial-progress-title">Trial Period Progress</div>
+      <div class="trial-progress-sub">Minimum required: 85% every semester</div>
+    </div>
+    <div class="trial-semesters">
+      <div class="trial-sem active">
+        <div class="trial-sem-label">Grade 11 · S1</div>
+        <div class="trial-sem-grade active">—</div>
+        <div class="trial-sem-status">In progress</div>
+      </div>
+      <div class="trial-sem future">
+        <div class="trial-sem-label">Grade 11 · S2</div>
+        <div class="trial-sem-grade future">—</div>
+        <div class="trial-sem-status">Upcoming</div>
+      </div>
+      <div class="trial-sem future">
+        <div class="trial-sem-label">Grade 12 · S1</div>
+        <div class="trial-sem-grade future">—</div>
+        <div class="trial-sem-status">Future</div>
+      </div>
+      <div class="trial-sem future">
+        <div class="trial-sem-label">Grade 12 · S2</div>
+        <div class="trial-sem-grade future">—</div>
+        <div class="trial-sem-status">Future</div>
+      </div>
+    </div>
+    <div class="trial-floor">
+      ⚡ <span>Entry requirement: <strong>85% minimum</strong> each semester · Trial began with 85% average at end of Grade 10</span>
+    </div>
+  </div>
+
+  <!-- CURRENT SEMESTER + SUBJECTS -->
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">Current Semester — G11 S1</div>
+      <div class="semester-grid">
+        <div class="sem-stat">
+          <div class="sem-stat-value amber">G11</div>
+          <div class="sem-stat-label">Year</div>
+        </div>
+        <div class="sem-stat">
+          <div class="sem-stat-value amber">2025</div>
+          <div class="sem-stat-label">School Year</div>
+        </div>
+      </div>
+      <div class="card-title" style="font-size: 12px; margin-bottom: 10px;">Core Subjects</div>
+      <div class="subjects-list">
+        <div class="subject-item"><div class="subject-dot"></div>Oral Communication</div>
+        <div class="subject-item"><div class="subject-dot"></div>21st Century Literature</div>
+        <div class="subject-item"><div class="subject-dot"></div>General Mathematics</div>
+        <div class="subject-item"><div class="subject-dot"></div>Earth & Life Science</div>
+        <div class="subject-item"><div class="subject-dot"></div>Personal Development</div>
+        <div class="subject-item"><div class="subject-dot"></div>Physical Education</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">What Comes Next</div>
+      <div class="subjects-list" style="gap: 12px;">
+        <div class="subject-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+          <span style="font-weight: 600; color: var(--amber);">Complete G11 → G12</span>
+          <span style="font-size: 11px; color: var(--white-40);">Maintain 85%+ every semester to stay in the program</span>
+        </div>
+        <div class="subject-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+          <span style="font-weight: 600; color: var(--white-70);">Full Scholarship Entry</span>
+          <span style="font-size: 11px; color: var(--white-40);">Upon G12 graduation → BSN Nursing at university</span>
+        </div>
+        <div class="subject-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+          <span style="font-weight: 600; color: var(--white-70);">Reward — Chromebook</span>
+          <span style="font-size: 11px; color: var(--white-40);">Upon completing Grade 12 successfully</span>
+        </div>
+        <div class="subject-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+          <span style="font-weight: 600; color: var(--white-70);">Reward — Motorcycle</span>
+          <span style="font-size: 11px; color: var(--white-40);">Program infrastructure upon entering university</span>
+        </div>
+        <div class="subject-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+          <span style="font-weight: 600; color: var(--white-70);">BSN Target Graduation</span>
+          <span style="font-size: 11px; color: var(--white-40);">2030 · Road to Australia begins</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MILESTONES -->
+  <div class="milestones-section">
+    <div class="section-header">
+      <div class="section-title">Milestones</div>
+      <div class="section-line"></div>
+    </div>
+    <div class="milestone-list">
+      <div class="milestone-item done">
+        <div class="milestone-icon done">✅</div>
+        <div class="milestone-info">
+          <div class="milestone-name">Grade 10 Completed</div>
+          <div class="milestone-detail">85% average · Trial period entry triggered</div>
+        </div>
+        <div class="milestone-badge badge-done">Done</div>
+      </div>
+      <div class="milestone-item done">
+        <div class="milestone-icon done">📱</div>
+        <div class="milestone-info">
+          <div class="milestone-name">Smartphone</div>
+          <div class="milestone-detail">Redmi Note 14 · 6+128GB · Trial G11 entry · April 2026</div>
+        </div>
+        <div class="milestone-badge badge-done">Done</div>
+      </div>
+      <div class="milestone-item upcoming">
+        <div class="milestone-icon upcoming">🎓</div>
+        <div class="milestone-info">
+          <div class="milestone-name">Complete Grade 11</div>
+          <div class="milestone-detail">85% minimum required to continue trial</div>
+        </div>
+        <div class="milestone-badge badge-upcoming">In Trial</div>
+      </div>
+      <div class="milestone-item">
+        <div class="milestone-icon future">🎓</div>
+        <div class="milestone-info">
+          <div class="milestone-name">Complete Grade 12</div>
+          <div class="milestone-detail">85% minimum · Unlocks full scholarship</div>
+        </div>
+        <div class="milestone-badge badge-future">2027</div>
+      </div>
+      <div class="milestone-item">
+        <div class="milestone-icon future">💻</div>
+        <div class="milestone-info">
+          <div class="milestone-name">Chromebook</div>
+          <div class="milestone-detail">Upon completing Grade 12</div>
+        </div>
+        <div class="milestone-badge badge-future">2027</div>
+      </div>
+      <div class="milestone-item">
+        <div class="milestone-icon future">🏍️</div>
+        <div class="milestone-info">
+          <div class="milestone-name">Motorcycle</div>
+          <div class="milestone-detail">Program infrastructure · Upon university entry</div>
+        </div>
+        <div class="milestone-badge badge-future">2027</div>
+      </div>
+      <div class="milestone-item">
+        <div class="milestone-icon future">📱</div>
+        <div class="milestone-info">
+          <div class="milestone-name">iPhone</div>
+          <div class="milestone-detail">Year 1 university complete</div>
+        </div>
+        <div class="milestone-badge badge-future">2028</div>
+      </div>
+      <div class="milestone-item">
+        <div class="milestone-icon future">🇦🇺</div>
+        <div class="milestone-info">
+          <div class="milestone-name">AHPRA License</div>
+          <div class="milestone-detail">Australian Nursing Registration · Post-graduation</div>
+        </div>
+        <div class="milestone-badge badge-future">Future</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENGLISH -->
+  <div class="english-section">
+    <div class="section-header">
+      <div class="section-title">English Development</div>
+      <div class="section-line"></div>
+    </div>
+    <div class="english-card">
+      <div class="english-header">
+        <div class="english-title">Building the Foundation</div>
+        <div class="english-target">Target: OET Grade B (C1 level) · Post-graduation</div>
+      </div>
+      <div class="english-stages">
+        <div class="english-stage active">
+          <div class="stage-dot active"></div>
+          <div class="stage-label">Trial G11–G12 · Basic communication with mentor · Building habits</div>
+          <div class="stage-tag active">Active</div>
+        </div>
+        <div class="english-stage">
+          <div class="stage-dot future"></div>
+          <div class="stage-label class="future">Year 1 university · Progressive English with mentor</div>
+          <div class="stage-tag">Future</div>
+        </div>
+        <div class="english-stage">
+          <div class="stage-dot future"></div>
+          <div class="stage-label future">Year 2 · FB Messenger exclusively in English with mentor</div>
+          <div class="stage-tag">Future</div>
+        </div>
+        <div class="english-stage">
+          <div class="stage-dot future"></div>
+          <div class="stage-label future">Summer Y3 · ChatGPT Advanced Voice Mode bootcamp</div>
+          <div class="stage-tag">Future</div>
+        </div>
+        <div class="english-stage">
+          <div class="stage-dot future"></div>
+          <div class="stage-label future">Year 3–4 · OET preparation · Target B2+/C1</div>
+          <div class="stage-tag">Future</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PATHWAY -->
+  <div class="pathway-section">
+    <div class="section-header">
+      <div class="section-title">Road to Australia</div>
+      <div class="section-line"></div>
+    </div>
+    <div class="pathway-card">
+      <div class="pathway-steps">
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle active">★</div>
+            <div class="step-label active">Trial<br>Period</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle">2</div>
+            <div class="step-label">BSN<br>University</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle">3</div>
+            <div class="step-label">PNLE<br>Philippines</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle">4</div>
+            <div class="step-label">1 Year<br>Clinical PH</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle">5</div>
+            <div class="step-label">OET<br>Grade B</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle">6</div>
+            <div class="step-label">NCLEX<br>USA</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle">7</div>
+            <div class="step-label">OSCE<br>Australia</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle" style="border-color: var(--gold); color: var(--gold);">🇦🇺</div>
+            <div class="step-label" style="color: var(--gold);">AHPRA<br>License</div>
+          </div>
+          <div class="step-connector dashed"></div>
+        </div>
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle" style="border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.3); border-style: dashed;">🇺🇸</div>
+            <div class="step-label" style="color: rgba(255,255,255,0.3);">U.S. Option<br>(Optional)</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- INVESTMENT -->
+  <div class="budget-section">
+    <div class="section-header">
+      <div class="section-title">Investment</div>
+      <div class="section-line"></div>
+    </div>
+    <div class="budget-note-card">
+      <div class="budget-note-icon">📊</div>
+      <div>
+        <div class="budget-note-title">Trial Period Investment</div>
+        <div class="budget-note-text">
+          During the trial period, the program provides limited support. Full scholarship investment begins upon university entry.
+        </div>
+        <div style="margin-top: 16px;">
+          <div class="budget-item">
+            <span class="budget-item-label">Smartphone — Redmi Note 14</span>
+            <span class="budget-item-value">₱7,499</span>
+          </div>
+          <div class="budget-item">
+            <span class="budget-item-label">Mobile data plan</span>
+            <span class="budget-item-value">Ongoing</span>
+          </div>
+          <div class="budget-item">
+            <span class="budget-item-label">Full scholarship investment (projected)</span>
+            <span class="budget-item-value" style="color: var(--white-40);">From 2027</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-left">
+      <strong>NextGen Nurses</strong> · April · Trial Period · Cohort 2030
+    </div>
+    <div class="footer-right">Updated May 2026</div>
+  </footer>
+
+</div>
+</body>
+</html>

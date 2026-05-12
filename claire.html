@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claire — NextGen Nurses</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:       #0A1628;
+    --navy-mid:   #0F2040;
+    --navy-card:  #132038;
+    --blue:       #1A5CDB;
+    --blue-mid:   #2A72F0;
+    --blue-light: #4A90F5;
+    --blue-glow:  rgba(26, 92, 219, 0.25);
+    --gold:       #F5C842;
+    --gold-dim:   rgba(245, 200, 66, 0.15);
+    --white:      #FFFFFF;
+    --white-70:   rgba(255,255,255,0.70);
+    --white-40:   rgba(255,255,255,0.40);
+    --white-15:   rgba(255,255,255,0.08);
+    --white-8:    rgba(255,255,255,0.05);
+    --green:      #22C55E;
+    --green-dim:  rgba(34, 197, 94, 0.12);
+    --amber:      #F59E0B;
+    --amber-dim:  rgba(245, 158, 11, 0.12);
+    --slate:      rgba(255,255,255,0.12);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--navy);
+    color: var(--white);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 15% 10%, rgba(26,92,219,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 85% 80%, rgba(26,92,219,0.12) 0%, transparent 55%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page-wrap {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  /* ── NAV ── */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 0 0;
+    margin-bottom: 48px;
+  }
+
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+  }
+
+  .logo-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--blue), var(--blue-light));
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    color: var(--white);
+    box-shadow: 0 4px 16px var(--blue-glow);
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    color: var(--white-40);
+    margin-top: 1px;
+  }
+
+  .back-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--white-40);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .back-link:hover { color: var(--white-70); }
+
+  .back-link svg {
+    width: 14px; height: 14px;
+    stroke: currentColor; fill: none;
+  }
+
+  /* ── HERO / PROFILE ── */
+  .profile-hero {
+    display: flex;
+    align-items: flex-start;
+    gap: 28px;
+    margin-bottom: 48px;
+    padding-bottom: 48px;
+    border-bottom: 1px solid var(--slate);
+    flex-wrap: wrap;
+  }
+
+  .profile-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, var(--blue), var(--blue-light));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--white);
+    box-shadow: 0 8px 32px var(--blue-glow);
+    flex-shrink: 0;
+  }
+
+  .profile-info { flex: 1; min-width: 200px; }
+
+  .profile-track {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--blue-light);
+    background: rgba(26,92,219,0.15);
+    border: 1px solid rgba(26,92,219,0.25);
+    padding: 4px 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    letter-spacing: 0.04em;
+  }
+
+  .profile-name {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(32px, 5vw, 48px);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .profile-school {
+    font-size: 14px;
+    color: var(--white-40);
+    margin-bottom: 16px;
+  }
+
+  .profile-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--green);
+    background: var(--green-dim);
+    border: 1px solid rgba(34,197,94,0.2);
+    padding: 5px 12px;
+    border-radius: 20px;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Profile stats */
+  .profile-stats {
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+
+  .pstat { text-align: center; }
+
+  .pstat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .pstat-value.blue { color: var(--blue-light); }
+  .pstat-value.gold { color: var(--gold); }
+
+  .pstat-label {
+    font-size: 10px;
+    color: var(--white-40);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ── SECTION HEADER ── */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--white-40);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--slate);
+  }
+
+  /* ── TWO-COL LAYOUT ── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  @media (max-width: 700px) {
+    .two-col { grid-template-columns: 1fr; }
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--navy-card);
+    border: 1px solid var(--slate);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--white-70);
+    margin-bottom: 16px;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── CURRENT SEMESTER CARD ── */
+  .semester-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .sem-stat {
+    background: var(--white-8);
+    border: 1px solid var(--slate);
+    border-radius: 10px;
+    padding: 14px;
+  }
+
+  .sem-stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.03em;
+    margin-bottom: 3px;
+  }
+
+  .sem-stat-value.blue { color: var(--blue-light); }
+  .sem-stat-value.gold { color: var(--gold); }
+  .sem-stat-value.green { color: var(--green); }
+
+  .sem-stat-label {
+    font-size: 10px;
+    color: var(--white-40);
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .subjects-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .subject-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--white-70);
+    padding: 8px 10px;
+    background: var(--white-8);
+    border-radius: 8px;
+    border: 1px solid var(--slate);
+  }
+
+  .subject-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--blue-light);
+    flex-shrink: 0;
+  }
+
+  /* ── GPA PROGRESS ── */
+  .gpa-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+
+  .gpa-label { font-size: 12px; color: var(--white-40); }
+
+  .gpa-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--green);
+    letter-spacing: -0.03em;
+  }
+
+  .gpa-bar {
+    height: 6px;
+    background: var(--white-15);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+
+  .gpa-fill {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, var(--green), #4ADE80);
+  }
+
+  .gpa-floor {
+    font-size: 10px;
+    color: var(--white-40);
+    letter-spacing: 0.04em;
+  }
+
+  /* ── BUDGET SECTION ── */
+  .budget-section { margin-bottom: 32px; }
+
+  .budget-total-card {
+    background: linear-gradient(135deg, rgba(26,92,219,0.2) 0%, rgba(26,92,219,0.05) 100%);
+    border: 1px solid rgba(26,92,219,0.3);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .budget-total-label {
+    font-size: 13px;
+    color: var(--white-40);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  .budget-total-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 40px;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .budget-total-sub {
+    font-size: 12px;
+    color: var(--white-40);
+    margin-top: 4px;
+  }
+
+  .budget-progress-wrap { min-width: 200px; flex: 1; }
+
+  .budget-progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--white-40);
+    margin-bottom: 8px;
+  }
+
+  .budget-progress-bar {
+    height: 8px;
+    background: var(--white-15);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .budget-progress-fill {
+    height: 100%;
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--blue), var(--blue-light));
+  }
+
+  .budget-cats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+  }
+
+  .budget-cat-card {
+    background: var(--navy-card);
+    border: 1px solid var(--slate);
+    border-radius: 12px;
+    padding: 18px;
+  }
+
+  .cat-icon { font-size: 20px; margin-bottom: 10px; }
+
+  .cat-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--white-40);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .cat-amount {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+
+  .cat-bar {
+    height: 3px;
+    background: var(--white-15);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .cat-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--blue), var(--blue-light));
+  }
+
+  /* ── MILESTONES ── */
+  .milestones-section { margin-bottom: 32px; }
+
+  .milestone-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .milestone-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    background: var(--navy-card);
+    border: 1px solid var(--slate);
+    border-radius: 12px;
+    transition: border-color 0.2s;
+  }
+
+  .milestone-item.done { border-color: rgba(34,197,94,0.2); }
+  .milestone-item.upcoming { border-color: rgba(245,200,66,0.15); }
+
+  .milestone-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .milestone-icon.done { background: var(--green-dim); }
+  .milestone-icon.upcoming { background: var(--gold-dim); }
+  .milestone-icon.future { background: var(--white-8); }
+
+  .milestone-info { flex: 1; }
+
+  .milestone-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 2px;
+  }
+
+  .milestone-detail {
+    font-size: 11px;
+    color: var(--white-40);
+  }
+
+  .milestone-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 20px;
+    flex-shrink: 0;
+  }
+
+  .badge-done {
+    background: var(--green-dim);
+    color: var(--green);
+    border: 1px solid rgba(34,197,94,0.2);
+  }
+
+  .badge-upcoming {
+    background: var(--gold-dim);
+    color: var(--gold);
+    border: 1px solid rgba(245,200,66,0.25);
+  }
+
+  .badge-future {
+    background: var(--white-8);
+    color: var(--white-40);
+    border: 1px solid var(--slate);
+  }
+
+  /* ── TRAVELS ── */
+  .travels-section { margin-bottom: 32px; }
+
+  .travel-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+
+  .travel-card {
+    background: var(--navy-card);
+    border: 1px solid var(--slate);
+    border-radius: 12px;
+    padding: 18px;
+    transition: border-color 0.2s;
+  }
+
+  .travel-card.done { border-color: rgba(34,197,94,0.2); }
+  .travel-card.upcoming { border-color: rgba(245,200,66,0.15); }
+
+  .travel-flag { font-size: 28px; margin-bottom: 10px; }
+
+  .travel-dest {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 4px;
+    letter-spacing: -0.01em;
+  }
+
+  .travel-when {
+    font-size: 11px;
+    color: var(--white-40);
+    margin-bottom: 10px;
+  }
+
+  .travel-status {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-block;
+  }
+
+  .travel-status.done {
+    background: var(--green-dim);
+    color: var(--green);
+  }
+
+  .travel-status.upcoming {
+    background: var(--gold-dim);
+    color: var(--gold);
+  }
+
+  .travel-status.future {
+    background: var(--white-8);
+    color: var(--white-40);
+  }
+
+  /* ── ENGLISH PROGRESS ── */
+  .english-section { margin-bottom: 32px; }
+
+  .english-card {
+    background: var(--navy-card);
+    border: 1px solid var(--slate);
+    border-radius: 16px;
+    padding: 24px;
+  }
+
+  .english-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .english-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .english-target {
+    font-size: 11px;
+    color: var(--white-40);
+  }
+
+  .english-stages {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .english-stage {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    background: var(--white-8);
+    border-radius: 10px;
+    border: 1px solid var(--slate);
+  }
+
+  .english-stage.active {
+    background: rgba(26,92,219,0.1);
+    border-color: rgba(26,92,219,0.3);
+  }
+
+  .stage-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .stage-dot.done { background: var(--green); }
+  .stage-dot.active { background: var(--blue-light); }
+  .stage-dot.future { background: var(--white-15); }
+
+  .stage-label {
+    flex: 1;
+    font-size: 12px;
+    color: var(--white-70);
+  }
+
+  .stage-label.future { color: var(--white-40); }
+
+  .stage-tag {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--white-40);
+  }
+
+  .stage-tag.done { color: var(--green); }
+  .stage-tag.active { color: var(--blue-light); }
+
+  /* ── PATHWAY ── */
+  .pathway-section { margin-bottom: 32px; }
+
+  .pathway-card {
+    background: var(--navy-card);
+    border: 1px solid var(--slate);
+    border-radius: 16px;
+    padding: 28px;
+    overflow: hidden;
+  }
+
+  .pathway-steps {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .pathway-step {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex: 1;
+    min-width: 80px;
+  }
+
+  .step-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .step-circle {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 2px solid var(--slate);
+    background: var(--navy-mid);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--white-40);
+    flex-shrink: 0;
+  }
+
+  .step-circle.done {
+    background: var(--blue);
+    border-color: var(--blue-light);
+    color: var(--white);
+    box-shadow: 0 0 12px var(--blue-glow);
+  }
+
+  .step-circle.active {
+    background: var(--gold-dim);
+    border-color: var(--gold);
+    color: var(--gold);
+    box-shadow: 0 0 12px rgba(245,200,66,0.2);
+  }
+
+  .step-label {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--white-40);
+    letter-spacing: 0.03em;
+    text-align: center;
+    white-space: nowrap;
+    max-width: 68px;
+    line-height: 1.3;
+  }
+
+  .step-label.done { color: var(--blue-light); }
+  .step-label.active { color: var(--gold); }
+
+  .step-connector {
+    flex: 1;
+    height: 2px;
+    background: var(--slate);
+    min-width: 16px;
+    position: relative;
+    top: -16px;
+  }
+
+  .step-connector.done {
+    background: linear-gradient(90deg, var(--blue), var(--blue-light));
+    box-shadow: 0 0 6px var(--blue-glow);
+  }
+
+  .step-connector.dashed {
+    background: none;
+    border-top: 2px dashed rgba(255,255,255,0.2);
+    height: 0;
+    top: -20px;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--slate);
+    padding-top: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .footer-left { font-size: 12px; color: var(--white-40); }
+  .footer-left strong { color: var(--white-70); font-weight: 600; }
+  .footer-right { font-size: 11px; color: var(--white-40); font-style: italic; }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .profile-hero    { animation: fadeUp 0.5s ease both; }
+  .two-col         { animation: fadeUp 0.5s 0.1s ease both; }
+  .budget-section  { animation: fadeUp 0.5s 0.15s ease both; }
+  .milestones-section { animation: fadeUp 0.5s 0.2s ease both; }
+  .travels-section { animation: fadeUp 0.5s 0.25s ease both; }
+  .english-section { animation: fadeUp 0.5s 0.3s ease both; }
+  .pathway-section { animation: fadeUp 0.5s 0.35s ease both; }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- NAV -->
+  <nav>
+    <a href="index.html" class="nav-logo">
+      <div class="logo-icon">NGS</div>
+      <div>
+        <div class="logo-text">NextGen Scholars</div>
+        <div class="logo-sub">Philippines</div>
+      </div>
+    </a>
+    <a href="index.html" class="back-link">
+      <svg viewBox="0 0 24 24" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      All Scholars
+    </a>
+  </nav>
+
+  <!-- PROFILE HERO -->
+  <div class="profile-hero">
+    <div class="profile-avatar">CB</div>
+    <div class="profile-info">
+      <div class="profile-track">NextGen Nurses · NGN</div>
+      <div class="profile-name">Claire</div>
+      <div class="profile-school">University of the Visayas · Cebu · BSN Nursing · Cohort 2028</div>
+      <div class="profile-status">
+        <div class="status-dot"></div>
+        Active Scholar
+      </div>
+    </div>
+    <div class="profile-stats">
+      <div class="pstat">
+        <div class="pstat-value blue">Y2·S2</div>
+        <div class="pstat-label">Semester</div>
+      </div>
+      <div class="pstat">
+        <div class="pstat-value gold">2028</div>
+        <div class="pstat-label">Graduation</div>
+      </div>
+      <div class="pstat">
+        <div class="pstat-value" style="color: var(--green);">37%</div>
+        <div class="pstat-label">Progress</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CURRENT SEMESTER + GPA -->
+  <div class="two-col" style="margin-bottom: 32px;">
+
+    <!-- Current Semester -->
+    <div class="card">
+      <div class="card-title">Current Semester — Y2S2</div>
+      <div class="semester-grid">
+        <div class="sem-stat">
+          <div class="sem-stat-value blue">Jan–Jun</div>
+          <div class="sem-stat-label">Period</div>
+        </div>
+        <div class="sem-stat">
+          <div class="sem-stat-value gold">2026</div>
+          <div class="sem-stat-label">Year</div>
+        </div>
+      </div>
+      <div class="card-title" style="margin-bottom: 10px; font-size: 12px;">Subjects</div>
+      <div class="subjects-list">
+        <div class="subject-item"><div class="subject-dot"></div>Health Assessment</div>
+        <div class="subject-item"><div class="subject-dot"></div>Fundamentals of Nursing Practice</div>
+        <div class="subject-item"><div class="subject-dot"></div>Pharmacology</div>
+        <div class="subject-item"><div class="subject-dot"></div>Care of Mother, Child & Family</div>
+        <div class="subject-item"><div class="subject-dot"></div>Community Health Nursing</div>
+        <div class="subject-item"><div class="subject-dot"></div>NSTP</div>
+      </div>
+    </div>
+
+    <!-- GPA -->
+    <div class="card">
+      <div class="card-title">Academic Standing</div>
+      <div class="gpa-row">
+        <span class="gpa-label">Y2S1 — Latest GPA</span>
+        <span class="gpa-value">81.36%</span>
+      </div>
+      <div class="gpa-bar">
+        <div class="gpa-fill" style="width: 81.36%"></div>
+      </div>
+      <div class="gpa-floor" style="margin-bottom: 24px;">Minimum required: 81% · UV grade scale</div>
+
+      <!-- Semester history -->
+      <div class="card-title" style="font-size: 12px; margin-bottom: 10px;">History</div>
+      <div class="subjects-list">
+        <div class="subject-item" style="justify-content: space-between;">
+          <span>Trial G12</span>
+          <span style="color: var(--green); font-weight: 600;">85%+</span>
+        </div>
+        <div class="subject-item" style="justify-content: space-between;">
+          <span>Year 1 — S1</span>
+          <span style="color: var(--green); font-weight: 600;">83.25%</span>
+        </div>
+        <div class="subject-item" style="justify-content: space-between;">
+          <span>Year 1 — S2</span>
+          <span style="color: var(--green); font-weight: 600;">88.16%</span>
+        </div>
+        <div class="subject-item" style="justify-content: space-between;">
+          <span>Year 2 — S1</span>
+          <span style="color: var(--amber); font-weight: 600;">81.36%</span>
+        </div>
+        <div class="subject-item" style="justify-content: space-between; border-color: rgba(26,92,219,0.3); background: rgba(26,92,219,0.08);">
+          <span style="color: var(--blue-light); font-weight: 600;">Year 2 — S2</span>
+          <span style="color: var(--blue-light); font-weight: 600;">In progress</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BUDGET -->
+  <div class="budget-section">
+    <div class="section-header">
+      <div class="section-title">Investment</div>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="budget-total-card">
+      <div>
+        <div class="budget-total-label">Total invested to date</div>
+        <div class="budget-total-value">₱2,053,637</div>
+        <div class="budget-total-sub">University + Travels + Rewards · All years</div>
+      </div>
+      <div class="budget-progress-wrap">
+        <div class="budget-progress-label">
+          <span>Program completion</span>
+          <span>37%</span>
+        </div>
+        <div class="budget-progress-bar">
+          <div class="budget-progress-fill" style="width: 37%"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="budget-cats-grid">
+      <div class="budget-cat-card">
+        <div class="cat-icon">🎓</div>
+        <div class="cat-name">University</div>
+        <div class="cat-amount">₱1,566,637</div>
+        <div class="cat-bar"><div class="cat-bar-fill" style="width: 76%"></div></div>
+      </div>
+      <div class="budget-cat-card">
+        <div class="cat-icon">✈️</div>
+        <div class="cat-name">Travels</div>
+        <div class="cat-amount">₱240,000</div>
+        <div class="cat-bar"><div class="cat-bar-fill" style="width: 12%"></div></div>
+      </div>
+      <div class="budget-cat-card">
+        <div class="cat-icon">🏆</div>
+        <div class="cat-name">Milestone Rewards</div>
+        <div class="cat-amount">₱247,000</div>
+        <div class="cat-bar"><div class="cat-bar-fill" style="width: 12%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MILESTONES -->
+  <div class="milestones-section">
+    <div class="section-header">
+      <div class="section-title">Milestones</div>
+      <div class="section-line"></div>
+    </div>
+    <div class="milestone-list">
+      <div class="milestone-item done">
+        <div class="milestone-icon done">📱</div>
+        <div class="milestone-info">
+          <div class="milestone-name">Smartphone</div>
+          <div class="milestone-detail">Redmi Note · Trial G11 entry</div>
+        </div>
+        <div class="milestone-badge badge-done">Done</div>
+      </div>
+      <div class="milestone-item done">
+        <div class="milestone-icon done">💻</div>
+        <div class="milestone-info">
+          <div class="milestone-name">Chromebook</div>
+          <div class="milestone-detail">ASUS 14" 2-in-1 · Grade 12 complete</div>
+        </div>
+        <div class="milestone-badge badge-done">Done</div>
+      </div>
+      <div class="milestone-item done">
+        <div class="milestone-icon done">🏍️</div>
+        <div class="milestone-info">
+          <div class="milestone-name">Motorcycle</div>
+          <div class="milestone-detail">Program infrastructure · Grade 12 complete</div>
+        </div>
+        <div class="milestone-badge badge-done">Done</div>
+      </div>
+      <div class="milestone-item done">
+        <div class="milestone-icon done">📱</div>
+        <div class="milestone-info">
+          <div class="milestone-name">iPhone 13 Pro</div>
+          <div class="milestone-detail">128GB · Year 1 complete</div>
+        </div>
+        <div class="milestone-badge badge-done">Done</div>
+      </div>
+      <div class="milestone-item done">
+        <div class="milestone-icon done">📱</div>
+        <div class="milestone-info">
+          <div class="milestone-name">iPad 11" A16</div>
+          <div class="milestone-detail">128GB · Year 2 complete (delivered early)</div>
+        </div>
+        <div class="milestone-badge badge-done">Done</div>
+      </div>
+      <div class="milestone-item done">
+        <div class="milestone-icon done">💳</div>
+        <div class="milestone-info">
+          <div class="milestone-name">Authorized Credit Card</div>
+          <div class="milestone-detail">Linked to mentor's account · January 2026</div>
+        </div>
+        <div class="milestone-badge badge-done">Done</div>
+      </div>
+      <div class="milestone-item">
+        <div class="milestone-icon future">🎓</div>
+        <div class="milestone-info">
+          <div class="milestone-name">BSN Graduation</div>
+          <div class="milestone-detail">University of the Visayas · 2028</div>
+        </div>
+        <div class="milestone-badge badge-future">2028</div>
+      </div>
+      <div class="milestone-item">
+        <div class="milestone-icon future">🇦🇺</div>
+        <div class="milestone-info">
+          <div class="milestone-name">AHPRA License</div>
+          <div class="milestone-detail">Australian Nursing Registration · Post-graduation</div>
+        </div>
+        <div class="milestone-badge badge-future">Future</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRAVELS -->
+  <div class="travels-section">
+    <div class="section-header">
+      <div class="section-title">Travel Program</div>
+      <div class="section-line"></div>
+    </div>
+    <div class="travel-list">
+      <div class="travel-card done">
+        <div class="travel-flag">🏖️</div>
+        <div class="travel-dest">Boracay</div>
+        <div class="travel-when">2024 · End of Trial G12</div>
+        <div class="travel-status done">Completed</div>
+      </div>
+      <div class="travel-card done">
+        <div class="travel-flag">🌿</div>
+        <div class="travel-dest">Bohol</div>
+        <div class="travel-when">2025 · After Year 1</div>
+        <div class="travel-status done">Completed</div>
+      </div>
+      <div class="travel-card done">
+        <div class="travel-flag">🇭🇰</div>
+        <div class="travel-dest">Hong Kong</div>
+        <div class="travel-when">Jan 2026 · Year 2 S2</div>
+        <div class="travel-status done">Completed</div>
+      </div>
+      <div class="travel-card upcoming">
+        <div class="travel-flag">🚢</div>
+        <div class="travel-dest">Taiwan Cruise</div>
+        <div class="travel-when">Jan 2027 · After Year 3 · MSC Bellissima</div>
+        <div class="travel-status upcoming">Booked</div>
+      </div>
+      <div class="travel-card">
+        <div class="travel-flag">🏛️</div>
+        <div class="travel-dest">Manila</div>
+        <div class="travel-when">2027 · B2 Visa Interview</div>
+        <div class="travel-status future">Planned</div>
+      </div>
+      <div class="travel-card">
+        <div class="travel-flag">🇺🇸</div>
+        <div class="travel-dest">U.S. Immersion</div>
+        <div class="travel-when">Post-graduation · 3 months · Kentucky base</div>
+        <div class="travel-status future">Planned</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ENGLISH -->
+  <div class="english-section">
+    <div class="section-header">
+      <div class="section-title">English Development</div>
+      <div class="section-line"></div>
+    </div>
+    <div class="english-card">
+      <div class="english-header">
+        <div class="english-title">From Cebu to the World</div>
+        <div class="english-target">Target: OET Grade B (C1 level)</div>
+      </div>
+      <div class="english-stages">
+        <div class="english-stage">
+          <div class="stage-dot done"></div>
+          <div class="stage-label">Trial G11–G12 · Basic communication with mentor</div>
+          <div class="stage-tag done">Done</div>
+        </div>
+        <div class="english-stage">
+          <div class="stage-dot done"></div>
+          <div class="stage-label">Year 1 · Progressive English with mentor</div>
+          <div class="stage-tag done">Done</div>
+        </div>
+        <div class="english-stage active">
+          <div class="stage-dot active"></div>
+          <div class="stage-label">Year 2 · FB Messenger exclusively in English with mentor</div>
+          <div class="stage-tag active">Active</div>
+        </div>
+        <div class="english-stage">
+          <div class="stage-dot future"></div>
+          <div class="stage-label">Summer Y3 · ChatGPT Advanced Voice Mode bootcamp</div>
+          <div class="stage-tag">Upcoming</div>
+        </div>
+        <div class="english-stage">
+          <div class="stage-dot future"></div>
+          <div class="stage-label">Year 3–4 · OET preparation · Target B2+/C1</div>
+          <div class="stage-tag">Future</div>
+        </div>
+        <div class="english-stage">
+          <div class="stage-dot future"></div>
+          <div class="stage-label">Post-graduation · 3-month U.S. immersion · C1 operational</div>
+          <div class="stage-tag">Future</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PATHWAY -->
+  <div class="pathway-section">
+    <div class="section-header">
+      <div class="section-title">Road to Australia</div>
+      <div class="section-line"></div>
+    </div>
+    <div class="pathway-card">
+      <div class="pathway-steps">
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle done">✓</div>
+            <div class="step-label done">Trial<br>Period</div>
+          </div>
+          <div class="step-connector done"></div>
+        </div>
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle active">★</div>
+            <div class="step-label active">BSN<br>University</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle">3</div>
+            <div class="step-label">PNLE<br>Philippines</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle">4</div>
+            <div class="step-label">1 Year<br>Clinical PH</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle">5</div>
+            <div class="step-label">OET<br>Grade B</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle">6</div>
+            <div class="step-label">NCLEX<br>USA</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle">7</div>
+            <div class="step-label">OSCE<br>Australia</div>
+          </div>
+          <div class="step-connector"></div>
+        </div>
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle" style="border-color: var(--gold); color: var(--gold);">🇦🇺</div>
+            <div class="step-label" style="color: var(--gold);">AHPRA<br>License</div>
+          </div>
+          <div class="step-connector dashed"></div>
+        </div>
+
+        <div class="pathway-step">
+          <div class="step-node">
+            <div class="step-circle" style="border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.3); border-style: dashed;">🇺🇸</div>
+            <div class="step-label" style="color: rgba(255,255,255,0.3);">U.S. Option<br>(Optional)</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-left">
+      <strong>NextGen Nurses</strong> · Claire Buenconsejo · Cohort 2028
+    </div>
+    <div class="footer-right">Updated May 2026</div>
+  </footer>
+
+</div>
+</body>
+</html>
