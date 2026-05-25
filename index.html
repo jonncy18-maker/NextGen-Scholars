@@ -10,8 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Manrope:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
-html, body, #root { height: 100%; margin: 0; }
-body { background: #06080f; }
+body { margin: 0; }
 
 /* NextGen Scholars — design system
    Navy + gold + warm white. Newsreader display, Manrope body.
@@ -633,6 +632,26 @@ body { background: #06080f; }
   color: var(--ngs-ink-soft);
   border-radius: 0 3px 3px 0;
 }
+.ngs-scholar-card-linked {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.ngs-scholar-card-linked:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(27, 42, 74, 0.13);
+}
+.ngs-scholar-dashboard-cta {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ngs-rule);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ngs-navy);
+  letter-spacing: 0.02em;
+}
 .ngs-scholar-progress {
   display: flex; flex-direction: column; gap: 6px;
 }
@@ -802,6 +821,22 @@ body { background: #06080f; }
   font-size: 11px;
   color: rgba(250, 247, 240, 0.4);
   letter-spacing: 0.02em;
+}
+
+/* desktop inline nav */
+.ngs-nav-desktop {
+  display: flex; align-items: center; gap: 2px;
+}
+.ngs-nav-desktop a {
+  padding: 8px 14px;
+  font-size: 14px; font-weight: 500;
+  color: var(--ngs-navy);
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.ngs-nav-desktop a:hover { background: rgba(27,42,74,0.07); }
+.ngs-nav-desktop .ngs-nav-cta-link {
+  color: var(--ngs-gold); font-weight: 600;
 }
 
 /* desktop bump */
@@ -1762,21 +1797,23 @@ function Scholars({ palette }) {
       name: 'Claire',
       track: 'NGN',
       status: 'Active',
-      stage: 'University · Year 2',
-      year: '2028 cohort',
-      quote: 'I want to be a nurse abroad. This program is making that real.',
+      stage: ‘University · Year 2’,
+      year: ‘2028 cohort’,
+      quote: ‘I want to be a nurse abroad. This program is making that real.’,
       progress: 0.35,
       accent: palette.gold,
+      href: ‘claire.html’,
     },
     {
-      name: 'April',
-      track: 'NGN',
-      status: 'Trial',
-      stage: 'Grade 11 trial period',
-      year: '2032 cohort',
-      quote: 'I’m still in high school, but I already know where I’m going.',
+      name: ‘April’,
+      track: ‘NGN’,
+      status: ‘Trial’,
+      stage: ‘Grade 11 trial period’,
+      year: ‘2032 cohort’,
+      quote: ‘I’m still in high school, but I already know where I’m going.’,
       progress: 0.08,
       accent: palette.gold,
+      href: ‘april.html’,
     },
     {
       name: 'Aljane',
@@ -1805,52 +1842,65 @@ function Scholars({ palette }) {
       </p>
 
       <div className="ngs-scholar-list">
-        {scholars.map(s => (
-          <article key={s.name} className="ngs-scholar-card">
-            <div className="ngs-scholar-photo" aria-label={`${s.name} portrait placeholder`}>
-              <div className="ngs-scholar-photo-inner">
-                <span>portrait</span>
-                <span>{s.name.toLowerCase()}.jpg</span>
-              </div>
-              <div className={`ngs-scholar-badge ngs-scholar-badge-${s.status.toLowerCase()}`}>
-                {s.status}
-              </div>
-            </div>
-
-            <div className="ngs-scholar-body">
-              <div className="ngs-scholar-head">
-                <h3>{s.name}</h3>
-                <span className="ngs-scholar-track">{s.track}</span>
-              </div>
-              <div className="ngs-scholar-meta">
-                <span>{s.stage}</span>
-                <span className="ngs-scholar-dot">·</span>
-                <span>{s.year}</span>
-              </div>
-
-              <blockquote className="ngs-scholar-quote">
-                <span className="ngs-scholar-quote-mark">"</span>
-                {s.quote}
-              </blockquote>
-
-              {s.note && (
-                <p className="ngs-scholar-note">{s.note}</p>
-              )}
-
-              <div className="ngs-scholar-progress">
-                <div className="ngs-scholar-progress-track">
-                  <div className="ngs-scholar-progress-fill" style={{
-                    width: `${s.progress * 100}%`,
-                    background: s.accent,
-                  }}/>
+        {scholars.map(s => {
+          const Tag = s.href ? 'a' : 'article';
+          const linkProps = s.href ? { href: s.href, className: 'ngs-scholar-card ngs-scholar-card-linked' } : { className: 'ngs-scholar-card' };
+          return (
+            <Tag key={s.name} {...linkProps}>
+              <div className="ngs-scholar-photo" aria-label={`${s.name} portrait placeholder`}>
+                <div className="ngs-scholar-photo-inner">
+                  <span>portrait</span>
+                  <span>{s.name.toLowerCase()}.jpg</span>
                 </div>
-                <div className="ngs-scholar-progress-label">
-                  Journey · {Math.round(s.progress * 100)}%
+                <div className={`ngs-scholar-badge ngs-scholar-badge-${s.status.toLowerCase()}`}>
+                  {s.status}
                 </div>
               </div>
-            </div>
-          </article>
-        ))}
+
+              <div className="ngs-scholar-body">
+                <div className="ngs-scholar-head">
+                  <h3>{s.name}</h3>
+                  <span className="ngs-scholar-track">{s.track}</span>
+                </div>
+                <div className="ngs-scholar-meta">
+                  <span>{s.stage}</span>
+                  <span className="ngs-scholar-dot">·</span>
+                  <span>{s.year}</span>
+                </div>
+
+                <blockquote className="ngs-scholar-quote">
+                  <span className="ngs-scholar-quote-mark">"</span>
+                  {s.quote}
+                </blockquote>
+
+                {s.note && (
+                  <p className="ngs-scholar-note">{s.note}</p>
+                )}
+
+                <div className="ngs-scholar-progress">
+                  <div className="ngs-scholar-progress-track">
+                    <div className="ngs-scholar-progress-fill" style={{
+                      width: `${s.progress * 100}%`,
+                      background: s.accent,
+                    }}/>
+                  </div>
+                  <div className="ngs-scholar-progress-label">
+                    Journey · {Math.round(s.progress * 100)}%
+                  </div>
+                </div>
+
+                {s.href && (
+                  <div className="ngs-scholar-dashboard-cta">
+                    View dashboard
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                      <path d="M3 8h10m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                )}
+              </div>
+            </Tag>
+          );
+        })}
       </div>
     </section>
   );
@@ -1985,7 +2035,7 @@ function Footer() {
   );
 }
 
-function TopNav({ palette }) {
+function TopNav({ palette, isDesktop }) {
   const [open, setOpen] = useState(false);
   return (
     <header className="ngs-nav">
@@ -1996,11 +2046,21 @@ function TopNav({ palette }) {
           </div>
           <span className="ngs-nav-name">NextGen Scholars</span>
         </a>
-        <button className="ngs-nav-btn" onClick={() => setOpen(!open)} aria-label="Menu">
-          <span></span><span></span>
-        </button>
+        {isDesktop ? (
+          <nav className="ngs-nav-desktop">
+            <a href="#about">About</a>
+            <a href="#tracks">Tracks</a>
+            <a href="#journey">Journey</a>
+            <a href="#scholars">Scholars</a>
+            <a href="#apply" className="ngs-nav-cta-link">Apply</a>
+          </nav>
+        ) : (
+          <button className="ngs-nav-btn" onClick={() => setOpen(!open)} aria-label="Menu">
+            <span></span><span></span>
+          </button>
+        )}
       </div>
-      {open && (
+      {!isDesktop && open && (
         <nav className="ngs-nav-menu" onClick={() => setOpen(false)}>
           <a href="#about">About</a>
           <a href="#tracks">Tracks</a>
@@ -2013,10 +2073,10 @@ function TopNav({ palette }) {
   );
 }
 
-function NGSSite({ palette, isMobile }) {
+function NGSSite({ palette, isDesktop }) {
   return (
-    <div className={`ngs-site ${isMobile ? 'is-mobile' : ''}`} id="top">
-      <TopNav palette={palette}/>
+    <div className={`ngs-site ${isDesktop ? 'is-desktop' : ''}`} id="top">
+      <TopNav palette={palette} isDesktop={isDesktop}/>
       <Hero palette={palette}/>
       <About/>
       <Tracks palette={palette}/>
@@ -2036,10 +2096,8 @@ window.NGSSite = NGSSite;
 const { useState: useStateApp, useEffect: useEffectApp } = React;
 
 const TWEAK_DEFAULTS = {
-  "viewport": "iphone",
   "palette": "navyGold",
   "headingFont": "newsreader",
-  "darkMode": false
 };
 
 const PALETTES = {
@@ -2101,150 +2159,27 @@ function ApplyVars({ palette, fonts }) {
   return null;
 }
 
-function FrameLabel({ children }) {
-  return (
-    <div style={{
-      fontFamily: "'IBM Plex Mono', ui-monospace, monospace",
-      fontSize: 11,
-      letterSpacing: '0.18em',
-      textTransform: 'uppercase',
-      color: 'rgba(255, 255, 255, 0.45)',
-      marginBottom: 18,
-      textAlign: 'center',
-    }}>{children}</div>
-  );
-}
-
-function BrowserChrome({ children }) {
-  return (
-    <div style={{
-      width: 1280, maxWidth: '92vw',
-      borderRadius: 12,
-      overflow: 'hidden',
-      background: '#fff',
-      boxShadow: '0 40px 80px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.18)',
-    }}>
-      <div style={{
-        height: 38,
-        background: 'linear-gradient(#2a2f3a, #1f2530)',
-        display: 'flex', alignItems: 'center', padding: '0 14px', gap: 8,
-        borderBottom: '1px solid rgba(0,0,0,0.3)',
-      }}>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <span style={{ width: 11, height: 11, borderRadius: 999, background: '#ff5f57' }}/>
-          <span style={{ width: 11, height: 11, borderRadius: 999, background: '#febc2e' }}/>
-          <span style={{ width: 11, height: 11, borderRadius: 999, background: '#28c840' }}/>
-        </div>
-        <div style={{
-          flex: 1,
-          margin: '0 80px',
-          height: 22,
-          borderRadius: 6,
-          background: 'rgba(255,255,255,0.08)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: "'IBM Plex Mono', monospace",
-          fontSize: 11,
-          color: 'rgba(255,255,255,0.55)',
-          letterSpacing: 0.04,
-        }}>
-          nextgenscholars.ph
-        </div>
-      </div>
-      <div style={{ height: 720, overflow: 'auto' }}>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function DesktopClass() {
-  useEffectApp(() => {
-    const el = document.querySelector('.ngs-desktop-shell .ngs-site');
-    if (el) el.classList.add('is-desktop');
-    return () => { if (el) el.classList.remove('is-desktop'); };
-  });
-  return null;
-}
-
-function DesktopSite({ palette }) {
-  return (
-    <div className="ngs-desktop-shell">
-      <NGSSite palette={palette}/>
-      <DesktopClass/>
-    </div>
-  );
-}
-
 function App() {
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
   const palette = PALETTES[t.palette] || PALETTES.navyGold;
   const fonts = FONT_STACKS[t.headingFont] || FONT_STACKS.newsreader;
 
-  const isDesktop = t.viewport === 'desktop';
-  const isMobile = t.viewport === 'iphone';
+  const [isDesktop, setIsDesktop] = useStateApp(() =>
+    window.matchMedia('(min-width: 960px)').matches
+  );
+
+  useEffectApp(() => {
+    const mq = window.matchMedia('(min-width: 960px)');
+    const handler = (e) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   return (
     <>
       <ApplyVars palette={palette} fonts={fonts}/>
-
-      <div style={{
-        minHeight: '100vh',
-        background:
-          'radial-gradient(120% 80% at 50% 0%, #1a2236 0%, #0a0e18 60%, #06080f 100%)',
-        padding: isMobile ? '48px 20px 80px' : '40px 20px 80px',
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        fontFamily: "'Manrope', system-ui, sans-serif",
-      }}>
-        <FrameLabel>
-          {isMobile ? 'NGS · iPhone · 402 × 874' : 'NGS · Desktop · 1280 wide'}
-        </FrameLabel>
-
-        {isMobile ? (
-          <IOSDevice width={402} height={844}>
-            <div style={{
-              height: '100%', overflow: 'auto',
-              WebkitOverflowScrolling: 'touch',
-              background: palette.paper,
-            }}>
-              <NGSSite palette={palette} isMobile={true}/>
-            </div>
-          </IOSDevice>
-        ) : (
-          <BrowserChrome>
-            <div style={{ background: palette.paper }}>
-              <DesktopSite palette={palette}/>
-            </div>
-          </BrowserChrome>
-        )}
-
-        <div style={{
-          marginTop: 32,
-          fontFamily: "'IBM Plex Mono', monospace",
-          fontSize: 11,
-          color: 'rgba(255,255,255,0.32)',
-          letterSpacing: 0.04,
-          textAlign: 'center',
-          maxWidth: 520,
-          lineHeight: 1.6,
-        }}>
-          Open Tweaks → switch palette / fonts / viewport.<br/>
-          Mobile is primary; desktop scales the same layout up at <em>≥960px</em>.
-        </div>
-      </div>
-
+      <NGSSite palette={palette} isDesktop={isDesktop}/>
       <TweaksPanel title="Tweaks">
-        <TweakSection label="View">
-          <TweakRadio
-            label="Viewport"
-            value={t.viewport}
-            onChange={v => setTweak('viewport', v)}
-            options={[
-              { value: 'iphone', label: 'Mobile' },
-              { value: 'desktop', label: 'Desktop' },
-            ]}
-          />
-        </TweakSection>
-
         <TweakSection label="Palette">
           <TweakSelect
             label="Color scheme"
@@ -2264,7 +2199,6 @@ function App() {
             ))}
           </div>
         </TweakSection>
-
         <TweakSection label="Typography">
           <TweakSelect
             label="Type pairing"
