@@ -1766,6 +1766,7 @@ function App() {
     return () => mq.removeEventListener('change', handler);
   }, []);
 
+  const ScholarProfile = window.ScholarProfile;
   return (
     <ScholarProfile
       data={window.CLAIRE_DATA}
