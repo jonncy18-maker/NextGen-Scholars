@@ -1,1109 +1,1810 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>April — NextGen Nurses</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>April — NextGen Scholars</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Manrope:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --navy:       #0A1628;
-    --navy-mid:   #0F2040;
-    --navy-card:  #132038;
-    --blue:       #1A5CDB;
-    --blue-light: #4A90F5;
-    --blue-glow:  rgba(26, 92, 219, 0.25);
-    --gold:       #F5C842;
-    --gold-dim:   rgba(245, 200, 66, 0.15);
-    --white:      #FFFFFF;
-    --white-70:   rgba(255,255,255,0.70);
-    --white-40:   rgba(255,255,255,0.40);
-    --white-15:   rgba(255,255,255,0.08);
-    --white-8:    rgba(255,255,255,0.05);
-    --green:      #22C55E;
-    --green-dim:  rgba(34, 197, 94, 0.12);
-    --amber:      #F59E0B;
-    --amber-dim:  rgba(245, 158, 11, 0.12);
-    --slate:      rgba(255,255,255,0.12);
-  }
-
-  html { scroll-behavior: smooth; }
-
-  body {
-    font-family: 'Inter', sans-serif;
-    background: var(--navy);
-    color: var(--white);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(ellipse 80% 60% at 15% 10%, rgba(245,158,11,0.08) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 50% at 85% 80%, rgba(26,92,219,0.10) 0%, transparent 55%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-    background-size: 60px 60px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .page-wrap {
-    position: relative;
-    z-index: 1;
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 0 24px 80px;
-  }
-
-  /* ── NAV ── */
-  nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 28px 0 0;
-    margin-bottom: 48px;
-  }
-
-  .nav-logo {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    text-decoration: none;
-  }
-
-  .logo-icon {
-    width: 40px; height: 40px;
-    background: linear-gradient(135deg, var(--blue), var(--blue-light));
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 14px;
-    color: var(--white);
-    box-shadow: 0 4px 16px var(--blue-glow);
-    flex-shrink: 0;
-  }
-
-  .logo-text {
-    font-family: 'Syne', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--white);
-  }
-
-  .logo-sub { font-size: 11px; color: var(--white-40); margin-top: 1px; }
-
-  .back-link {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--white-40);
-    text-decoration: none;
-    transition: color 0.2s;
-  }
-
-  .back-link:hover { color: var(--white-70); }
-  .back-link svg { width: 14px; height: 14px; stroke: currentColor; fill: none; }
-
-  /* ── TRIAL BANNER ── */
-  .trial-banner {
-    background: linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(245,158,11,0.05) 100%);
-    border: 1px solid rgba(245,158,11,0.3);
-    border-radius: 12px;
-    padding: 16px 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 32px;
-  }
-
-  .trial-banner-icon { font-size: 20px; flex-shrink: 0; }
-
-  .trial-banner-text {
-    font-size: 13px;
-    color: var(--white-70);
-    line-height: 1.5;
-  }
-
-  .trial-banner-text strong { color: var(--gold); }
-
-  /* ── PROFILE ── */
-  .profile-hero {
-    display: flex;
-    align-items: flex-start;
-    gap: 28px;
-    margin-bottom: 48px;
-    padding-bottom: 48px;
-    border-bottom: 1px solid var(--slate);
-    flex-wrap: wrap;
-  }
-
-  .profile-avatar {
-    width: 72px; height: 72px;
-    border-radius: 18px;
-    background: linear-gradient(135deg, #92400E, #F59E0B);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Syne', sans-serif;
-    font-size: 26px;
-    font-weight: 800;
-    color: var(--white);
-    box-shadow: 0 8px 32px rgba(245,158,11,0.2);
-    flex-shrink: 0;
-  }
-
-  .profile-info { flex: 1; min-width: 200px; }
-
-  .profile-track {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--amber);
-    background: var(--amber-dim);
-    border: 1px solid rgba(245,158,11,0.25);
-    padding: 4px 10px;
-    border-radius: 6px;
-    margin-bottom: 10px;
-    letter-spacing: 0.04em;
-  }
-
-  .profile-name {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(32px, 5vw, 48px);
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    line-height: 1;
-    margin-bottom: 8px;
-  }
-
-  .profile-school { font-size: 14px; color: var(--white-40); margin-bottom: 16px; }
-
-  .profile-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--amber);
-    background: var(--amber-dim);
-    border: 1px solid rgba(245,158,11,0.2);
-    padding: 5px 12px;
-    border-radius: 20px;
-  }
-
-  .status-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--amber);
-    animation: pulse 2s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-
-  .profile-stats {
-    display: flex;
-    gap: 32px;
-    align-items: center;
-    margin-left: auto;
-    flex-wrap: wrap;
-  }
-
-  .pstat { text-align: center; }
-
-  .pstat-value {
-    font-family: 'Syne', sans-serif;
-    font-size: 24px;
-    font-weight: 800;
-    color: var(--white);
-    letter-spacing: -0.03em;
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-
-  .pstat-label {
-    font-size: 10px;
-    color: var(--white-40);
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  /* ── SECTION HEADER ── */
-  .section-header {
-    display: flex;
-    align-items: baseline;
-    gap: 16px;
-    margin-bottom: 20px;
-  }
-
-  .section-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--white-40);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-
-  .section-line { flex: 1; height: 1px; background: var(--slate); }
-
-  /* ── TWO-COL ── */
-  .two-col {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 32px;
-  }
-
-  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
-
-  /* ── CARDS ── */
-  .card {
-    background: var(--navy-card);
-    border: 1px solid var(--slate);
-    border-radius: 16px;
-    padding: 24px;
-  }
-
-  .card-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--white-70);
-    margin-bottom: 16px;
-  }
-
-  /* ── TRIAL PROGRESS ── */
-  .trial-progress-card {
-    background: var(--navy-card);
-    border: 1px solid rgba(245,158,11,0.2);
-    border-radius: 16px;
-    padding: 28px;
-    margin-bottom: 32px;
-  }
-
-  .trial-progress-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .trial-progress-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--white);
-  }
-
-  .trial-progress-sub { font-size: 12px; color: var(--white-40); }
-
-  .trial-semesters {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-
-  .trial-sem {
-    background: var(--white-8);
-    border: 1px solid var(--slate);
-    border-radius: 10px;
-    padding: 14px;
-    text-align: center;
-  }
-
-  .trial-sem.active {
-    background: var(--amber-dim);
-    border-color: rgba(245,158,11,0.3);
-  }
-
-  .trial-sem.future { opacity: 0.5; }
-
-  .trial-sem-label {
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--white-40);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-
-  .trial-sem.active .trial-sem-label { color: var(--amber); }
-
-  .trial-sem-grade {
-    font-family: 'Syne', sans-serif;
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--white);
-    margin-bottom: 4px;
-  }
-
-  .trial-sem-grade.pass { color: var(--green); }
-  .trial-sem-grade.active { color: var(--amber); }
-  .trial-sem-grade.future { color: var(--white-40); }
-
-  .trial-sem-status {
-    font-size: 10px;
-    color: var(--white-40);
-  }
-
-  .trial-floor {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 14px;
-    background: var(--white-8);
-    border-radius: 8px;
-    font-size: 12px;
-    color: var(--white-40);
-  }
-
-  .trial-floor strong { color: var(--gold); }
-
-  /* ── CURRENT SEMESTER ── */
-  .sem-stat {
-    background: var(--white-8);
-    border: 1px solid var(--slate);
-    border-radius: 10px;
-    padding: 14px;
-  }
-
-  .sem-stat-value {
-    font-family: 'Syne', sans-serif;
-    font-size: 22px;
-    font-weight: 800;
-    color: var(--white);
-    letter-spacing: -0.03em;
-    margin-bottom: 3px;
-  }
-
-  .sem-stat-value.amber { color: var(--amber); }
-
-  .sem-stat-label {
-    font-size: 10px;
-    color: var(--white-40);
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-
-  .semester-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-
-  .subjects-list { display: flex; flex-direction: column; gap: 8px; }
-
-  .subject-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 12px;
-    color: var(--white-70);
-    padding: 8px 10px;
-    background: var(--white-8);
-    border-radius: 8px;
-    border: 1px solid var(--slate);
-  }
-
-  .subject-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--amber);
-    flex-shrink: 0;
-  }
-
-  /* ── MILESTONES ── */
-  .milestones-section { margin-bottom: 32px; }
-
-  .milestone-list { display: flex; flex-direction: column; gap: 10px; }
-
-  .milestone-item {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
-    background: var(--navy-card);
-    border: 1px solid var(--slate);
-    border-radius: 12px;
-  }
-
-  .milestone-item.done { border-color: rgba(34,197,94,0.2); }
-  .milestone-item.upcoming { border-color: rgba(245,158,11,0.15); }
-
-  .milestone-icon {
-    width: 36px; height: 36px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    flex-shrink: 0;
-  }
-
-  .milestone-icon.done { background: var(--green-dim); }
-  .milestone-icon.upcoming { background: var(--amber-dim); }
-  .milestone-icon.future { background: var(--white-8); }
-
-  .milestone-info { flex: 1; }
-
-  .milestone-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--white);
-    margin-bottom: 2px;
-  }
-
-  .milestone-detail { font-size: 11px; color: var(--white-40); }
-
-  .milestone-badge {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 4px 10px;
-    border-radius: 20px;
-    flex-shrink: 0;
-  }
-
-  .badge-done { background: var(--green-dim); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
-  .badge-upcoming { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
-  .badge-future { background: var(--white-8); color: var(--white-40); border: 1px solid var(--slate); }
-
-  /* ── PATHWAY ── */
-  .pathway-section { margin-bottom: 32px; }
-
-  .pathway-card {
-    background: var(--navy-card);
-    border: 1px solid var(--slate);
-    border-radius: 16px;
-    padding: 28px;
-    overflow: hidden;
-  }
-
-  .pathway-steps {
-    display: flex;
-    align-items: flex-start;
-    overflow-x: auto;
-    padding-bottom: 8px;
-  }
-
-  .pathway-step {
-    display: flex;
-    align-items: center;
-    flex: 1;
-    min-width: 80px;
-  }
-
-  .step-node {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-
-  .step-circle {
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    border: 2px solid var(--slate);
-    background: var(--navy-mid);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 800;
-    color: var(--white-40);
-    flex-shrink: 0;
-  }
-
-  .step-circle.active {
-    background: var(--amber-dim);
-    border-color: var(--amber);
-    color: var(--amber);
-    box-shadow: 0 0 12px rgba(245,158,11,0.2);
-  }
-
-  .step-label {
-    font-size: 9px;
-    font-weight: 600;
-    color: var(--white-40);
-    letter-spacing: 0.03em;
-    text-align: center;
-    white-space: nowrap;
-    max-width: 68px;
-    line-height: 1.3;
-  }
-
-  .step-label.active { color: var(--amber); }
-
-  .step-connector {
-    flex: 1;
-    height: 2px;
-    background: var(--slate);
-    min-width: 16px;
-    position: relative;
-    top: -16px;
-  }
-
-  .step-connector.dashed {
-    background: none;
-    border-top: 2px dashed rgba(255,255,255,0.2);
-    height: 0;
-    top: -20px;
-  }
-
-  /* ── ENGLISH ── */
-  .english-section { margin-bottom: 32px; }
-
-  .english-card {
-    background: var(--navy-card);
-    border: 1px solid var(--slate);
-    border-radius: 16px;
-    padding: 24px;
-  }
-
-  .english-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .english-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--white);
-  }
-
-  .english-target { font-size: 11px; color: var(--white-40); }
-
-  .english-stages { display: flex; flex-direction: column; gap: 10px; }
-
-  .english-stage {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 12px 14px;
-    background: var(--white-8);
-    border-radius: 10px;
-    border: 1px solid var(--slate);
-  }
-
-  .english-stage.active {
-    background: var(--amber-dim);
-    border-color: rgba(245,158,11,0.3);
-  }
-
-  .stage-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .stage-dot.active { background: var(--amber); }
-  .stage-dot.future { background: var(--white-15); }
-
-  .stage-label { flex: 1; font-size: 12px; color: var(--white-70); }
-  .stage-label.future { color: var(--white-40); }
-
-  .stage-tag {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--white-40);
-  }
-
-  .stage-tag.active { color: var(--amber); }
-
-  /* ── INVESTMENT ── */
-  .budget-section { margin-bottom: 32px; }
-
-  .budget-note-card {
-    background: var(--navy-card);
-    border: 1px solid var(--slate);
-    border-radius: 16px;
-    padding: 24px;
-    display: flex;
-    gap: 16px;
-    align-items: flex-start;
-  }
-
-  .budget-note-icon { font-size: 24px; flex-shrink: 0; }
-
-  .budget-note-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--white);
-    margin-bottom: 6px;
-  }
-
-  .budget-note-text { font-size: 13px; color: var(--white-40); line-height: 1.6; }
-
-  .budget-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--slate);
-    font-size: 13px;
-  }
-
-  .budget-item:last-child { border-bottom: none; }
-  .budget-item-label { color: var(--white-70); }
-
-  .budget-item-value {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    color: var(--white);
-    font-size: 14px;
-  }
-
-  /* ── FOOTER ── */
-  footer {
-    border-top: 1px solid var(--slate);
-    padding-top: 28px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .footer-left { font-size: 12px; color: var(--white-40); }
-  .footer-left strong { color: var(--white-70); font-weight: 600; }
-  .footer-right { font-size: 11px; color: var(--white-40); font-style: italic; }
-
-  /* ── ANIMATIONS ── */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .profile-hero       { animation: fadeUp 0.5s ease both; }
-  .trial-banner       { animation: fadeUp 0.5s 0.05s ease both; }
-  .trial-progress-card { animation: fadeUp 0.5s 0.1s ease both; }
-  .two-col            { animation: fadeUp 0.5s 0.15s ease both; }
-  .milestones-section { animation: fadeUp 0.5s 0.2s ease both; }
-  .english-section    { animation: fadeUp 0.5s 0.25s ease both; }
-  .pathway-section    { animation: fadeUp 0.5s 0.3s ease both; }
-  .budget-section     { animation: fadeUp 0.5s 0.35s ease both; }
+/* ── base ── */
+html, body, #root { height: 100%; margin: 0; }
+body { background: var(--ngs-paper); }
+
+/* ── design tokens ── */
+:root {
+  --ngs-navy: #1B2A4A;
+  --ngs-navy-deep: #131F38;
+  --ngs-navy-ink: #0E1A33;
+  --ngs-gold: #C9A84C;
+  --ngs-gold-soft: #E4C97A;
+  --ngs-paper: #FAF7F0;
+  --ngs-paper-2: #F2EDE2;
+  --ngs-ink: #1A1A1A;
+  --ngs-ink-soft: #4A4E5E;
+  --ngs-muted: #6B6E7A;
+  --ngs-rule: rgba(27, 42, 74, 0.12);
+  --ngs-rule-light: rgba(255, 255, 255, 0.18);
+  --ngs-red: #B11B2A;
+  --ngs-display: 'Newsreader', 'Iowan Old Style', Georgia, serif;
+  --ngs-sans: 'Manrope', 'Helvetica Neue', Helvetica, system-ui, sans-serif;
+  --ngs-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+/* ── NGS mark (logo badge) ── */
+.ngs-mark {
+  display: inline-flex; padding: 6px 9px;
+  background: var(--ngs-navy);
+  color: var(--ngs-gold);
+  font-family: var(--ngs-display);
+  font-size: 13px; font-weight: 600;
+  letter-spacing: 0.18em;
+  border-radius: 3px;
+}
+.ngs-mark span + span { margin-left: 1px; }
+.ngs-mark-sm { padding: 5px 8px; font-size: 11px; }
+
+/* ── pulse animation ── */
+@keyframes ngs-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, 0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(201, 168, 76, 0); }
+}
+</style>
+
+<style>
+/* Scholar profile pages — extends styles.css.
+   Reuses --ngs-* tokens; adds profile-specific scaffolding. */
+
+/* ── page shell ───────────────────────────────────────────── */
+.ngs-profile {
+  font-family: var(--ngs-sans);
+  color: var(--ngs-ink);
+  background: var(--ngs-paper);
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100%;
+}
+.ngs-profile * { box-sizing: border-box; }
+.ngs-profile h1, .ngs-profile h2, .ngs-profile h3, .ngs-profile h4 {
+  margin: 0; font-weight: 500; letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.ngs-profile p { margin: 0; }
+.ngs-profile a { color: inherit; text-decoration: none; }
+.ngs-profile ol, .ngs-profile ul { margin: 0; padding: 0; list-style: none; }
+.ngs-profile button { font-family: inherit; cursor: pointer; border: 0; background: none; }
+.ngs-profile em, .ngs-profile .ngs-italic {
+  font-family: var(--ngs-display);
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* ── top nav ──────────────────────────────────────────────── */
+.ngs-pnav {
+  position: sticky; top: 0; z-index: 30;
+  background: rgba(250, 247, 240, 0.86);
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  border-bottom: 1px solid var(--ngs-rule);
+}
+.ngs-profile.is-mobile .ngs-pnav-inner { padding-top: 64px; }
+.ngs-pnav-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px;
+}
+.ngs-pnav-brand {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--ngs-navy);
+}
+.ngs-pnav-name {
+  font-family: var(--ngs-display);
+  font-size: 16px; font-weight: 500; letter-spacing: -0.01em;
+}
+.ngs-pnav-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ngs-muted);
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--ngs-rule);
+  transition: all 0.18s ease;
+}
+.ngs-pnav-back:hover { color: var(--ngs-navy); border-color: var(--ngs-navy); }
+.ngs-pnav-back::before { content: '←'; opacity: 0.5; }
+
+/* ── PHOTO HEADER ─────────────────────────────────────────── */
+.ngs-phead {
+  position: relative;
+  background: var(--ngs-navy);
+  color: var(--ngs-paper);
+  overflow: hidden;
+}
+.ngs-phead-photo {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  background:
+    radial-gradient(60% 60% at 30% 30%, rgba(201,168,76,0.18), transparent 70%),
+    repeating-linear-gradient(135deg,
+      rgba(255,255,255,0.04) 0 10px,
+      rgba(255,255,255,0.02) 10px 20px),
+    var(--ngs-navy-deep);
+  display: flex; align-items: center; justify-content: center;
+}
+.ngs-phead-photo-label {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 6px;
+  font-family: var(--ngs-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(250, 247, 240, 0.35);
+}
+.ngs-phead-photo-label span:last-child {
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  color: rgba(250, 247, 240, 0.25);
+}
+.ngs-phead-photo::before {
+  content: '';
+  position: absolute; inset: auto 0 0 0;
+  height: 50%;
+  background: linear-gradient(to bottom, transparent, var(--ngs-navy));
+  pointer-events: none;
+}
+.ngs-phead-photo-status {
+  position: absolute; top: 18px; right: 18px;
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-family: var(--ngs-mono);
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.14em;
+}
+.ngs-phead-photo-status.is-active { background: var(--ngs-gold); color: var(--ngs-navy); }
+.ngs-phead-photo-status.is-trial { background: var(--ngs-navy); color: var(--ngs-gold); border: 1px solid var(--ngs-gold); }
+.ngs-phead-photo-status.is-paused { background: transparent; color: var(--ngs-red); border: 1px solid var(--ngs-red); }
+
+.ngs-phead-meta {
+  position: relative;
+  padding: 0 24px 36px;
+  margin-top: -40px; /* lift over the gradient bleed */
+  z-index: 1;
+}
+.ngs-phead-track {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--ngs-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ngs-gold);
+  margin-bottom: 14px;
+}
+.ngs-phead-track-dot {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: var(--ngs-gold);
+}
+.ngs-phead-name {
+  font-family: var(--ngs-display);
+  font-size: 64px; font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -0.025em;
+  color: var(--ngs-paper);
+  margin-bottom: 18px;
+}
+.ngs-phead-school {
+  font-size: 14px;
+  color: rgba(250, 247, 240, 0.65);
+  line-height: 1.5;
+  max-width: 32ch;
+  margin-bottom: 22px;
+}
+.ngs-phead-school strong {
+  color: var(--ngs-paper);
+  font-weight: 500;
+}
+.ngs-phead-stats {
+  display: flex;
+  gap: 14px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+.ngs-phead-stats > div {
+  flex: 1;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.ngs-phead-stats strong {
+  font-family: var(--ngs-display);
+  font-size: 26px; font-weight: 400;
+  color: var(--ngs-gold);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.ngs-phead-stats span {
+  font-family: var(--ngs-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: rgba(250, 247, 240, 0.5);
+}
+
+/* ── TRIAL BANNER ────────────────────────────────────────── */
+.ngs-tbanner {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 18px 24px;
+  background: var(--ngs-navy);
+  color: var(--ngs-paper);
+  border-top: 1px solid rgba(201, 168, 76, 0.25);
+  border-bottom: 1px solid rgba(201, 168, 76, 0.25);
+}
+.ngs-tbanner-icon {
+  width: 36px; height: 36px;
+  flex-shrink: 0;
+  color: var(--ngs-gold);
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(201, 168, 76, 0.1);
+  border-radius: 999px;
+}
+.ngs-tbanner-text {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: rgba(250, 247, 240, 0.78);
+  text-wrap: pretty;
+  padding-top: 6px;
+}
+.ngs-tbanner-text strong {
+  color: var(--ngs-gold);
+  font-weight: 600;
+}
+
+/* ── TRIAL PROGRESS ──────────────────────────────────────── */
+.ngs-tprogress {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.ngs-tsem {
+  padding: 14px 12px;
+  background: var(--ngs-paper);
+  border: 1px solid var(--ngs-rule);
+  border-radius: 4px;
+  text-align: center;
+}
+.ngs-tsem.is-active {
+  background: var(--ngs-navy);
+  border-color: var(--ngs-gold);
+  color: var(--ngs-paper);
+}
+.ngs-tsem.is-future {
+  opacity: 0.55;
+}
+.ngs-tsem-label {
+  font-family: var(--ngs-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ngs-muted);
+  margin-bottom: 8px;
+}
+.ngs-tsem.is-active .ngs-tsem-label { color: var(--ngs-gold); }
+.ngs-tsem-grade {
+  font-family: var(--ngs-display);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--ngs-navy);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.ngs-tsem.is-active .ngs-tsem-grade { color: var(--ngs-gold); }
+.ngs-tsem.is-future .ngs-tsem-grade { color: var(--ngs-muted); }
+.ngs-tsem-status {
+  font-family: var(--ngs-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ngs-muted);
+}
+.ngs-tsem.is-active .ngs-tsem-status { color: rgba(250, 247, 240, 0.5); }
+
+.ngs-tfloor {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 14px 16px;
+  background: var(--ngs-paper);
+  border: 1px solid var(--ngs-rule);
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--ngs-ink-soft);
+  margin-bottom: 28px;
+}
+.ngs-tfloor-mark {
+  color: var(--ngs-gold);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.ngs-tfloor strong {
+  color: var(--ngs-navy);
+  font-weight: 600;
+}
+.ngs-tfloor-detail { color: var(--ngs-ink-soft); font-weight: 400; }
+
+.ngs-tnext {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--ngs-rule);
+}
+.ngs-tnext-head {
+  font-family: var(--ngs-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ngs-muted);
+  margin-bottom: 14px;
+}
+.ngs-tnext-list {
+  display: flex; flex-direction: column;
+}
+.ngs-tnext-row {
+  display: flex; flex-direction: column;
+  gap: 3px;
+  padding: 14px 0;
+  border-bottom: 1px dotted var(--ngs-rule);
+}
+.ngs-tnext-row:last-child { border-bottom: 0; }
+.ngs-tnext-row.is-highlight .ngs-tnext-name { color: var(--ngs-gold); }
+.ngs-tnext-name {
+  font-family: var(--ngs-display);
+  font-size: 17px;
+  color: var(--ngs-navy);
+}
+.ngs-tnext-detail {
+  font-size: 13px;
+  color: var(--ngs-ink-soft);
+  line-height: 1.5;
+}
+
+/* ── PULL QUOTE ───────────────────────────────────────────── */
+.ngs-pquote {
+  padding: 48px 24px;
+  background: var(--ngs-paper);
+  border-bottom: 1px solid var(--ngs-rule);
+}
+.ngs-pquote-mark {
+  font-family: var(--ngs-display);
+  font-size: 64px;
+  line-height: 0.5;
+  color: var(--ngs-gold);
+  margin-bottom: 14px;
+  display: block;
+}
+.ngs-pquote-body {
+  font-family: var(--ngs-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 1.3;
+  color: var(--ngs-navy);
+  text-wrap: pretty;
+  max-width: 32ch;
+}
+
+/* ── SECTION SCAFFOLD ─────────────────────────────────────── */
+.ngs-psection {
+  padding: 56px 24px;
+  border-top: 1px solid var(--ngs-rule);
+}
+.ngs-psection:first-of-type { border-top: 0; }
+.ngs-psection-eyebrow {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ngs-navy);
+  margin-bottom: 18px;
+  font-weight: 600;
+}
+.ngs-psection-eyebrow-rule {
+  width: 24px; height: 1px; background: var(--ngs-gold);
+}
+.ngs-psection h2 {
+  font-family: var(--ngs-display);
+  font-size: 32px;
+  line-height: 1.1;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--ngs-navy);
+  margin-bottom: 14px;
+}
+.ngs-psection-intro {
+  font-size: 14.5px;
+  color: var(--ngs-ink-soft);
+  line-height: 1.55;
+  max-width: 38ch;
+  margin-bottom: 28px;
+}
+.ngs-psection.is-paper-2 { background: var(--ngs-paper-2); }
+
+/* ── SEMESTER ─────────────────────────────────────────────── */
+.ngs-semester-stats {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.ngs-semstat {
+  padding: 16px;
+  background: var(--ngs-paper);
+  border: 1px solid var(--ngs-rule);
+  border-radius: 4px;
+}
+.ngs-semstat-value {
+  font-family: var(--ngs-display);
+  font-size: 22px;
+  color: var(--ngs-navy);
+  letter-spacing: -0.02em;
+  margin-bottom: 3px;
+}
+.ngs-semstat-value.is-gold { color: var(--ngs-gold); }
+.ngs-semstat-label {
+  font-family: var(--ngs-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ngs-muted);
+}
+.ngs-subjects {
+  display: flex; flex-direction: column;
+  border-top: 1px solid var(--ngs-rule);
+}
+.ngs-subjects-head {
+  font-family: var(--ngs-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ngs-muted);
+  padding: 14px 0 10px;
+}
+.ngs-subject {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px dotted var(--ngs-rule);
+  font-size: 14px;
+  color: var(--ngs-ink);
+}
+.ngs-subject:last-child { border-bottom: 0; }
+.ngs-subject-num {
+  font-family: var(--ngs-mono);
+  font-size: 10.5px;
+  color: var(--ngs-gold);
+  letter-spacing: 0.1em;
+  min-width: 22px;
+}
+
+/* ── ACADEMIC STANDING ───────────────────────────────────── */
+.ngs-gpa-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 10px;
+}
+.ngs-gpa-label {
+  font-family: var(--ngs-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ngs-muted);
+}
+.ngs-gpa-value {
+  font-family: var(--ngs-display);
+  font-size: 48px;
+  font-weight: 400;
+  color: var(--ngs-navy);
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+.ngs-gpa-bar {
+  height: 4px;
+  background: var(--ngs-rule);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  position: relative;
+}
+.ngs-gpa-fill {
+  height: 100%;
+  background: var(--ngs-gold);
+  border-radius: 2px;
+}
+.ngs-gpa-floor {
+  position: absolute;
+  top: -3px; bottom: -3px;
+  width: 1.5px;
+  background: var(--ngs-navy);
+  opacity: 0.6;
+}
+.ngs-gpa-floor-label {
+  font-family: var(--ngs-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ngs-muted);
+  margin-bottom: 28px;
+}
+.ngs-history {
+  display: flex; flex-direction: column;
+  border-top: 1px solid var(--ngs-rule);
+}
+.ngs-history-head {
+  font-family: var(--ngs-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ngs-muted);
+  padding: 14px 0 8px;
+}
+.ngs-history-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 12px 0;
+  border-bottom: 1px dotted var(--ngs-rule);
+}
+.ngs-history-row:last-child { border-bottom: 0; }
+.ngs-history-row.is-current {
+  background: var(--ngs-paper-2);
+  margin: 0 -14px;
+  padding: 12px 14px;
+  border-radius: 4px;
+  border-bottom: 0;
+}
+.ngs-history-term {
+  font-size: 14px;
+  color: var(--ngs-navy);
+}
+.ngs-history-row.is-current .ngs-history-term { font-weight: 600; }
+.ngs-history-grade {
+  font-family: var(--ngs-mono);
+  font-size: 13px;
+  color: var(--ngs-navy);
+}
+.ngs-history-grade.is-good { color: #2C7A4B; }
+.ngs-history-grade.is-warn { color: #B57E1E; }
+.ngs-history-grade.is-active { color: var(--ngs-gold); }
+
+/* ── SUPPORT / INVESTMENT ────────────────────────────────── */
+.ngs-support-summary {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 24px;
+  background: var(--ngs-navy);
+  color: var(--ngs-paper);
+  border-radius: 6px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.ngs-support-summary::before {
+  content: '';
+  position: absolute; right: -40px; top: -40px;
+  width: 180px; height: 180px;
+  border: 1px solid rgba(201, 168, 76, 0.2);
+  border-radius: 999px;
+}
+.ngs-support-summary::after {
+  content: '';
+  position: absolute; right: -10px; top: -10px;
+  width: 100px; height: 100px;
+  border: 1px solid rgba(201, 168, 76, 0.15);
+  border-radius: 999px;
+}
+.ngs-support-summary-label {
+  font-family: var(--ngs-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ngs-gold);
+  position: relative;
+  z-index: 1;
+}
+.ngs-support-summary-value {
+  font-family: var(--ngs-display);
+  font-size: 44px;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  color: var(--ngs-paper);
+  line-height: 1;
+  position: relative; z-index: 1;
+}
+.ngs-support-summary-foot {
+  font-size: 12.5px;
+  color: rgba(250, 247, 240, 0.6);
+  position: relative; z-index: 1;
+}
+.ngs-support-progress {
+  margin-top: 12px;
+  position: relative; z-index: 1;
+}
+.ngs-support-progress-label {
+  display: flex; justify-content: space-between;
+  font-family: var(--ngs-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(250, 247, 240, 0.55);
+  margin-bottom: 6px;
+}
+.ngs-support-progress-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.ngs-support-progress-fill {
+  height: 100%;
+  background: var(--ngs-gold);
+  border-radius: 2px;
+}
+
+.ngs-support-cats {
+  display: flex; flex-direction: column; gap: 0;
+}
+.ngs-support-cat {
+  display: flex; align-items: flex-start; gap: 16px;
+  padding: 18px 0;
+  border-top: 1px solid var(--ngs-rule);
+}
+.ngs-support-cat:last-child { border-bottom: 1px solid var(--ngs-rule); }
+.ngs-support-cat-icon {
+  width: 40px; height: 40px;
+  border-radius: 4px;
+  background: var(--ngs-paper);
+  border: 1px solid var(--ngs-rule);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ngs-navy);
+}
+.ngs-support-cat-body { flex: 1; }
+.ngs-support-cat-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.ngs-support-cat-name {
+  font-family: var(--ngs-display);
+  font-size: 18px;
+  color: var(--ngs-navy);
+}
+.ngs-support-cat-amount {
+  font-family: var(--ngs-mono);
+  font-size: 13px;
+  color: var(--ngs-gold);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ngs-support-cat-detail {
+  font-size: 13px;
+  color: var(--ngs-ink-soft);
+  line-height: 1.5;
+}
+
+/* ── MILESTONES ───────────────────────────────────────────── */
+.ngs-mlist {
+  display: flex; flex-direction: column;
+}
+.ngs-mrow {
+  display: flex; align-items: flex-start; gap: 16px;
+  padding: 18px 0;
+  border-top: 1px solid var(--ngs-rule);
+}
+.ngs-mrow:last-child { border-bottom: 1px solid var(--ngs-rule); }
+.ngs-mrow-icon {
+  width: 40px; height: 40px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.ngs-mrow.is-done .ngs-mrow-icon { background: var(--ngs-gold); color: var(--ngs-navy); }
+.ngs-mrow.is-future .ngs-mrow-icon {
+  background: var(--ngs-paper);
+  border: 1px solid var(--ngs-rule);
+  color: var(--ngs-muted);
+}
+.ngs-mrow-body { flex: 1; padding-top: 2px; }
+.ngs-mrow-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.ngs-mrow-name {
+  font-family: var(--ngs-display);
+  font-size: 18px;
+  color: var(--ngs-navy);
+}
+.ngs-mrow.is-future .ngs-mrow-name { color: var(--ngs-ink-soft); }
+.ngs-mrow-badge {
+  font-family: var(--ngs-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.ngs-mrow.is-done .ngs-mrow-badge {
+  background: var(--ngs-paper-2);
+  color: var(--ngs-navy);
+}
+.ngs-mrow.is-future .ngs-mrow-badge {
+  background: transparent;
+  border: 1px solid var(--ngs-rule);
+  color: var(--ngs-muted);
+}
+.ngs-mrow-detail {
+  font-size: 13.5px;
+  color: var(--ngs-ink-soft);
+  line-height: 1.45;
+}
+
+/* ── TRAVELS ──────────────────────────────────────────────── */
+.ngs-travels {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+.ngs-travel {
+  padding: 18px 16px;
+  background: var(--ngs-paper);
+  border: 1px solid var(--ngs-rule);
+  border-radius: 4px;
+}
+.ngs-travel.is-paper-2 { background: var(--ngs-paper-2); }
+.ngs-travel-icon {
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ngs-navy);
+  margin-bottom: 12px;
+}
+.ngs-travel.is-done .ngs-travel-icon { color: var(--ngs-gold); }
+.ngs-travel-dest {
+  font-family: var(--ngs-display);
+  font-size: 19px;
+  color: var(--ngs-navy);
+  margin-bottom: 4px;
+  letter-spacing: -0.01em;
+}
+.ngs-travel-when {
+  font-size: 12px;
+  color: var(--ngs-ink-soft);
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
+.ngs-travel-status {
+  display: inline-block;
+  font-family: var(--ngs-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 3px;
+}
+.ngs-travel-status.is-done {
+  background: var(--ngs-gold);
+  color: var(--ngs-navy);
+}
+.ngs-travel-status.is-booked {
+  background: var(--ngs-navy);
+  color: var(--ngs-gold);
+}
+.ngs-travel-status.is-planned {
+  background: transparent;
+  color: var(--ngs-muted);
+  border: 1px solid var(--ngs-rule);
+}
+
+/* ── ENGLISH STAGES ──────────────────────────────────────── */
+.ngs-english {
+  padding: 24px;
+  background: var(--ngs-paper);
+  border: 1px solid var(--ngs-rule);
+  border-radius: 6px;
+}
+.ngs-english.is-paper-host { background: var(--ngs-paper-2); }
+.ngs-english-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 22px;
+  flex-wrap: wrap; gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--ngs-rule);
+}
+.ngs-english-title {
+  font-family: var(--ngs-display);
+  font-size: 22px;
+  color: var(--ngs-navy);
+}
+.ngs-english-target {
+  font-family: var(--ngs-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ngs-gold);
+  font-weight: 600;
+}
+.ngs-estages {
+  display: flex; flex-direction: column;
+  position: relative;
+}
+.ngs-estage {
+  display: flex; gap: 14px;
+  padding: 12px 0;
+  position: relative;
+}
+.ngs-estage-rail {
+  position: absolute;
+  left: 11px; top: 30px; bottom: -12px;
+  width: 1.5px;
+  background: var(--ngs-rule);
+}
+.ngs-estage:last-child .ngs-estage-rail { display: none; }
+.ngs-estage-rail.is-done { background: var(--ngs-gold); }
+.ngs-estage-dot {
+  width: 22px; height: 22px;
+  border-radius: 999px;
+  border: 2px solid var(--ngs-rule);
+  background: var(--ngs-paper);
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+.ngs-estage.is-done .ngs-estage-dot {
+  background: var(--ngs-gold);
+  border-color: var(--ngs-gold);
+}
+.ngs-estage.is-active .ngs-estage-dot {
+  background: var(--ngs-navy);
+  border-color: var(--ngs-navy);
+}
+.ngs-estage-pulse {
+  width: 6px; height: 6px;
+  border-radius: 999px;
+  background: var(--ngs-gold);
+  animation: ngs-pulse 1.8s ease-in-out infinite;
+}
+.ngs-estage-body {
+  flex: 1;
+  padding-top: 1px;
+}
+.ngs-estage-label {
+  font-size: 13.5px;
+  color: var(--ngs-ink);
+  line-height: 1.5;
+}
+.ngs-estage.is-future .ngs-estage-label { color: var(--ngs-muted); }
+.ngs-estage-tag {
+  font-family: var(--ngs-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ngs-muted);
+  margin-top: 4px;
+  display: inline-block;
+}
+.ngs-estage.is-done .ngs-estage-tag { color: var(--ngs-navy); }
+.ngs-estage.is-active .ngs-estage-tag { color: var(--ngs-gold); }
+
+/* ── PATHWAY (horizontal scrolling) ──────────────────────── */
+.ngs-pathway {
+  padding: 24px 0 24px 24px;
+  background: var(--ngs-navy);
+  color: var(--ngs-paper);
+  margin: 0 -24px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.ngs-pathway-track {
+  display: flex; align-items: flex-start;
+  gap: 0;
+  padding-right: 24px;
+  min-width: max-content;
+}
+.ngs-pstep {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px;
+  width: 88px;
+  flex-shrink: 0;
+}
+.ngs-pstep-circle {
+  width: 40px; height: 40px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.04);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--ngs-mono);
+  font-size: 12px; font-weight: 600;
+  color: rgba(250, 247, 240, 0.4);
+}
+.ngs-pstep.is-done .ngs-pstep-circle {
+  background: var(--ngs-gold);
+  border-color: var(--ngs-gold);
+  color: var(--ngs-navy);
+}
+.ngs-pstep.is-active .ngs-pstep-circle {
+  background: var(--ngs-navy);
+  border-color: var(--ngs-gold);
+  color: var(--ngs-gold);
+  box-shadow: 0 0 0 4px rgba(201,168,76,0.15);
+}
+.ngs-pstep.is-goal .ngs-pstep-circle {
+  border-color: var(--ngs-gold);
+  color: var(--ngs-gold);
+  background: rgba(201,168,76,0.1);
+}
+.ngs-pstep.is-optional .ngs-pstep-circle {
+  border-style: dashed;
+  border-color: rgba(255,255,255,0.25);
+}
+.ngs-pstep-label {
+  font-size: 10.5px;
+  text-align: center;
+  line-height: 1.3;
+  color: rgba(250, 247, 240, 0.55);
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+.ngs-pstep.is-done .ngs-pstep-label { color: var(--ngs-gold); }
+.ngs-pstep.is-active .ngs-pstep-label { color: var(--ngs-paper); font-weight: 600; }
+.ngs-pstep.is-goal .ngs-pstep-label { color: var(--ngs-gold); font-weight: 600; }
+
+.ngs-pline {
+  flex: 0 0 16px;
+  height: 1.5px;
+  margin-top: 19px;
+  background: rgba(255,255,255,0.12);
+}
+.ngs-pline.is-done { background: var(--ngs-gold); }
+.ngs-pline.is-dashed {
+  background: none;
+  border-top: 1.5px dashed rgba(255,255,255,0.25);
+  height: 0;
+}
+
+/* ── FOOTER ───────────────────────────────────────────────── */
+.ngs-pfooter {
+  padding: 36px 24px 28px;
+  background: var(--ngs-navy-ink);
+  color: rgba(250, 247, 240, 0.7);
+}
+.ngs-pfooter-left {
+  font-family: var(--ngs-display);
+  font-size: 17px;
+  color: var(--ngs-gold-soft);
+  margin-bottom: 8px;
+}
+.ngs-pfooter-meta {
+  display: flex; justify-content: space-between; align-items: baseline;
+  flex-wrap: wrap; gap: 8px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  font-family: var(--ngs-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(250, 247, 240, 0.4);
+}
+
+/* ── DESKTOP UP ───────────────────────────────────────────── */
+.ngs-profile.is-desktop {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+.ngs-profile.is-desktop .ngs-pnav-inner { padding: 18px 80px; max-width: 1200px; margin: 0 auto; }
+.ngs-profile.is-desktop .ngs-phead {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  align-items: end;
+}
+.ngs-profile.is-desktop .ngs-phead-photo {
+  aspect-ratio: auto;
+  height: 100%;
+  min-height: 540px;
+}
+.ngs-profile.is-desktop .ngs-phead-photo::before {
+  background: linear-gradient(to right, transparent, var(--ngs-navy));
+  inset: 0 0 0 auto;
+  width: 50%; height: 100%;
+}
+.ngs-profile.is-desktop .ngs-phead-meta { padding: 64px 80px 64px 40px; margin-top: 0; }
+.ngs-profile.is-desktop .ngs-phead-name { font-size: 96px; }
+.ngs-profile.is-desktop .ngs-phead-school { font-size: 16px; max-width: 40ch; }
+.ngs-profile.is-desktop .ngs-phead-stats strong { font-size: 32px; }
+.ngs-profile.is-desktop .ngs-pquote { padding: 80px 80px; }
+.ngs-profile.is-desktop .ngs-pquote-body { font-size: 36px; max-width: 24ch; }
+.ngs-profile.is-desktop .ngs-psection { padding: 96px 80px; }
+.ngs-profile.is-desktop .ngs-psection h2 { font-size: 48px; }
+.ngs-profile.is-desktop .ngs-two-col {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 48px;
+}
+.ngs-profile.is-desktop .ngs-travels {
+  grid-template-columns: repeat(3, 1fr);
+}
+.ngs-profile.is-desktop .ngs-pathway { margin: 0; border-radius: 8px; padding: 36px 40px; }
+.ngs-profile.is-desktop .ngs-pstep { width: 110px; }
+.ngs-profile.is-desktop .ngs-pline { flex: 1 0 auto; }
+.ngs-profile.is-desktop .ngs-pfooter { padding: 48px 80px 36px; }
 </style>
 </head>
 <body>
-<div class="page-wrap">
+<div id="root"></div>
 
-  <!-- NAV -->
-  <nav>
-    <a href="index.html" class="nav-logo">
-      <div class="logo-icon">NGS</div>
-      <div>
-        <div class="logo-text">NextGen Scholars</div>
-        <div class="logo-sub">Philippines</div>
-      </div>
-    </a>
-    <a href="index.html#scholars" class="back-link">
-      <svg viewBox="0 0 24 24" stroke-width="2"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-      All Scholars
-    </a>
-  </nav>
+<script type="text/babel">
+// Iconography for scholar profile pages.
+// All flat-line SVG, 24x24 viewBox, currentColor stroke.
 
-  <!-- PROFILE HERO -->
-  <div class="profile-hero">
-    <div class="profile-avatar">AP</div>
-    <div class="profile-info">
-      <div class="profile-track">NextGen Nurses · Trial Period</div>
-      <div class="profile-name">April</div>
-      <div class="profile-school">Senior High School · Grade 11 · Cebu</div>
-      <div class="profile-status">
-        <div class="status-dot"></div>
-        Trial Scholar · G11
-      </div>
-    </div>
-    <div class="profile-stats">
-      <div class="pstat">
-        <div class="pstat-value" style="color: var(--amber);">G11</div>
-        <div class="pstat-label">Current Year</div>
-      </div>
-      <div class="pstat">
-        <div class="pstat-value" style="color: var(--gold);">2 yrs</div>
-        <div class="pstat-label">Trial Period</div>
-      </div>
-      <div class="pstat">
-        <div class="pstat-value" style="color: var(--white-40);">2030</div>
-        <div class="pstat-label">BSN Target</div>
-      </div>
-    </div>
-  </div>
+const Icon = ({ children, size = 22, color = 'currentColor', fill = 'none', strokeWidth = 1.6, viewBox = '0 0 24 24' }) => (
+  <svg width={size} height={size} viewBox={viewBox} fill={fill}
+       stroke={color} strokeWidth={strokeWidth}
+       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {children}
+  </svg>
+);
 
-  <!-- TRIAL BANNER -->
-  <div class="trial-banner">
-    <div class="trial-banner-icon">⏳</div>
-    <div class="trial-banner-text">
-      April is currently in her <strong>2-year trial period</strong> (Grade 11–12). Full NGN scholarship begins upon successful completion of Senior High School with a minimum <strong>85% average</strong>. Trial started May/June 2025.
-    </div>
-  </div>
+// ─── Milestone rewards
+const IconPhone = (p) => <Icon {...p}>
+  <rect x="7" y="3" width="10" height="18" rx="2"/>
+  <line x1="11" y1="18" x2="13" y2="18"/>
+</Icon>;
 
-  <!-- TRIAL PROGRESS -->
-  <div class="trial-progress-card">
-    <div class="trial-progress-header">
-      <div class="trial-progress-title">Trial Period Progress</div>
-      <div class="trial-progress-sub">Minimum required: 85% every semester</div>
-    </div>
-    <div class="trial-semesters">
-      <div class="trial-sem active">
-        <div class="trial-sem-label">Grade 11 · S1</div>
-        <div class="trial-sem-grade active">—</div>
-        <div class="trial-sem-status">In progress</div>
-      </div>
-      <div class="trial-sem future">
-        <div class="trial-sem-label">Grade 11 · S2</div>
-        <div class="trial-sem-grade future">—</div>
-        <div class="trial-sem-status">Upcoming</div>
-      </div>
-      <div class="trial-sem future">
-        <div class="trial-sem-label">Grade 12 · S1</div>
-        <div class="trial-sem-grade future">—</div>
-        <div class="trial-sem-status">Future</div>
-      </div>
-      <div class="trial-sem future">
-        <div class="trial-sem-label">Grade 12 · S2</div>
-        <div class="trial-sem-grade future">—</div>
-        <div class="trial-sem-status">Future</div>
-      </div>
-    </div>
-    <div class="trial-floor">
-      ⚡ <span>Entry requirement: <strong>85% minimum</strong> each semester · Trial began with 85% average at end of Grade 10</span>
-    </div>
-  </div>
+const IconLaptop = (p) => <Icon {...p}>
+  <rect x="4" y="5" width="16" height="11" rx="1.5"/>
+  <path d="M2 19h20l-1.5-2H3.5L2 19z"/>
+</Icon>;
 
-  <!-- CURRENT SEMESTER + SUBJECTS -->
-  <div class="two-col">
-    <div class="card">
-      <div class="card-title">Current Semester — G11 S1</div>
-      <div class="semester-grid">
-        <div class="sem-stat">
-          <div class="sem-stat-value amber">G11</div>
-          <div class="sem-stat-label">Year</div>
-        </div>
-        <div class="sem-stat">
-          <div class="sem-stat-value amber">2025</div>
-          <div class="sem-stat-label">School Year</div>
-        </div>
-      </div>
-      <div class="card-title" style="font-size: 12px; margin-bottom: 10px;">Core Subjects</div>
-      <div class="subjects-list">
-        <div class="subject-item"><div class="subject-dot"></div>Oral Communication</div>
-        <div class="subject-item"><div class="subject-dot"></div>21st Century Literature</div>
-        <div class="subject-item"><div class="subject-dot"></div>General Mathematics</div>
-        <div class="subject-item"><div class="subject-dot"></div>Earth & Life Science</div>
-        <div class="subject-item"><div class="subject-dot"></div>Personal Development</div>
-        <div class="subject-item"><div class="subject-dot"></div>Physical Education</div>
-      </div>
-    </div>
+const IconBike = (p) => <Icon {...p}>
+  <circle cx="5.5" cy="17.5" r="3.5"/>
+  <circle cx="18.5" cy="17.5" r="3.5"/>
+  <path d="M5.5 17.5L10 9h5l3.5 8.5"/>
+  <path d="M9 9h4"/>
+  <path d="M15 9l-1 3"/>
+</Icon>;
 
-    <div class="card">
-      <div class="card-title">What Comes Next</div>
-      <div class="subjects-list" style="gap: 12px;">
-        <div class="subject-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-          <span style="font-weight: 600; color: var(--amber);">Complete G11 → G12</span>
-          <span style="font-size: 11px; color: var(--white-40);">Maintain 85%+ every semester to stay in the program</span>
-        </div>
-        <div class="subject-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-          <span style="font-weight: 600; color: var(--white-70);">Full Scholarship Entry</span>
-          <span style="font-size: 11px; color: var(--white-40);">Upon G12 graduation → BSN Nursing at university</span>
-        </div>
-        <div class="subject-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-          <span style="font-weight: 600; color: var(--white-70);">Reward — Chromebook</span>
-          <span style="font-size: 11px; color: var(--white-40);">Upon completing Grade 12 successfully</span>
-        </div>
-        <div class="subject-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-          <span style="font-weight: 600; color: var(--white-70);">Reward — Motorcycle</span>
-          <span style="font-size: 11px; color: var(--white-40);">Program infrastructure upon entering university</span>
-        </div>
-        <div class="subject-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-          <span style="font-weight: 600; color: var(--white-70);">BSN Target Graduation</span>
-          <span style="font-size: 11px; color: var(--white-40);">2030 · Road to Australia begins</span>
-        </div>
-      </div>
-    </div>
-  </div>
+const IconTablet = (p) => <Icon {...p}>
+  <rect x="5" y="3" width="14" height="18" rx="1.8"/>
+  <line x1="11" y1="18" x2="13" y2="18"/>
+</Icon>;
 
-  <!-- MILESTONES -->
-  <div class="milestones-section">
-    <div class="section-header">
-      <div class="section-title">Milestones</div>
-      <div class="section-line"></div>
-    </div>
-    <div class="milestone-list">
-      <div class="milestone-item done">
-        <div class="milestone-icon done">✅</div>
-        <div class="milestone-info">
-          <div class="milestone-name">Grade 10 Completed</div>
-          <div class="milestone-detail">85% average · Trial period entry triggered</div>
-        </div>
-        <div class="milestone-badge badge-done">Done</div>
-      </div>
-      <div class="milestone-item done">
-        <div class="milestone-icon done">📱</div>
-        <div class="milestone-info">
-          <div class="milestone-name">Smartphone</div>
-          <div class="milestone-detail">Redmi Note 14 · 6+128GB · Trial G11 entry · April 2026</div>
-        </div>
-        <div class="milestone-badge badge-done">Done</div>
-      </div>
-      <div class="milestone-item upcoming">
-        <div class="milestone-icon upcoming">🎓</div>
-        <div class="milestone-info">
-          <div class="milestone-name">Complete Grade 11</div>
-          <div class="milestone-detail">85% minimum required to continue trial</div>
-        </div>
-        <div class="milestone-badge badge-upcoming">In Trial</div>
-      </div>
-      <div class="milestone-item">
-        <div class="milestone-icon future">🎓</div>
-        <div class="milestone-info">
-          <div class="milestone-name">Complete Grade 12</div>
-          <div class="milestone-detail">85% minimum · Unlocks full scholarship</div>
-        </div>
-        <div class="milestone-badge badge-future">2027</div>
-      </div>
-      <div class="milestone-item">
-        <div class="milestone-icon future">💻</div>
-        <div class="milestone-info">
-          <div class="milestone-name">Chromebook</div>
-          <div class="milestone-detail">Upon completing Grade 12</div>
-        </div>
-        <div class="milestone-badge badge-future">2027</div>
-      </div>
-      <div class="milestone-item">
-        <div class="milestone-icon future">🏍️</div>
-        <div class="milestone-info">
-          <div class="milestone-name">Motorcycle</div>
-          <div class="milestone-detail">Program infrastructure · Upon university entry</div>
-        </div>
-        <div class="milestone-badge badge-future">2027</div>
-      </div>
-      <div class="milestone-item">
-        <div class="milestone-icon future">📱</div>
-        <div class="milestone-info">
-          <div class="milestone-name">iPhone</div>
-          <div class="milestone-detail">Year 1 university complete</div>
-        </div>
-        <div class="milestone-badge badge-future">2028</div>
-      </div>
-      <div class="milestone-item">
-        <div class="milestone-icon future">🇦🇺</div>
-        <div class="milestone-info">
-          <div class="milestone-name">AHPRA License</div>
-          <div class="milestone-detail">Australian Nursing Registration · Post-graduation</div>
-        </div>
-        <div class="milestone-badge badge-future">Future</div>
-      </div>
-    </div>
-  </div>
+const IconCard = (p) => <Icon {...p}>
+  <rect x="3" y="6" width="18" height="13" rx="1.8"/>
+  <line x1="3" y1="10.5" x2="21" y2="10.5"/>
+  <line x1="7" y1="15.5" x2="11" y2="15.5"/>
+</Icon>;
 
-  <!-- ENGLISH -->
-  <div class="english-section">
-    <div class="section-header">
-      <div class="section-title">English Development</div>
-      <div class="section-line"></div>
-    </div>
-    <div class="english-card">
-      <div class="english-header">
-        <div class="english-title">Building the Foundation</div>
-        <div class="english-target">Target: OET Grade B (C1 level) · Post-graduation</div>
-      </div>
-      <div class="english-stages">
-        <div class="english-stage active">
-          <div class="stage-dot active"></div>
-          <div class="stage-label">Trial G11–G12 · Basic communication with mentor · Building habits</div>
-          <div class="stage-tag active">Active</div>
-        </div>
-        <div class="english-stage">
-          <div class="stage-dot future"></div>
-          <div class="stage-label class="future">Year 1 university · Progressive English with mentor</div>
-          <div class="stage-tag">Future</div>
-        </div>
-        <div class="english-stage">
-          <div class="stage-dot future"></div>
-          <div class="stage-label future">Year 2 · FB Messenger exclusively in English with mentor</div>
-          <div class="stage-tag">Future</div>
-        </div>
-        <div class="english-stage">
-          <div class="stage-dot future"></div>
-          <div class="stage-label future">Summer Y3 · ChatGPT Advanced Voice Mode bootcamp</div>
-          <div class="stage-tag">Future</div>
-        </div>
-        <div class="english-stage">
-          <div class="stage-dot future"></div>
-          <div class="stage-label future">Year 3–4 · OET preparation · Target B2+/C1</div>
-          <div class="stage-tag">Future</div>
-        </div>
-      </div>
-    </div>
-  </div>
+const IconCap = (p) => <Icon {...p}>
+  <path d="M2 9l10-4 10 4-10 4-10-4z"/>
+  <path d="M6 11v5c0 1.5 3 2.5 6 2.5s6-1 6-2.5v-5"/>
+  <line x1="22" y1="9" x2="22" y2="14"/>
+</Icon>;
 
-  <!-- PATHWAY -->
-  <div class="pathway-section">
-    <div class="section-header">
-      <div class="section-title">Road to Australia</div>
-      <div class="section-line"></div>
-    </div>
-    <div class="pathway-card">
-      <div class="pathway-steps">
+const IconTrophy = (p) => <Icon {...p}>
+  <path d="M8 4h8v4a4 4 0 11-8 0V4z"/>
+  <path d="M8 4H5v2a3 3 0 003 3"/>
+  <path d="M16 4h3v2a3 3 0 01-3 3"/>
+  <line x1="12" y1="12" x2="12" y2="16"/>
+  <path d="M8 20h8l-1-4H9l-1 4z"/>
+</Icon>;
 
-        <div class="pathway-step">
-          <div class="step-node">
-            <div class="step-circle active">★</div>
-            <div class="step-label active">Trial<br>Period</div>
+// ─── Flags / country marks (silhouettes, not literal flags)
+const IconAU = (p) => <Icon {...p}>
+  {/* Australia outline */}
+  <path d="M3 11c.5-2 2-3 4-3 1.5 0 2 1 3.5 1 1 0 1.5-1 3-1 2 0 3 2 5 2 1.5 0 2.5-1 3-1
+           l-.5 4c-1 1.5-3 4-6 5-2 1-4 .5-6 .5s-3 1-5 0c-1.5-.5-2-2-2-4l1-3.5z"/>
+  <circle cx="18" cy="17.5" r="0.6" fill="currentColor"/>
+</Icon>;
+
+const IconUS = (p) => <Icon {...p}>
+  {/* simplified stars + stripes square */}
+  <rect x="3" y="5" width="18" height="14" rx="1.5"/>
+  <line x1="3" y1="8" x2="21" y2="8"/>
+  <line x1="3" y1="11" x2="21" y2="11"/>
+  <line x1="11" y1="14" x2="21" y2="14"/>
+  <line x1="11" y1="17" x2="21" y2="17"/>
+  <line x1="3" y1="14" x2="11" y2="14"/>
+</Icon>;
+
+// ─── Travel destination marks
+const IconBeach = (p) => <Icon {...p}>
+  {/* palm + wave */}
+  <path d="M12 21V11"/>
+  <path d="M12 11c-2-3-6-3-8-1 1-1 5-1 8 1z"/>
+  <path d="M12 11c2-3 6-3 8-1-1-1-5-1-8 1z"/>
+  <path d="M12 11c-1-3 1-7 4-7-2 2-3 4-4 7z"/>
+  <path d="M3 20c2 1 4-1 6 0s4-1 6 0 4-1 6 0"/>
+</Icon>;
+
+const IconIsland = (p) => <Icon {...p}>
+  {/* palm + small mountain on island */}
+  <path d="M3 19c3 1 6-1 9 0s6-1 9 0"/>
+  <path d="M8 16l3-5 2 3 1-2 2 4"/>
+  <path d="M16 16V8"/>
+  <path d="M16 8c-1-2-3-2-4-1 1 0 3 0 4 1z"/>
+  <path d="M16 8c1-2 3-2 4-1-1 0-3 0-4 1z"/>
+</Icon>;
+
+const IconCity = (p) => <Icon {...p}>
+  {/* skyline */}
+  <path d="M3 21V11l3-2v12"/>
+  <path d="M6 21V7l4-3v17"/>
+  <path d="M10 21V10l4 2v9"/>
+  <path d="M14 21V13l3 2v6"/>
+  <path d="M17 21V16l4 1v4"/>
+  <line x1="2" y1="21" x2="22" y2="21"/>
+</Icon>;
+
+const IconShipMini = (p) => <Icon {...p}>
+  {/* cruise ship — smaller version of main site icon */}
+  <path d="M3 17l1 3c.2.6.7 1 1.4 1h13.2c.7 0 1.2-.4 1.4-1l1-3H3z"/>
+  <path d="M5 17V11h14v6"/>
+  <path d="M8 11V8h8v3"/>
+  <line x1="7" y1="14" x2="17" y2="14"/>
+  <path d="M2 22c1.3.6 2.5-.5 4 0s3 .5 4 0 3-.5 4 0 3 .5 4 0"/>
+</Icon>;
+
+const IconBuilding = (p) => <Icon {...p}>
+  {/* government / building */}
+  <path d="M3 21V10l9-5 9 5v11"/>
+  <line x1="3" y1="21" x2="21" y2="21"/>
+  <line x1="7" y1="21" x2="7" y2="13"/>
+  <line x1="12" y1="21" x2="12" y2="13"/>
+  <line x1="17" y1="21" x2="17" y2="13"/>
+  <line x1="5" y1="13" x2="19" y2="13"/>
+</Icon>;
+
+// ─── State markers
+const IconCheck = (p) => <Icon {...p} strokeWidth={2}>
+  <polyline points="4 12 10 18 20 6"/>
+</Icon>;
+
+const IconStar = (p) => <Icon {...p}>
+  <polygon points="12 2 14.6 8.5 21.5 9 16.2 13.5 18 20.5 12 16.7 6 20.5 7.8 13.5 2.5 9 9.4 8.5 12 2"/>
+</Icon>;
+
+const IconArrowRight = ({ size = 14, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="M3 8h10m0 0l-4-4m4 4l-4 4" stroke={color} strokeWidth="1.6"
+          strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+// Registry — map icon name strings to components
+window.NGSIcons = {
+  phone: IconPhone, laptop: IconLaptop, bike: IconBike,
+  tablet: IconTablet, card: IconCard, cap: IconCap, trophy: IconTrophy,
+  au: IconAU, us: IconUS,
+  beach: IconBeach, island: IconIsland, city: IconCity,
+  ship: IconShipMini, building: IconBuilding,
+  check: IconCheck, star: IconStar, arrow: IconArrowRight,
+};
+</script>
+
+<script type="text/babel">
+// ScholarProfile — renders a scholar dashboard from a `data` prop.
+// Used by both Claire.html and April.html. Mounts on window for cross-file access.
+
+const { useState: useStateP } = React;
+
+function ScholarProfile({ data, palette, isMobile }) {
+  return (
+    <div className={`ngs-profile ${isMobile ? 'is-mobile' : 'is-desktop'}`}
+         data-screen-label={`${data.firstName} — Profile`}>
+      <TopNav data={data}/>
+      <PhotoHeader data={data} palette={palette}/>
+      {data.quote && <PullQuote quote={data.quote}/>}
+      {data.trialBanner && <TrialBanner text={data.trialBanner}/>}
+      {data.trialProgress && <TrialProgressSection data={data.trialProgress}/>}
+      {data.currentSemester && <SemesterSection data={data.currentSemester} palette={palette}/>}
+      {data.academics && <AcademicSection data={data.academics} palette={palette}/>}
+      {data.support && <SupportSection data={data.support}/>}
+      {data.milestones && <MilestonesSection items={data.milestones}/>}
+      {data.travels && <TravelsSection items={data.travels}/>}
+      {data.english && <EnglishSection data={data.english}/>}
+      {data.pathway && <PathwaySection data={data.pathway}/>}
+      <ProfileFooter data={data}/>
+    </div>
+  );
+}
+
+// ─── TRIAL BANNER ──────────────────────────────────────────
+function TrialBanner({ text }) {
+  return (
+    <section className="ngs-tbanner">
+      <div className="ngs-tbanner-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" strokeWidth="1.6"
+             strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 7v5l3 2"/>
+        </svg>
+      </div>
+      <p className="ngs-tbanner-text" dangerouslySetInnerHTML={{__html: text}}/>
+    </section>
+  );
+}
+
+// ─── TRIAL PROGRESS ────────────────────────────────────────
+function TrialProgressSection({ data }) {
+  return (
+    <section className="ngs-psection is-paper-2">
+      <SectionEyebrow>Trial period</SectionEyebrow>
+      <h2>{data.title}</h2>
+      <p className="ngs-psection-intro">{data.intro}</p>
+
+      <div className="ngs-tprogress">
+        {data.semesters.map((s, i) => (
+          <div key={i} className={`ngs-tsem is-${s.state}`}>
+            <div className="ngs-tsem-label">{s.label}</div>
+            <div className="ngs-tsem-grade">{s.grade}</div>
+            <div className="ngs-tsem-status">{s.status}</div>
           </div>
-          <div class="step-connector"></div>
-        </div>
+        ))}
+      </div>
 
-        <div class="pathway-step">
-          <div class="step-node">
-            <div class="step-circle">2</div>
-            <div class="step-label">BSN<br>University</div>
-          </div>
-          <div class="step-connector"></div>
+      <div className="ngs-tfloor">
+        <span className="ngs-tfloor-mark">▲</span>
+        <div>
+          <strong>{data.floor}</strong>
+          {data.floorDetail && <span className="ngs-tfloor-detail"> — {data.floorDetail}</span>}
         </div>
+      </div>
 
-        <div class="pathway-step">
-          <div class="step-node">
-            <div class="step-circle">3</div>
-            <div class="step-label">PNLE<br>Philippines</div>
-          </div>
-          <div class="step-connector"></div>
-        </div>
-
-        <div class="pathway-step">
-          <div class="step-node">
-            <div class="step-circle">4</div>
-            <div class="step-label">1 Year<br>Clinical PH</div>
-          </div>
-          <div class="step-connector"></div>
-        </div>
-
-        <div class="pathway-step">
-          <div class="step-node">
-            <div class="step-circle">5</div>
-            <div class="step-label">OET<br>Grade B</div>
-          </div>
-          <div class="step-connector"></div>
-        </div>
-
-        <div class="pathway-step">
-          <div class="step-node">
-            <div class="step-circle">6</div>
-            <div class="step-label">NCLEX<br>USA</div>
-          </div>
-          <div class="step-connector"></div>
-        </div>
-
-        <div class="pathway-step">
-          <div class="step-node">
-            <div class="step-circle">7</div>
-            <div class="step-label">OSCE<br>Australia</div>
-          </div>
-          <div class="step-connector"></div>
-        </div>
-
-        <div class="pathway-step">
-          <div class="step-node">
-            <div class="step-circle" style="border-color: var(--gold); color: var(--gold);">🇦🇺</div>
-            <div class="step-label" style="color: var(--gold);">AHPRA<br>License</div>
-          </div>
-          <div class="step-connector dashed"></div>
-        </div>
-
-        <div class="pathway-step">
-          <div class="step-node">
-            <div class="step-circle" style="border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.3); border-style: dashed;">🇺🇸</div>
-            <div class="step-label" style="color: rgba(255,255,255,0.3);">U.S. Option<br>(Optional)</div>
+      {data.nextSteps && (
+        <div className="ngs-tnext">
+          <div className="ngs-tnext-head">What unlocks next</div>
+          <div className="ngs-tnext-list">
+            {data.nextSteps.map((n, i) => (
+              <div key={i} className={`ngs-tnext-row ${n.highlight ? 'is-highlight' : ''}`}>
+                <div className="ngs-tnext-name">{n.name}</div>
+                <div className="ngs-tnext-detail">{n.detail}</div>
+              </div>
+            ))}
           </div>
         </div>
+      )}
+    </section>
+  );
+}
 
+function TopNav({ data }) {
+  return (
+    <header className="ngs-pnav">
+      <div className="ngs-pnav-inner">
+        <a href="index.html" className="ngs-pnav-brand">
+          <div className="ngs-mark ngs-mark-sm">
+            <span>N</span><span>G</span><span>S</span>
+          </div>
+          <span className="ngs-pnav-name">NextGen Scholars</span>
+        </a>
+        <a href="index.html#scholars" className="ngs-pnav-back">All scholars</a>
       </div>
-    </div>
-  </div>
+    </header>
+  );
+}
 
-  <!-- INVESTMENT -->
-  <div class="budget-section">
-    <div class="section-header">
-      <div class="section-title">Investment</div>
-      <div class="section-line"></div>
-    </div>
-    <div class="budget-note-card">
-      <div class="budget-note-icon">📊</div>
-      <div>
-        <div class="budget-note-title">Trial Period Investment</div>
-        <div class="budget-note-text">
-          During the trial period, the program provides limited support. Full scholarship investment begins upon university entry.
+function PhotoHeader({ data, palette }) {
+  const statusClass = data.status === 'paused' ? 'is-paused' :
+                      data.status === 'trial' ? 'is-trial' : 'is-active';
+  return (
+    <section className="ngs-phead">
+      <div className="ngs-phead-photo">
+        <div className="ngs-phead-photo-label">
+          <span>portrait</span>
+          <span>{data.firstName.toLowerCase()}.jpg</span>
         </div>
-        <div style="margin-top: 16px;">
-          <div class="budget-item">
-            <span class="budget-item-label">Smartphone — Redmi Note 14</span>
-            <span class="budget-item-value">₱7,499</span>
-          </div>
-          <div class="budget-item">
-            <span class="budget-item-label">Mobile data plan</span>
-            <span class="budget-item-value">Ongoing</span>
-          </div>
-          <div class="budget-item">
-            <span class="budget-item-label">Full scholarship investment (projected)</span>
-            <span class="budget-item-value" style="color: var(--white-40);">From 2027</span>
-          </div>
+        <div className={`ngs-phead-photo-status ${statusClass}`}>
+          {data.statusLabel || data.status}
         </div>
       </div>
-    </div>
-  </div>
+      <div className="ngs-phead-meta">
+        <div className="ngs-phead-track">
+          <span className="ngs-phead-track-dot"></span>
+          {data.trackName} · {data.track}
+        </div>
+        <h1 className="ngs-phead-name">{data.firstName}</h1>
+        <p className="ngs-phead-school">
+          <strong>{data.school}</strong>{data.city ? ` · ${data.city}` : ''}<br/>
+          {data.program} · {data.cohort}
+        </p>
+        {data.headlineStats && (
+          <div className="ngs-phead-stats">
+            {data.headlineStats.map((s, i) => (
+              <div key={i}>
+                <strong>{s.value}</strong>
+                <span>{s.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
 
-  <!-- FOOTER -->
-  <footer>
-    <div class="footer-left">
-      <strong>NextGen Nurses</strong> · April · Trial Period · Cohort 2030
-    </div>
-    <div class="footer-right">Updated May 2026</div>
-  </footer>
+function PullQuote({ quote }) {
+  return (
+    <section className="ngs-pquote">
+      <span className="ngs-pquote-mark">“</span>
+      <p className="ngs-pquote-body">{quote}</p>
+    </section>
+  );
+}
 
-</div>
+function SectionEyebrow({ children }) {
+  return (
+    <div className="ngs-psection-eyebrow">
+      <span className="ngs-psection-eyebrow-rule"></span>
+      {children}
+    </div>
+  );
+}
+
+function SemesterSection({ data, palette }) {
+  return (
+    <section className="ngs-psection">
+      <SectionEyebrow>Current semester</SectionEyebrow>
+      <h2>{data.title}</h2>
+      <p className="ngs-psection-intro">{data.intro}</p>
+
+      <div className="ngs-semester-stats">
+        <div className="ngs-semstat">
+          <div className="ngs-semstat-value">{data.period}</div>
+          <div className="ngs-semstat-label">Period</div>
+        </div>
+        <div className="ngs-semstat">
+          <div className="ngs-semstat-value is-gold">{data.year}</div>
+          <div className="ngs-semstat-label">Year</div>
+        </div>
+      </div>
+
+      <div className="ngs-subjects">
+        <div className="ngs-subjects-head">Subjects</div>
+        {data.subjects.map((s, i) => (
+          <div key={i} className="ngs-subject">
+            <span className="ngs-subject-num">{String(i+1).padStart(2,'0')}</span>
+            <span>{s}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function AcademicSection({ data, palette }) {
+  // For the bar, compute floor position
+  const floorPct = data.current.floor;
+  const valuePct = data.current.value;
+
+  return (
+    <section className="ngs-psection is-paper-2">
+      <SectionEyebrow>Academic standing</SectionEyebrow>
+      <h2>{data.title}</h2>
+      <p className="ngs-psection-intro">{data.intro}</p>
+
+      <div className="ngs-gpa-head">
+        <span className="ngs-gpa-label">{data.current.label}</span>
+        <span className="ngs-gpa-value">{valuePct}%</span>
+      </div>
+      <div className="ngs-gpa-bar">
+        <div className="ngs-gpa-fill" style={{ width: `${valuePct}%` }}></div>
+        <div className="ngs-gpa-floor" style={{ left: `${floorPct}%` }} title="Minimum required"></div>
+      </div>
+      <div className="ngs-gpa-floor-label">
+        Minimum required: {floorPct}% · UV grade scale
+      </div>
+
+      <div className="ngs-history">
+        <div className="ngs-history-head">History</div>
+        {data.history.map((h, i) => (
+          <div key={i} className={`ngs-history-row ${h.status === 'active' ? 'is-current' : ''}`}>
+            <span className="ngs-history-term">{h.label}</span>
+            <span className={`ngs-history-grade is-${h.status}`}>{h.value}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SupportSection({ data }) {
+  return (
+    <section className="ngs-psection">
+      <SectionEyebrow>Investment</SectionEyebrow>
+      <h2>{data.title}</h2>
+      <p className="ngs-psection-intro">{data.intro}</p>
+
+      {data.total && (
+        <div className="ngs-support-summary">
+          <div className="ngs-support-summary-label">Total invested to date</div>
+          <div className="ngs-support-summary-value">{data.total.value}</div>
+          <div className="ngs-support-summary-foot">{data.total.detail}</div>
+          {data.total.progress !== undefined && (
+            <div className="ngs-support-progress">
+              <div className="ngs-support-progress-label">
+                <span>Program completion</span>
+                <span>{Math.round(data.total.progress * 100)}%</span>
+              </div>
+              <div className="ngs-support-progress-bar">
+                <div className="ngs-support-progress-fill"
+                     style={{ width: `${data.total.progress * 100}%` }}></div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="ngs-support-cats">
+        {data.categories.map((c, i) => {
+          const Icon = window.NGSIcons[c.icon];
+          return (
+            <div key={i} className="ngs-support-cat">
+              <div className="ngs-support-cat-icon">
+                {Icon && <Icon size={20}/>}
+              </div>
+              <div className="ngs-support-cat-body">
+                <div className="ngs-support-cat-head">
+                  <div className="ngs-support-cat-name">{c.name}</div>
+                  {c.amount && <div className="ngs-support-cat-amount">{c.amount}</div>}
+                </div>
+                <div className="ngs-support-cat-detail">{c.detail}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function MilestonesSection({ items }) {
+  return (
+    <section className="ngs-psection is-paper-2">
+      <SectionEyebrow>Milestones</SectionEyebrow>
+      <h2>Rewards along the way.</h2>
+      <p className="ngs-psection-intro">
+        Devices and infrastructure unlocked as academic targets are hit.
+      </p>
+
+      <div className="ngs-mlist">
+        {items.map((m, i) => {
+          const Icon = window.NGSIcons[m.icon];
+          const stateClass = m.state === 'done' ? 'is-done' : 'is-future';
+          return (
+            <div key={i} className={`ngs-mrow ${stateClass}`}>
+              <div className="ngs-mrow-icon">
+                {Icon && <Icon size={20}/>}
+              </div>
+              <div className="ngs-mrow-body">
+                <div className="ngs-mrow-head">
+                  <div className="ngs-mrow-name">{m.name}</div>
+                  <div className="ngs-mrow-badge">{m.badge || (m.state === 'done' ? 'Done' : 'Future')}</div>
+                </div>
+                <div className="ngs-mrow-detail">{m.detail}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function TravelsSection({ items }) {
+  return (
+    <section className="ngs-psection">
+      <SectionEyebrow>Travel program</SectionEyebrow>
+      <h2>Worlds <em className="ngs-italic">opened.</em></h2>
+      <p className="ngs-psection-intro">
+        Annual reward trips that scale with milestones — each a deliberate widening of horizons.
+      </p>
+
+      <div className="ngs-travels">
+        {items.map((t, i) => {
+          const Icon = window.NGSIcons[t.icon];
+          return (
+            <article key={i} className={`ngs-travel is-${t.state}`}>
+              <div className="ngs-travel-icon">
+                {Icon && <Icon size={28}/>}
+              </div>
+              <div className="ngs-travel-dest">{t.dest}</div>
+              <div className="ngs-travel-when">{t.when}</div>
+              <span className={`ngs-travel-status is-${t.state}`}>
+                {t.state === 'done' ? 'Completed' :
+                 t.state === 'booked' ? 'Booked' : 'Planned'}
+              </span>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function EnglishSection({ data }) {
+  return (
+    <section className="ngs-psection is-paper-2">
+      <SectionEyebrow>English development</SectionEyebrow>
+      <h2>{data.heading}</h2>
+      <p className="ngs-psection-intro">{data.intro}</p>
+
+      <div className="ngs-english is-paper-host">
+        <div className="ngs-english-head">
+          <div className="ngs-english-title">{data.title}</div>
+          <div className="ngs-english-target">Target: {data.target}</div>
+        </div>
+
+        <div className="ngs-estages">
+          {data.stages.map((s, i) => {
+            const next = data.stages[i + 1];
+            const railDone = s.state === 'done';
+            return (
+              <div key={i} className={`ngs-estage is-${s.state}`}>
+                <div className={`ngs-estage-rail ${railDone ? 'is-done' : ''}`}></div>
+                <div className="ngs-estage-dot">
+                  {s.state === 'done' && (
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                      <path d="M1 4l3 3 5-5" stroke="var(--ngs-navy)" strokeWidth="2"
+                            strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                  {s.state === 'active' && <span className="ngs-estage-pulse"></span>}
+                </div>
+                <div className="ngs-estage-body">
+                  <div className="ngs-estage-label">{s.label}</div>
+                  <div className="ngs-estage-tag">
+                    {s.state === 'done' ? 'Done' :
+                     s.state === 'active' ? 'In progress' :
+                     s.state === 'upcoming' ? 'Upcoming' : 'Future'}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PathwaySection({ data }) {
+  return (
+    <section className="ngs-psection">
+      <SectionEyebrow>Long arc</SectionEyebrow>
+      <h2>{data.title}</h2>
+      <p className="ngs-psection-intro">{data.intro}</p>
+
+      <div className="ngs-pathway">
+        <div className="ngs-pathway-track">
+          {data.steps.map((s, i) => {
+            const isLast = i === data.steps.length - 1;
+            const connector = s.connector || (s.state === 'done' ? 'done' : '');
+            return (
+              <React.Fragment key={i}>
+                <div className={`ngs-pstep is-${s.state}`}>
+                  <div className="ngs-pstep-circle">
+                    {s.state === 'done' ? (
+                      <svg width="14" height="11" viewBox="0 0 14 11" fill="none">
+                        <path d="M1 5l4 4 8-8" stroke="currentColor" strokeWidth="2"
+                              strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    ) : s.state === 'active' ? '★' : i + 1}
+                  </div>
+                  <div className="ngs-pstep-label" dangerouslySetInnerHTML={{__html: s.label}}/>
+                </div>
+                {!isLast && (
+                  <div className={`ngs-pline ${
+                    s.state === 'done' ? 'is-done' :
+                    s.connector === 'dashed' ? 'is-dashed' : ''
+                  }`}></div>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProfileFooter({ data }) {
+  return (
+    <footer className="ngs-pfooter">
+      <div className="ngs-pfooter-left">One generation lifts another.</div>
+      <div className="ngs-pfooter-meta">
+        <span>{data.trackName} · {data.firstName} · {data.cohort}</span>
+        <span>{data.updated || 'Updated May 2026'}</span>
+      </div>
+    </footer>
+  );
+}
+
+window.ScholarProfile = ScholarProfile;
+</script>
+
+<script type="text/babel">
+// April's data — Trial period, Cohort 2032.
+// Source: ported from uploads/april.html with rounded peso figures.
+
+const APRIL_DATA = {
+  firstName: 'April',
+  track: 'NGN',
+  trackName: 'NextGen Nurses · Trial',
+  cohort: 'Cohort 2032',
+  school: 'Senior High School',
+  city: 'Cebu',
+  program: 'Grade 11 · Trial period',
+  status: 'trial',
+  statusLabel: 'Trial Scholar',
+  updated: 'Updated May 2026',
+
+  quote: 'I\u2019m still in high school, but I already know where I\u2019m going.',
+
+  headlineStats: [
+    { value: 'G11',   label: 'Current Year' },
+    { value: '2 yrs', label: 'Trial Period' },
+    { value: '2032',  label: 'BSN Target' },
+  ],
+
+  trialBanner:
+    'April is in her <strong>2-year trial period</strong> (Grade 11–12). ' +
+    'Full NGN scholarship begins on successful Senior High completion with a ' +
+    'minimum <strong>85% average</strong>. Trial started May/June 2025.',
+
+  trialProgress: {
+    title: 'Four semesters to clear.',
+    intro:
+      'Trial began with an 85% average at the end of Grade 10. The same floor ' +
+      'must hold every semester to remain in the program.',
+    semesters: [
+      { label: 'G11 · S1', grade: '—', state: 'active', status: 'In progress' },
+      { label: 'G11 · S2', grade: '—', state: 'future', status: 'Upcoming' },
+      { label: 'G12 · S1', grade: '—', state: 'future', status: 'Future' },
+      { label: 'G12 · S2', grade: '—', state: 'future', status: 'Future' },
+    ],
+    floor: 'Entry requirement: 85% minimum each semester',
+    floorDetail: 'Trial began with 85% average at the end of Grade 10',
+    nextSteps: [
+      { name: 'Complete G11 → G12',     detail: 'Maintain 85%+ every semester to stay in the program', highlight: true },
+      { name: 'Full scholarship entry', detail: 'Upon G12 graduation → BSN Nursing at university' },
+      { name: 'Reward — Chromebook',    detail: 'Upon completing Grade 12 successfully' },
+      { name: 'Reward — Motorcycle',    detail: 'Program infrastructure upon entering university' },
+      { name: 'BSN target graduation',  detail: 'Cohort 2032 · Road to Australia begins' },
+    ],
+  },
+
+  currentSemester: {
+    title: 'Grade 11, Semester One.',
+    intro: 'Six core subjects. The first semester of a four-semester trial.',
+    period: 'G11',
+    year: '2025',
+    subjects: [
+      'Oral Communication',
+      '21st Century Literature',
+      'General Mathematics',
+      'Earth & Life Science',
+      'Personal Development',
+      'Physical Education',
+    ],
+  },
+
+  support: {
+    title: 'Trial period investment.',
+    intro:
+      'During the trial period the program provides limited support — enough to ' +
+      'demonstrate commitment and keep communication open. Full scholarship ' +
+      'investment begins upon university entry.',
+    categories: [
+      { icon: 'phone',  name: 'Smartphone',
+        amount: '₱7.5K',
+        detail: 'Redmi Note 14 · 6+128GB · Provided at trial entry, April 2026.' },
+      { icon: 'card',   name: 'Mobile data plan',
+        amount: 'Ongoing',
+        detail: 'Maintained throughout trial to support daily mentor check-ins.' },
+      { icon: 'cap',    name: 'Full scholarship',
+        amount: 'From 2027',
+        detail: 'Tuition, board, milestone rewards, and travel program activate on BSN entry.' },
+    ],
+  },
+
+  milestones: [
+    { icon: 'check',  name: 'Grade 10 Completed',
+      detail: '85% average · Triggered trial period entry',
+      state: 'done', badge: 'Done' },
+    { icon: 'phone',  name: 'Smartphone',
+      detail: 'Redmi Note 14 · 6+128GB · Trial G11 entry · April 2026',
+      state: 'done', badge: 'Done' },
+    { icon: 'cap',    name: 'Complete Grade 11',
+      detail: '85% minimum required to continue trial',
+      state: 'future', badge: 'In Trial' },
+    { icon: 'cap',    name: 'Complete Grade 12',
+      detail: '85% minimum · Unlocks full scholarship',
+      state: 'future', badge: '2027' },
+    { icon: 'laptop', name: 'Chromebook',
+      detail: 'Upon completing Grade 12',
+      state: 'future', badge: '2027' },
+    { icon: 'bike',   name: 'Motorcycle',
+      detail: 'Program infrastructure · Upon university entry',
+      state: 'future', badge: '2027' },
+    { icon: 'phone',  name: 'iPhone',
+      detail: 'Year 1 university complete',
+      state: 'future', badge: '2028' },
+    { icon: 'au',     name: 'AHPRA License',
+      detail: 'Australian Nursing Registration · Post-graduation',
+      state: 'future', badge: 'Future' },
+  ],
+
+  // No travels section yet — April hasn't earned travel rewards during trial.
+
+  english: {
+    heading: 'Building the foundation.',
+    intro:
+      'Five stages — informal at first, then structured English work begins in ' +
+      'university. OET preparation comes in the senior years.',
+    title: 'Building the Foundation',
+    target: 'OET Grade B (C1 level) · Post-graduation',
+    stages: [
+      { label: 'Trial G11–G12 · Basic communication with mentor · Building habits', state: 'active' },
+      { label: 'Year 1 university · Progressive English with mentor',               state: 'future' },
+      { label: 'Year 2 · FB Messenger exclusively in English with mentor',          state: 'future' },
+      { label: 'Summer Y3 · ChatGPT Advanced Voice Mode bootcamp',                  state: 'future' },
+      { label: 'Year 3–4 · OET preparation · Target B2+/C1',                        state: 'future' },
+    ],
+  },
+
+  pathway: {
+    title: 'Road to Australia.',
+    intro: 'Same nine-step pathway as Claire — April is at step one.',
+    steps: [
+      { label: 'Trial<br/>Period',     state: 'active' },
+      { label: 'BSN<br/>University',   state: 'next' },
+      { label: 'PNLE<br/>Philippines', state: 'next' },
+      { label: '1 Year<br/>Clinical PH', state: 'next' },
+      { label: 'OET<br/>Grade B',      state: 'next' },
+      { label: 'NCLEX<br/>USA',        state: 'next' },
+      { label: 'OSCE<br/>Australia',   state: 'next' },
+      { label: 'AHPRA<br/>License',    state: 'goal' },
+      { label: 'U.S. Option<br/>(Optional)', state: 'optional', connector: 'dashed' },
+    ],
+  },
+};
+
+window.APRIL_DATA = APRIL_DATA;
+</script>
+
+<script type="text/babel">
+const { useState: useStateApp, useEffect: useEffectApp } = React;
+
+function App() {
+  const [isDesktop, setIsDesktop] = useStateApp(
+    () => window.matchMedia('(min-width: 960px)').matches
+  );
+
+  useEffectApp(() => {
+    const mq = window.matchMedia('(min-width: 960px)');
+    const handler = (e) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  return (
+    <ScholarProfile
+      data={window.APRIL_DATA}
+      palette={{}}
+      isMobile={!isDesktop}
+    />
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
 </body>
 </html>
