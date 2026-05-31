@@ -12,6 +12,7 @@
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="scholars-data.js"></script>
 
 <style>
 /* ── base ── */
@@ -1631,123 +1632,8 @@ window.ScholarProfile = ScholarProfile;
 </script>
 
 <script type="text/babel">
-// Claire's data — public-facing version. Peso figures rounded to nearest 10K.
-
-const CLAIRE_DATA = {
-  firstName: 'Claire',
-  track: 'NGN',
-  trackName: 'NextGen Nurses',
-  cohort: 'Cohort 2028',
-  school: 'University of the Visayas',
-  city: 'Cebu',
-  program: 'BSN Nursing',
-  status: 'active',
-  statusLabel: 'Active Scholar',
-  updated: 'Updated May 2026',
-
-  quote: 'I want to be a nurse abroad. This program is making that real.',
-
-  headlineStats: [
-    { value: 'Y2 · S2', label: 'Current Semester' },
-    { value: '2028',    label: 'Graduation' },
-    { value: '37%',     label: 'Journey' },
-  ],
-
-  currentSemester: {
-    title: 'Year Two, Semester Two.',
-    intro: 'Jan–Jun 2026. Six concurrent subjects — the densest term of the BSN program so far.',
-    period: 'Jan – Jun',
-    year: '2026',
-    subjects: [
-      'Health Assessment',
-      'Fundamentals of Nursing Practice',
-      'Pharmacology',
-      'Care of Mother, Child & Family',
-      'Community Health Nursing',
-      'NSTP',
-    ],
-  },
-
-  academics: {
-    title: 'Holding the line.',
-    intro: 'Claire must maintain an 81% floor to remain in the BSN program. Every semester clears it.',
-    current: { label: 'Year 2 · S1 — Latest GPA', value: 81.36, floor: 81 },
-    history: [
-      { label: 'Trial · Grade 12',     value: '85%+',        status: 'good' },
-      { label: 'Year 1 · S1',          value: '83.25%',      status: 'good' },
-      { label: 'Year 1 · S2',          value: '88.16%',      status: 'good' },
-      { label: 'Year 2 · S1',          value: '81.36%',      status: 'warn' },
-      { label: 'Year 2 · S2',          value: 'In progress', status: 'active' },
-    ],
-  },
-
-  support: {
-    title: 'What it takes to lift one.',
-    intro: 'A single donor underwrites Claire end-to-end — tuition, board, travel, and the milestone rewards that mark each step.',
-    total: {
-      value: '₱2.05M',
-      detail: 'Across university, travel program, and milestone rewards through Year 2',
-      progress: 0.37,
-    },
-    categories: [
-      { icon: 'cap',    name: 'University',        amount: '₱1.57M', detail: 'Tuition, board, supplies, and academic fees across the four-year BSN program.' },
-      { icon: 'us',     name: 'Travel Program',    amount: '₱240K',  detail: 'Annual reward trips — currently Boracay, Bohol, Hong Kong; future Taiwan cruise + U.S. immersion.' },
-      { icon: 'trophy', name: 'Milestone Rewards', amount: '₱247K',  detail: 'Phone, laptop, motorcycle, tablet, credit-card line — earned as each academic target is met.' },
-    ],
-  },
-
-  milestones: [
-    { icon: 'phone',  name: 'Smartphone',           detail: 'Redmi Note · Trial G11 entry',           state: 'done', badge: 'Done' },
-    { icon: 'laptop', name: 'Chromebook',           detail: 'ASUS 14" 2-in-1 · Grade 12 complete',    state: 'done', badge: 'Done' },
-    { icon: 'bike',   name: 'Motorcycle',           detail: 'Program infrastructure · Grade 12 complete', state: 'done', badge: 'Done' },
-    { icon: 'phone',  name: 'iPhone 13 Pro',        detail: '128GB · Year 1 complete',                state: 'done', badge: 'Done' },
-    { icon: 'tablet', name: 'iPad 11" A16',         detail: '128GB · Year 2 complete (delivered early)', state: 'done', badge: 'Done' },
-    { icon: 'card',   name: 'Authorized Credit Card', detail: "Linked to mentor's account · January 2026", state: 'done', badge: 'Done' },
-    { icon: 'cap',    name: 'BSN Graduation',       detail: 'University of the Visayas',              state: 'future', badge: '2028' },
-    { icon: 'au',     name: 'AHPRA License',        detail: 'Australian Nursing Registration · Post-graduation', state: 'future', badge: 'Future' },
-  ],
-
-  travels: [
-    { icon: 'beach',    dest: 'Boracay',       when: '2024 · End of Trial G12',         state: 'done' },
-    { icon: 'island',   dest: 'Bohol',         when: '2025 · After Year 1',             state: 'done' },
-    { icon: 'city',     dest: 'Hong Kong',     when: 'Jan 2026 · Year 2 S2',            state: 'done' },
-    { icon: 'ship',     dest: 'Taiwan Cruise', when: 'Jan 2027 · MSC Bellissima',       state: 'booked' },
-    { icon: 'building', dest: 'Manila',        when: '2027 · B2 Visa Interview',        state: 'planned' },
-    { icon: 'us',       dest: 'U.S. Immersion',when: 'Post-graduation · 3 months · KY', state: 'planned' },
-  ],
-
-  english: {
-    heading: 'From Cebu to the world.',
-    intro: 'A six-stage English development plan — informal at first, structured by year three.',
-    title: 'From Cebu to the World',
-    target: 'OET Grade B (C1 level)',
-    stages: [
-      { label: 'Trial G11–G12 · Basic communication with mentor',                state: 'done' },
-      { label: 'Year 1 · Progressive English with mentor',                       state: 'done' },
-      { label: 'Year 2 · FB Messenger exclusively in English with mentor',       state: 'active' },
-      { label: 'Summer Y3 · ChatGPT Advanced Voice Mode bootcamp',               state: 'upcoming' },
-      { label: 'Year 3–4 · OET preparation · Target B2+/C1',                     state: 'future' },
-      { label: 'Post-graduation · 3-month U.S. immersion · C1 operational',      state: 'future' },
-    ],
-  },
-
-  pathway: {
-    title: 'Road to Australia.',
-    intro: 'Nine steps from the trial period to a working AHPRA license. The U.S. path stays open as a secondary option.',
-    steps: [
-      { label: 'Trial<br/>Period',     state: 'done' },
-      { label: 'BSN<br/>University',   state: 'active' },
-      { label: 'PNLE<br/>Philippines', state: 'next' },
-      { label: '1 Year<br/>Clinical PH', state: 'next' },
-      { label: 'OET<br/>Grade B',      state: 'next' },
-      { label: 'NCLEX<br/>USA',        state: 'next' },
-      { label: 'OSCE<br/>Australia',   state: 'next' },
-      { label: 'AHPRA<br/>License',    state: 'goal' },
-      { label: 'U.S. Option<br/>(Optional)', state: 'optional', connector: 'dashed' },
-    ],
-  },
-};
-
+// Claire's public profile — sourced from NGS_DATA in scholars-data.js.
+const CLAIRE_DATA = NGS_DATA.scholars.claire.publicProfile;
 window.CLAIRE_DATA = CLAIRE_DATA;
 </script>
 
