@@ -25,8 +25,7 @@ build step are understood and intentionally deferred (see ROADMAP.md).
 | `claire.html` | Public scholar dashboard — Claire (active BSN). |
 | `april.html` | Public scholar dashboard — April (trial period, Grade 11). |
 | `navigator.html` | **Private** mentor ops dashboard. Reads `scholars-data.js`. Has a cosmetic password lock. |
-| `scholars-data.js` | Data for the navigator (scholars, expenses, milestones, travels, budgets, alerts, deadlines, actions). |
-| `project/` | Claude Design split source (jsx/css). Reference only; root files are what deploy. |
+| `scholars-data.js` | Single source of truth for all scholar data (public cards, profiles, and navigator financials). |
 | `chats/`, `README.md` | Original Claude Design handoff transcripts + notes. |
 
 ## How the standalone HTML files are built
@@ -57,11 +56,11 @@ build step are understood and intentionally deferred (see ROADMAP.md).
   **cosmetic only**. The file is a public static asset — anyone can read it and
   the data directly. Do not treat this as real access control (see ROADMAP #1).
 
-## Known issue: duplicated scholar data
+## Scholar data — single source of truth
 
-Scholar facts are hand-duplicated across `index.html` cards, `claire.html`,
-`april.html`, `scholars-data.js`, and `project/site.jsx`. They drift. The
-highest-value safe refactor is consolidating to one data source (ROADMAP #2).
+All scholar facts live in `scholars-data.js` (`NGS_DATA`). The `card` and
+`publicProfile` sub-objects drive the public pages; the full object drives the
+navigator. Do not re-duplicate facts into HTML — update `scholars-data.js`.
 
 ## Working in this environment
 

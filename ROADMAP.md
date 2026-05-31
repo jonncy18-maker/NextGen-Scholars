@@ -15,61 +15,42 @@ yet; this is the agreed backlog.
 
 ### 1. (Do sooner) Private data is publicly exposed
 - `navigator.html` shows real students' names, schools, GPAs, semester expense
-  ledgers, peso amounts, budget allocations, and donor investment totals.
+  ledgers, peso amounts, donor investment totals.
 - The `password: 'ngs2026'` lock is **cosmetic** — `scholars-data.js` is a
   public static asset; anyone can open it directly and read everything. The
   password never protects the data.
 - Distinction: the public profile pages (`index.html`, `claire.html`,
   `april.html`) are *intended* public. The **navigator is intended private but
   is currently fully public.** That mismatch is the real issue.
-- **Direction:** if the navigator is private, put it behind real auth and load
-  its data only after authorization (a backend or hosted auth provider; or move
-  the sensitive data off the public static site entirely). At minimum, stop
-  shipping the sensitive ledger as a public asset.
+- **Decision (2026-05-31):** Accept for now — scholars have consented and the
+  program is small. Revisit when the program grows or if a real backend is added.
+- **Direction (when ready):** put the navigator behind real auth and load its
+  data only after authorization (a backend or hosted auth provider; or move the
+  sensitive data off the public static site entirely).
 
-### 2. (High value, workflow-compatible) Single source of truth for scholar data
-- Scholar facts are duplicated across `index.html` cards, `claire.html`,
-  `april.html`, `scholars-data.js`, and `project/site.jsx`. They already drift
-  (caused real bugs this project hit).
-- **Direction:** consolidate to one data file that the landing cards, profile
-  pages, and navigator all derive from. Safest high-leverage step; compatible
-  with either workflow direction.
+### 2. ✅ (Done) Single source of truth for scholar data
+- Consolidated to `scholars-data.js` — `index.html`, `claire.html`, `april.html`
+  all read from `NGS_DATA` instead of hardcoding scholar details.
 
-### 3. (Decide first) One canonical source tree
-- Two competing entrypoints exist: `project/` (split Claude Design source) and
-  the hand-edited root `index.html` (and the other root HTML files). They drift;
-  it's unclear which is canonical.
-- **Direction:** pick one canonical source. If root files are the deploy target,
-  ideally generate them from source rather than hand-maintaining both.
+### 3. ✅ (Done) One canonical source tree
+- **Decision (2026-05-31):** root HTML files are canonical; `project/` (stale
+  Claude Design split source) deleted.
 
-### 4. (Decide first) Build system vs. Claude Design — the fork
-- Current: runtime Babel + CDN **development** React shipped to users.
-- **Option A — keep Claude Design round-tripping:** standalone HTML stays;
-  accept the duplication + perf cost.
-- **Option B — real build (Vite/Astro/Next):** faster, deduplicated, testable,
-  real modules — but you lose the Claude Design visual round-trip and edit in
-  code instead.
-- You can't fully have both. **Choose consciously before investing in 2–4.**
+### 4. (Decided) Build system vs. Claude Design — keep Claude Design
+- **Decision (implied by #3):** standalone HTML + CDN React stays. No bundler.
+  Claude Design round-trip is the workflow.
 
-### 5. (Before any real launch) User-facing correctness
-- **Apply form (`index.html`)** sets `sent = true` locally but submits nowhere —
-  users think a nomination was sent when nothing is delivered. Wire to a real
-  endpoint (Formspree/Netlify Forms/mailto/backend) or relabel as prototype.
-- **Accessibility:** mobile nav button lacks `aria-expanded`/`aria-controls` and
-  focus management; track-selection "buttons" act like radios without radio
-  semantics/`aria-pressed`. Add proper ARIA + visible focus states.
+### 5. ✅ (Done) User-facing correctness
+- Apply form wired to `mailto:` — nominations now actually reach the team.
+- Accessibility: `aria-expanded`/`aria-controls` on mobile nav toggle;
+  `role="radiogroup"` + `role="radio"` + `aria-checked` on track selector;
+  `:focus-visible` outlines on all interactive elements.
 
-### 6. (Hygiene, low urgency while data is static & self-authored)
-- `navigator.html` builds DOM via string `innerHTML` interpolation — fine today
-  (static, self-authored data) but XSS-prone if data ever becomes external/
-  user-editable. Prefer `textContent`/DOM APIs, or fold the navigator into the
-  same component architecture as the public pages.
-- `project/app.jsx` applies `is-desktop` via post-render `querySelector` instead
-  of a declarative prop — make viewport/desktop state declarative in React.
-- Centralize navigation into one shared component (root vs. `project/` nav
-  behavior currently differs).
-
-## Suggested first move
-When ready to act, **start with #2 (consolidate scholar data)** — safest,
-highest value, and works regardless of the #3/#4 workflow decision. Tackle #1
-(privacy) on its own track since it's about data exposure, not refactoring.
+### 6. ✅ (Done) Navigator innerHTML / XSS hygiene
+- Added `esc()` HTML-escape helper; applied to every data value interpolated
+  into `innerHTML` strings throughout `navigator.html`.
+- `renderLogFeed()` converted to DOM API (`textContent`) — the only section
+  with live user input, so the only immediate XSS sink.
+- Note: `project/app.jsx` declarative viewport item is moot — `project/` deleted.
+- Note: navigation centralization across pages deferred (conflicts with Claude
+  Design standalone-file constraint).
