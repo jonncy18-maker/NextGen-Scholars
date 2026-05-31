@@ -104,6 +104,10 @@ body { margin: 0; }
   background: var(--ngs-gold);
   border-radius: 1px;
 }
+.ngs-nav-btn:focus-visible {
+  outline: 2px solid var(--ngs-gold);
+  outline-offset: 2px;
+}
 .ngs-nav-menu {
   border-top: 1px solid var(--ngs-rule);
   padding: 8px 20px 16px;
@@ -255,6 +259,8 @@ body { margin: 0; }
   color: var(--ngs-navy);
 }
 .ngs-btn-gold:active { transform: scale(0.98); }
+.ngs-btn:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
+.ngs-btn-gold:focus-visible { outline: 2px solid var(--ngs-navy); outline-offset: 2px; }
 .ngs-btn-ghost {
   border: 1px solid rgba(250, 247, 240, 0.3);
   color: var(--ngs-paper);
@@ -744,6 +750,7 @@ body { margin: 0; }
   border-color: var(--ngs-gold);
   font-weight: 600;
 }
+.ngs-radio:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 .ngs-form-foot {
   font-size: 13px;
   color: rgba(250, 247, 240, 0.55);
@@ -1884,9 +1891,17 @@ function Apply({ palette }) {
 
   const valid = form.name.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) && form.track;
 
+  const TRACK_LABELS = { NGN: 'NextGen Nurses', NGH: 'NextGen Hospitality', unsure: 'Not sure yet' };
+
   const submit = (e) => {
     e.preventDefault();
     if (!valid) return;
+    const trackLabel = TRACK_LABELS[form.track] || form.track;
+    const subject = encodeURIComponent(`NGS Nomination – ${form.name} (${trackLabel})`);
+    const body = encodeURIComponent(
+      `Name: ${form.name}\nEmail: ${form.email}\nTrack: ${trackLabel}\n\n${form.message || '(No additional message)'}`
+    );
+    window.location.href = `mailto:hello@nextgenscholars.ph?subject=${subject}&body=${body}`;
     setSent(true);
   };
 
@@ -1914,8 +1929,8 @@ function Apply({ palette }) {
                 <path d="M2 9l6 6L20 3" stroke={palette.gold} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <h3>Message received.</h3>
-            <p>We respond within seven days, in English or Tagalog — whichever is easier.</p>
+            <h3>One more step.</h3>
+            <p>Your email client should have opened with the nomination pre-filled — just hit Send. Didn't open? Write directly to <a href="mailto:hello@nextgenscholars.ph" style={{color: 'var(--ngs-gold)'}}>hello@nextgenscholars.ph</a>.</p>
             <button className="ngs-btn ngs-btn-ghost ngs-btn-ghost-light" onClick={() => { setSent(false); setForm({ name:'', email:'', track:'', message:'' }); }}>
               Send another
             </button>
@@ -1934,14 +1949,15 @@ function Apply({ palette }) {
             </label>
 
             <div className="ngs-field">
-              <span>Which track?</span>
-              <div className="ngs-radio-row">
+              <span id="ngs-track-label">Which track?</span>
+              <div className="ngs-radio-row" role="radiogroup" aria-labelledby="ngs-track-label">
                 {[
                   { v: 'NGN', label: 'NextGen Nurses' },
                   { v: 'NGH', label: 'NextGen Hospitality' },
                   { v: 'unsure', label: 'Not sure yet' },
                 ].map(o => (
                   <button key={o.v} type="button"
+                    role="radio" aria-checked={form.track === o.v}
                     className={`ngs-radio ${form.track === o.v ? 'is-active' : ''}`}
                     onClick={() => setForm({...form, track: o.v})}>
                     {o.label}
@@ -2027,13 +2043,15 @@ function TopNav({ palette, isDesktop }) {
             <a href="#apply" className="ngs-nav-cta-link">Apply</a>
           </nav>
         ) : (
-          <button className="ngs-nav-btn" onClick={() => setOpen(!open)} aria-label="Menu">
+          <button className="ngs-nav-btn" onClick={() => setOpen(!open)}
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            aria-expanded={open} aria-controls="ngs-nav-mobile-menu">
             <span></span><span></span>
           </button>
         )}
       </div>
       {!isDesktop && open && (
-        <nav className="ngs-nav-menu" onClick={() => setOpen(false)}>
+        <nav className="ngs-nav-menu" id="ngs-nav-mobile-menu" onClick={() => setOpen(false)}>
           <a href="#about">About</a>
           <a href="#tracks">Tracks</a>
           <a href="#journey">Journey</a>
