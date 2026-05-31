@@ -1,37 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Pathway Navigator — NextGen Scholars · Mentor View</title>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Manrope:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-
-<style>
-/* navigator styles loaded via src/navigator.js → src/styles/navigator.css */
-:root {
-  --ngs-navy: #1B2A4A;
-  --ngs-navy-deep: #131F38;
-  --ngs-navy-ink: #0E1A33;
-  --ngs-gold: #C9A84C;
-  --ngs-gold-soft: #E4C97A;
-  --ngs-paper: #FAF7F0;
-  --ngs-paper-2: #F2EDE2;
-  --ngs-ink: #1A1A1A;
-  --ngs-ink-soft: #4A4E5E;
-  --ngs-muted: #6B6E7A;
-  --ngs-rule: rgba(27,42,74,0.12);
-  --ngs-red: #B11B2A;
-  --ngs-green: #2F7D55;
-  --ngs-amber: #B5862A;
-  --ngs-blue: #2C5AA0;
-
-  --ngs-display: 'Newsreader', 'Iowan Old Style', Georgia, serif;
-  --ngs-sans: 'Manrope', 'Helvetica Neue', Helvetica, system-ui, sans-serif;
-  --ngs-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-}
+@import './tokens.css';
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
@@ -53,6 +20,14 @@ input, select { font-family: inherit; }
 ul, ol { margin: 0; padding: 0; list-style: none; }
 .italic { font-family: var(--ngs-display); font-style: italic; font-weight: 400; }
 .mono { font-family: var(--ngs-mono); }
+
+/* ── additional tokens used only in navigator ── */
+:root {
+  --ngs-green: #2F7D55;
+  --ngs-amber: #B5862A;
+  --ngs-blue-nav: #2C5AA0;
+  --ngs-ink-soft: #4A4E5E;
+}
 
 /* ─── monogram ─── */
 .ngs-mark {
@@ -207,7 +182,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 }
 .alert.critical { border-left-color: var(--ngs-red);   background: rgba(177,27,42,0.06); }
 .alert.watch    { border-left-color: var(--ngs-amber); background: rgba(181,134,42,0.08); }
-.alert.info     { border-left-color: var(--ngs-blue);  background: rgba(44,90,160,0.06); }
+.alert.info     { border-left-color: var(--ngs-blue-nav);  background: rgba(44,90,160,0.06); }
 .alert.dismissing { opacity: 0; transform: translateX(20px); max-height: 0; padding-top: 0; padding-bottom: 0; margin-bottom: -12px; }
 .alert-icon { font-size: 20px; line-height: 1.2; flex-shrink: 0; }
 .alert-body { flex: 1; }
@@ -351,7 +326,6 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .total-card.lead .total-lbl { color: rgba(250,247,240,0.7); }
 
 .chart-card { background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px; padding: 26px 26px 20px; margin-bottom: 22px; }
-/* by semester */
 .bars { display: flex; align-items: flex-end; gap: 28px; height: 160px; padding: 0 4px; }
 .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 0; height: 100%; }
 .bar-pair { display: flex; align-items: flex-end; justify-content: center; gap: 7px; width: 100%; height: 100%; }
@@ -374,7 +348,6 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .legend-swatch { width: 14px; height: 14px; border-radius: 3px; }
 .legend-swatch.actual { background: var(--ngs-navy); }
 .legend-swatch.budget { background: #C9C1B0; }
-/* by category */
 .cat-rows { display: flex; flex-direction: column; gap: 14px; }
 .cat-row { display: grid; grid-template-columns: 140px 1fr auto; gap: 16px; align-items: center; }
 .cat-label { font-size: 13px; color: var(--ngs-ink); font-weight: 500; }
@@ -482,212 +455,3 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
   .log-form { grid-template-columns: 1fr; }
   .nav-back { display: none; }
 }
-</style>
-
-</head>
-<body>
-
-<!-- ════════════════ LOCK SCREEN ════════════════ -->
-<div id="lock">
-  <div class="lock-bg"></div>
-  <div class="lock-inner">
-    <div class="lock-badge"><span>N</span><span>G</span><span>S</span></div>
-    <h1 class="lock-title">Pathway <em>Navigator</em></h1>
-    <div class="lock-sub">Mentor access only</div>
-    <form class="lock-form" id="lockForm" autocomplete="off">
-      <input class="lock-input" id="lockInput" type="password" placeholder="Enter passphrase" aria-label="Passphrase"/>
-      <div class="lock-err" id="lockErr">Incorrect passphrase — try again.</div>
-      <button class="lock-btn" type="submit">Unlock dashboard</button>
-    </form>
-    <div class="lock-hint">Private operations console · NextGen Scholars · Phase 1</div>
-  </div>
-</div>
-
-<!-- ════════════════ NAV ════════════════ -->
-<header class="nav">
-  <div class="nav-inner">
-    <a class="nav-brand" href="index.html">
-      <span class="ngs-mark"><span>N</span><span>G</span><span>S</span></span>
-      <span class="nav-name">Pathway Navigator</span>
-    </a>
-    <div class="nav-right">
-      <div class="nav-toggle" id="currencyToggle">
-        <button data-cur="PHP" class="active">PHP ₱</button>
-        <button data-cur="USD">USD $</button>
-      </div>
-      <span class="nav-badge">Mentor View</span>
-      <a class="nav-back" href="index.html">← All scholars</a>
-    </div>
-  </div>
-</header>
-
-<main class="wrap">
-
-  <!-- ═══ 1. ESCALATIONS & ALERTS ═══ -->
-  <section class="section" data-screen-label="Alerts">
-    <div class="eyebrow"><span class="num">01</span> Escalations &amp; Alerts <span class="eyebrow-rule"></span></div>
-    <div class="section-head">
-      <h2 class="section-title">What needs attention</h2>
-      <span class="section-note">Dismiss as you resolve each item.</span>
-    </div>
-    <div class="alert-list" id="alertList"></div>
-  </section>
-
-  <!-- ═══ 2. SCHOLAR STATUS ═══ -->
-  <section class="section" data-screen-label="Scholar status">
-    <div class="eyebrow"><span class="num">02</span> Scholar Status <span class="eyebrow-rule"></span></div>
-    <div class="section-head">
-      <h2 class="section-title">Three lives in motion</h2>
-      <span class="section-note">Live academic &amp; investment snapshot.</span>
-    </div>
-    <div class="status-grid" id="statusGrid"></div>
-  </section>
-
-  <!-- ═══ 3. LOG UPDATE ═══ -->
-  <section class="section" data-screen-label="Log update">
-    <div class="eyebrow"><span class="num">03</span> Log Update <span class="eyebrow-rule"></span></div>
-    <div class="section-head">
-      <h2 class="section-title">Record an update</h2>
-      <span class="section-note">GPA entries below the floor raise an alert automatically.</span>
-    </div>
-    <div class="log-card">
-      <form class="log-form" id="logForm">
-        <div class="field">
-          <label for="logScholar">Scholar</label>
-          <select id="logScholar"></select>
-        </div>
-        <div class="field">
-          <label for="logType">Type</label>
-          <select id="logType">
-            <option>GPA</option><option>Expense</option><option>Milestone</option>
-            <option>English</option><option>Travel</option><option>Alert</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="logDetail">Details</label>
-          <input id="logDetail" type="text" placeholder="e.g. Y2·S2 midterm GPA 80.4"/>
-        </div>
-        <button class="log-btn" type="submit">Log</button>
-      </form>
-      <div class="log-feed" id="logFeed"></div>
-    </div>
-  </section>
-
-  <!-- ═══ 4. EXPENSE DASHBOARD ═══ -->
-  <section class="section" data-screen-label="Expenses">
-    <div class="eyebrow"><span class="num">04</span> Expense Dashboard <span class="eyebrow-rule"></span></div>
-    <div class="section-head">
-      <h2 class="section-title">Where the investment goes</h2>
-    </div>
-    <div class="exp-controls">
-      <div class="tabs" id="expTabs"></div>
-      <div class="viewtoggle" id="expView">
-        <button data-view="sem" class="active">By Semester</button>
-        <button data-view="cat">By Category</button>
-      </div>
-    </div>
-    <div class="totals-row" id="totalsRow"></div>
-    <div class="chart-card" id="chartCard"></div>
-    <div class="exp-table-card">
-      <div class="exp-toolbar">
-        <input id="expSearch" type="text" placeholder="Search items…"/>
-        <select id="expSem"></select>
-      </div>
-      <table class="exp">
-        <thead><tr>
-          <th>Item</th><th>Category</th><th>Date</th>
-          <th class="right">Amount</th><th>Status</th>
-        </tr></thead>
-        <tbody id="expBody"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- ═══ 5. CRITICAL DEADLINES ═══ -->
-  <section class="section" data-screen-label="Deadlines">
-    <div class="eyebrow"><span class="num">05</span> Critical Deadlines <span class="eyebrow-rule"></span></div>
-    <div class="section-head">
-      <h2 class="section-title">On the calendar</h2>
-    </div>
-    <div class="dl-card">
-      <table class="dl">
-        <thead><tr>
-          <th>Event</th><th>Scholar</th><th>When</th><th>Category</th><th>Urgency</th>
-        </tr></thead>
-        <tbody id="dlBody"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- ═══ 6. MENTOR ACTION ITEMS ═══ -->
-  <section class="section" data-screen-label="Action items">
-    <div class="eyebrow"><span class="num">06</span> Mentor Action Items <span class="eyebrow-rule"></span></div>
-    <div class="section-head">
-      <h2 class="section-title">This week’s checklist</h2>
-      <span class="section-note" id="actionCount"></span>
-    </div>
-    <div class="actions-list" id="actionsList"></div>
-  </section>
-
-  <!-- ═══ 7. ENGLISH DEVELOPMENT PULSE ═══ -->
-  <section class="section" data-screen-label="English pulse">
-    <div class="eyebrow"><span class="num">07</span> English Development Pulse <span class="eyebrow-rule"></span></div>
-    <div class="section-head">
-      <h2 class="section-title">From Cebu to the world</h2>
-    </div>
-    <div class="eng-grid">
-      <div class="eng-card">
-        <div class="eng-scholar">Claire · Active</div>
-        <div class="eng-stage">Stage 3 — English Only in Messenger</div>
-        <p class="eng-desc">All mentor chat now happens exclusively in English. Fluency is climbing toward the OET preparation window in the senior years.</p>
-        <div class="eng-obs">
-          <div class="eng-ob"><span class="eng-dot pos"></span>Initiates conversations in English without prompting.</div>
-          <div class="eng-ob"><span class="eng-dot pos"></span>Comfortable with clinical and nursing vocabulary.</div>
-          <div class="eng-ob"><span class="eng-dot watch"></span>Spoken confidence still trails written fluency.</div>
-          <div class="eng-ob"><span class="eng-dot pending"></span>ChatGPT Advanced Voice bootcamp queued for Summer Y3.</div>
-        </div>
-      </div>
-      <div class="eng-card">
-        <div class="eng-scholar">April · Trial</div>
-        <div class="eng-stage">Stage 1 — Foundation</div>
-        <p class="eng-desc">Building daily communication habits with the mentor during the trial period. Structured English work begins on university entry.</p>
-        <div class="eng-obs">
-          <div class="eng-ob"><span class="eng-dot pos"></span>Responds daily to mentor check-ins.</div>
-          <div class="eng-ob"><span class="eng-dot watch"></span>Mixes Cebuano and English; vocabulary still forming.</div>
-          <div class="eng-ob"><span class="eng-dot pending"></span>Progressive English with mentor starts Year 1.</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-</main>
-
-<!-- ════════════════ FOOTER ════════════════ -->
-<footer class="footer">
-  <div class="wrap">
-    <div class="footer-mark">
-      <span class="ngs-mark on-navy"><span>N</span><span>G</span><span>S</span></span>
-      <div class="footer-tag">One generation lifts another.</div>
-    </div>
-    <div class="footer-fine">
-      <span>Pathway Navigator · Mentor View · Phase 1</span>
-      <span id="footUpdated"></span>
-    </div>
-  </div>
-</footer>
-
-<script type="module" src="/src/navigator.js"></script>
-
-
-<template id="__bundler_thumbnail" data-bg-color="#0E1A33">
-  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
-    <rect width="1200" height="800" fill="#0E1A33"/>
-    <g fill="#C9A84C" font-family="Georgia, serif" text-anchor="middle">
-      <text x="600" y="360" font-size="120" font-style="italic">Navigator</text>
-      <text x="600" y="450" font-size="30" letter-spacing="8">MENTOR VIEW</text>
-    </g>
-  </svg>
-</template>
-
-</body>
-</html>

@@ -592,3 +592,5 @@ const NGS_DATA = {
   ],
 
 };
+
+export { NGS_DATA };
