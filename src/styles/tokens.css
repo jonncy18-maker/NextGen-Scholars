@@ -1,0 +1,22 @@
+/* NextGen Scholars — design tokens shared across all pages */
+:root {
+  --ngs-navy: #1B2A4A;
+  --ngs-navy-deep: #131F38;
+  --ngs-navy-ink: #0E1A33;
+  --ngs-gold: #C9A84C;
+  --ngs-gold-soft: #E4C97A;
+  --ngs-paper: #FAF7F0;
+  --ngs-paper-2: #F2EDE2;
+  --ngs-ink: #1A1A1A;
+  --ngs-ink-soft: #2C3142;
+  --ngs-muted: #6B6E7A;
+  --ngs-rule: rgba(27, 42, 74, 0.12);
+  --ngs-rule-light: rgba(255, 255, 255, 0.18);
+  --ngs-red: #B11B2A;
+  --ngs-blue: #0038A8;
+  --ngs-yellow: #FCD116;
+
+  --ngs-display: 'Newsreader', 'Source Serif Pro', 'Iowan Old Style', Georgia, serif;
+  --ngs-sans: 'Manrope', 'Helvetica Neue', Helvetica, system-ui, sans-serif;
+  --ngs-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
