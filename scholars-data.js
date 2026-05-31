@@ -36,8 +36,8 @@ const NGS_DATA = {
         { sem: 'Trial · G12', gpa: 85,    status: 'good' },
         { sem: 'Y1S1',        gpa: null,   status: 'excluded', note: 'Excluded from actuals' },
         { sem: 'Y1S2',        gpa: 83.25,  status: 'good' },
-        { sem: 'Y2S1',        gpa: 88.16,  status: 'good' },
-        { sem: 'Y2S2',        gpa: 81.36,  status: 'warn' },
+        { sem: 'Y2S1',        gpa: 81.36,  status: 'warn' },
+        { sem: 'Y2S2',        gpa: null,   status: 'active' },
       ],
 
       // Milestones
@@ -276,8 +276,7 @@ const NGS_DATA = {
           current: { label: 'Year 2 · S1 — Latest GPA', value: 81.36, floor: 81 },
           history: [
             { label: 'Trial · Grade 12',  value: '85%+',        status: 'good' },
-            { label: 'Year 1 · S1',       value: '83.25%',      status: 'good' },
-            { label: 'Year 1 · S2',       value: '88.16%',      status: 'good' },
+            { label: 'Year 1 · S2',       value: '83.25%',      status: 'good' },
             { label: 'Year 2 · S1',       value: '81.36%',      status: 'warn' },
             { label: 'Year 2 · S2',       value: 'In progress', status: 'active' },
           ],
