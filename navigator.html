@@ -247,6 +247,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
   border-top: 3px solid var(--ngs-gold); overflow: hidden;
   display: flex; flex-direction: column;
 }
+.scard.accent-gold  { border-top-color: var(--ngs-gold); }
 .scard.accent-navy  { border-top-color: var(--ngs-navy); }
 .scard.accent-muted { border-top-color: var(--ngs-muted); }
 .scard-body { padding: 22px 22px 20px; flex: 1; display: flex; flex-direction: column; }
@@ -725,8 +726,41 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
   function latestGpa(s) {
     const key = s._key;
     if (state.liveGpa[key] != null) return state.liveGpa[key];
-    const closed = s.academics.filter(a => a.gpa != null);
+    const closed = (s.academics || []).filter(a => a.gpa != null);
     return closed.length ? closed[closed.length - 1].gpa : null;
+  }
+
+  // ── derived aggregates ──
+  // scholars-data.js stores per-semester budgets plus milestones[]/travels[]
+  // arrays; this dashboard template expects rolled-up totals and a single
+  // nextMilestone. Derive them here so the data file stays untouched.
+  function sumActual(s) {
+    return allExpenses(s).reduce((t, e) => t + (e.avb === 'Actual' ? (e.amount || 0) : 0), 0);
+  }
+  function sumMilestones(s) {
+    // only realized (delivered) milestones count toward invested-to-date
+    return (s.milestones || []).reduce((t, m) => t + (m.state === 'done' ? (m.amountPhp || 0) : 0), 0);
+  }
+  function sumTravel(s) {
+    // only completed trips count toward invested-to-date
+    return (s.travels || []).reduce((t, v) => t + (v.state === 'done' ? (v.amountPhp || 0) : 0), 0);
+  }
+  function sumAllocated(s) {
+    return Object.values(s.budgets || {}).reduce((t, v) => t + (typeof v === 'number' ? v : 0), 0);
+  }
+  function scholarTotals(s) {
+    const university = sumActual(s);
+    const milestones = sumMilestones(s);
+    const travel = sumTravel(s);
+    return { university, milestones, travel, total: university + milestones + travel, allocated: sumAllocated(s) };
+  }
+  function nextMilestone(s) {
+    const f = (s.milestones || []).find(m => m.state !== 'done');
+    if (!f) return { name: 'All milestones complete', detail: '—' };
+    return { name: f.name, detail: f.sem ? ('Expected · ' + f.sem) : 'Upcoming' };
+  }
+  function accentFor(s) {
+    return s.status === 'active' ? 'gold' : s.status === 'trial' ? 'navy' : 'muted';
   }
 
   // ════════════ 1. ALERTS ════════════
@@ -762,10 +796,12 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
     SCHOLAR_KEYS.forEach(k => {
       const s = D.scholars[k]; s._key = k;
       const gpa = latestGpa(s);
-      const budgetPct = s.budgets.allocated ? Math.round(s.budgets.total / s.budgets.allocated * 100) : 0;
+      const tot = scholarTotals(s);
+      const budgetPct = tot.allocated ? Math.min(100, Math.round(tot.total / tot.allocated * 100)) : 0;
+      const next = nextMilestone(s);
       const pillCls = s.status === 'active' ? 'active' : s.status === 'trial' ? 'trial' : 'paused';
       const pillTxt = s.status === 'active' ? 'Active' : s.status === 'trial' ? 'Trial' : 'Paused';
-      const card = el('article', 'scard accent-' + s.accent);
+      const card = el('article', 'scard accent-' + accentFor(s));
       card.dataset.scholar = k;
       card.innerHTML =
         '<div class="scard-body">' +
@@ -773,16 +809,16 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
           '<span class="pill ' + pillCls + '">' + pillTxt + '</span></div>' +
           '<div class="scard-school">' + s.school + '</div>' +
           '<div class="metric-grid">' +
-            '<div class="metric"><div class="metric-val">' + s.currentSem + '</div><div class="metric-lbl">Current<br>Sem</div></div>' +
+            '<div class="metric"><div class="metric-val">' + (s.currentSem || '—') + '</div><div class="metric-lbl">Current<br>Sem</div></div>' +
             '<div class="metric"><div class="metric-val ' + gpaClass(gpa, s.gpaFloor) + '" data-gpa-cell>' + (gpa != null ? gpa.toFixed(2) + '%' : '—') + '</div><div class="metric-lbl">Last<br>GPA</div></div>' +
-            '<div class="metric"><div class="metric-val" data-amt="' + s.budgets.total + '">' + fmt(s.budgets.total) + '</div><div class="metric-lbl">Total<br>Invested</div></div>' +
+            '<div class="metric"><div class="metric-val" data-amt="' + tot.total + '">' + fmt(tot.total) + '</div><div class="metric-lbl">Total<br>Invested</div></div>' +
             '<div class="metric"><div class="metric-val">' + budgetPct + '%</div><div class="metric-lbl">Budget<br>Used</div></div>' +
           '</div>' +
           '<div class="scard-prog"><div class="scard-prog-fill" style="width:0%"></div></div>' +
-          '<div class="scard-prog-lbl">Floor ' + s.gpaFloor + '% · ' + budgetPct + '% of allocation deployed</div>' +
+          '<div class="scard-prog-lbl">' + (s.gpaFloor != null ? 'Floor ' + s.gpaFloor + '% · ' : '') + budgetPct + '% of allocation deployed</div>' +
           '<div class="scard-next"><div class="scard-next-lbl">Next milestone</div>' +
-          '<div class="scard-next-name">' + s.nextMilestone.name + '</div>' +
-          '<div class="scard-next-detail">' + s.nextMilestone.detail + '</div></div>' +
+          '<div class="scard-next-name">' + next.name + '</div>' +
+          '<div class="scard-next-detail">' + next.detail + '</div></div>' +
         '</div>';
       grid.appendChild(card);
       requestAnimationFrame(() => { card.querySelector('.scard-prog-fill').style.width = budgetPct + '%'; });
@@ -848,7 +884,7 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
   // ════════════ 4. EXPENSE DASHBOARD ════════════
   function allExpenses(s) {
     const out = [];
-    Object.keys(s.expenses).forEach(sem => s.expenses[sem].forEach(e => out.push(Object.assign({ sem }, e))));
+    Object.keys(s.expenses).forEach(sem => s.expenses[sem].forEach(e => out.push(Object.assign({ sem, status: e.avb }, e))));
     return out;
   }
   function initExpense() {
@@ -878,7 +914,7 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
 
   function renderTotals() {
     const s = D.scholars[state.expScholar];
-    const b = s.budgets;
+    const b = scholarTotals(s);
     const row = $('#totalsRow');
     row.innerHTML =
       '<div class="total-card lead"><div class="total-val" data-amt="' + b.total + '">' + fmt(b.total) + '</div><div class="total-lbl">Total Invested</div></div>' +
@@ -894,7 +930,7 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
       const sems = Object.keys(s.expenses);
       const data = sems.map(sem => {
         let actual = 0, budget = 0;
-        s.expenses[sem].forEach(e => { if (e.status === 'Actual') actual += e.amount; else budget += e.amount; });
+        s.expenses[sem].forEach(e => { if (e.avb === 'Actual') actual += e.amount; else budget += e.amount; });
         return { sem, actual, budget };
       });
       const max = Math.max(1, ...data.flatMap(d => [d.actual, d.budget]));
