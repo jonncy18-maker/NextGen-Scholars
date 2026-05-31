@@ -513,6 +513,7 @@ function Footer() {
       <div className="ngs-footer-fine">
         <span>© 2026 NextGen Scholars · Philippines · United States</span>
         <span>Privately funded · No public donations accepted</span>
+        <a href="navigator.html" style={{opacity: 0.5, fontSize: '0.75rem', marginTop: '0.25rem'}}>Mentor view →</a>
       </div>
     </footer>
   );
