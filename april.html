@@ -12,6 +12,7 @@
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="scholars-data.js"></script>
 
 <style>
 /* ── base ── */
@@ -1631,152 +1632,8 @@ window.ScholarProfile = ScholarProfile;
 </script>
 
 <script type="text/babel">
-// April's data — Trial period, Cohort 2032.
-// Source: ported from uploads/april.html with rounded peso figures.
-
-const APRIL_DATA = {
-  firstName: 'April',
-  track: 'NGN',
-  trackName: 'NextGen Nurses · Trial',
-  cohort: 'Cohort 2032',
-  school: 'Senior High School',
-  city: 'Cebu',
-  program: 'Grade 11 · Trial period',
-  status: 'trial',
-  statusLabel: 'Trial Scholar',
-  updated: 'Updated May 2026',
-
-  quote: 'I\u2019m still in high school, but I already know where I\u2019m going.',
-
-  headlineStats: [
-    { value: 'G11',   label: 'Current Year' },
-    { value: '2 yrs', label: 'Trial Period' },
-    { value: '2032',  label: 'BSN Target' },
-  ],
-
-  trialBanner:
-    'April is in her <strong>2-year trial period</strong> (Grade 11–12). ' +
-    'Full NGN scholarship begins on successful Senior High completion with a ' +
-    'minimum <strong>85% average</strong>. Trial started May/June 2025.',
-
-  trialProgress: {
-    title: 'Four semesters to clear.',
-    intro:
-      'Trial began with an 85% average at the end of Grade 10. The same floor ' +
-      'must hold every semester to remain in the program.',
-    semesters: [
-      { label: 'G11 · S1', grade: '—', state: 'active', status: 'In progress' },
-      { label: 'G11 · S2', grade: '—', state: 'future', status: 'Upcoming' },
-      { label: 'G12 · S1', grade: '—', state: 'future', status: 'Future' },
-      { label: 'G12 · S2', grade: '—', state: 'future', status: 'Future' },
-    ],
-    floor: 'Entry requirement: 85% minimum each semester',
-    floorDetail: 'Trial began with 85% average at the end of Grade 10',
-    nextSteps: [
-      { name: 'Complete G11 → G12',     detail: 'Maintain 85%+ every semester to stay in the program', highlight: true },
-      { name: 'Full scholarship entry', detail: 'Upon G12 graduation → BSN Nursing at university' },
-      { name: 'Reward — Chromebook',    detail: 'Upon completing Grade 12 successfully' },
-      { name: 'Reward — Motorcycle',    detail: 'Program infrastructure upon entering university' },
-      { name: 'BSN target graduation',  detail: 'Cohort 2032 · Road to Australia begins' },
-    ],
-  },
-
-  currentSemester: {
-    title: 'Grade 11, Semester One.',
-    intro: 'Six core subjects. The first semester of a four-semester trial.',
-    period: 'G11',
-    year: '2025',
-    subjects: [
-      'Oral Communication',
-      '21st Century Literature',
-      'General Mathematics',
-      'Earth & Life Science',
-      'Personal Development',
-      'Physical Education',
-    ],
-  },
-
-  support: {
-    title: 'Trial period investment.',
-    intro:
-      'During the trial period the program provides limited support — enough to ' +
-      'demonstrate commitment and keep communication open. Full scholarship ' +
-      'investment begins upon university entry.',
-    categories: [
-      { icon: 'phone',  name: 'Smartphone',
-        amount: '₱7.5K',
-        detail: 'Redmi Note 14 · 6+128GB · Provided at trial entry, April 2026.' },
-      { icon: 'card',   name: 'Mobile data plan',
-        amount: 'Ongoing',
-        detail: 'Maintained throughout trial to support daily mentor check-ins.' },
-      { icon: 'cap',    name: 'Full scholarship',
-        amount: 'From 2027',
-        detail: 'Tuition, board, milestone rewards, and travel program activate on BSN entry.' },
-    ],
-  },
-
-  milestones: [
-    { icon: 'check',  name: 'Grade 10 Completed',
-      detail: '85% average · Triggered trial period entry',
-      state: 'done', badge: 'Done' },
-    { icon: 'phone',  name: 'Smartphone',
-      detail: 'Redmi Note 14 · 6+128GB · Trial G11 entry · April 2026',
-      state: 'done', badge: 'Done' },
-    { icon: 'cap',    name: 'Complete Grade 11',
-      detail: '85% minimum required to continue trial',
-      state: 'future', badge: 'In Trial' },
-    { icon: 'cap',    name: 'Complete Grade 12',
-      detail: '85% minimum · Unlocks full scholarship',
-      state: 'future', badge: '2027' },
-    { icon: 'laptop', name: 'Chromebook',
-      detail: 'Upon completing Grade 12',
-      state: 'future', badge: '2027' },
-    { icon: 'bike',   name: 'Motorcycle',
-      detail: 'Program infrastructure · Upon university entry',
-      state: 'future', badge: '2027' },
-    { icon: 'phone',  name: 'iPhone',
-      detail: 'Year 1 university complete',
-      state: 'future', badge: '2028' },
-    { icon: 'au',     name: 'AHPRA License',
-      detail: 'Australian Nursing Registration · Post-graduation',
-      state: 'future', badge: 'Future' },
-  ],
-
-  // No travels section yet — April hasn't earned travel rewards during trial.
-
-  english: {
-    heading: 'Building the foundation.',
-    intro:
-      'Five stages — informal at first, then structured English work begins in ' +
-      'university. OET preparation comes in the senior years.',
-    title: 'Building the Foundation',
-    target: 'OET Grade B (C1 level) · Post-graduation',
-    stages: [
-      { label: 'Trial G11–G12 · Basic communication with mentor · Building habits', state: 'active' },
-      { label: 'Year 1 university · Progressive English with mentor',               state: 'future' },
-      { label: 'Year 2 · FB Messenger exclusively in English with mentor',          state: 'future' },
-      { label: 'Summer Y3 · ChatGPT Advanced Voice Mode bootcamp',                  state: 'future' },
-      { label: 'Year 3–4 · OET preparation · Target B2+/C1',                        state: 'future' },
-    ],
-  },
-
-  pathway: {
-    title: 'Road to Australia.',
-    intro: 'Same nine-step pathway as Claire — April is at step one.',
-    steps: [
-      { label: 'Trial<br/>Period',     state: 'active' },
-      { label: 'BSN<br/>University',   state: 'next' },
-      { label: 'PNLE<br/>Philippines', state: 'next' },
-      { label: '1 Year<br/>Clinical PH', state: 'next' },
-      { label: 'OET<br/>Grade B',      state: 'next' },
-      { label: 'NCLEX<br/>USA',        state: 'next' },
-      { label: 'OSCE<br/>Australia',   state: 'next' },
-      { label: 'AHPRA<br/>License',    state: 'goal' },
-      { label: 'U.S. Option<br/>(Optional)', state: 'optional', connector: 'dashed' },
-    ],
-  },
-};
-
+// April's public profile — sourced from NGS_DATA in scholars-data.js.
+const APRIL_DATA = NGS_DATA.scholars.april.publicProfile;
 window.APRIL_DATA = APRIL_DATA;
 </script>
 
