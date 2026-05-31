@@ -682,7 +682,11 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
 <script>
 (function () {
   'use strict';
-  const D = window.NGS_DATA;
+  // scholars-data.js declares `const NGS_DATA` in the shared global lexical
+  // scope, which is NOT exposed on `window`. Bind to the in-scope identifier
+  // and mirror it onto window so window.NGS_DATA references resolve too.
+  const D = (typeof NGS_DATA !== 'undefined') ? NGS_DATA : window.NGS_DATA;
+  window.NGS_DATA = D;
   const $ = (s, r) => (r || document).querySelector(s);
   const el = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
   const SCHOLAR_KEYS = ['claire', 'april', 'aljane'];
@@ -1012,11 +1016,7 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
     const form = $('#lockForm'), input = $('#lockInput'), err = $('#lockErr');
     form.addEventListener('submit', e => {
       e.preventDefault();
-      const enteredPassword = input.value;
-      console.log('NGS_DATA:', window.NGS_DATA);
-      console.log('password entered:', enteredPassword);
-      console.log('expected:', window.NGS_DATA?.config?.password);
-      if (enteredPassword === D.config.password) {
+      if (input.value === D.config.password) {
         $('#lock').classList.add('is-hidden');
         document.body.style.overflow = '';
       } else {
