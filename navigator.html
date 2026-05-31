@@ -699,6 +699,7 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
     return;
   }
   const el = (tag, cls, html) => { const n = document.createElement(tag); if (cls) n.className = cls; if (html != null) n.innerHTML = html; return n; };
+  const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const SCHOLAR_KEYS = ['claire', 'april', 'aljane'];
   const NAMECLASS = { Claire: '', April: 't-april', Aljane: 't-aljane' };
 
@@ -785,10 +786,10 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
       const node = el('div', 'alert ' + a.severity);
       node.dataset.id = a.id;
       node.innerHTML =
-        '<div class="alert-icon">' + a.icon + '</div>' +
-        '<div class="alert-body"><div class="alert-title">' + a.title + '</div>' +
-        '<div class="alert-sub">' + a.sub + '</div></div>' +
-        '<div class="alert-meta"><span class="scholar-tag ' + (NAMECLASS[a.scholar] || '') + '">' + a.scholar + '</span>' +
+        '<div class="alert-icon">' + esc(a.icon) + '</div>' +
+        '<div class="alert-body"><div class="alert-title">' + esc(a.title) + '</div>' +
+        '<div class="alert-sub">' + esc(a.sub) + '</div></div>' +
+        '<div class="alert-meta"><span class="scholar-tag ' + esc(NAMECLASS[a.scholar] || '') + '">' + esc(a.scholar) + '</span>' +
         '<button class="alert-x" aria-label="Dismiss">×</button></div>';
       node.querySelector('.alert-x').addEventListener('click', () => {
         node.classList.add('dismissing');
@@ -814,20 +815,20 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
       card.dataset.scholar = k;
       card.innerHTML =
         '<div class="scard-body">' +
-          '<div class="scard-head"><div><div class="scard-name">' + s.firstName + '</div></div>' +
-          '<span class="pill ' + pillCls + '">' + pillTxt + '</span></div>' +
-          '<div class="scard-school">' + s.school + '</div>' +
+          '<div class="scard-head"><div><div class="scard-name">' + esc(s.firstName) + '</div></div>' +
+          '<span class="pill ' + esc(pillCls) + '">' + esc(pillTxt) + '</span></div>' +
+          '<div class="scard-school">' + esc(s.school) + '</div>' +
           '<div class="metric-grid">' +
-            '<div class="metric"><div class="metric-val">' + (s.currentSem || '—') + '</div><div class="metric-lbl">Current<br>Sem</div></div>' +
-            '<div class="metric"><div class="metric-val ' + gpaClass(gpa, s.gpaFloor) + '" data-gpa-cell>' + (gpa != null ? gpa.toFixed(2) + '%' : '—') + '</div><div class="metric-lbl">Last<br>GPA</div></div>' +
-            '<div class="metric"><div class="metric-val" data-amt="' + tot.total + '">' + fmt(tot.total) + '</div><div class="metric-lbl">Total<br>Invested</div></div>' +
-            '<div class="metric"><div class="metric-val">' + budgetPct + '%</div><div class="metric-lbl">Budget<br>Used</div></div>' +
+            '<div class="metric"><div class="metric-val">' + esc(s.currentSem || '—') + '</div><div class="metric-lbl">Current<br>Sem</div></div>' +
+            '<div class="metric"><div class="metric-val ' + esc(gpaClass(gpa, s.gpaFloor)) + '" data-gpa-cell>' + esc(gpa != null ? gpa.toFixed(2) + '%' : '—') + '</div><div class="metric-lbl">Last<br>GPA</div></div>' +
+            '<div class="metric"><div class="metric-val" data-amt="' + esc(tot.total) + '">' + esc(fmt(tot.total)) + '</div><div class="metric-lbl">Total<br>Invested</div></div>' +
+            '<div class="metric"><div class="metric-val">' + esc(budgetPct) + '%</div><div class="metric-lbl">Budget<br>Used</div></div>' +
           '</div>' +
           '<div class="scard-prog"><div class="scard-prog-fill" style="width:0%"></div></div>' +
-          '<div class="scard-prog-lbl">' + (s.gpaFloor != null ? 'Floor ' + s.gpaFloor + '% · ' : '') + budgetPct + '% of allocation deployed</div>' +
+          '<div class="scard-prog-lbl">' + esc(s.gpaFloor != null ? 'Floor ' + s.gpaFloor + '% · ' : '') + esc(budgetPct) + '% of allocation deployed</div>' +
           '<div class="scard-next"><div class="scard-next-lbl">Next milestone</div>' +
-          '<div class="scard-next-name">' + next.name + '</div>' +
-          '<div class="scard-next-detail">' + next.detail + '</div></div>' +
+          '<div class="scard-next-name">' + esc(next.name) + '</div>' +
+          '<div class="scard-next-detail">' + esc(next.detail) + '</div></div>' +
         '</div>';
       grid.appendChild(card);
       requestAnimationFrame(() => { card.querySelector('.scard-prog-fill').style.width = budgetPct + '%'; });
@@ -881,11 +882,11 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
     }
     state.logs.slice(0, 5).forEach(l => {
       const row = el('div', 'log-row');
-      row.innerHTML =
-        '<span class="log-time">' + l.ts + '</span>' +
-        '<span class="scholar-tag ' + (NAMECLASS[l.scholar] || '') + '">' + l.scholar + '</span>' +
-        '<span class="log-type">' + l.type + '</span>' +
-        '<span class="log-detail">' + l.detail + '</span>';
+      const time = el('span', 'log-time'); time.textContent = l.ts;
+      const tag = el('span', 'scholar-tag ' + (NAMECLASS[l.scholar] || '')); tag.textContent = l.scholar;
+      const type = el('span', 'log-type'); type.textContent = l.type;
+      const detail = el('span', 'log-detail'); detail.textContent = l.detail;
+      row.append(time, tag, type, detail);
       feed.appendChild(row);
     });
   }
@@ -899,7 +900,8 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
   function initExpense() {
     const tabs = $('#expTabs');
     SCHOLAR_KEYS.forEach(k => {
-      const b = el('button', 'tab' + (k === state.expScholar ? ' active' : ''), D.scholars[k].firstName);
+      const b = el('button', 'tab' + (k === state.expScholar ? ' active' : ''));
+      b.textContent = D.scholars[k].firstName;
       b.dataset.scholar = k;
       b.addEventListener('click', () => {
         state.expScholar = k; state.expSem = 'all'; state.expSearch = '';
@@ -926,10 +928,10 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
     const b = scholarTotals(s);
     const row = $('#totalsRow');
     row.innerHTML =
-      '<div class="total-card lead"><div class="total-val" data-amt="' + b.total + '">' + fmt(b.total) + '</div><div class="total-lbl">Total Invested</div></div>' +
-      '<div class="total-card"><div class="total-val" data-amt="' + b.university + '">' + fmt(b.university) + '</div><div class="total-lbl">Universidad</div></div>' +
-      '<div class="total-card"><div class="total-val" data-amt="' + b.milestones + '">' + fmt(b.milestones) + '</div><div class="total-lbl">Milestones</div></div>' +
-      '<div class="total-card"><div class="total-val" data-amt="' + b.travel + '">' + fmt(b.travel) + '</div><div class="total-lbl">Viajes</div></div>';
+      '<div class="total-card lead"><div class="total-val" data-amt="' + esc(b.total) + '">' + esc(fmt(b.total)) + '</div><div class="total-lbl">Total Invested</div></div>' +
+      '<div class="total-card"><div class="total-val" data-amt="' + esc(b.university) + '">' + esc(fmt(b.university)) + '</div><div class="total-lbl">Universidad</div></div>' +
+      '<div class="total-card"><div class="total-val" data-amt="' + esc(b.milestones) + '">' + esc(fmt(b.milestones)) + '</div><div class="total-lbl">Milestones</div></div>' +
+      '<div class="total-card"><div class="total-val" data-amt="' + esc(b.travel) + '">' + esc(fmt(b.travel)) + '</div><div class="total-lbl">Viajes</div></div>';
   }
 
   function renderChart() {
@@ -948,11 +950,11 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
         const ah = Math.round(d.actual / max * 100);
         const bh = Math.round(d.budget / max * 100);
         bars += '<div class="bar-group"><div class="bar-pair">' +
-          '<div class="bar actual" style="height:' + ah + '%"><span class="bar-tip">' + fmt(d.actual) + '</span></div>' +
-          '<div class="bar budget" style="height:' + bh + '%"><span class="bar-tip">' + fmt(d.budget) + '</span></div>' +
+          '<div class="bar actual" style="height:' + esc(ah) + '%"><span class="bar-tip">' + esc(fmt(d.actual)) + '</span></div>' +
+          '<div class="bar budget" style="height:' + esc(bh) + '%"><span class="bar-tip">' + esc(fmt(d.budget)) + '</span></div>' +
           '</div></div>';
       });
-      bars += '</div><div class="bar-xlabels">' + data.map(d => '<div class="bar-xlabel">' + d.sem + '</div>').join('') + '</div>';
+      bars += '</div><div class="bar-xlabels">' + data.map(d => '<div class="bar-xlabel">' + esc(d.sem) + '</div>').join('') + '</div>';
       bars += '<div class="legend"><div class="legend-item"><span class="legend-swatch actual"></span>Actual spend</div>' +
         '<div class="legend-item"><span class="legend-swatch budget"></span>Budgeted / projected</div></div>';
       card.innerHTML = bars;
@@ -966,9 +968,9 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
       const max = Math.max(1, ...entries.map(e => e[1]));
       let rows = '<div class="cat-rows">';
       entries.forEach(([cat, val]) => {
-        rows += '<div class="cat-row"><div class="cat-label">' + cat + '</div>' +
-          '<div class="cat-track"><div class="cat-fill" data-w="' + (val / max * 100) + '"></div></div>' +
-          '<div class="cat-val" data-amt="' + val + '">' + fmt(val) + '</div></div>';
+        rows += '<div class="cat-row"><div class="cat-label">' + esc(cat) + '</div>' +
+          '<div class="cat-track"><div class="cat-fill" data-w="' + esc(val / max * 100) + '"></div></div>' +
+          '<div class="cat-val" data-amt="' + esc(val) + '">' + esc(fmt(val)) + '</div></div>';
       });
       rows += '</div>';
       card.innerHTML = rows;
@@ -980,7 +982,7 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
     const s = D.scholars[state.expScholar];
     const sel = $('#expSem');
     sel.innerHTML = '<option value="all">All semesters</option>' +
-      Object.keys(s.expenses).map(sem => '<option value="' + sem + '">' + sem + '</option>').join('');
+      Object.keys(s.expenses).map(sem => '<option value="' + esc(sem) + '">' + esc(sem) + '</option>').join('');
     sel.value = state.expSem;
   }
 
@@ -999,11 +1001,11 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
     rows.forEach(r => {
       const tr = el('tr');
       tr.innerHTML =
-        '<td><span class="exp-item">' + r.item + '</span></td>' +
-        '<td><span class="exp-cat">' + r.cat + '</span></td>' +
-        '<td class="exp-date">' + r.date + '</td>' +
-        '<td class="right exp-amount" data-amt="' + r.amount + '">' + fmt(r.amount) + '</td>' +
-        '<td><span class="exp-status ' + r.status + '">' + r.status + '</span></td>';
+        '<td><span class="exp-item">' + esc(r.item) + '</span></td>' +
+        '<td><span class="exp-cat">' + esc(r.cat) + '</span></td>' +
+        '<td class="exp-date">' + esc(r.date) + '</td>' +
+        '<td class="right exp-amount" data-amt="' + esc(r.amount) + '">' + esc(fmt(r.amount)) + '</td>' +
+        '<td><span class="exp-status ' + esc(r.status) + '">' + esc(r.status) + '</span></td>';
       body.appendChild(tr);
     });
   }
@@ -1015,11 +1017,11 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
     [...D.deadlines].sort((a, b) => a.sort - b.sort).forEach(d => {
       const tr = el('tr');
       tr.innerHTML =
-        '<td><span class="dl-event">' + d.event + '</span></td>' +
-        '<td><span class="scholar-tag ' + (NAMECLASS[d.scholar] || '') + '">' + d.scholar + '</span></td>' +
-        '<td class="dl-when">' + d.when + '</td>' +
-        '<td class="dl-cat">' + d.cat + '</td>' +
-        '<td><span class="urg ' + d.urgency + '">' + d.urgency + '</span></td>';
+        '<td><span class="dl-event">' + esc(d.event) + '</span></td>' +
+        '<td><span class="scholar-tag ' + esc(NAMECLASS[d.scholar] || '') + '">' + esc(d.scholar) + '</span></td>' +
+        '<td class="dl-when">' + esc(d.when) + '</td>' +
+        '<td class="dl-cat">' + esc(d.cat) + '</td>' +
+        '<td><span class="urg ' + esc(d.urgency) + '">' + esc(d.urgency) + '</span></td>';
       body.appendChild(tr);
     });
   }
@@ -1033,9 +1035,9 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
       const item = el('div', 'action' + (done ? ' done' : ''));
       item.innerHTML =
         '<span class="checkbox">✓</span>' +
-        '<span class="action-text">' + a.text + '</span>' +
-        '<span class="scholar-tag ' + (NAMECLASS[a.scholar] || '') + '">' + a.scholar + '</span>' +
-        '<span class="action-cat">' + a.cat + '</span>';
+        '<span class="action-text">' + esc(a.text) + '</span>' +
+        '<span class="scholar-tag ' + esc(NAMECLASS[a.scholar] || '') + '">' + esc(a.scholar) + '</span>' +
+        '<span class="action-cat">' + esc(a.cat) + '</span>';
       item.addEventListener('click', () => { state.checked[a.id] = !state.checked[a.id]; renderActions(); });
       list.appendChild(item);
     });
