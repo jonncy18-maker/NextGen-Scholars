@@ -2,12 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import './styles/navigator.css';
 import { NGS_DATA } from '../scholars-data.js';
+import { loadFromSheets } from './sheets-loader.js';
 
 if (!NGS_DATA || !NGS_DATA.config) {
   throw new Error('NGS_DATA missing — hard-refresh (Ctrl/Cmd+Shift+R)');
 }
 
-const D = NGS_DATA;
+// Mutable so the Sheets loader can swap in live data without restructuring the file.
+let D = NGS_DATA;
 const SCHOLAR_KEYS = ['claire', 'april', 'aljane'].filter(k => D.scholars[k]);
 const NAMECLASS = { Claire: '', April: 't-april', Aljane: 't-aljane' };
 
@@ -570,7 +572,14 @@ function EnglishSection() {
 
 // ── footer ────────────────────────────────────────────────────────────────────
 
-function NavFooter() {
+const SHEETS_LABEL = {
+  loading: { text: 'Sheets · syncing…', cls: 'sheets-loading' },
+  live:    { text: 'Sheets · live',     cls: 'sheets-live'    },
+  static:  { text: 'Sheets · offline',  cls: 'sheets-static'  },
+};
+
+function NavFooter({ sheetsStatus }) {
+  const pill = SHEETS_LABEL[sheetsStatus] || SHEETS_LABEL.static;
   return (
     <footer className="footer">
       <div className="wrap">
@@ -580,6 +589,7 @@ function NavFooter() {
         </div>
         <div className="footer-fine">
           <span>Pathway Navigator · Mentor View · Phase 1</span>
+          <span className={`sheets-pill ${pill.cls}`}>{pill.text}</span>
           <span>Last updated · {D.config.lastUpdated}</span>
         </div>
       </div>
@@ -595,6 +605,20 @@ function Navigator() {
   const [alerts, setAlerts] = useState(() => (D.alerts || []).map(a => ({ ...a })));
   const [logs, setLogs] = useState([]);
   const [liveGpa, setLiveGpa] = useState({});
+  const [sheetsStatus, setSheetsStatus] = useState('loading'); // 'loading' | 'live' | 'static'
+
+  useEffect(() => {
+    loadFromSheets()
+      .then(data => {
+        D = data;
+        setAlerts((D.alerts || []).map(a => ({ ...a })));
+        setSheetsStatus('live');
+      })
+      .catch(err => {
+        console.warn('Sheets unavailable, using static data:', err.message);
+        setSheetsStatus('static');
+      });
+  }, []);
 
   function handleDismiss(id) {
     setAlerts(prev => prev.map(a => a.id === id ? { ...a, _dismissed: true } : a));
@@ -635,7 +659,7 @@ function Navigator() {
         <ActionsSection />
         <EnglishSection />
       </main>
-      <NavFooter />
+      <NavFooter sheetsStatus={sheetsStatus} />
     </>
   );
 }
