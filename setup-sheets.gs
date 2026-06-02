@@ -23,8 +23,7 @@ function setupNGSData() {
   const defaultSheet = ss.getSheetByName('Sheet1');
   if (defaultSheet) ss.deleteSheet(defaultSheet);
 
-  SpreadsheetApp.flush();
-  Browser.msgBox('✅ NGS data loaded into all tabs!');
+  Logger.log('✅ NGS data loaded into all tabs!');
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -37,18 +36,14 @@ function writeSheet(ss, name, headers, rows) {
   const sh = getOrCreate(ss, name);
   sh.clearContents();
 
-  // Header row — bold + light blue fill
-  const headerRange = sh.getRange(1, 1, 1, headers.length);
-  headerRange.setValues([headers]);
-  headerRange.setFontWeight('bold');
-  headerRange.setBackground('#c9daf8');
+  // Write header + data in one batch call
+  const allRows = [headers, ...rows];
+  sh.getRange(1, 1, allRows.length, headers.length).setValues(allRows);
 
-  if (rows.length) {
-    sh.getRange(2, 1, rows.length, headers.length).setValues(rows);
-  }
-
+  // Bold header row only (no autoResize — it's too slow across 10 sheets)
+  sh.getRange(1, 1, 1, headers.length).setFontWeight('bold');
   sh.setFrozenRows(1);
-  sh.autoResizeColumns(1, headers.length);
+
   return sh;
 }
 
