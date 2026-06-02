@@ -610,7 +610,17 @@ function Navigator() {
   useEffect(() => {
     loadFromSheets()
       .then(data => {
-        D = data;
+        // Sanity-check: if the sheet returned HTML instead of CSV the scholars
+        // object will be empty. Fall back to static data in that case.
+        const hasScholars = data.scholars && Object.keys(data.scholars).length > 0;
+        if (!hasScholars) {
+          console.warn('Sheets returned no scholar data — using static fallback');
+          setSheetsStatus('static');
+          return;
+        }
+        // Password is cosmetic; always keep the value from scholars-data.js so
+        // a misconfigured sheet can't lock the mentor out.
+        D = { ...data, config: { ...data.config, password: NGS_DATA.config.password } };
         setAlerts((D.alerts || []).map(a => ({ ...a })));
         setSheetsStatus('live');
       })
