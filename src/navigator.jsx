@@ -43,7 +43,7 @@ function allExpenses(s) {
 function scholarTotals(s) {
   const university = allExpenses(s).reduce((t, e) => t + (e.avb === 'Actual' ? (e.amount || 0) : 0), 0);
   const milestones = (s.milestones || []).reduce((t, m) => t + (m.state === 'done' ? (m.amountPhp || 0) : 0), 0);
-  const travel = (s.travels || []).reduce((t, v) => t + (v.state === 'done' ? (v.amountPhp || 0) : 0), 0);
+  const travel = (s.travels || []).reduce((t, v) => t + ((v.state === 'done' || v.state === 'booked') ? (v.amountPhp || 0) : 0), 0);
   const allocated = Object.values(s.budgets || {}).reduce((t, v) => t + (typeof v === 'number' ? v : 0), 0);
   return { university, milestones, travel, total: university + milestones + travel, allocated };
 }
@@ -56,6 +56,156 @@ function nextMilestone(s) {
 
 function accentFor(s) {
   return s.status === 'active' ? 'gold' : s.status === 'trial' ? 'navy' : 'muted';
+}
+
+// ── alert & action generators ─────────────────────────────────────────────────
+
+function safeId(str) {
+  return String(str || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+// Maps a semester label to a sortable number so we can compare "is this sem past?"
+function semToOrder(sem) {
+  if (!sem) return 9999;
+  if (/^post/i.test(sem)) return 99999;
+  const y = sem.match(/^(\d{4})$/);
+  if (y) return (parseInt(y[1]) - 2020) * 1000;
+  const m = sem.match(/[Yy](\d+)(?:[Ss](\d+))?/);
+  if (m) return parseInt(m[1]) * 100 + (m[2] ? parseInt(m[2]) * 10 : 0);
+  if (/G12/i.test(sem)) return 45;
+  if (/G11/i.test(sem)) return 25;
+  return 10;
+}
+
+function generateAlerts(data) {
+  const alerts = [];
+
+  Object.entries(data.scholars).forEach(([key, scholar]) => {
+    const floor = scholar.gpaFloor;
+
+    (scholar.academics || []).forEach(sem => {
+      // GPA alerts — skip already-confirmed-good and excluded semesters
+      if (sem.gpa != null && floor != null && sem.status !== 'good' && sem.status !== 'excluded') {
+        if (sem.gpa < floor) {
+          alerts.push({
+            id: `gpa-${key}-${safeId(sem.sem)}`,
+            severity: 'critical',
+            icon: '🔴',
+            scholar: scholar.firstName,
+            title: `${scholar.firstName} GPA below floor — ${sem.sem}`,
+            sub: `GPA ${sem.gpa.toFixed(2)}% is below the ${floor}% floor. Immediate review required.`,
+          });
+        } else if (sem.gpa < floor + 2) {
+          alerts.push({
+            id: `gpa-warn-${key}-${safeId(sem.sem)}`,
+            severity: 'amber',
+            icon: '⚠️',
+            scholar: scholar.firstName,
+            title: `${scholar.firstName} GPA watch — ${sem.sem}`,
+            sub: `GPA ${sem.gpa.toFixed(2)}% is within 2 points of the ${floor}% floor.`,
+          });
+        }
+      }
+      // Pending grade — active semester with no recorded GPA
+      if (sem.gpa == null && sem.status === 'active') {
+        alerts.push({
+          id: `grade-pending-${key}-${safeId(sem.sem)}`,
+          severity: 'blue',
+          icon: '🔵',
+          scholar: scholar.firstName,
+          title: `${scholar.firstName} ${sem.sem} grade not yet confirmed`,
+          sub: `${sem.sem} grade has not been recorded yet.`,
+        });
+      }
+    });
+
+    // Booked travel reminder
+    (scholar.travels || []).forEach(travel => {
+      if (travel.state === 'booked') {
+        alerts.push({
+          id: `travel-booked-${key}-${safeId(travel.dest)}`,
+          severity: 'blue',
+          icon: '🔵',
+          scholar: scholar.firstName,
+          title: `${travel.dest} confirmed — ${travel.sem}`,
+          sub: `${scholar.firstName}'s ${travel.dest} trip is booked. Verify standing before departure.`,
+        });
+      }
+    });
+  });
+
+  // Deadline alerts — urgency 'now' or 'soon'
+  (data.deadlines || []).forEach(dl => {
+    if (dl.urgency === 'now' || dl.urgency === 'soon') {
+      const firstName = (data.scholars[dl.scholar] || {}).firstName || dl.scholar;
+      alerts.push({
+        id: `deadline-${safeId(dl.event)}`,
+        severity: 'blue',
+        icon: '🔵',
+        scholar: firstName,
+        title: dl.event,
+        sub: `${dl.event} — ${dl.when}.`,
+      });
+    }
+  });
+
+  return alerts;
+}
+
+function generateActions(data) {
+  const actions = [];
+
+  Object.entries(data.scholars).forEach(([key, scholar]) => {
+    // Grade confirmation for active semesters awaiting a result
+    (scholar.academics || []).forEach(sem => {
+      if (sem.gpa == null && sem.status === 'active') {
+        actions.push({
+          id: `action-grade-${key}-${safeId(sem.sem)}`,
+          text: `Confirm ${scholar.firstName} ${sem.sem} semester grade when released`,
+          scholar: scholar.firstName,
+          cat: 'Academic',
+        });
+      }
+    });
+
+    // Milestone unlock — first pending milestone whose target sem has arrived
+    const firstPending = (scholar.milestones || []).find(m => m.state !== 'done');
+    if (firstPending && scholar.currentSem && semToOrder(firstPending.sem) <= semToOrder(scholar.currentSem)) {
+      actions.push({
+        id: `action-milestone-${key}-${safeId(firstPending.name)}`,
+        text: `Unlock ${firstPending.name} milestone for ${scholar.firstName}`,
+        scholar: scholar.firstName,
+        cat: 'Milestone',
+      });
+    }
+
+    // Booked travel — confirm details
+    (scholar.travels || []).forEach(travel => {
+      if (travel.state === 'booked') {
+        actions.push({
+          id: `action-travel-${key}-${safeId(travel.dest)}`,
+          text: `Verify ${scholar.firstName} standing and confirm ${travel.dest} travel details`,
+          scholar: scholar.firstName,
+          cat: 'Travel',
+        });
+      }
+    });
+  });
+
+  // Imminent deadlines (urgency 'now') become action items
+  (data.deadlines || []).forEach(dl => {
+    if (dl.urgency === 'now') {
+      const firstName = (data.scholars[dl.scholar] || {}).firstName || dl.scholar;
+      actions.push({
+        id: `action-deadline-${safeId(dl.event)}`,
+        text: `Act on: ${dl.event} — ${dl.when}`,
+        scholar: firstName,
+        cat: dl.cat || 'Academic',
+      });
+    }
+  });
+
+  return actions;
 }
 
 // ── lock screen ──────────────────────────────────────────────────────────────
@@ -507,7 +657,7 @@ function DeadlinesSection() {
 function ActionsSection() {
   const [checked, setChecked] = useState({});
   const toggle = id => setChecked(c => ({ ...c, [id]: !c[id] }));
-  const actions = D.actions || [];
+  const actions = generateActions(D);
   const left = actions.length - Object.values(checked).filter(Boolean).length;
 
   return (
@@ -592,7 +742,7 @@ function NavFooter() {
 function Navigator() {
   const [unlocked, setUnlocked] = useState(false);
   const [currency, setCurrency] = useState('PHP');
-  const [alerts, setAlerts] = useState(() => (D.alerts || []).map(a => ({ ...a })));
+  const [alerts, setAlerts] = useState(() => generateAlerts(D).map(a => ({ ...a })));
   const [logs, setLogs] = useState([]);
   const [liveGpa, setLiveGpa] = useState({});
 
