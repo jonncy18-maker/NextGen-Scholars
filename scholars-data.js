@@ -547,22 +547,6 @@ const NGS_DATA = {
     },
   },
 
-  // ── PROGRAM-LEVEL ALERTS ───────────────────────────────────────────────────
-  alerts: [
-    { id:'a1', severity:'amber', icon:'⚠️', scholar:'claire',
-      title:'Claire GPA watch — Y2S2 in progress',
-      sub:'Y2S1 closed at 81.36% — just above the 81% UV floor. Y2S2 results pending.' },
-    { id:'a2', severity:'amber', icon:'⏳', scholar:'april',
-      title:'April G11 S1 grade not yet confirmed',
-      sub:'Trial gate: must clear 85%. No grade recorded yet.' },
-    { id:'a3', severity:'blue',  icon:'🛂', scholar:'claire',
-      title:'B2 Visa process — initiation in Y3S1 (Aug 2026)',
-      sub:'Documentation and interview prep begin next semester.' },
-    { id:'a4', severity:'blue',  icon:'🚢', scholar:'claire',
-      title:'Taiwan Cruise confirmed — Jan 2027',
-      sub:'MSC Bellissima · 8 pax · Starlux DE89V3. Claire must clear Y3S2 good standing.' },
-  ],
-
   // ── DEADLINES ─────────────────────────────────────────────────────────────
   deadlines: [
     { event:'Y2S2 Final Exams',              scholar:'claire', when:'Jun 2026',     sort:'2026-06-01', cat:'Academic',   urgency:'now'      },
@@ -579,16 +563,6 @@ const NGS_DATA = {
     { event:'OSCE — Australia (in-person)',   scholar:'claire', when:'~2030',        sort:'2030-03-01', cat:'Licensure',  urgency:'future'   },
     { event:'AHPRA Registration',             scholar:'claire', when:'~2030',        sort:'2030-06-01', cat:'Licensure',  urgency:'future'   },
     { event:'April BSN Entry (if cleared)',   scholar:'april',  when:'~2027',        sort:'2027-08-01', cat:'Academic',   urgency:'future'   },
-  ],
-
-  // ── ACTION ITEMS ───────────────────────────────────────────────────────────
-  actions: [
-    { id:'ac1', text:'Confirm Claire Y2S2 semester grades when released',             scholar:'claire', cat:'Academic'  },
-    { id:'ac2', text:'Log April G11 S1 final grade and assess trial standing',        scholar:'april',  cat:'Academic'  },
-    { id:'ac3', text:'Unlock authorized credit card milestone on Y2 completion',      scholar:'claire', cat:'Milestone' },
-    { id:'ac4', text:'Subscribe ChatGPT Plus for Claire English bootcamp — Summer 2026', scholar:'claire', cat:'English' },
-    { id:'ac5', text:'Begin B2 visa document checklist — Y3S1 start',                scholar:'claire', cat:'Visa'      },
-    { id:'ac6', text:'Verify Taiwan cruise pax roster and seat confirmation',         scholar:'claire', cat:'Travel'    },
   ],
 
 };
