@@ -469,6 +469,7 @@ const EMPTY_FILTERS = {
   amtMin: '',
   amtMax: '',
   statuses: [],
+  sents: [],
 };
 
 function countActiveFilters(f) {
@@ -476,7 +477,8 @@ function countActiveFilters(f) {
     (f.cats.length ? 1 : 0) +
     (f.dateFrom || f.dateTo ? 1 : 0) +
     (f.amtMin !== '' || f.amtMax !== '' ? 1 : 0) +
-    (f.statuses.length ? 1 : 0);
+    (f.statuses.length ? 1 : 0) +
+    (f.sents.length ? 1 : 0);
 }
 
 function applyFilters(rows, f) {
@@ -488,6 +490,7 @@ function applyFilters(rows, f) {
     if (f.amtMin !== '' && r.amount < parseFloat(f.amtMin)) return false;
     if (f.amtMax !== '' && r.amount > parseFloat(f.amtMax)) return false;
     if (f.statuses.length > 0 && !f.statuses.includes(r.status)) return false;
+    if (f.sents.length > 0 && !f.sents.includes(r.sent)) return false;
     return true;
   });
 }
@@ -501,6 +504,7 @@ function applySorting(rows, field, dir) {
     if (field === 'date')   { va = a.date   || ''; vb = b.date   || ''; }
     if (field === 'amount') { va = a.amount || 0;  vb = b.amount || 0;  }
     if (field === 'status') { va = a.status || ''; vb = b.status || ''; }
+    if (field === 'sent')   { va = a.sent   || ''; vb = b.sent   || ''; }
     const cmp = typeof va === 'number' ? va - vb : va.localeCompare(vb);
     return dir === 'asc' ? cmp : -cmp;
   });
@@ -522,7 +526,7 @@ function SortTh({ label, field, sortField, sortDir, onSort, className }) {
 
 // ── filter panel ──────────────────────────────────────────────────────────────
 
-function FilterPanel({ filters, setFilters, uniqueCats, uniqueStatuses, onClear }) {
+function FilterPanel({ filters, setFilters, uniqueCats, uniqueStatuses, uniqueSents, onClear }) {
   function toggleArr(key, val) {
     setFilters(f => {
       const arr = f[key];
@@ -591,6 +595,21 @@ function FilterPanel({ filters, setFilters, uniqueCats, uniqueStatuses, onClear 
             ))}
           </div>
         </div>
+
+        <div className="filter-col">
+          <div className="filter-label">Sent</div>
+          <div className="filter-chips">
+            {uniqueSents.map(s => (
+              <button
+                key={s}
+                className={`filter-chip${filters.sents.includes(s) ? ' active' : ''}`}
+                onClick={() => toggleArr('sents', s)}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="filter-footer">
@@ -622,6 +641,7 @@ function ExpenseSection({ currency }) {
   const allRows = allExpenses(s);
   const uniqueCats = [...new Set(allRows.map(r => r.cat))].sort();
   const uniqueStatuses = [...new Set(allRows.map(r => r.status))].sort();
+  const uniqueSents = [...new Set(allRows.map(r => r.sent).filter(Boolean))].sort();
 
   function switchScholar(k) {
     setExpScholar(k);
@@ -675,6 +695,7 @@ function ExpenseSection({ currency }) {
           setFilters={setFilters}
           uniqueCats={uniqueCats}
           uniqueStatuses={uniqueStatuses}
+          uniqueSents={uniqueSents}
           onClear={clearFilters}
         />
       )}
@@ -719,11 +740,12 @@ function ExpenseSection({ currency }) {
               <SortTh label="Date"     field="date"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
               <SortTh label="Amount"   field="amount" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="right" />
               <SortTh label="Status"   field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              <SortTh label="Sent"     field="sent"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
             </tr>
           </thead>
           <tbody>
             {rows.length === 0
-              ? <tr className="exp-none"><td colSpan={5}>No matching expenses.</td></tr>
+              ? <tr className="exp-none"><td colSpan={6}>No matching expenses.</td></tr>
               : rows.map((r, i) => (
                 <tr key={i}>
                   <td><span className="exp-item">{r.item}</span></td>
@@ -731,6 +753,7 @@ function ExpenseSection({ currency }) {
                   <td className="exp-date">{r.date}</td>
                   <td className="right exp-amount">{$fmt(r.amount, currency)}</td>
                   <td><span className={`exp-status ${r.status}`}>{r.status}</span></td>
+                  <td><span className={`exp-sent ${r.sent === 'Yes' ? 'is-yes' : 'is-no'}`}>{r.sent || '—'}</span></td>
                 </tr>
               ))
             }

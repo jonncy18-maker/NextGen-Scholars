@@ -499,6 +499,9 @@ table.exp tbody tr:hover { background: var(--ngs-paper-2); }
 .exp-status { font-family: var(--ngs-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; padding: 3px 9px; border-radius: 3px; }
 .exp-status.Actual { background: rgba(47,125,85,0.12); color: var(--ngs-green); }
 .exp-status.Budget { background: rgba(181,134,42,0.14); color: var(--ngs-amber); }
+.exp-sent { font-family: var(--ngs-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; padding: 3px 9px; border-radius: 3px; }
+.exp-sent.is-yes { background: rgba(47,125,85,0.10); color: var(--ngs-green); }
+.exp-sent.is-no  { background: rgba(177,27,42,0.08);  color: var(--ngs-red); }
 .exp-none td { text-align: center; padding: 28px; font-family: var(--ngs-mono); font-size: 12px; color: var(--ngs-muted); }
 
 /* ════════════════ 5. DEADLINES ════════════════ */
