@@ -1,16 +1,21 @@
-// NextGen Scholars — site sections. Mobile-first, scrolls inside the iOS frame.
-// Exports a single <NGSSite/> on window.
+import React, { useState, useEffect } from 'react';
+import { NGS_DATA } from '../../scholars-data.js';
 
-const { useState, useEffect, useRef } = React;
+const PALETTE = {
+  navy: '#1B2A4A',
+  navyDeep: '#131F38',
+  navyInk: '#0E1A33',
+  gold: '#C9A84C',
+  goldSoft: '#E4C97A',
+  paper: '#FAF7F0',
+  paper2: '#F2EDE2',
+  red: '#B11B2A',
+  blue: '#0038A8',
+  yellow: '#FCD116',
+};
 
-// ─────────────────────────────────────────────────────────────
-// Iconography (geometric, restrained)
-// ─────────────────────────────────────────────────────────────
 const IconPlane = ({ size = 28, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
-    <path d="M3 18.5l26-10.2c.8-.3 1.6.5 1.3 1.3L20.2 35.6"
-          stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
-          transform="translate(0 -4)"/>
     <path d="M3 14.5l26-9.5c.7-.3 1.5.5 1.2 1.3l-9.9 26.6c-.3.8-1.4.8-1.7 0l-4.3-10.4-10.4-4.3c-.8-.3-.8-1.4 0-1.7z"
           stroke={color} strokeWidth="1.4" strokeLinejoin="round"/>
     <path d="M14 19l8-8" stroke={color} strokeWidth="1.4" strokeLinecap="round"/>
@@ -19,18 +24,13 @@ const IconPlane = ({ size = 28, color = 'currentColor' }) => (
 
 const IconShip = ({ size = 28, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true">
-    {/* hull */}
     <path d="M3 22l1.4 4.2c.3.9 1.1 1.5 2 1.5h19.2c.9 0 1.7-.6 2-1.5L29 22H3z"
           stroke={color} strokeWidth="1.4" strokeLinejoin="round"/>
-    {/* superstructure */}
     <path d="M7 22V13h18v9" stroke={color} strokeWidth="1.4"/>
     <path d="M10 13V9h12v4" stroke={color} strokeWidth="1.4"/>
-    {/* windows */}
     <path d="M9 17h14" stroke={color} strokeWidth="1.2" strokeDasharray="1.6 2"/>
-    {/* funnels */}
     <rect x="12" y="4" width="2.4" height="5" stroke={color} strokeWidth="1.2"/>
     <rect x="17.6" y="4" width="2.4" height="5" stroke={color} strokeWidth="1.2"/>
-    {/* water line */}
     <path d="M2 29c2 1 3 -1 5 0s3 1 5 0 3 -1 5 0 3 1 5 0 3 -1 5 0"
           stroke={color} strokeWidth="1.1" strokeLinecap="round" opacity="0.55"/>
   </svg>
@@ -42,38 +42,32 @@ const IconArrow = ({ size = 14, color = 'currentColor' }) => (
   </svg>
 );
 
-// ─────────────────────────────────────────────────────────────
-// 1. HERO — dark navy, subtle Philippine flag motif (triangle + sun rays)
-// ─────────────────────────────────────────────────────────────
-function Hero({ palette }) {
+function Hero() {
   return (
     <section className="ngs-hero">
-      {/* PH flag motif — barely-there red triangle at left edge with three sun rays */}
       <div className="ngs-hero-flag" aria-hidden="true">
         <svg viewBox="0 0 200 600" preserveAspectRatio="none" width="100%" height="100%">
           <defs>
             <linearGradient id="flagFade" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stopColor={palette.red} stopOpacity="0.18"/>
-              <stop offset="1" stopColor={palette.red} stopOpacity="0"/>
+              <stop offset="0" stopColor={PALETTE.red} stopOpacity="0.18"/>
+              <stop offset="1" stopColor={PALETTE.red} stopOpacity="0"/>
             </linearGradient>
           </defs>
           <polygon points="0,0 110,300 0,600" fill="url(#flagFade)"/>
-          {/* sun rays from triangle apex */}
-          <g stroke={palette.gold} strokeWidth="0.6" opacity="0.55">
+          <g stroke={PALETTE.gold} strokeWidth="0.6" opacity="0.55">
             <line x1="110" y1="300" x2="160" y2="270"/>
             <line x1="110" y1="300" x2="170" y2="300"/>
             <line x1="110" y1="300" x2="160" y2="330"/>
           </g>
-          <circle cx="110" cy="300" r="3" fill={palette.gold} opacity="0.7"/>
+          <circle cx="110" cy="300" r="3" fill={PALETTE.gold} opacity="0.7"/>
         </svg>
       </div>
 
-      {/* faint grain */}
       <div className="ngs-hero-grain" aria-hidden="true"></div>
 
       <div className="ngs-hero-inner">
         <div className="ngs-hero-eyebrow">
-          <span className="ngs-dot" style={{background: palette.gold}}></span>
+          <span className="ngs-dot" style={{background: PALETTE.gold}}></span>
           <span>NextGen Scholars · Philippines</span>
         </div>
 
@@ -111,9 +105,6 @@ function Hero({ palette }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// 2. ABOUT
-// ─────────────────────────────────────────────────────────────
 function About() {
   return (
     <section className="ngs-section ngs-about" id="about">
@@ -152,10 +143,7 @@ function About() {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// 3. OUR TRACKS — two cards
-// ─────────────────────────────────────────────────────────────
-function Tracks({ palette }) {
+function Tracks() {
   const tracks = [
     {
       code: 'NGN',
@@ -171,7 +159,6 @@ function Tracks({ palette }) {
         'Visa screen + retrogression bridge',
         'Hospital placement (USA / Australia / Singapore)',
       ],
-      tint: palette.gold,
     },
     {
       code: 'NGH',
@@ -186,7 +173,6 @@ function Tracks({ palette }) {
         'Cruise line interview prep',
         'Onboard placement (international)',
       ],
-      tint: palette.gold,
     },
   ];
 
@@ -206,8 +192,8 @@ function Tracks({ palette }) {
         {tracks.map(t => (
           <article key={t.code} className="ngs-track-card">
             <div className="ngs-track-head">
-              <div className="ngs-track-icon" style={{background: palette.navy}}>
-                <t.Icon size={26} color={palette.gold}/>
+              <div className="ngs-track-icon" style={{background: PALETTE.navy}}>
+                <t.Icon size={26} color={PALETTE.gold}/>
               </div>
               <div className="ngs-track-code">{t.code}</div>
             </div>
@@ -241,10 +227,7 @@ function Tracks({ palette }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// 4. MILESTONES — vertical progress timeline (mobile-friendly)
-// ─────────────────────────────────────────────────────────────
-function Milestones({ palette }) {
+function Milestones() {
   const stages = [
     { label: 'High school', detail: 'Identification, family interview, trial period' },
     { label: 'University / Bootcamp', detail: 'Full tuition + board, monthly check-ins' },
@@ -253,7 +236,6 @@ function Milestones({ palette }) {
     { label: 'International placement', detail: 'USA hospital, Australian hospital, or international cruise contract' },
   ];
 
-  // Active state demo — show the journey progressing
   const [active, setActive] = useState(2);
 
   return (
@@ -273,7 +255,7 @@ function Milestones({ palette }) {
         <div className="ngs-timeline-rail" aria-hidden="true">
           <div className="ngs-timeline-fill" style={{
             height: `${(active / (stages.length - 1)) * 100}%`,
-            background: palette.gold,
+            background: PALETTE.gold,
           }}/>
         </div>
 
@@ -288,7 +270,7 @@ function Milestones({ palette }) {
               <div className="ngs-stage-node" aria-hidden="true">
                 {state === 'done' && (
                   <svg width="12" height="10" viewBox="0 0 12 10" fill="none">
-                    <path d="M1 5l3.5 3.5L11 1.5" stroke={palette.navy} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M1 5l3.5 3.5L11 1.5" stroke={PALETTE.navy} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 )}
                 {state === 'now' && <span className="ngs-stage-pulse"></span>}
@@ -310,43 +292,13 @@ function Milestones({ palette }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// 5. MEET THE SCHOLARS
-// ─────────────────────────────────────────────────────────────
-function Scholars({ palette }) {
+function Scholars() {
+  const accentMap = { gold: PALETTE.gold, red: PALETTE.red };
   const scholars = [
-    {
-      name: 'Claire',
-      track: 'NGN',
-      status: 'Active',
-      stage: 'University · Year 2',
-      year: '2028 cohort',
-      quote: 'I want to be a nurse abroad. This program is making that real.',
-      progress: 0.35,
-      accent: palette.gold,
-    },
-    {
-      name: 'April',
-      track: 'NGN',
-      status: 'Trial',
-      stage: 'Grade 11 trial period',
-      year: '2032 cohort',
-      quote: 'I’m still in high school, but I already know where I’m going.',
-      progress: 0.08,
-      accent: palette.gold,
-    },
-    {
-      name: 'Aljane',
-      track: 'NGH',
-      status: 'Paused',
-      stage: 'On hold — external scholarship',
-      year: '2028 cohort',
-      note: 'Received an external scholarship covering university. NGH remains an option post-graduation.',
-      quote: 'My path is on pause, but not forgotten.',
-      progress: 0.45,
-      accent: palette.red,
-    },
-  ];
+    NGS_DATA.scholars.claire.card,
+    NGS_DATA.scholars.april.card,
+    NGS_DATA.scholars.aljane.card,
+  ].map(c => ({ ...c, accent: accentMap[c.accentKey] || PALETTE.gold }));
 
   return (
     <section className="ngs-section ngs-scholars" id="scholars">
@@ -358,73 +310,93 @@ function Scholars({ palette }) {
         Three lives <span className="ngs-italic">in motion.</span>
       </h2>
       <p className="ngs-lede ngs-lede-short">
-        Names and photos are shared with each scholar’s permission.
+        Names and photos are shared with each scholar's permission.
       </p>
 
       <div className="ngs-scholar-list">
-        {scholars.map(s => (
-          <article key={s.name} className="ngs-scholar-card">
-            <div className="ngs-scholar-photo" aria-label={`${s.name} portrait placeholder`}>
-              <div className="ngs-scholar-photo-inner">
-                <span>portrait</span>
-                <span>{s.name.toLowerCase()}.jpg</span>
-              </div>
-              <div className={`ngs-scholar-badge ngs-scholar-badge-${s.status.toLowerCase()}`}>
-                {s.status}
-              </div>
-            </div>
-
-            <div className="ngs-scholar-body">
-              <div className="ngs-scholar-head">
-                <h3>{s.name}</h3>
-                <span className="ngs-scholar-track">{s.track}</span>
-              </div>
-              <div className="ngs-scholar-meta">
-                <span>{s.stage}</span>
-                <span className="ngs-scholar-dot">·</span>
-                <span>{s.year}</span>
-              </div>
-
-              <blockquote className="ngs-scholar-quote">
-                <span className="ngs-scholar-quote-mark">“</span>
-                {s.quote}
-              </blockquote>
-
-              {s.note && (
-                <p className="ngs-scholar-note">{s.note}</p>
-              )}
-
-              <div className="ngs-scholar-progress">
-                <div className="ngs-scholar-progress-track">
-                  <div className="ngs-scholar-progress-fill" style={{
-                    width: `${s.progress * 100}%`,
-                    background: s.accent,
-                  }}/>
+        {scholars.map(s => {
+          const Tag = s.href ? 'a' : 'article';
+          const linkProps = s.href
+            ? { href: s.href, className: 'ngs-scholar-card ngs-scholar-card-linked' }
+            : { className: 'ngs-scholar-card' };
+          return (
+            <Tag key={s.name} {...linkProps}>
+              <div className="ngs-scholar-photo" aria-label={`${s.name} portrait placeholder`}>
+                <div className="ngs-scholar-photo-inner">
+                  <span>portrait</span>
+                  <span>{s.name.toLowerCase()}.jpg</span>
                 </div>
-                <div className="ngs-scholar-progress-label">
-                  Journey · {Math.round(s.progress * 100)}%
+                <div className={`ngs-scholar-badge ngs-scholar-badge-${s.status.toLowerCase()}`}>
+                  {s.status}
                 </div>
               </div>
-            </div>
-          </article>
-        ))}
+
+              <div className="ngs-scholar-body">
+                <div className="ngs-scholar-head">
+                  <h3>{s.name}</h3>
+                  <span className="ngs-scholar-track">{s.track}</span>
+                </div>
+                <div className="ngs-scholar-meta">
+                  <span>{s.stage}</span>
+                  <span className="ngs-scholar-dot">·</span>
+                  <span>{s.year}</span>
+                </div>
+
+                <blockquote className="ngs-scholar-quote">
+                  <span className="ngs-scholar-quote-mark">"</span>
+                  {s.quote}
+                </blockquote>
+
+                {s.note && (
+                  <p className="ngs-scholar-note">{s.note}</p>
+                )}
+
+                <div className="ngs-scholar-progress">
+                  <div className="ngs-scholar-progress-track">
+                    <div className="ngs-scholar-progress-fill" style={{
+                      width: `${s.progress * 100}%`,
+                      background: s.accent,
+                    }}/>
+                  </div>
+                  <div className="ngs-scholar-progress-label">
+                    Journey · {Math.round(s.progress * 100)}%
+                  </div>
+                </div>
+
+                {s.href && (
+                  <div className="ngs-scholar-dashboard-cta">
+                    View dashboard
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                      <path d="M3 8h10m0 0l-4-4m4 4l-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                )}
+              </div>
+            </Tag>
+          );
+        })}
       </div>
     </section>
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// 6. APPLY / CONTACT
-// ─────────────────────────────────────────────────────────────
-function Apply({ palette }) {
+function Apply() {
   const [form, setForm] = useState({ name: '', email: '', track: '', message: '' });
   const [sent, setSent] = useState(false);
 
   const valid = form.name.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) && form.track;
 
+  const TRACK_LABELS = { NGN: 'NextGen Nurses', NGH: 'NextGen Hospitality', unsure: 'Not sure yet' };
+
   const submit = (e) => {
     e.preventDefault();
     if (!valid) return;
+    const trackLabel = TRACK_LABELS[form.track] || form.track;
+    const subject = encodeURIComponent(`NGS Nomination – ${form.name} (${trackLabel})`);
+    const body = encodeURIComponent(
+      `Name: ${form.name}\nEmail: ${form.email}\nTrack: ${trackLabel}\n\n${form.message || '(No additional message)'}`
+    );
+    window.location.href = `mailto:hello@nextgenscholars.ph?subject=${subject}&body=${body}`;
     setSent(true);
   };
 
@@ -447,13 +419,13 @@ function Apply({ palette }) {
 
         {sent ? (
           <div className="ngs-apply-sent">
-            <div className="ngs-apply-check" style={{borderColor: palette.gold}}>
+            <div className="ngs-apply-check" style={{borderColor: PALETTE.gold}}>
               <svg width="22" height="18" viewBox="0 0 22 18" fill="none">
-                <path d="M2 9l6 6L20 3" stroke={palette.gold} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M2 9l6 6L20 3" stroke={PALETTE.gold} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <h3>Message received.</h3>
-            <p>We respond within seven days, in English or Tagalog — whichever is easier.</p>
+            <h3>One more step.</h3>
+            <p>Your email client should have opened with the nomination pre-filled — just hit Send. Didn't open? Write directly to <a href="mailto:hello@nextgenscholars.ph" style={{color: 'var(--ngs-gold)'}}>hello@nextgenscholars.ph</a>.</p>
             <button className="ngs-btn ngs-btn-ghost ngs-btn-ghost-light" onClick={() => { setSent(false); setForm({ name:'', email:'', track:'', message:'' }); }}>
               Send another
             </button>
@@ -472,14 +444,15 @@ function Apply({ palette }) {
             </label>
 
             <div className="ngs-field">
-              <span>Which track?</span>
-              <div className="ngs-radio-row">
+              <span id="ngs-track-label">Which track?</span>
+              <div className="ngs-radio-row" role="radiogroup" aria-labelledby="ngs-track-label">
                 {[
                   { v: 'NGN', label: 'NextGen Nurses' },
                   { v: 'NGH', label: 'NextGen Hospitality' },
                   { v: 'unsure', label: 'Not sure yet' },
                 ].map(o => (
                   <button key={o.v} type="button"
+                    role="radio" aria-checked={form.track === o.v}
                     className={`ngs-radio ${form.track === o.v ? 'is-active' : ''}`}
                     onClick={() => setForm({...form, track: o.v})}>
                     {o.label}
@@ -510,9 +483,6 @@ function Apply({ palette }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// FOOTER
-// ─────────────────────────────────────────────────────────────
 function Footer() {
   return (
     <footer className="ngs-footer">
@@ -543,15 +513,13 @@ function Footer() {
       <div className="ngs-footer-fine">
         <span>© 2026 NextGen Scholars · Philippines · United States</span>
         <span>Privately funded · No public donations accepted</span>
+        <a href="navigator.html" style={{opacity: 0.5, fontSize: '0.75rem', marginTop: '0.25rem'}}>Mentor view →</a>
       </div>
     </footer>
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// TOP NAV (sticky, mobile-first)
-// ─────────────────────────────────────────────────────────────
-function TopNav({ palette }) {
+function TopNav({ isDesktop }) {
   const [open, setOpen] = useState(false);
   return (
     <header className="ngs-nav">
@@ -562,12 +530,24 @@ function TopNav({ palette }) {
           </div>
           <span className="ngs-nav-name">NextGen Scholars</span>
         </a>
-        <button className="ngs-nav-btn" onClick={() => setOpen(!open)} aria-label="Menu">
-          <span></span><span></span>
-        </button>
+        {isDesktop ? (
+          <nav className="ngs-nav-desktop">
+            <a href="#about">About</a>
+            <a href="#tracks">Tracks</a>
+            <a href="#journey">Journey</a>
+            <a href="#scholars">Scholars</a>
+            <a href="#apply" className="ngs-nav-cta-link">Apply</a>
+          </nav>
+        ) : (
+          <button className="ngs-nav-btn" onClick={() => setOpen(!open)}
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            aria-expanded={open} aria-controls="ngs-nav-mobile-menu">
+            <span></span><span></span>
+          </button>
+        )}
       </div>
-      {open && (
-        <nav className="ngs-nav-menu" onClick={() => setOpen(false)}>
+      {!isDesktop && open && (
+        <nav className="ngs-nav-menu" id="ngs-nav-mobile-menu" onClick={() => setOpen(false)}>
           <a href="#about">About</a>
           <a href="#tracks">Tracks</a>
           <a href="#journey">Journey</a>
@@ -579,22 +559,17 @@ function TopNav({ palette }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// COMPOSE
-// ─────────────────────────────────────────────────────────────
-function NGSSite({ palette, isMobile }) {
+export function NGSSite({ isDesktop }) {
   return (
-    <div className={`ngs-site ${isMobile ? 'is-mobile' : ''}`} id="top" data-screen-label="NGS — Mobile">
-      <TopNav palette={palette}/>
-      <Hero palette={palette}/>
+    <div className={`ngs-site ${isDesktop ? 'is-desktop' : ''}`} id="top">
+      <TopNav isDesktop={isDesktop}/>
+      <Hero/>
       <About/>
-      <Tracks palette={palette}/>
-      <Milestones palette={palette}/>
-      <Scholars palette={palette}/>
-      <Apply palette={palette}/>
+      <Tracks/>
+      <Milestones/>
+      <Scholars/>
+      <Apply/>
       <Footer/>
     </div>
   );
 }
-
-window.NGSSite = NGSSite;

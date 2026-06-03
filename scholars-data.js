@@ -224,6 +224,127 @@ const NGS_DATA = {
           {id:116,item:'Motor oil',                          amount:750,    qty:1, cat:'Motor',               date:'2026-05-20', sent:'Yes', avb:'Actual', vendor:''},
         ],
       },
+
+      // ── CARD (for index.html scholar list) ──────────────────────────────────
+      card: {
+        name: 'Claire',
+        track: 'NGN',
+        status: 'Active',
+        stage: 'University · Year 2',
+        year: '2028 cohort',
+        quote: 'I want to be a nurse abroad. This program is making that real.',
+        progress: 0.35,
+        accentKey: 'gold',
+        href: 'claire.html',
+      },
+
+      // ── PUBLIC PROFILE (for claire.html) ────────────────────────────────────
+      publicProfile: {
+        firstName: 'Claire',
+        track: 'NGN',
+        trackName: 'NextGen Nurses',
+        cohort: 'Cohort 2028',
+        school: 'University of the Visayas',
+        city: 'Cebu',
+        program: 'BSN Nursing',
+        status: 'active',
+        statusLabel: 'Active Scholar',
+        updated: 'Updated May 2026',
+        quote: 'I want to be a nurse abroad. This program is making that real.',
+        headlineStats: [
+          { value: 'Y2 · S2', label: 'Current Semester' },
+          { value: '2028',    label: 'Graduation' },
+          { value: '37%',     label: 'Journey' },
+        ],
+        currentSemester: {
+          title: 'Year Two, Semester Two.',
+          intro: 'Jan–Jun 2026. Six concurrent subjects — the densest term of the BSN program so far.',
+          period: 'Jan – Jun',
+          year: '2026',
+          subjects: [
+            'Health Assessment',
+            'Fundamentals of Nursing Practice',
+            'Pharmacology',
+            'Care of Mother, Child & Family',
+            'Community Health Nursing',
+            'NSTP',
+          ],
+        },
+        academics: {
+          title: 'Holding the line.',
+          intro: 'Claire must maintain an 81% floor to remain in the BSN program. Every semester clears it.',
+          current: { label: 'Year 2 · S1 — Latest GPA', value: 81.36, floor: 81 },
+          history: [
+            { label: 'Trial · Grade 12',  value: '85%+',        status: 'good' },
+            { label: 'Year 1 · S1',       value: '83.25%',      status: 'good' },
+            { label: 'Year 1 · S2',       value: '88.16%',      status: 'good' },
+            { label: 'Year 2 · S1',       value: '81.36%',      status: 'warn' },
+            { label: 'Year 2 · S2',       value: 'In progress', status: 'active' },
+          ],
+        },
+        support: {
+          title: 'What it takes to lift one.',
+          intro: 'A single donor underwrites Claire end-to-end — tuition, board, travel, and the milestone rewards that mark each step.',
+          total: {
+            value: '₱2.05M',
+            rawPhp: 2050000,
+            detail: 'Across university, travel program, and milestone rewards through Year 2',
+            progress: 0.37,
+          },
+          categories: [
+            { icon: 'cap',    name: 'University',        amount: '₱1.57M', amountPhp: 1570000, detail: 'Tuition, board, supplies, and academic fees across the four-year BSN program.' },
+            { icon: 'us',     name: 'Travel Program',    amount: '₱240K',  amountPhp: 240000,  detail: 'Annual reward trips — currently Boracay, Bohol, Hong Kong; future Taiwan cruise + U.S. immersion.' },
+            { icon: 'trophy', name: 'Milestone Rewards', amount: '₱247K',  amountPhp: 247000,  detail: 'Phone, laptop, motorcycle, tablet, credit-card line — earned as each academic target is met.' },
+          ],
+        },
+        milestones: [
+          { icon: 'phone',  name: 'Smartphone',             detail: 'Redmi Note · Trial G11 entry',               state: 'done',   badge: 'Done'   },
+          { icon: 'laptop', name: 'Chromebook',             detail: 'ASUS 14" 2-in-1 · Grade 12 complete',        state: 'done',   badge: 'Done'   },
+          { icon: 'bike',   name: 'Motorcycle',             detail: 'Program infrastructure · Grade 12 complete', state: 'done',   badge: 'Done'   },
+          { icon: 'phone',  name: 'iPhone 13 Pro',          detail: '128GB · Year 1 complete',                    state: 'done',   badge: 'Done'   },
+          { icon: 'tablet', name: 'iPad 11" A16',           detail: '128GB · Year 2 complete (delivered early)',  state: 'done',   badge: 'Done'   },
+          { icon: 'card',   name: 'Authorized Credit Card', detail: "Linked to mentor's account · January 2026",  state: 'done',   badge: 'Done'   },
+          { icon: 'cap',    name: 'BSN Graduation',         detail: 'University of the Visayas',                  state: 'future', badge: '2028'   },
+          { icon: 'au',     name: 'AHPRA License',          detail: 'Australian Nursing Registration · Post-graduation', state: 'future', badge: 'Future' },
+        ],
+        travels: [
+          { icon: 'beach',    dest: 'Boracay',       when: '2024 · End of Trial G12',          state: 'done'    },
+          { icon: 'island',   dest: 'Bohol',         when: '2025 · After Year 1',              state: 'done'    },
+          { icon: 'city',     dest: 'Hong Kong',     when: 'Jan 2026 · Year 2 S2',             state: 'done'    },
+          { icon: 'ship',     dest: 'Taiwan Cruise', when: 'Jan 2027 · MSC Bellissima',        state: 'booked'  },
+          { icon: 'building', dest: 'Manila',        when: '2027 · B2 Visa Interview',         state: 'planned' },
+          { icon: 'us',       dest: 'U.S. Immersion',when: 'Post-graduation · 3 months · KY', state: 'planned' },
+        ],
+        english: {
+          heading: 'From Cebu to the world.',
+          intro: 'A six-stage English development plan — informal at first, structured by year three.',
+          title: 'From Cebu to the World',
+          target: 'OET Grade B (C1 level)',
+          stages: [
+            { label: 'Trial G11–G12 · Basic communication with mentor',              state: 'done'     },
+            { label: 'Year 1 · Progressive English with mentor',                     state: 'done'     },
+            { label: 'Year 2 · FB Messenger exclusively in English with mentor',     state: 'active'   },
+            { label: 'Summer Y3 · ChatGPT Advanced Voice Mode bootcamp',             state: 'upcoming' },
+            { label: 'Year 3–4 · OET preparation · Target B2+/C1',                  state: 'future'   },
+            { label: 'Post-graduation · 3-month U.S. immersion · C1 operational',   state: 'future'   },
+          ],
+        },
+        pathway: {
+          title: 'Road to Australia.',
+          intro: 'Nine steps from the trial period to a working AHPRA license. The U.S. path stays open as a secondary option.',
+          steps: [
+            { label: 'Trial<br/>Period',          state: 'done'     },
+            { label: 'BSN<br/>University',        state: 'active'   },
+            { label: 'PNLE<br/>Philippines',      state: 'next'     },
+            { label: '1 Year<br/>Clinical PH',    state: 'next'     },
+            { label: 'OET<br/>Grade B',           state: 'next'     },
+            { label: 'NCLEX<br/>USA',             state: 'next'     },
+            { label: 'OSCE<br/>Australia',        state: 'next'     },
+            { label: 'AHPRA<br/>License',         state: 'goal'     },
+            { label: 'U.S. Option<br/>(Optional)', state: 'optional', connector: 'dashed' },
+          ],
+        },
+      },
     },
 
     // ── APRIL ─────────────────────────────────────────────────────────────────
@@ -266,6 +387,136 @@ const NGS_DATA = {
           { id:'a1', item:'Smartphone — Redmi Note 14 6+128GB', amount:7500, qty:1, cat:'Milestones', date:'2026-04-01', sent:'Yes', avb:'Actual', vendor:'Lazada' },
         ],
       },
+
+      // ── CARD (for index.html scholar list) ──────────────────────────────────
+      card: {
+        name: 'April',
+        track: 'NGN',
+        status: 'Trial',
+        stage: 'Grade 11 trial period',
+        year: '2032 cohort',
+        quote: "I’m still in high school, but I already know where I’m going.",
+        progress: 0.08,
+        accentKey: 'gold',
+        href: 'april.html',
+      },
+
+      // ── PUBLIC PROFILE (for april.html) ─────────────────────────────────────
+      publicProfile: {
+        firstName: 'April',
+        track: 'NGN',
+        trackName: 'NextGen Nurses · Trial',
+        cohort: 'Cohort 2032',
+        school: 'Senior High School',
+        city: 'Cebu',
+        program: 'Grade 11 · Trial period',
+        status: 'trial',
+        statusLabel: 'Trial Scholar',
+        updated: 'Updated May 2026',
+        quote: "I’m still in high school, but I already know where I’m going.",
+        headlineStats: [
+          { value: 'G11',   label: 'Current Year' },
+          { value: '2 yrs', label: 'Trial Period' },
+          { value: '2032',  label: 'BSN Target' },
+        ],
+        trialBanner:
+          'April is in her <strong>2-year trial period</strong> (Grade 11–12). ' +
+          'Full NGN scholarship begins on successful Senior High completion with a ' +
+          'minimum <strong>85% average</strong>. Trial started May/June 2025.',
+        trialProgress: {
+          title: 'Four semesters to clear.',
+          intro:
+            'Trial began with an 85% average at the end of Grade 10. The same floor ' +
+            'must hold every semester to remain in the program.',
+          semesters: [
+            { label: 'G11 · S1', grade: '—', state: 'active', status: 'In progress' },
+            { label: 'G11 · S2', grade: '—', state: 'future', status: 'Upcoming' },
+            { label: 'G12 · S1', grade: '—', state: 'future', status: 'Future' },
+            { label: 'G12 · S2', grade: '—', state: 'future', status: 'Future' },
+          ],
+          floor: 'Entry requirement: 85% minimum each semester',
+          floorDetail: 'Trial began with 85% average at the end of Grade 10',
+          nextSteps: [
+            { name: 'Complete G11 → G12',     detail: 'Maintain 85%+ every semester to stay in the program', highlight: true },
+            { name: 'Full scholarship entry', detail: 'Upon G12 graduation → BSN Nursing at university' },
+            { name: 'Reward — Chromebook',    detail: 'Upon completing Grade 12 successfully' },
+            { name: 'Reward — Motorcycle',    detail: 'Program infrastructure upon entering university' },
+            { name: 'BSN target graduation',  detail: 'Cohort 2032 · Road to Australia begins' },
+          ],
+        },
+        currentSemester: {
+          title: 'Grade 11, Semester One.',
+          intro: 'Six core subjects. The first semester of a four-semester trial.',
+          period: 'G11',
+          year: '2025',
+          subjects: [
+            'Oral Communication',
+            '21st Century Literature',
+            'General Mathematics',
+            'Earth & Life Science',
+            'Personal Development',
+            'Physical Education',
+          ],
+        },
+        support: {
+          title: 'Trial period investment.',
+          intro:
+            'During the trial period the program provides limited support — enough to ' +
+            'demonstrate commitment and keep communication open. Full scholarship ' +
+            'investment begins upon university entry.',
+          total: {
+            value: '₱7.5K',
+            rawPhp: 7500,
+            detail: 'Trial period support to date (smartphone)',
+            progress: 0.04,
+          },
+          categories: [
+            { icon: 'phone', name: 'Smartphone',    amount: '₱7.5K',     amountPhp: 7500, detail: 'Redmi Note 14 · 6+128GB · Provided at trial entry, April 2026.' },
+            { icon: 'card',  name: 'Mobile data plan', amount: 'Ongoing', detail: 'Maintained throughout trial to support daily mentor check-ins.' },
+            { icon: 'cap',   name: 'Full scholarship',  amount: 'From 2027', detail: 'Tuition, board, milestone rewards, and travel program activate on BSN entry.' },
+          ],
+        },
+        milestones: [
+          { icon: 'check',  name: 'Grade 10 Completed', detail: '85% average · Triggered trial period entry',              state: 'done',   badge: 'Done'     },
+          { icon: 'phone',  name: 'Smartphone',          detail: 'Redmi Note 14 · 6+128GB · Trial G11 entry · April 2026', state: 'done',   badge: 'Done'     },
+          { icon: 'cap',    name: 'Complete Grade 11',   detail: '85% minimum required to continue trial',                 state: 'future', badge: 'In Trial' },
+          { icon: 'cap',    name: 'Complete Grade 12',   detail: '85% minimum · Unlocks full scholarship',                 state: 'future', badge: '2027'     },
+          { icon: 'laptop', name: 'Chromebook',          detail: 'Upon completing Grade 12',                               state: 'future', badge: '2027'     },
+          { icon: 'bike',   name: 'Motorcycle',          detail: 'Program infrastructure · Upon university entry',         state: 'future', badge: '2027'     },
+          { icon: 'phone',  name: 'iPhone',              detail: 'Year 1 university complete',                             state: 'future', badge: '2028'     },
+          { icon: 'au',     name: 'AHPRA License',       detail: 'Australian Nursing Registration · Post-graduation',      state: 'future', badge: 'Future'   },
+        ],
+        english: {
+          heading: 'Building the foundation.',
+          intro:
+            'Five stages — informal at first, then structured English work begins in ' +
+            'university. OET preparation comes in the senior years.',
+          title: 'Building the Foundation',
+          target: 'OET Grade B (C1 level) · Post-graduation',
+          stages: [
+            { label: 'Trial G11–G12 · Basic communication with mentor · Building habits', state: 'active' },
+            { label: 'Year 1 university · Progressive English with mentor',               state: 'future' },
+            { label: 'Year 2 · FB Messenger exclusively in English with mentor',          state: 'future' },
+            { label: 'Summer Y3 · ChatGPT Advanced Voice Mode bootcamp',                  state: 'future' },
+            { label: 'Year 3–4 · OET preparation · Target B2+/C1',                       state: 'future' },
+          ],
+        },
+        pathway: {
+          title: 'Road to Australia.',
+          intro: 'Same nine-step pathway as Claire — April is at step one.',
+          steps: [
+            { label: 'Trial<br/>Period',          state: 'active'   },
+            { label: 'BSN<br/>University',        state: 'next'     },
+            { label: 'PNLE<br/>Philippines',      state: 'next'     },
+            { label: '1 Year<br/>Clinical PH',    state: 'next'     },
+            { label: 'OET<br/>Grade B',           state: 'next'     },
+            { label: 'NCLEX<br/>USA',             state: 'next'     },
+            { label: 'OSCE<br/>Australia',        state: 'next'     },
+            { label: 'AHPRA<br/>License',         state: 'goal'     },
+            { label: 'U.S. Option<br/>(Optional)', state: 'optional', connector: 'dashed' },
+          ],
+        },
+      },
     },
 
     // ── ALJANE ────────────────────────────────────────────────────────────────
@@ -287,6 +538,19 @@ const NGS_DATA = {
       travels: [],
       budgets: {},
       expenses: {},
+
+      // ── CARD (for index.html scholar list) ──────────────────────────────────
+      card: {
+        name: 'Aljane',
+        track: 'NGH',
+        status: 'Paused',
+        stage: 'On hold — external scholarship',
+        year: '2028 cohort',
+        note: 'Received an external scholarship covering university. NGH remains an option post-graduation.',
+        quote: 'My path is on pause, but not forgotten.',
+        progress: 0.45,
+        accentKey: 'red',
+      },
     },
   },
 
@@ -335,3 +599,5 @@ const NGS_DATA = {
   ],
 
 };
+
+export { NGS_DATA };
