@@ -721,6 +721,35 @@ function ExpenseSection({ currency }) {
           : <ChartCat key={expScholar + '-cat'} s={s} currency={currency} />
         }
       </div>
+
+      {(() => {
+        const pendingRows = rows.filter(r => r.sent !== 'Yes');
+        const pendingTotal = pendingRows.reduce((t, r) => t + (r.amount || 0), 0);
+        const allUnsent = allRows.filter(r => r.sent !== 'Yes');
+        const allUnsentTotal = allUnsent.reduce((t, r) => t + (r.amount || 0), 0);
+        const isFiltered = activeFilters > 0;
+        return (
+          <div className="pending-send-card">
+            <div className="pending-send-left">
+              <div className="pending-send-label">Pending to Send</div>
+              <div className="pending-send-note">
+                {isFiltered
+                  ? `${pendingRows.length} item${pendingRows.length !== 1 ? 's' : ''} not yet sent · filtered view`
+                  : `${pendingRows.length} item${pendingRows.length !== 1 ? 's' : ''} not yet sent · all rows`}
+              </div>
+            </div>
+            <div className="pending-send-right">
+              <div className="pending-send-amount">{$fmt(pendingTotal, currency)}</div>
+              {isFiltered && allUnsentTotal !== pendingTotal && (
+                <div className="pending-send-allnote">
+                  {$fmt(allUnsentTotal, currency)} total unfiltered
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       <div className="exp-table-card">
         <div className="exp-toolbar">
           <input type="text" placeholder="Search items…" value={expSearch} onChange={e => setExpSearch(e.target.value)} />

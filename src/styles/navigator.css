@@ -473,6 +473,27 @@ table.exp thead th.sort-active { color: var(--ngs-navy); }
 .cat-fill { height: 100%; background: var(--ngs-navy); border-radius: 4px; width: 0; transition: width 0.8s cubic-bezier(.2,.7,.2,1); }
 .cat-val { font-family: var(--ngs-mono); font-size: 12.5px; color: var(--ngs-navy); text-align: right; min-width: 96px; }
 
+/* pending-to-send summary */
+.pending-send-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  background: rgba(181,134,42,0.07); border: 1px solid rgba(181,134,42,0.28);
+  border-radius: 8px; padding: 16px 22px; margin-bottom: 18px;
+}
+.pending-send-left { display: flex; flex-direction: column; gap: 4px; }
+.pending-send-label {
+  font-family: var(--ngs-mono); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.16em; color: var(--ngs-amber);
+}
+.pending-send-note { font-size: 12.5px; color: var(--ngs-ink-soft); }
+.pending-send-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.pending-send-amount {
+  font-family: var(--ngs-display); font-size: 28px; font-weight: 500;
+  color: var(--ngs-amber); letter-spacing: -0.02em; line-height: 1;
+}
+.pending-send-allnote {
+  font-family: var(--ngs-mono); font-size: 10.5px; color: var(--ngs-muted);
+}
+
 .exp-table-card { background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px; overflow: hidden; }
 .exp-toolbar { display: flex; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--ngs-rule); background: var(--ngs-paper-2); }
 .exp-toolbar input, .exp-toolbar select {
