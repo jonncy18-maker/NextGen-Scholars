@@ -287,13 +287,14 @@ const NGS_DATA = {
           intro: 'A single donor underwrites Claire end-to-end — tuition, board, travel, and the milestone rewards that mark each step.',
           total: {
             value: '₱2.05M',
+            rawPhp: 2050000,
             detail: 'Across university, travel program, and milestone rewards through Year 2',
             progress: 0.37,
           },
           categories: [
-            { icon: 'cap',    name: 'University',        amount: '₱1.57M', detail: 'Tuition, board, supplies, and academic fees across the four-year BSN program.' },
-            { icon: 'us',     name: 'Travel Program',    amount: '₱240K',  detail: 'Annual reward trips — currently Boracay, Bohol, Hong Kong; future Taiwan cruise + U.S. immersion.' },
-            { icon: 'trophy', name: 'Milestone Rewards', amount: '₱247K',  detail: 'Phone, laptop, motorcycle, tablet, credit-card line — earned as each academic target is met.' },
+            { icon: 'cap',    name: 'University',        amount: '₱1.57M', amountPhp: 1570000, detail: 'Tuition, board, supplies, and academic fees across the four-year BSN program.' },
+            { icon: 'us',     name: 'Travel Program',    amount: '₱240K',  amountPhp: 240000,  detail: 'Annual reward trips — currently Boracay, Bohol, Hong Kong; future Taiwan cruise + U.S. immersion.' },
+            { icon: 'trophy', name: 'Milestone Rewards', amount: '₱247K',  amountPhp: 247000,  detail: 'Phone, laptop, motorcycle, tablet, credit-card line — earned as each academic target is met.' },
           ],
         },
         milestones: [
@@ -463,8 +464,14 @@ const NGS_DATA = {
             'During the trial period the program provides limited support — enough to ' +
             'demonstrate commitment and keep communication open. Full scholarship ' +
             'investment begins upon university entry.',
+          total: {
+            value: '₱7.5K',
+            rawPhp: 7500,
+            detail: 'Trial period support to date (smartphone)',
+            progress: 0.04,
+          },
           categories: [
-            { icon: 'phone', name: 'Smartphone',    amount: '₱7.5K',   detail: 'Redmi Note 14 · 6+128GB · Provided at trial entry, April 2026.' },
+            { icon: 'phone', name: 'Smartphone',    amount: '₱7.5K',     amountPhp: 7500, detail: 'Redmi Note 14 · 6+128GB · Provided at trial entry, April 2026.' },
             { icon: 'card',  name: 'Mobile data plan', amount: 'Ongoing', detail: 'Maintained throughout trial to support daily mentor check-ins.' },
             { icon: 'cap',   name: 'Full scholarship',  amount: 'From 2027', detail: 'Tuition, board, milestone rewards, and travel program activate on BSN entry.' },
           ],

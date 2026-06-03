@@ -1,18 +1,58 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NGSIcons } from './icons.jsx';
+import { storedMode, storedRate, persistFx, fetchMarketRate, DEFAULT_RATE } from '../../fx.js';
+
+// ── FX state hook shared across profile components ────────────────────────────
+
+function useFxState() {
+  const [fxMode, setFxMode] = useState(() => storedMode());
+  const [fxRate, setFxRate] = useState(() => storedRate());
+  const [fxStatus, setFxStatus] = useState('idle');
+  const [currency, setCurrency] = useState('PHP');
+
+  useEffect(() => {
+    if (fxMode !== 'market') return;
+    setFxStatus('loading');
+    fetchMarketRate()
+      .then(rate => {
+        setFxRate(rate);
+        setFxStatus('idle');
+        persistFx('market', rate);
+      })
+      .catch(() => setFxStatus('error'));
+  }, [fxMode]);
+
+  function handleModeChange(mode) {
+    setFxMode(mode);
+    if (mode === 'manual') { setFxStatus('idle'); persistFx('manual', fxRate); }
+  }
+  function handleRateChange(rate) { setFxRate(rate); persistFx('manual', rate); }
+
+  return { currency, setCurrency, fxMode, fxRate, fxStatus, handleModeChange, handleRateChange };
+}
+
+function fmtPhp(amountPhp, currency, rate) {
+  if (amountPhp == null) return null;
+  if (currency === 'USD') return '$' + Math.round(amountPhp / (rate || DEFAULT_RATE)).toLocaleString('en-US');
+  return '₱' + Math.round(amountPhp).toLocaleString('en-US');
+}
+
+// ── root export ───────────────────────────────────────────────────────────────
 
 export function ScholarProfile({ data, isMobile }) {
+  const fx = useFxState();
+
   return (
     <div className={`ngs-profile ${isMobile ? 'is-mobile' : 'is-desktop'}`}
          data-screen-label={`${data.firstName} — Profile`}>
-      <TopNav data={data}/>
+      <TopNav data={data} fx={fx} />
       <PhotoHeader data={data}/>
       {data.quote && <PullQuote quote={data.quote}/>}
       {data.trialBanner && <TrialBanner text={data.trialBanner}/>}
       {data.trialProgress && <TrialProgressSection data={data.trialProgress}/>}
       {data.currentSemester && <SemesterSection data={data.currentSemester}/>}
       {data.academics && <AcademicSection data={data.academics}/>}
-      {data.support && <SupportSection data={data.support}/>}
+      {data.support && <SupportSection data={data.support} currency={fx.currency} fxRate={fx.fxRate} />}
       {data.milestones && <MilestonesSection items={data.milestones}/>}
       {data.travels && <TravelsSection items={data.travels}/>}
       {data.english && <EnglishSection data={data.english}/>}
@@ -22,7 +62,19 @@ export function ScholarProfile({ data, isMobile }) {
   );
 }
 
-function TopNav({ data }) {
+// ── top nav with FX widget ────────────────────────────────────────────────────
+
+function TopNav({ data, fx }) {
+  const [inputVal, setInputVal] = useState(String(fx.fxRate));
+
+  useEffect(() => { setInputVal(fx.fxRate.toFixed(2)); }, [fx.fxRate]);
+
+  function handleRateInput(e) {
+    setInputVal(e.target.value);
+    const n = parseFloat(e.target.value);
+    if (!isNaN(n) && n > 0) fx.handleRateChange(n);
+  }
+
   return (
     <header className="ngs-pnav">
       <div className="ngs-pnav-inner">
@@ -32,6 +84,41 @@ function TopNav({ data }) {
           </div>
           <span className="ngs-pnav-name">NextGen Scholars</span>
         </a>
+
+        <div className="ngs-pnav-fx">
+          <div className="ngs-pnav-curtoggle">
+            {['PHP', 'USD'].map(cur => (
+              <button
+                key={cur}
+                className={fx.currency === cur ? 'active' : ''}
+                onClick={() => fx.setCurrency(cur)}
+              >
+                {cur === 'PHP' ? '₱' : '$'}
+              </button>
+            ))}
+          </div>
+          <div className="ngs-pnav-fxwidget">
+            <span className="ngs-pnav-fxlabel">$1 = ₱</span>
+            <div className="ngs-pnav-fxmode">
+              <button className={fx.fxMode === 'market' ? 'active' : ''} onClick={() => fx.handleModeChange('market')}>
+                {fx.fxStatus === 'loading' ? '⟳' : 'Mkt'}
+              </button>
+              <button className={fx.fxMode === 'manual' ? 'active' : ''} onClick={() => fx.handleModeChange('manual')}>
+                Man
+              </button>
+            </div>
+            <input
+              type="number"
+              className={`ngs-pnav-fxinput${fx.fxMode === 'market' ? ' is-market' : ''}`}
+              value={inputVal}
+              disabled={fx.fxMode === 'market'}
+              min="1" max="999" step="0.01"
+              onChange={handleRateInput}
+              title={fx.fxMode === 'market' ? 'Rate set by market' : 'PHP per 1 USD'}
+            />
+          </div>
+        </div>
+
         <a href="index.html#scholars" className="ngs-pnav-back">All scholars</a>
       </div>
     </header>
@@ -219,7 +306,11 @@ function AcademicSection({ data }) {
   );
 }
 
-function SupportSection({ data }) {
+function SupportSection({ data, currency, fxRate }) {
+  const totalFormatted = data.total?.rawPhp != null
+    ? fmtPhp(data.total.rawPhp, currency, fxRate)
+    : data.total?.value;
+
   return (
     <section className="ngs-psection">
       <SectionEyebrow>Investment</SectionEyebrow>
@@ -229,7 +320,7 @@ function SupportSection({ data }) {
       {data.total && (
         <div className="ngs-support-summary">
           <div className="ngs-support-summary-label">Total invested to date</div>
-          <div className="ngs-support-summary-value">{data.total.value}</div>
+          <div className="ngs-support-summary-value">{totalFormatted}</div>
           <div className="ngs-support-summary-foot">{data.total.detail}</div>
           {data.total.progress !== undefined && (
             <div className="ngs-support-progress">
@@ -249,6 +340,9 @@ function SupportSection({ data }) {
       <div className="ngs-support-cats">
         {data.categories.map((c, i) => {
           const IconComp = NGSIcons[c.icon];
+          const amtDisplay = c.amountPhp != null
+            ? fmtPhp(c.amountPhp, currency, fxRate)
+            : c.amount;
           return (
             <div key={i} className="ngs-support-cat">
               <div className="ngs-support-cat-icon">
@@ -257,7 +351,7 @@ function SupportSection({ data }) {
               <div className="ngs-support-cat-body">
                 <div className="ngs-support-cat-head">
                   <div className="ngs-support-cat-name">{c.name}</div>
-                  {c.amount && <div className="ngs-support-cat-amount">{c.amount}</div>}
+                  {amtDisplay && <div className="ngs-support-cat-amount">{amtDisplay}</div>}
                 </div>
                 <div className="ngs-support-cat-detail">{c.detail}</div>
               </div>

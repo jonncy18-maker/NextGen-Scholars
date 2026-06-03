@@ -3,23 +3,30 @@ import ReactDOM from 'react-dom/client';
 import './styles/navigator.css';
 import { NGS_DATA } from '../scholars-data.js';
 import { loadFromSheets } from './sheets-loader.js';
+import { storedMode, storedRate, persistFx, fetchMarketRate, DEFAULT_RATE } from './fx.js';
 
 if (!NGS_DATA || !NGS_DATA.config) {
   throw new Error('NGS_DATA missing — hard-refresh (Ctrl/Cmd+Shift+R)');
 }
 
-// Mutable so the Sheets loader can swap in live data without restructuring the file.
 let D = NGS_DATA;
 const SCHOLAR_KEYS = ['claire', 'april', 'aljane'].filter(k => D.scholars[k]);
 const NAMECLASS = { Claire: '', April: 't-april', Aljane: 't-aljane' };
 
-// ── utilities ────────────────────────────────────────────────────────────────
+// ── FX context ───────────────────────────────────────────────────────────────
 
-function fmt(amount, currency) {
-  if (amount == null) return '—';
-  if (currency === 'USD') return '$' + Math.round(amount / D.config.exchangeRate).toLocaleString('en-US');
-  return '₱' + Math.round(amount).toLocaleString('en-US');
+const FxCtx = React.createContext(DEFAULT_RATE);
+
+function useFmt() {
+  const rate = React.useContext(FxCtx);
+  return (amount, currency) => {
+    if (amount == null) return '—';
+    if (currency === 'USD') return '$' + Math.round(amount / rate).toLocaleString('en-US');
+    return '₱' + Math.round(amount).toLocaleString('en-US');
+  };
 }
+
+// ── utilities ────────────────────────────────────────────────────────────────
 
 function gpaClass(gpa, floor) {
   if (gpa == null) return '';
@@ -114,7 +121,19 @@ function LockScreen({ isHiding, onUnlock }) {
 
 // ── nav ──────────────────────────────────────────────────────────────────────
 
-function NavBar({ currency, onCurrencyChange }) {
+function NavBar({ currency, onCurrencyChange, fxMode, fxRate, fxStatus, onFxModeChange, onFxRateChange }) {
+  const [inputVal, setInputVal] = useState(String(fxRate));
+
+  useEffect(() => {
+    setInputVal(fxRate.toFixed(2));
+  }, [fxRate]);
+
+  function handleRateInput(e) {
+    setInputVal(e.target.value);
+    const n = parseFloat(e.target.value);
+    if (!isNaN(n) && n > 0) onFxRateChange(n);
+  }
+
   return (
     <header className="nav">
       <div className="nav-inner">
@@ -130,6 +149,39 @@ function NavBar({ currency, onCurrencyChange }) {
               </button>
             ))}
           </div>
+
+          <div className="fx-widget">
+            <span className="fx-label">$1 = ₱</span>
+            <div className="fx-mode-toggle">
+              <button
+                className={fxMode === 'market' ? 'active' : ''}
+                onClick={() => onFxModeChange('market')}
+                title="Fetch live market rate"
+              >
+                {fxStatus === 'loading' ? '⟳' : 'Market'}
+              </button>
+              <button
+                className={fxMode === 'manual' ? 'active' : ''}
+                onClick={() => onFxModeChange('manual')}
+                title="Enter rate manually"
+              >
+                Manual
+              </button>
+            </div>
+            <input
+              type="number"
+              className={`fx-input${fxMode === 'market' ? ' is-market' : ''}`}
+              value={inputVal}
+              disabled={fxMode === 'market'}
+              min="1"
+              max="999"
+              step="0.01"
+              onChange={handleRateInput}
+              title={fxMode === 'market' ? 'Rate set by market — switch to Manual to edit' : 'PHP per 1 USD'}
+            />
+            {fxStatus === 'error' && <span className="fx-err" title="Could not fetch market rate">!</span>}
+          </div>
+
           <span className="nav-badge">Mentor View</span>
           <a className="nav-back" href="index.html">← All scholars</a>
         </div>
@@ -194,6 +246,7 @@ function ProgBar({ pct }) {
 }
 
 function ScholarCard({ sk, currency, liveGpa }) {
+  const $fmt = useFmt();
   const s = { ...D.scholars[sk], _key: sk };
   const gpa = latestGpa(s, liveGpa);
   const tot = scholarTotals(s);
@@ -220,7 +273,7 @@ function ScholarCard({ sk, currency, liveGpa }) {
             <div className="metric-lbl">Last<br />GPA</div>
           </div>
           <div className="metric">
-            <div className="metric-val">{fmt(tot.total, currency)}</div>
+            <div className="metric-val">{$fmt(tot.total, currency)}</div>
             <div className="metric-lbl">Total<br />Invested</div>
           </div>
           <div className="metric">
@@ -321,23 +374,24 @@ function LogSection({ logs, onLog }) {
 // ── expense dashboard ─────────────────────────────────────────────────────────
 
 function TotalsRow({ s, currency }) {
+  const $fmt = useFmt();
   const b = scholarTotals(s);
   return (
     <div className="totals-row">
       <div className="total-card lead">
-        <div className="total-val">{fmt(b.total, currency)}</div>
+        <div className="total-val">{$fmt(b.total, currency)}</div>
         <div className="total-lbl">Total Invested</div>
       </div>
       <div className="total-card">
-        <div className="total-val">{fmt(b.university, currency)}</div>
+        <div className="total-val">{$fmt(b.university, currency)}</div>
         <div className="total-lbl">Universidad</div>
       </div>
       <div className="total-card">
-        <div className="total-val">{fmt(b.milestones, currency)}</div>
+        <div className="total-val">{$fmt(b.milestones, currency)}</div>
         <div className="total-lbl">Milestones</div>
       </div>
       <div className="total-card">
-        <div className="total-val">{fmt(b.travel, currency)}</div>
+        <div className="total-val">{$fmt(b.travel, currency)}</div>
         <div className="total-lbl">Viajes</div>
       </div>
     </div>
@@ -345,6 +399,7 @@ function TotalsRow({ s, currency }) {
 }
 
 function ChartSem({ s, currency }) {
+  const $fmt = useFmt();
   const sems = Object.keys(s.expenses || {});
   const data = sems.map(sem => {
     let actual = 0, budget = 0;
@@ -362,10 +417,10 @@ function ChartSem({ s, currency }) {
           <div key={d.sem} className="bar-group">
             <div className="bar-pair">
               <div className="bar actual" style={{ height: ready ? Math.round(d.actual / max * 100) + '%' : '0%' }}>
-                <span className="bar-tip">{fmt(d.actual, currency)}</span>
+                <span className="bar-tip">{$fmt(d.actual, currency)}</span>
               </div>
               <div className="bar budget" style={{ height: ready ? Math.round(d.budget / max * 100) + '%' : '0%' }}>
-                <span className="bar-tip">{fmt(d.budget, currency)}</span>
+                <span className="bar-tip">{$fmt(d.budget, currency)}</span>
               </div>
             </div>
           </div>
@@ -381,6 +436,7 @@ function ChartSem({ s, currency }) {
 }
 
 function ChartCat({ s, currency }) {
+  const $fmt = useFmt();
   const totals = {};
   allExpenses(s).forEach(e => { totals[e.cat] = (totals[e.cat] || 0) + e.amount; });
   const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
@@ -396,33 +452,233 @@ function ChartCat({ s, currency }) {
           <div className="cat-track">
             <div className="cat-fill" style={{ width: ready ? (val / max * 100) + '%' : '0%' }} />
           </div>
-          <div className="cat-val">{fmt(val, currency)}</div>
+          <div className="cat-val">{$fmt(val, currency)}</div>
         </div>
       ))}
     </div>
   );
 }
 
+// ── filter helpers ────────────────────────────────────────────────────────────
+
+const EMPTY_FILTERS = {
+  item: '',
+  cats: [],
+  dateFrom: '',
+  dateTo: '',
+  amtMin: '',
+  amtMax: '',
+  statuses: [],
+};
+
+function countActiveFilters(f) {
+  return (f.item ? 1 : 0) +
+    (f.cats.length ? 1 : 0) +
+    (f.dateFrom || f.dateTo ? 1 : 0) +
+    (f.amtMin !== '' || f.amtMax !== '' ? 1 : 0) +
+    (f.statuses.length ? 1 : 0);
+}
+
+function applyFilters(rows, f) {
+  return rows.filter(r => {
+    if (f.item && !r.item.toLowerCase().includes(f.item.toLowerCase())) return false;
+    if (f.cats.length > 0 && !f.cats.includes(r.cat)) return false;
+    if (f.dateFrom && r.date < f.dateFrom) return false;
+    if (f.dateTo && r.date > f.dateTo) return false;
+    if (f.amtMin !== '' && r.amount < parseFloat(f.amtMin)) return false;
+    if (f.amtMax !== '' && r.amount > parseFloat(f.amtMax)) return false;
+    if (f.statuses.length > 0 && !f.statuses.includes(r.status)) return false;
+    return true;
+  });
+}
+
+function applySorting(rows, field, dir) {
+  if (!field) return rows;
+  return [...rows].sort((a, b) => {
+    let va, vb;
+    if (field === 'item')   { va = a.item   || ''; vb = b.item   || ''; }
+    if (field === 'cat')    { va = a.cat    || ''; vb = b.cat    || ''; }
+    if (field === 'date')   { va = a.date   || ''; vb = b.date   || ''; }
+    if (field === 'amount') { va = a.amount || 0;  vb = b.amount || 0;  }
+    if (field === 'status') { va = a.status || ''; vb = b.status || ''; }
+    const cmp = typeof va === 'number' ? va - vb : va.localeCompare(vb);
+    return dir === 'asc' ? cmp : -cmp;
+  });
+}
+
+function SortTh({ label, field, sortField, sortDir, onSort, className }) {
+  const active = sortField === field;
+  const arrow = active ? (sortDir === 'asc' ? ' ↑' : ' ↓') : '';
+  return (
+    <th
+      className={`sortable${active ? ' sort-active' : ''}${className ? ' ' + className : ''}`}
+      onClick={() => onSort(field)}
+      title={`Sort by ${label}`}
+    >
+      {label}{arrow}
+    </th>
+  );
+}
+
+// ── filter panel ──────────────────────────────────────────────────────────────
+
+function FilterPanel({ filters, setFilters, uniqueCats, uniqueStatuses, onClear }) {
+  function toggleArr(key, val) {
+    setFilters(f => {
+      const arr = f[key];
+      return { ...f, [key]: arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val] };
+    });
+  }
+
+  return (
+    <div className="filter-panel">
+      <div className="filter-grid">
+        <div className="filter-col">
+          <div className="filter-label">Item</div>
+          <input
+            type="text"
+            className="filter-text"
+            placeholder="Search item name…"
+            value={filters.item}
+            onChange={e => setFilters(f => ({ ...f, item: e.target.value }))}
+          />
+        </div>
+
+        <div className="filter-col">
+          <div className="filter-label">Category</div>
+          <div className="filter-chips">
+            {uniqueCats.map(cat => (
+              <button
+                key={cat}
+                className={`filter-chip${filters.cats.includes(cat) ? ' active' : ''}`}
+                onClick={() => toggleArr('cats', cat)}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="filter-col">
+          <div className="filter-label">Date range</div>
+          <div className="filter-range">
+            <input type="date" value={filters.dateFrom} onChange={e => setFilters(f => ({ ...f, dateFrom: e.target.value }))} />
+            <span className="filter-range-sep">→</span>
+            <input type="date" value={filters.dateTo} onChange={e => setFilters(f => ({ ...f, dateTo: e.target.value }))} />
+          </div>
+        </div>
+
+        <div className="filter-col">
+          <div className="filter-label">Amount (₱)</div>
+          <div className="filter-range">
+            <input type="number" placeholder="Min" value={filters.amtMin} min="0" onChange={e => setFilters(f => ({ ...f, amtMin: e.target.value }))} />
+            <span className="filter-range-sep">→</span>
+            <input type="number" placeholder="Max" value={filters.amtMax} min="0" onChange={e => setFilters(f => ({ ...f, amtMax: e.target.value }))} />
+          </div>
+        </div>
+
+        <div className="filter-col">
+          <div className="filter-label">Status</div>
+          <div className="filter-chips">
+            {uniqueStatuses.map(st => (
+              <button
+                key={st}
+                className={`filter-chip filter-chip-status${filters.statuses.includes(st) ? ' active' : ''}`}
+                onClick={() => toggleArr('statuses', st)}
+              >
+                {st}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="filter-footer">
+        <button className="filter-clear" onClick={onClear}>Clear all filters</button>
+      </div>
+    </div>
+  );
+}
+
+// ── expense section ───────────────────────────────────────────────────────────
+
 function ExpenseSection({ currency }) {
+  const $fmt = useFmt();
+
   const [expScholar, setExpScholar] = useState(SCHOLAR_KEYS[0]);
   const [expView, setExpView] = useState('sem');
   const [expSearch, setExpSearch] = useState('');
   const [expSem, setExpSem] = useState('all');
 
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState(EMPTY_FILTERS);
+
+  const [sortField, setSortField] = useState(null);
+  const [sortDir, setSortDir] = useState('asc');
+
   const s = { ...D.scholars[expScholar], _key: expScholar };
   const sems = Object.keys(s.expenses || {});
 
-  function switchScholar(k) { setExpScholar(k); setExpSem('all'); setExpSearch(''); }
+  const allRows = allExpenses(s);
+  const uniqueCats = [...new Set(allRows.map(r => r.cat))].sort();
+  const uniqueStatuses = [...new Set(allRows.map(r => r.status))].sort();
 
-  let rows = allExpenses(s);
+  function switchScholar(k) {
+    setExpScholar(k);
+    setExpSem('all');
+    setExpSearch('');
+    setFilters(EMPTY_FILTERS);
+    setSortField(null);
+    setSortDir('asc');
+  }
+
+  function handleSort(field) {
+    if (sortField === field) {
+      if (sortDir === 'asc') setSortDir('desc');
+      else { setSortField(null); setSortDir('asc'); }
+    } else {
+      setSortField(field);
+      setSortDir('asc');
+    }
+  }
+
+  function clearFilters() {
+    setFilters(EMPTY_FILTERS);
+    setExpSearch('');
+    setExpSem('all');
+  }
+
+  let rows = allRows;
   if (expSem !== 'all') rows = rows.filter(r => r.sem === expSem);
   if (expSearch) rows = rows.filter(r => (r.item + ' ' + r.cat).toLowerCase().includes(expSearch.toLowerCase()));
-  rows = rows.slice(0, 60);
+  rows = applyFilters(rows, filters);
+  rows = applySorting(rows, sortField, sortDir);
+
+  const activeFilters = countActiveFilters(filters) + (expSearch ? 1 : 0) + (expSem !== 'all' ? 1 : 0);
 
   return (
     <section className="section">
       <div className="eyebrow"><span className="num">04</span> Expense Dashboard <span className="eyebrow-rule" /></div>
-      <div className="section-head"><h2 className="section-title">Where the investment goes</h2></div>
+      <div className="section-head">
+        <h2 className="section-title">Where the investment goes</h2>
+        <button
+          className={`filter-toggle-btn${showFilters ? ' is-open' : ''}${activeFilters > 0 ? ' has-active' : ''}`}
+          onClick={() => setShowFilters(v => !v)}
+        >
+          {showFilters ? '▲' : '▼'} Filters{activeFilters > 0 ? ` · ${activeFilters} active` : ''}
+        </button>
+      </div>
+
+      {showFilters && (
+        <FilterPanel
+          filters={filters}
+          setFilters={setFilters}
+          uniqueCats={uniqueCats}
+          uniqueStatuses={uniqueStatuses}
+          onClear={clearFilters}
+        />
+      )}
+
       <div className="exp-controls">
         <div className="tabs">
           {SCHOLAR_KEYS.map(k => (
@@ -451,11 +707,20 @@ function ExpenseSection({ currency }) {
             <option value="all">All semesters</option>
             {sems.map(sem => <option key={sem} value={sem}>{sem}</option>)}
           </select>
+          {activeFilters > 0 && (
+            <button className="exp-clear-btn" onClick={clearFilters}>Clear filters</button>
+          )}
         </div>
         <table className="exp">
-          <thead><tr>
-            <th>Item</th><th>Category</th><th>Date</th><th className="right">Amount</th><th>Status</th>
-          </tr></thead>
+          <thead>
+            <tr>
+              <SortTh label="Item"     field="item"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              <SortTh label="Category" field="cat"    sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              <SortTh label="Date"     field="date"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              <SortTh label="Amount"   field="amount" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="right" />
+              <SortTh label="Status"   field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+            </tr>
+          </thead>
           <tbody>
             {rows.length === 0
               ? <tr className="exp-none"><td colSpan={5}>No matching expenses.</td></tr>
@@ -464,13 +729,16 @@ function ExpenseSection({ currency }) {
                   <td><span className="exp-item">{r.item}</span></td>
                   <td><span className="exp-cat">{r.cat}</span></td>
                   <td className="exp-date">{r.date}</td>
-                  <td className="right exp-amount">{fmt(r.amount, currency)}</td>
+                  <td className="right exp-amount">{$fmt(r.amount, currency)}</td>
                   <td><span className={`exp-status ${r.status}`}>{r.status}</span></td>
                 </tr>
               ))
             }
           </tbody>
         </table>
+        {rows.length > 0 && (
+          <div className="exp-count">{rows.length} row{rows.length !== 1 ? 's' : ''}</div>
+        )}
       </div>
     </section>
   );
@@ -605,21 +873,47 @@ function Navigator() {
   const [alerts, setAlerts] = useState(() => (D.alerts || []).map(a => ({ ...a })));
   const [logs, setLogs] = useState([]);
   const [liveGpa, setLiveGpa] = useState({});
-  const [sheetsStatus, setSheetsStatus] = useState('loading'); // 'loading' | 'live' | 'static'
+  const [sheetsStatus, setSheetsStatus] = useState('loading');
+
+  const [fxMode, setFxMode] = useState(() => storedMode());
+  const [fxRate, setFxRate] = useState(() => storedRate());
+  const [fxStatus, setFxStatus] = useState('idle'); // 'idle' | 'loading' | 'error'
+
+  // Fetch market rate when mode is 'market'
+  useEffect(() => {
+    if (fxMode !== 'market') return;
+    setFxStatus('loading');
+    fetchMarketRate()
+      .then(rate => {
+        setFxRate(rate);
+        setFxStatus('idle');
+        persistFx('market', rate);
+      })
+      .catch(() => setFxStatus('error'));
+  }, [fxMode]);
+
+  function handleFxModeChange(mode) {
+    setFxMode(mode);
+    if (mode === 'manual') {
+      setFxStatus('idle');
+      persistFx('manual', fxRate);
+    }
+  }
+
+  function handleFxRateChange(rate) {
+    setFxRate(rate);
+    persistFx('manual', rate);
+  }
 
   useEffect(() => {
     loadFromSheets()
       .then(data => {
-        // Sanity-check: if the sheet returned HTML instead of CSV the scholars
-        // object will be empty. Fall back to static data in that case.
         const hasScholars = data.scholars && Object.keys(data.scholars).length > 0;
         if (!hasScholars) {
           console.warn('Sheets returned no scholar data — using static fallback');
           setSheetsStatus('static');
           return;
         }
-        // Password is cosmetic; always keep the value from scholars-data.js so
-        // a misconfigured sheet can't lock the mentor out.
         D = { ...data, config: { ...data.config, password: NGS_DATA.config.password } };
         setAlerts((D.alerts || []).map(a => ({ ...a })));
         setSheetsStatus('live');
@@ -657,9 +951,17 @@ function Navigator() {
   }
 
   return (
-    <>
+    <FxCtx.Provider value={fxRate}>
       <LockScreen isHiding={unlocked} onUnlock={() => setUnlocked(true)} />
-      <NavBar currency={currency} onCurrencyChange={setCurrency} />
+      <NavBar
+        currency={currency}
+        onCurrencyChange={setCurrency}
+        fxMode={fxMode}
+        fxRate={fxRate}
+        fxStatus={fxStatus}
+        onFxModeChange={handleFxModeChange}
+        onFxRateChange={handleFxRateChange}
+      />
       <main className="wrap">
         <AlertsSection alerts={alerts} onDismiss={handleDismiss} />
         <StatusSection currency={currency} liveGpa={liveGpa} />
@@ -670,7 +972,7 @@ function Navigator() {
         <EnglishSection />
       </main>
       <NavFooter sheetsStatus={sheetsStatus} />
-    </>
+    </FxCtx.Provider>
   );
 }
 
