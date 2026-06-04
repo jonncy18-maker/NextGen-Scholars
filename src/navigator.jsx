@@ -701,6 +701,7 @@ function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
   const [sortDir, setSortDir] = useState('asc');
 
   const [sentOverrides, setSentOverrides] = useState(() => new Set());
+  const [deletedIds, setDeletedIds] = useState(() => new Set());
   const [showAddForm, setShowAddForm] = useState(false);
 
   function handleMarkSent(r) {
@@ -708,12 +709,16 @@ function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
     writeSent(r.id, expScholar);
   }
 
+  function handleDeleteExpense(r) {
+    setDeletedIds(prev => new Set([...prev, String(r.id)]));
+  }
+
   const s = { ...D.scholars[expScholar], _key: expScholar };
   const sems = Object.keys(s.expenses || {});
 
   const baseRows = allExpenses(s);
   const localRows = (addedExpenses[expScholar] || []).map(e => ({ ...e, status: e.avb }));
-  const allRows = [...baseRows, ...localRows];
+  const allRows = [...baseRows, ...localRows].filter(r => !deletedIds.has(String(r.id)));
 
   const uniqueCats = [...new Set(allRows.map(r => r.cat))].sort();
   const uniqueStatuses = [...new Set(allRows.map(r => r.status))].sort();
@@ -867,11 +872,12 @@ function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
               <SortTh label="Total"     field="total"  sortField={sortField} sortDir={sortDir} onSort={handleSort} className="right" />
               <SortTh label="Status"    field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
               <SortTh label="Sent"      field="sent"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              <th className="exp-th-del" />
             </tr>
           </thead>
           <tbody>
             {rows.length === 0
-              ? <tr className="exp-none"><td colSpan={8}>No matching expenses.</td></tr>
+              ? <tr className="exp-none"><td colSpan={9}>No matching expenses.</td></tr>
               : rows.map((r, i) => {
                 const isSent = r.sent === 'Yes' || sentOverrides.has(String(r.id));
                 const qty = r.qty || 1;
@@ -890,6 +896,9 @@ function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
                         ? <span className="exp-sent is-yes">✓ Sent</span>
                         : <button className="exp-sent is-no mark-sent-btn" title="Mark as sent in Sheets" onClick={() => handleMarkSent(r)}>Mark Sent →</button>
                       }
+                    </td>
+                    <td className="exp-del-cell">
+                      <button className="exp-del-btn" title="Delete expense" onClick={() => handleDeleteExpense(r)}>Delete</button>
                     </td>
                   </tr>
                 );
