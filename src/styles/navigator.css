@@ -578,7 +578,7 @@ table.exp tbody tr:hover { background: var(--ngs-paper-2); }
 }
 .add-exp-form {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 12px; align-items: end;
 }
 .add-exp-actions {
@@ -602,9 +602,6 @@ table.exp tbody tr:hover { background: var(--ngs-paper-2); }
 .add-exp-save:hover:not(:disabled) { background: var(--ngs-gold-soft); }
 .add-exp-save:disabled { opacity: 0.45; cursor: not-allowed; }
 .add-exp-save.is-saved { background: var(--ngs-green); color: #fff; }
-@media (max-width: 980px) {
-  .add-exp-form { grid-template-columns: 1fr 1fr 1fr; }
-}
 @media (max-width: 640px) {
   .add-exp-form { grid-template-columns: 1fr 1fr; }
 }
