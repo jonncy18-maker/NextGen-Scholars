@@ -4,6 +4,7 @@ import './styles/navigator.css';
 import { NGS_DATA } from '../scholars-data.js';
 import { loadFromSheets } from './sheets-loader.js';
 import { storedMode, storedRate, persistFx, fetchMarketRate, DEFAULT_RATE } from './fx.js';
+import { writeToSheets } from './sheets-writer.js';
 
 if (!NGS_DATA || !NGS_DATA.config) {
   throw new Error('NGS_DATA missing — hard-refresh (Ctrl/Cmd+Shift+R)');
@@ -635,6 +636,13 @@ function ExpenseSection({ currency }) {
   const [sortField, setSortField] = useState(null);
   const [sortDir, setSortDir] = useState('asc');
 
+  const [sentOverrides, setSentOverrides] = useState(() => new Set());
+
+  function handleMarkSent(r) {
+    setSentOverrides(prev => new Set([...prev, String(r.id)]));
+    writeToSheets({ action: 'markSent', id: String(r.id), scholar: expScholar });
+  }
+
   const s = { ...D.scholars[expScholar], _key: expScholar };
   const sems = Object.keys(s.expenses || {});
 
@@ -650,6 +658,7 @@ function ExpenseSection({ currency }) {
     setFilters(EMPTY_FILTERS);
     setSortField(null);
     setSortDir('asc');
+    setSentOverrides(new Set());
   }
 
   function handleSort(field) {
@@ -775,16 +784,24 @@ function ExpenseSection({ currency }) {
           <tbody>
             {rows.length === 0
               ? <tr className="exp-none"><td colSpan={6}>No matching expenses.</td></tr>
-              : rows.map((r, i) => (
-                <tr key={i}>
-                  <td><span className="exp-item">{r.item}</span></td>
-                  <td><span className="exp-cat">{r.cat}</span></td>
-                  <td className="exp-date">{r.date}</td>
-                  <td className="right exp-amount">{$fmt(r.amount, currency)}</td>
-                  <td><span className={`exp-status ${r.status}`}>{r.status}</span></td>
-                  <td><span className={`exp-sent ${r.sent === 'Yes' ? 'is-yes' : 'is-no'}`}>{r.sent || '—'}</span></td>
-                </tr>
-              ))
+              : rows.map((r, i) => {
+                const isSent = r.sent === 'Yes' || sentOverrides.has(String(r.id));
+                return (
+                  <tr key={i}>
+                    <td><span className="exp-item">{r.item}</span></td>
+                    <td><span className="exp-cat">{r.cat}</span></td>
+                    <td className="exp-date">{r.date}</td>
+                    <td className="right exp-amount">{$fmt(r.amount, currency)}</td>
+                    <td><span className={`exp-status ${r.status}`}>{r.status}</span></td>
+                    <td>
+                      {isSent
+                        ? <span className="exp-sent is-yes">Yes</span>
+                        : <button className="exp-sent is-no mark-sent-btn" title="Mark as sent in Sheets" onClick={() => handleMarkSent(r)}>No →</button>
+                      }
+                    </td>
+                  </tr>
+                );
+              })
             }
           </tbody>
         </table>
@@ -982,6 +999,7 @@ function Navigator() {
 
   function handleLog(entry) {
     setLogs(prev => [entry, ...prev]);
+    writeToSheets({ action: 'logUpdate', ts: entry.ts, scholar: entry.scholar, type: entry.type, detail: entry.detail });
     if (entry.type === 'GPA') {
       const m = entry.detail.match(/(\d{1,3}(?:\.\d+)?)/);
       if (m) {

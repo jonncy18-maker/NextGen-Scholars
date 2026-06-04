@@ -18,12 +18,63 @@ function setupNGSData() {
   setupAlerts(ss);
   setupDeadlines(ss);
   setupActions(ss);
+  setupLogs(ss);
 
   // Remove default empty Sheet1 if it still exists
   const defaultSheet = ss.getSheetByName('Sheet1');
   if (defaultSheet) ss.deleteSheet(defaultSheet);
 
   Logger.log('✅ NGS data loaded into all tabs!');
+}
+
+// ── WEB APP — write-back from navigator ──────────────────────────────────────
+// Deploy as: Extensions → Apps Script → Deploy → New deployment
+//   Type: Web app | Execute as: Me | Who has access: Anyone with the link
+// Then paste the generated URL into src/sheets-writer.js → WEB_APP_URL.
+
+function doPost(e) {
+  try {
+    const payload = JSON.parse(e.postData.contents);
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    if (payload.action === 'logUpdate') {
+      const sh = getOrCreate(ss, 'Logs');
+      if (sh.getLastRow() === 0) {
+        sh.getRange(1, 1, 1, 5).setValues([['timestamp', 'scholar', 'type', 'detail', 'source']]);
+        sh.getRange(1, 1, 1, 5).setFontWeight('bold');
+        sh.setFrozenRows(1);
+      }
+      sh.appendRow([
+        payload.ts || new Date().toISOString(),
+        payload.scholar,
+        payload.type,
+        payload.detail,
+        'navigator',
+      ]);
+    }
+
+    if (payload.action === 'markSent') {
+      const sh = ss.getSheetByName('Expenses');
+      if (!sh) throw new Error('Expenses sheet not found');
+      const data = sh.getDataRange().getValues();
+      const idCol   = data[0].indexOf('id');
+      const sentCol = data[0].indexOf('sent');
+      const avbCol  = data[0].indexOf('avb');
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][idCol]) === String(payload.id)) {
+          sh.getRange(i + 1, sentCol + 1).setValue('Yes');
+          if (avbCol >= 0) sh.getRange(i + 1, avbCol + 1).setValue('Actual');
+          break;
+        }
+      }
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ ok: true }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ ok: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -351,6 +402,15 @@ function setupDeadlines(ss) {
       ['AHPRA Registration',            'claire', '~2030',         '2030-06-01', 'Licensure', 'future'],
       ['April BSN Entry (if cleared)',  'april',  '~2027',         '2027-08-01', 'Academic',  'future'],
     ]
+  );
+}
+
+// ── LOGS ──────────────────────────────────────────────────────────────────────
+
+function setupLogs(ss) {
+  writeSheet(ss, 'Logs',
+    ['timestamp', 'scholar', 'type', 'detail', 'source'],
+    [] // populated by doPost at runtime
   );
 }
 
