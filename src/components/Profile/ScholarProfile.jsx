@@ -93,7 +93,7 @@ function TopNav({ data, fx }) {
                 className={fx.currency === cur ? 'active' : ''}
                 onClick={() => fx.setCurrency(cur)}
               >
-                {cur === 'PHP' ? '₱' : '$'}
+                {cur === 'PHP' ? 'PHP ₱' : 'USD $'}
               </button>
             ))}
           </div>
@@ -101,10 +101,10 @@ function TopNav({ data, fx }) {
             <span className="ngs-pnav-fxlabel">$1 = ₱</span>
             <div className="ngs-pnav-fxmode">
               <button className={fx.fxMode === 'market' ? 'active' : ''} onClick={() => fx.handleModeChange('market')}>
-                {fx.fxStatus === 'loading' ? '⟳' : 'Mkt'}
+                {fx.fxStatus === 'loading' ? '⟳' : 'Market'}
               </button>
               <button className={fx.fxMode === 'manual' ? 'active' : ''} onClick={() => fx.handleModeChange('manual')}>
-                Man
+                Manual
               </button>
             </div>
             <input
@@ -114,12 +114,13 @@ function TopNav({ data, fx }) {
               disabled={fx.fxMode === 'market'}
               min="1" max="999" step="0.01"
               onChange={handleRateInput}
-              title={fx.fxMode === 'market' ? 'Rate set by market' : 'PHP per 1 USD'}
+              title={fx.fxMode === 'market' ? 'Rate set by market — switch to Manual to edit' : 'PHP per 1 USD'}
             />
+            {fx.fxStatus === 'error' && <span className="ngs-pnav-fxerr" title="Could not fetch market rate">!</span>}
           </div>
         </div>
 
-        <a href="index.html#scholars" className="ngs-pnav-back">All scholars</a>
+        <a href="index.html#scholars" className="ngs-pnav-back">← All scholars</a>
       </div>
     </header>
   );

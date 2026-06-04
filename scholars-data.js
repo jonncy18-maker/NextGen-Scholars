@@ -225,6 +225,19 @@ const NGS_DATA = {
         ],
       },
 
+      // ── ENGLISH DEVELOPMENT (for navigator English section) ─────────────────
+      english: {
+        scholar: 'Claire · Active',
+        stage: 'Stage 3 — English Only in Messenger',
+        desc: 'All mentor chat now happens exclusively in English. Fluency is climbing toward the OET preparation window in the senior years.',
+        observations: [
+          { type: 'pos',     text: 'Initiates conversations in English without prompting.' },
+          { type: 'pos',     text: 'Comfortable with clinical and nursing vocabulary.' },
+          { type: 'watch',   text: 'Spoken confidence still trails written fluency.' },
+          { type: 'pending', text: 'ChatGPT Advanced Voice bootcamp queued for Summer Y3.' },
+        ],
+      },
+
       // ── CARD (for index.html scholar list) ──────────────────────────────────
       card: {
         name: 'Claire',
@@ -385,6 +398,18 @@ const NGS_DATA = {
       expenses: {
         TG11S1: [
           { id:'a1', item:'Smartphone — Redmi Note 14 6+128GB', amount:7500, qty:1, cat:'Milestones', date:'2026-04-01', sent:'Yes', avb:'Actual', vendor:'Lazada' },
+        ],
+      },
+
+      // ── ENGLISH DEVELOPMENT (for navigator English section) ─────────────────
+      english: {
+        scholar: 'April · Trial',
+        stage: 'Stage 1 — Foundation',
+        desc: 'Building daily communication habits with the mentor during the trial period. Structured English work begins on university entry.',
+        observations: [
+          { type: 'pos',     text: 'Responds daily to mentor check-ins.' },
+          { type: 'watch',   text: 'Mixes Cebuano and English; vocabulary still forming.' },
+          { type: 'pending', text: 'Progressive English with mentor starts Year 1.' },
         ],
       },
 

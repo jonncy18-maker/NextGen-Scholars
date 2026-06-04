@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NGS_DATA } from '../../scholars-data.js';
 
 const PALETTE = {
@@ -41,6 +41,53 @@ const IconArrow = ({ size = 14, color = 'currentColor' }) => (
     <path d="M3 8h10m0 0l-4-4m4 4l-4 4" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
+
+// ── quick menu (Home + Expenses) ──────────────────────────────────────────────
+
+function QuickMenu() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef();
+
+  useEffect(() => {
+    if (!open) return;
+    const handle = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handle);
+    return () => document.removeEventListener('mousedown', handle);
+  }, [open]);
+
+  return (
+    <div className="ngs-qmenu" ref={ref}>
+      <button
+        className={`ngs-qmenu-btn${open ? ' is-open' : ''}`}
+        onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
+        aria-label="Site menu"
+      >
+        <span>Menu</span>
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+          <path
+            d={open ? 'M1 8l4.5-4.5L10 8' : 'M1 3l4.5 4.5L10 3'}
+            stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      {open && (
+        <div className="ngs-qmenu-dropdown" role="menu">
+          <a href="#top" className="ngs-qmenu-item" role="menuitem" onClick={() => setOpen(false)}>
+            <span className="ngs-qmenu-icon" aria-hidden="true">⌂</span>
+            <span>Home</span>
+          </a>
+          <a href="navigator.html" className="ngs-qmenu-item" role="menuitem">
+            <span className="ngs-qmenu-icon" aria-hidden="true">₱</span>
+            <span>Expenses</span>
+          </a>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── hero ──────────────────────────────────────────────────────────────────────
 
 function Hero() {
   return (
@@ -91,7 +138,10 @@ function Hero() {
         <div className="ngs-hero-meta">
           <div><strong>2</strong><span>active tracks</span></div>
           <div className="ngs-hero-meta-rule"></div>
-          <div><strong>2<em className="ngs-hero-meta-sep">·</em>1</strong><span>active · paused</span></div>
+          <div>
+            <strong>2</strong><span>active</span>
+            <strong style={{marginLeft:'10px'}}>1</strong><span>paused</span>
+          </div>
           <div className="ngs-hero-meta-rule"></div>
           <div><strong>100%</strong><span>privately funded</span></div>
         </div>
@@ -143,7 +193,7 @@ function About() {
   );
 }
 
-function Tracks() {
+function Tracks({ onSelectTrack }) {
   const tracks = [
     {
       code: 'NGN',
@@ -217,7 +267,11 @@ function Tracks() {
               </ol>
             </div>
 
-            <a href="#apply" className="ngs-track-cta">
+            <a
+              href="#apply"
+              className="ngs-track-cta"
+              onClick={() => onSelectTrack(t.code)}
+            >
               Apply to {t.code} <IconArrow/>
             </a>
           </article>
@@ -380,13 +434,18 @@ function Scholars() {
   );
 }
 
-function Apply() {
-  const [form, setForm] = useState({ name: '', email: '', track: '', message: '' });
+const TRACK_LABELS = { NGN: 'NextGen Nurses', NGH: 'NextGen Hospitality', unsure: 'Not sure yet' };
+
+function Apply({ defaultTrack }) {
+  const [form, setForm] = useState({ name: '', email: '', track: defaultTrack || '', message: '' });
   const [sent, setSent] = useState(false);
 
-  const valid = form.name.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) && form.track;
+  // Sync when parent sets a default track (from track card CTA)
+  useEffect(() => {
+    if (defaultTrack) setForm(f => ({ ...f, track: defaultTrack }));
+  }, [defaultTrack]);
 
-  const TRACK_LABELS = { NGN: 'NextGen Nurses', NGH: 'NextGen Hospitality', unsure: 'Not sure yet' };
+  const valid = form.name.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) && form.track;
 
   const submit = (e) => {
     e.preventDefault();
@@ -396,7 +455,7 @@ function Apply() {
     const body = encodeURIComponent(
       `Name: ${form.name}\nEmail: ${form.email}\nTrack: ${trackLabel}\n\n${form.message || '(No additional message)'}`
     );
-    window.location.href = `mailto:hello@nextgenscholars.ph?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:jbshaw.cpa@gmail.com?subject=${subject}&body=${body}`;
     setSent(true);
   };
 
@@ -425,7 +484,11 @@ function Apply() {
               </svg>
             </div>
             <h3>One more step.</h3>
-            <p>Your email client should have opened with the nomination pre-filled — just hit Send. Didn't open? Write directly to <a href="mailto:hello@nextgenscholars.ph" style={{color: 'var(--ngs-gold)'}}>hello@nextgenscholars.ph</a>.</p>
+            <p>
+              Your email client should have opened with the nomination pre-filled — just hit Send.
+              Didn't open? Write directly to{' '}
+              <a href="mailto:jbshaw.cpa@gmail.com" style={{color: 'var(--ngs-gold)'}}>jbshaw.cpa@gmail.com</a>.
+            </p>
             <button className="ngs-btn ngs-btn-ghost ngs-btn-ghost-light" onClick={() => { setSent(false); setForm({ name:'', email:'', track:'', message:'' }); }}>
               Send another
             </button>
@@ -474,7 +537,7 @@ function Apply() {
             </button>
 
             <p className="ngs-form-foot">
-              Or write directly: <a href="mailto:hello@nextgenscholars.ph">hello@nextgenscholars.ph</a>
+              Or write directly: <a href="mailto:jbshaw.cpa@gmail.com">jbshaw.cpa@gmail.com</a>
             </p>
           </form>
         )}
@@ -507,13 +570,12 @@ function Footer() {
         <div>
           <h4>Get in touch</h4>
           <a href="#apply">Apply</a>
-          <a href="mailto:hello@nextgenscholars.ph">hello@nextgenscholars.ph</a>
+          <a href="mailto:jbshaw.cpa@gmail.com">jbshaw.cpa@gmail.com</a>
         </div>
       </div>
       <div className="ngs-footer-fine">
         <span>© 2026 NextGen Scholars · Philippines · United States</span>
         <span>Privately funded · No public donations accepted</span>
-        <a href="navigator.html" style={{opacity: 0.5, fontSize: '0.75rem', marginTop: '0.25rem'}}>Mentor view →</a>
       </div>
     </footer>
   );
@@ -537,6 +599,7 @@ function TopNav({ isDesktop }) {
             <a href="#journey">Journey</a>
             <a href="#scholars">Scholars</a>
             <a href="#apply" className="ngs-nav-cta-link">Apply</a>
+            <QuickMenu />
           </nav>
         ) : (
           <button className="ngs-nav-btn" onClick={() => setOpen(!open)}
@@ -553,6 +616,9 @@ function TopNav({ isDesktop }) {
           <a href="#journey">Journey</a>
           <a href="#scholars">Scholars</a>
           <a href="#apply" className="ngs-nav-menu-cta">Apply</a>
+          <div className="ngs-nav-menu-divider"></div>
+          <a href="#top" className="ngs-nav-menu-item">Home</a>
+          <a href="navigator.html" className="ngs-nav-menu-item">Expenses →</a>
         </nav>
       )}
     </header>
@@ -560,15 +626,17 @@ function TopNav({ isDesktop }) {
 }
 
 export function NGSSite({ isDesktop }) {
+  const [defaultTrack, setDefaultTrack] = useState('');
+
   return (
     <div className={`ngs-site ${isDesktop ? 'is-desktop' : ''}`} id="top">
       <TopNav isDesktop={isDesktop}/>
       <Hero/>
       <About/>
-      <Tracks/>
+      <Tracks onSelectTrack={setDefaultTrack}/>
       <Milestones/>
       <Scholars/>
-      <Apply/>
+      <Apply defaultTrack={defaultTrack}/>
       <Footer/>
     </div>
   );
