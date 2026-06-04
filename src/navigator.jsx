@@ -338,8 +338,8 @@ function ChartSem({ s, currency, extraRows }) {
 
   const data = allSems.map(sem => {
     let actual = 0, budget = 0;
-    (s.expenses[sem] || []).forEach(e => { if (e.avb === 'Actual') actual += e.amount; else budget += e.amount; });
-    (extraRows || []).filter(r => r.sem === sem).forEach(e => { if (e.avb === 'Actual') actual += e.amount; else budget += e.amount; });
+    (s.expenses[sem] || []).forEach(e => { const tot = (e.amount || 0) * (e.qty || 1); if (e.avb === 'Actual') actual += tot; else budget += tot; });
+    (extraRows || []).filter(r => r.sem === sem).forEach(e => { const tot = (e.amount || 0) * (e.qty || 1); if (e.avb === 'Actual') actual += tot; else budget += tot; });
     return { sem, actual, budget };
   });
   const max = Math.max(1, ...data.flatMap(d => [d.actual, d.budget]));
@@ -374,7 +374,7 @@ function ChartSem({ s, currency, extraRows }) {
 function ChartCat({ s, currency, extraRows }) {
   const $fmt = useFmt();
   const totals = {};
-  [...allExpenses(s), ...(extraRows || [])].forEach(e => { totals[e.cat] = (totals[e.cat] || 0) + e.amount; });
+  [...allExpenses(s), ...(extraRows || [])].forEach(e => { totals[e.cat] = (totals[e.cat] || 0) + (e.amount || 0) * (e.qty || 1); });
   const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
   const max = Math.max(1, ...entries.map(e => e[1]));
   const [ready, setReady] = useState(false);
@@ -439,6 +439,8 @@ function applySorting(rows, field, dir) {
     if (field === 'cat')    { va = a.cat    || ''; vb = b.cat    || ''; }
     if (field === 'date')   { va = a.date   || ''; vb = b.date   || ''; }
     if (field === 'amount') { va = a.amount || 0;  vb = b.amount || 0;  }
+    if (field === 'qty')    { va = a.qty    || 1;  vb = b.qty    || 1;  }
+    if (field === 'total')  { va = (a.amount || 0) * (a.qty || 1); vb = (b.amount || 0) * (b.qty || 1); }
     if (field === 'status') { va = a.status || ''; vb = b.status || ''; }
     if (field === 'sent')   { va = a.sent   || ''; vb = b.sent   || ''; }
     const cmp = typeof va === 'number' ? va - vb : va.localeCompare(vb);
@@ -817,9 +819,9 @@ function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
 
       {(() => {
         const pendingRows = rows.filter(r => r.sent !== 'Yes');
-        const pendingTotal = pendingRows.reduce((t, r) => t + (r.amount || 0), 0);
+        const pendingTotal = pendingRows.reduce((t, r) => t + (r.amount || 0) * (r.qty || 1), 0);
         const allUnsent = allRows.filter(r => r.sent !== 'Yes');
-        const allUnsentTotal = allUnsent.reduce((t, r) => t + (r.amount || 0), 0);
+        const allUnsentTotal = allUnsent.reduce((t, r) => t + (r.amount || 0) * (r.qty || 1), 0);
         const isFiltered = activeFilters > 0;
         return (
           <div className="pending-send-card">
@@ -857,25 +859,31 @@ function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
         <table className="exp">
           <thead>
             <tr>
-              <SortTh label="Item"     field="item"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-              <SortTh label="Category" field="cat"    sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-              <SortTh label="Date"     field="date"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-              <SortTh label="Amount"   field="amount" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="right" />
-              <SortTh label="Status"   field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-              <SortTh label="Sent"     field="sent"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              <SortTh label="Item"       field="item"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              <SortTh label="Category"  field="cat"    sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              <SortTh label="Date"      field="date"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              <SortTh label="Unit Price" field="amount" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="right" />
+              <SortTh label="Qty"       field="qty"    sortField={sortField} sortDir={sortDir} onSort={handleSort} className="right" />
+              <SortTh label="Total"     field="total"  sortField={sortField} sortDir={sortDir} onSort={handleSort} className="right" />
+              <SortTh label="Status"    field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+              <SortTh label="Sent"      field="sent"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
             </tr>
           </thead>
           <tbody>
             {rows.length === 0
-              ? <tr className="exp-none"><td colSpan={6}>No matching expenses.</td></tr>
+              ? <tr className="exp-none"><td colSpan={8}>No matching expenses.</td></tr>
               : rows.map((r, i) => {
                 const isSent = r.sent === 'Yes' || sentOverrides.has(String(r.id));
+                const qty = r.qty || 1;
+                const total = (r.amount || 0) * qty;
                 return (
                   <tr key={i}>
                     <td><span className="exp-item">{r.item}</span></td>
                     <td><span className="exp-cat">{r.cat}</span></td>
                     <td className="exp-date">{r.date}</td>
                     <td className="right exp-amount">{$fmt(r.amount, currency)}</td>
+                    <td className="right exp-qty">{qty}</td>
+                    <td className="right exp-total">{$fmt(total, currency)}</td>
                     <td><span className={`exp-status ${r.status}`}>{r.status}</span></td>
                     <td>
                       {isSent
