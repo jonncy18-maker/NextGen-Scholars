@@ -15,3 +15,39 @@ export function writeToSheets(payload) {
     mode: 'no-cors',
   }).catch(() => {});
 }
+
+// Convenience wrappers for each write action.
+
+export function writeSent(id, scholar) {
+  writeToSheets({ action: 'markSent', id: String(id), scholar });
+}
+
+export function writeExpense(scholar, exp) {
+  writeToSheets({
+    action: 'addExpense',
+    scholar,
+    sem:    exp.sem,
+    item:   exp.item,
+    cat:    exp.cat,
+    amount: exp.amount,
+    qty:    exp.qty,
+    date:   exp.date,
+    avb:    exp.avb,
+    sent:   exp.sent,
+    vendor: exp.vendor || '',
+  });
+}
+
+export function writeActionToggle(id, done) {
+  writeToSheets({ action: 'toggleAction', id: String(id), done });
+}
+
+export function writeLog(entry) {
+  writeToSheets({
+    action: 'logUpdate',
+    ts:      entry.ts,
+    scholar: entry.scholar,
+    type:    entry.type,
+    detail:  entry.detail,
+  });
+}

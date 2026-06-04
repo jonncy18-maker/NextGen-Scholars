@@ -61,6 +61,14 @@ body { background: var(--ngs-paper); }
 .ngs-pnav-fxinput:focus { border-color: var(--ngs-gold); }
 .ngs-pnav-fxinput.is-market { background: var(--ngs-paper-2); color: var(--ngs-muted); cursor: not-allowed; }
 .ngs-pnav-fxinput::-webkit-inner-spin-button { opacity: 0.5; }
+.ngs-pnav-fxerr {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: rgba(177,27,42,0.12); color: #B11B2A;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 10px; flex-shrink: 0; cursor: help;
+}
+/* widen currency toggle labels to match navigator */
+.ngs-pnav-curtoggle button { padding: 5px 11px; }
 
 /* ── photo header ── */
 .ngs-phead { position: relative; background: var(--ngs-navy); color: var(--ngs-paper); overflow: hidden; }

@@ -4,7 +4,8 @@ import './styles/navigator.css';
 import { NGS_DATA } from '../scholars-data.js';
 import { loadFromSheets } from './sheets-loader.js';
 import { storedMode, storedRate, persistFx, fetchMarketRate, DEFAULT_RATE } from './fx.js';
-import { writeToSheets } from './sheets-writer.js';
+import { writeSent, writeExpense, writeActionToggle } from './sheets-writer.js';
+import { allExpenses, scholarTotals, nextMilestone, accentFor } from './utils.js';
 
 if (!NGS_DATA || !NGS_DATA.config) {
   throw new Error('NGS_DATA missing — hard-refresh (Ctrl/Cmd+Shift+R)');
@@ -12,7 +13,15 @@ if (!NGS_DATA || !NGS_DATA.config) {
 
 let D = NGS_DATA;
 const SCHOLAR_KEYS = ['claire', 'april', 'aljane'].filter(k => D.scholars[k]);
-const NAMECLASS = { Claire: '', April: 't-april', Aljane: 't-aljane' };
+
+// Scholar name → CSS modifier class. Keys are lowercase to match data keys.
+const NAMECLASS = { claire: '', april: 't-april', aljane: 't-aljane' };
+
+const EXPENSE_CATS = [
+  'Tuition', 'Enrollment', 'Uniforms', 'Books', 'Living Expenses',
+  'Printing & Research', 'School Supplies', 'Activities',
+  'Medical Equipment', 'Motor', 'Milestones', 'Other',
+];
 
 // ── FX context ───────────────────────────────────────────────────────────────
 
@@ -40,32 +49,6 @@ function latestGpa(s, liveGpa) {
   if (liveGpa[s._key] != null) return liveGpa[s._key];
   const closed = (s.academics || []).filter(a => a.gpa != null);
   return closed.length ? closed[closed.length - 1].gpa : null;
-}
-
-function allExpenses(s) {
-  const out = [];
-  Object.keys(s.expenses || {}).forEach(sem =>
-    (s.expenses[sem] || []).forEach(e => out.push({ ...e, sem, status: e.avb }))
-  );
-  return out;
-}
-
-function scholarTotals(s) {
-  const university = allExpenses(s).reduce((t, e) => t + (e.avb === 'Actual' ? (e.amount || 0) : 0), 0);
-  const milestones = (s.milestones || []).reduce((t, m) => t + (m.state === 'done' ? (m.amountPhp || 0) : 0), 0);
-  const travel = (s.travels || []).reduce((t, v) => t + (v.state === 'done' ? (v.amountPhp || 0) : 0), 0);
-  const allocated = Object.values(s.budgets || {}).reduce((t, v) => t + (typeof v === 'number' ? v : 0), 0);
-  return { university, milestones, travel, total: university + milestones + travel, allocated };
-}
-
-function nextMilestone(s) {
-  const f = (s.milestones || []).find(m => m.state !== 'done');
-  if (!f) return { name: 'All milestones complete', detail: '—' };
-  return { name: f.name, detail: f.sem ? 'Expected · ' + f.sem : 'Upcoming' };
-}
-
-function accentFor(s) {
-  return s.status === 'active' ? 'gold' : s.status === 'trial' ? 'navy' : 'muted';
 }
 
 // ── lock screen ──────────────────────────────────────────────────────────────
@@ -122,7 +105,7 @@ function LockScreen({ isHiding, onUnlock }) {
 
 // ── nav ──────────────────────────────────────────────────────────────────────
 
-function NavBar({ currency, onCurrencyChange, fxMode, fxRate, fxStatus, onFxModeChange, onFxRateChange }) {
+function NavBar({ currency, onCurrencyChange, fxMode, fxRate, fxStatus, onFxModeChange, onFxRateChange, sheetsStatus, onRefresh }) {
   const [inputVal, setInputVal] = useState(String(fxRate));
 
   useEffect(() => {
@@ -182,6 +165,14 @@ function NavBar({ currency, onCurrencyChange, fxMode, fxRate, fxStatus, onFxMode
             />
             {fxStatus === 'error' && <span className="fx-err" title="Could not fetch market rate">!</span>}
           </div>
+
+          <button
+            className={`nav-refresh${sheetsStatus === 'loading' ? ' is-loading' : ''}`}
+            onClick={onRefresh}
+            title="Reload data from Google Sheets"
+          >
+            <span className="refresh-icon">↻</span> Refresh
+          </button>
 
           <span className="nav-badge">Mentor View</span>
           <a className="nav-back" href="index.html">← All scholars</a>
@@ -311,67 +302,6 @@ function StatusSection({ currency, liveGpa }) {
   );
 }
 
-// ── log ───────────────────────────────────────────────────────────────────────
-
-function LogSection({ logs, onLog }) {
-  const [scholar, setScholar] = useState(SCHOLAR_KEYS[0]);
-  const [type, setType] = useState('GPA');
-  const [detail, setDetail] = useState('');
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (!detail.trim()) return;
-    const s = D.scholars[scholar];
-    const ts = new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-    onLog({ ts, scholar: s.firstName, scholarKey: scholar, type, detail: detail.trim() });
-    setDetail('');
-  }
-
-  return (
-    <section className="section">
-      <div className="eyebrow"><span className="num">03</span> Log Update <span className="eyebrow-rule" /></div>
-      <div className="section-head">
-        <h2 className="section-title">Record an update</h2>
-        <span className="section-note">GPA entries below the floor raise an alert automatically.</span>
-      </div>
-      <div className="log-card">
-        <form className="log-form" onSubmit={handleSubmit}>
-          <div className="field">
-            <label>Scholar</label>
-            <select value={scholar} onChange={e => setScholar(e.target.value)}>
-              {SCHOLAR_KEYS.map(k => <option key={k} value={k}>{D.scholars[k].firstName}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label>Type</label>
-            <select value={type} onChange={e => setType(e.target.value)}>
-              {['GPA', 'Expense', 'Milestone', 'English', 'Travel', 'Alert'].map(t => <option key={t}>{t}</option>)}
-            </select>
-          </div>
-          <div className="field">
-            <label>Details</label>
-            <input type="text" placeholder="e.g. Y2·S2 midterm GPA 80.4" value={detail} onChange={e => setDetail(e.target.value)} />
-          </div>
-          <button className="log-btn" type="submit">Log</button>
-        </form>
-        <div className="log-feed">
-          {logs.length === 0
-            ? <div className="log-empty">No updates logged this session.</div>
-            : logs.slice(0, 5).map((l, i) => (
-              <div key={i} className="log-row">
-                <span className="log-time">{l.ts}</span>
-                <span className={`scholar-tag ${NAMECLASS[l.scholar] || ''}`}>{l.scholar}</span>
-                <span className="log-type">{l.type}</span>
-                <span className="log-detail">{l.detail}</span>
-              </div>
-            ))
-          }
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // ── expense dashboard ─────────────────────────────────────────────────────────
 
 function TotalsRow({ s, currency }) {
@@ -399,12 +329,17 @@ function TotalsRow({ s, currency }) {
   );
 }
 
-function ChartSem({ s, currency }) {
+function ChartSem({ s, currency, extraRows }) {
   const $fmt = useFmt();
   const sems = Object.keys(s.expenses || {});
-  const data = sems.map(sem => {
+  // include semesters from locally-added rows
+  const extraSems = [...new Set((extraRows || []).map(r => r.sem))].filter(sem => !sems.includes(sem));
+  const allSems = [...sems, ...extraSems];
+
+  const data = allSems.map(sem => {
     let actual = 0, budget = 0;
     (s.expenses[sem] || []).forEach(e => { if (e.avb === 'Actual') actual += e.amount; else budget += e.amount; });
+    (extraRows || []).filter(r => r.sem === sem).forEach(e => { if (e.avb === 'Actual') actual += e.amount; else budget += e.amount; });
     return { sem, actual, budget };
   });
   const max = Math.max(1, ...data.flatMap(d => [d.actual, d.budget]));
@@ -436,10 +371,10 @@ function ChartSem({ s, currency }) {
   );
 }
 
-function ChartCat({ s, currency }) {
+function ChartCat({ s, currency, extraRows }) {
   const $fmt = useFmt();
   const totals = {};
-  allExpenses(s).forEach(e => { totals[e.cat] = (totals[e.cat] || 0) + e.amount; });
+  [...allExpenses(s), ...(extraRows || [])].forEach(e => { totals[e.cat] = (totals[e.cat] || 0) + e.amount; });
   const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
   const max = Math.max(1, ...entries.map(e => e[1]));
   const [ready, setReady] = useState(false);
@@ -620,9 +555,136 @@ function FilterPanel({ filters, setFilters, uniqueCats, uniqueStatuses, uniqueSe
   );
 }
 
+// ── add expense form ──────────────────────────────────────────────────────────
+
+function AddExpenseForm({ scholar, onAdd, onCancel }) {
+  const s = D.scholars[scholar];
+  const existingSems = Object.keys(s.expenses || {});
+  const todayISO = new Date().toISOString().split('T')[0];
+
+  const [form, setForm] = useState({
+    sem:    existingSems[existingSems.length - 1] || (s.currentSem || ''),
+    item:   '',
+    cat:    EXPENSE_CATS[0],
+    amount: '',
+    qty:    '1',
+    date:   todayISO,
+    avb:    'Actual',
+    sent:   'No',
+    vendor: '',
+  });
+  const [saved, setSaved] = useState(false);
+
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const valid = form.item.trim() && form.amount && !isNaN(parseFloat(form.amount)) && parseFloat(form.amount) > 0 && form.sem.trim();
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!valid) return;
+    const exp = {
+      id:     `local_${Date.now()}`,
+      item:   form.item.trim(),
+      cat:    form.cat,
+      amount: parseFloat(form.amount),
+      qty:    parseInt(form.qty) || 1,
+      date:   form.date,
+      avb:    form.avb,
+      sent:   form.sent,
+      vendor: form.vendor.trim(),
+      sem:    form.sem.trim(),
+      status: form.avb,
+    };
+    onAdd(scholar, exp);
+    setSaved(true);
+    setTimeout(() => {
+      setSaved(false);
+      setForm(f => ({ ...f, item: '', amount: '', qty: '1', vendor: '' }));
+    }, 1200);
+  }
+
+  return (
+    <div className="add-exp-card">
+      <div className="add-exp-title">Add Expense — {s.firstName}</div>
+      <form className="add-exp-form" onSubmit={handleSubmit}>
+        <div className="field">
+          <label>Item</label>
+          <input
+            type="text"
+            placeholder="e.g. Tuition - Prelim"
+            value={form.item}
+            onChange={e => set('item', e.target.value)}
+            autoFocus
+          />
+        </div>
+        <div className="field">
+          <label>Category</label>
+          <select value={form.cat} onChange={e => set('cat', e.target.value)}>
+            {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label>Amount (₱)</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="0.00"
+            value={form.amount}
+            onChange={e => set('amount', e.target.value)}
+          />
+        </div>
+        <div className="field">
+          <label>Qty</label>
+          <input type="number" min="1" value={form.qty} onChange={e => set('qty', e.target.value)} />
+        </div>
+        <div className="field">
+          <label>Date</label>
+          <input type="date" value={form.date} onChange={e => set('date', e.target.value)} />
+        </div>
+        <div className="field">
+          <label>Semester</label>
+          <input
+            list="add-exp-sems"
+            value={form.sem}
+            placeholder="e.g. Y3S1"
+            onChange={e => set('sem', e.target.value)}
+          />
+          <datalist id="add-exp-sems">
+            {existingSems.map(s => <option key={s} value={s} />)}
+          </datalist>
+        </div>
+        <div className="field">
+          <label>Status</label>
+          <select value={form.avb} onChange={e => set('avb', e.target.value)}>
+            <option value="Actual">Actual</option>
+            <option value="Budget">Budget</option>
+          </select>
+        </div>
+        <div className="field">
+          <label>Sent</label>
+          <select value={form.sent} onChange={e => set('sent', e.target.value)}>
+            <option value="No">No</option>
+            <option value="Yes">Yes</option>
+          </select>
+        </div>
+        <div className="field">
+          <label>Vendor</label>
+          <input type="text" placeholder="Optional" value={form.vendor} onChange={e => set('vendor', e.target.value)} />
+        </div>
+        <div className="add-exp-actions">
+          <button type="button" className="add-exp-cancel" onClick={onCancel}>Cancel</button>
+          <button type="submit" className={`add-exp-save${saved ? ' is-saved' : ''}`} disabled={!valid}>
+            {saved ? '✓ Saved' : 'Save expense'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 // ── expense section ───────────────────────────────────────────────────────────
 
-function ExpenseSection({ currency }) {
+function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
   const $fmt = useFmt();
 
   const [expScholar, setExpScholar] = useState(SCHOLAR_KEYS[0]);
@@ -637,16 +699,20 @@ function ExpenseSection({ currency }) {
   const [sortDir, setSortDir] = useState('asc');
 
   const [sentOverrides, setSentOverrides] = useState(() => new Set());
+  const [showAddForm, setShowAddForm] = useState(false);
 
   function handleMarkSent(r) {
     setSentOverrides(prev => new Set([...prev, String(r.id)]));
-    writeToSheets({ action: 'markSent', id: String(r.id), scholar: expScholar });
+    writeSent(r.id, expScholar);
   }
 
   const s = { ...D.scholars[expScholar], _key: expScholar };
   const sems = Object.keys(s.expenses || {});
 
-  const allRows = allExpenses(s);
+  const baseRows = allExpenses(s);
+  const localRows = (addedExpenses[expScholar] || []).map(e => ({ ...e, status: e.avb }));
+  const allRows = [...baseRows, ...localRows];
+
   const uniqueCats = [...new Set(allRows.map(r => r.cat))].sort();
   const uniqueStatuses = [...new Set(allRows.map(r => r.status))].sort();
   const uniqueSents = [...new Set(allRows.map(r => r.sent).filter(Boolean))].sort();
@@ -659,6 +725,7 @@ function ExpenseSection({ currency }) {
     setSortField(null);
     setSortDir('asc');
     setSentOverrides(new Set());
+    setShowAddForm(false);
   }
 
   function handleSort(field) {
@@ -687,7 +754,7 @@ function ExpenseSection({ currency }) {
 
   return (
     <section className="section">
-      <div className="eyebrow"><span className="num">04</span> Expense Dashboard <span className="eyebrow-rule" /></div>
+      <div className="eyebrow"><span className="num">03</span> Expense Dashboard <span className="eyebrow-rule" /></div>
       <div className="section-head">
         <h2 className="section-title">Where the investment goes</h2>
         <button
@@ -717,17 +784,34 @@ function ExpenseSection({ currency }) {
             </button>
           ))}
         </div>
-        <div className="viewtoggle">
-          {[['sem', 'By Semester'], ['cat', 'By Category']].map(([v, lbl]) => (
-            <button key={v} className={expView === v ? 'active' : ''} onClick={() => setExpView(v)}>{lbl}</button>
-          ))}
+        <div className="exp-controls-right">
+          <div className="viewtoggle">
+            {[['sem', 'By Semester'], ['cat', 'By Category']].map(([v, lbl]) => (
+              <button key={v} className={expView === v ? 'active' : ''} onClick={() => setExpView(v)}>{lbl}</button>
+            ))}
+          </div>
+          <button
+            className={`add-exp-btn${showAddForm ? ' is-open' : ''}`}
+            onClick={() => setShowAddForm(v => !v)}
+          >
+            {showAddForm ? '✕ Cancel' : '+ Add Expense'}
+          </button>
         </div>
       </div>
+
+      {showAddForm && (
+        <AddExpenseForm
+          scholar={expScholar}
+          onAdd={(scholar, exp) => { onAddExpense(scholar, exp); }}
+          onCancel={() => setShowAddForm(false)}
+        />
+      )}
+
       <TotalsRow s={s} currency={currency} />
       <div className="chart-card">
         {expView === 'sem'
-          ? <ChartSem key={expScholar + '-sem'} s={s} currency={currency} />
-          : <ChartCat key={expScholar + '-cat'} s={s} currency={currency} />
+          ? <ChartSem key={expScholar + '-sem'} s={s} currency={currency} extraRows={localRows} />
+          : <ChartCat key={expScholar + '-cat'} s={s} currency={currency} extraRows={localRows} />
         }
       </div>
 
@@ -795,8 +879,8 @@ function ExpenseSection({ currency }) {
                     <td><span className={`exp-status ${r.status}`}>{r.status}</span></td>
                     <td>
                       {isSent
-                        ? <span className="exp-sent is-yes">Yes</span>
-                        : <button className="exp-sent is-no mark-sent-btn" title="Mark as sent in Sheets" onClick={() => handleMarkSent(r)}>No →</button>
+                        ? <span className="exp-sent is-yes">✓ Sent</span>
+                        : <button className="exp-sent is-no mark-sent-btn" title="Mark as sent in Sheets" onClick={() => handleMarkSent(r)}>Mark Sent →</button>
                       }
                     </td>
                   </tr>
@@ -816,10 +900,10 @@ function ExpenseSection({ currency }) {
 // ── deadlines ─────────────────────────────────────────────────────────────────
 
 function DeadlinesSection() {
-  const sorted = [...(D.deadlines || [])].sort((a, b) => a.sort - b.sort);
+  const sorted = [...(D.deadlines || [])].sort((a, b) => (a.sort || '').localeCompare(b.sort || ''));
   return (
     <section className="section">
-      <div className="eyebrow"><span className="num">05</span> Critical Deadlines <span className="eyebrow-rule" /></div>
+      <div className="eyebrow"><span className="num">04</span> Critical Deadlines <span className="eyebrow-rule" /></div>
       <div className="section-head"><h2 className="section-title">On the calendar</h2></div>
       <div className="dl-card">
         <table className="dl">
@@ -845,13 +929,18 @@ function DeadlinesSection() {
 
 function ActionsSection() {
   const [checked, setChecked] = useState({});
-  const toggle = id => setChecked(c => ({ ...c, [id]: !c[id] }));
   const actions = D.actions || [];
   const left = actions.length - Object.values(checked).filter(Boolean).length;
 
+  function toggle(id) {
+    const newDone = !checked[id];
+    setChecked(c => ({ ...c, [id]: newDone }));
+    writeActionToggle(id, newDone);
+  }
+
   return (
     <section className="section">
-      <div className="eyebrow"><span className="num">06</span> Mentor Action Items <span className="eyebrow-rule" /></div>
+      <div className="eyebrow"><span className="num">05</span> Mentor Action Items <span className="eyebrow-rule" /></div>
       <div className="section-head">
         <h2 className="section-title">This week's checklist</h2>
         <span className="section-note">{left} of {actions.length} open</span>
@@ -875,33 +964,35 @@ function ActionsSection() {
 
 // ── english pulse ─────────────────────────────────────────────────────────────
 
+function EnglishCard({ sk }) {
+  const s = D.scholars[sk];
+  const eng = s?.english;
+  if (!eng) return null;
+  return (
+    <div className="eng-card">
+      <div className="eng-scholar">{eng.scholar}</div>
+      <div className="eng-stage">{eng.stage}</div>
+      <p className="eng-desc">{eng.desc}</p>
+      <div className="eng-obs">
+        {eng.observations.map((ob, i) => (
+          <div key={i} className="eng-ob">
+            <span className={`eng-dot ${ob.type}`} />
+            {ob.text}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function EnglishSection() {
+  const withEnglish = SCHOLAR_KEYS.filter(k => D.scholars[k]?.english);
   return (
     <section className="section">
-      <div className="eyebrow"><span className="num">07</span> English Development Pulse <span className="eyebrow-rule" /></div>
+      <div className="eyebrow"><span className="num">06</span> English Development Pulse <span className="eyebrow-rule" /></div>
       <div className="section-head"><h2 className="section-title">From Cebu to the world</h2></div>
       <div className="eng-grid">
-        <div className="eng-card">
-          <div className="eng-scholar">Claire · Active</div>
-          <div className="eng-stage">Stage 3 — English Only in Messenger</div>
-          <p className="eng-desc">All mentor chat now happens exclusively in English. Fluency is climbing toward the OET preparation window in the senior years.</p>
-          <div className="eng-obs">
-            <div className="eng-ob"><span className="eng-dot pos" />Initiates conversations in English without prompting.</div>
-            <div className="eng-ob"><span className="eng-dot pos" />Comfortable with clinical and nursing vocabulary.</div>
-            <div className="eng-ob"><span className="eng-dot watch" />Spoken confidence still trails written fluency.</div>
-            <div className="eng-ob"><span className="eng-dot pending" />ChatGPT Advanced Voice bootcamp queued for Summer Y3.</div>
-          </div>
-        </div>
-        <div className="eng-card">
-          <div className="eng-scholar">April · Trial</div>
-          <div className="eng-stage">Stage 1 — Foundation</div>
-          <p className="eng-desc">Building daily communication habits with the mentor during the trial period. Structured English work begins on university entry.</p>
-          <div className="eng-obs">
-            <div className="eng-ob"><span className="eng-dot pos" />Responds daily to mentor check-ins.</div>
-            <div className="eng-ob"><span className="eng-dot watch" />Mixes Cebuano and English; vocabulary still forming.</div>
-            <div className="eng-ob"><span className="eng-dot pending" />Progressive English with mentor starts Year 1.</div>
-          </div>
-        </div>
+        {withEnglish.map(k => <EnglishCard key={k} sk={k} />)}
       </div>
     </section>
   );
@@ -940,13 +1031,16 @@ function Navigator() {
   const [unlocked, setUnlocked] = useState(false);
   const [currency, setCurrency] = useState('PHP');
   const [alerts, setAlerts] = useState(() => (D.alerts || []).map(a => ({ ...a })));
-  const [logs, setLogs] = useState([]);
   const [liveGpa, setLiveGpa] = useState({});
   const [sheetsStatus, setSheetsStatus] = useState('loading');
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [fxMode, setFxMode] = useState(() => storedMode());
   const [fxRate, setFxRate] = useState(() => storedRate());
-  const [fxStatus, setFxStatus] = useState('idle'); // 'idle' | 'loading' | 'error'
+  const [fxStatus, setFxStatus] = useState('idle');
+
+  // addedExpenses tracks locally-added rows across scholar switches: { claire: [], april: [], ... }
+  const [addedExpenses, setAddedExpenses] = useState({});
 
   // Fetch market rate when mode is 'market'
   useEffect(() => {
@@ -974,7 +1068,9 @@ function Navigator() {
     persistFx('manual', rate);
   }
 
+  // Load from Sheets — re-runs on manual refresh
   useEffect(() => {
+    setSheetsStatus('loading');
     loadFromSheets()
       .then(data => {
         const hasScholars = data.scholars && Object.keys(data.scholars).length > 0;
@@ -983,7 +1079,20 @@ function Navigator() {
           setSheetsStatus('static');
           return;
         }
-        D = { ...data, config: { ...data.config, password: NGS_DATA.config.password } };
+        // Merge Sheets data with static fields (english, publicProfile) not held in Sheets
+        const mergedScholars = {};
+        Object.keys(data.scholars).forEach(k => {
+          mergedScholars[k] = {
+            ...data.scholars[k],
+            english: NGS_DATA.scholars[k]?.english,
+            publicProfile: NGS_DATA.scholars[k]?.publicProfile,
+          };
+        });
+        D = {
+          ...data,
+          scholars: mergedScholars,
+          config: { ...data.config, password: NGS_DATA.config.password },
+        };
         setAlerts((D.alerts || []).map(a => ({ ...a })));
         setSheetsStatus('live');
       })
@@ -991,33 +1100,18 @@ function Navigator() {
         console.warn('Sheets unavailable, using static data:', err.message);
         setSheetsStatus('static');
       });
-  }, []);
+  }, [refreshKey]);
 
   function handleDismiss(id) {
     setAlerts(prev => prev.map(a => a.id === id ? { ...a, _dismissed: true } : a));
   }
 
-  function handleLog(entry) {
-    setLogs(prev => [entry, ...prev]);
-    writeToSheets({ action: 'logUpdate', ts: entry.ts, scholar: entry.scholar, type: entry.type, detail: entry.detail });
-    if (entry.type === 'GPA') {
-      const m = entry.detail.match(/(\d{1,3}(?:\.\d+)?)/);
-      if (m) {
-        const val = parseFloat(m[1]);
-        const s = D.scholars[entry.scholarKey];
-        setLiveGpa(prev => ({ ...prev, [entry.scholarKey]: val }));
-        if (s && val < s.gpaFloor) {
-          setAlerts(prev => [{
-            id: 'gpa-' + Date.now(),
-            severity: 'critical',
-            icon: '🔴',
-            scholar: s.firstName,
-            title: 'GPA below floor — ' + s.firstName,
-            sub: `Logged ${val.toFixed(2)}% against a ${s.gpaFloor}% floor. Intervention required.`,
-          }, ...prev]);
-        }
-      }
-    }
+  function handleAddExpense(scholar, exp) {
+    setAddedExpenses(prev => ({
+      ...prev,
+      [scholar]: [...(prev[scholar] || []), exp],
+    }));
+    writeExpense(scholar, exp);
   }
 
   return (
@@ -1031,12 +1125,17 @@ function Navigator() {
         fxStatus={fxStatus}
         onFxModeChange={handleFxModeChange}
         onFxRateChange={handleFxRateChange}
+        sheetsStatus={sheetsStatus}
+        onRefresh={() => setRefreshKey(k => k + 1)}
       />
       <main className="wrap">
         <AlertsSection alerts={alerts} onDismiss={handleDismiss} />
         <StatusSection currency={currency} liveGpa={liveGpa} />
-        <LogSection logs={logs} onLog={handleLog} />
-        <ExpenseSection currency={currency} />
+        <ExpenseSection
+          currency={currency}
+          addedExpenses={addedExpenses}
+          onAddExpense={handleAddExpense}
+        />
         <DeadlinesSection />
         <ActionsSection />
         <EnglishSection />
