@@ -2,7 +2,7 @@
 // Apps Script → Deploy → New deployment → Web app
 //   Execute as: Me  |  Who has access: Anyone with the link
 // Paste the generated URL here, then hard-refresh the navigator.
-export const WEB_APP_URL = '';
+export const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzOrJyFROMg2HQGjAVYF84VjeN7Q_ZOpX6b3tNh-dP3HcpeH3tekYrPJI3T9lnWqaZd/exec';
 
 // Fire-and-forget POST to the Apps Script web app.
 // Apps Script blocks CORS on the response, so we use no-cors (can't read the reply).
