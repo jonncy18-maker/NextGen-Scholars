@@ -1,35 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NGSIcons } from './icons.jsx';
-import { storedMode, storedRate, persistFx, fetchMarketRate, DEFAULT_RATE } from '../../fx.js';
-
-// ── FX state hook shared across profile components ────────────────────────────
-
-function useFxState() {
-  const [fxMode, setFxMode] = useState(() => storedMode());
-  const [fxRate, setFxRate] = useState(() => storedRate());
-  const [fxStatus, setFxStatus] = useState('idle');
-  const [currency, setCurrency] = useState('PHP');
-
-  useEffect(() => {
-    if (fxMode !== 'market') return;
-    setFxStatus('loading');
-    fetchMarketRate()
-      .then(rate => {
-        setFxRate(rate);
-        setFxStatus('idle');
-        persistFx('market', rate);
-      })
-      .catch(() => setFxStatus('error'));
-  }, [fxMode]);
-
-  function handleModeChange(mode) {
-    setFxMode(mode);
-    if (mode === 'manual') { setFxStatus('idle'); persistFx('manual', fxRate); }
-  }
-  function handleRateChange(rate) { setFxRate(rate); persistFx('manual', rate); }
-
-  return { currency, setCurrency, fxMode, fxRate, fxStatus, handleModeChange, handleRateChange };
-}
+import { DEFAULT_RATE } from '../../fx.js';
+import { useFxState } from '../../context/FxContext.jsx';
 
 function fmtPhp(amountPhp, currency, rate) {
   if (amountPhp == null) return null;
