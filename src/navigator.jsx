@@ -39,6 +39,14 @@ function Navigator() {
   const [fxRate, setFxRate] = useState(() => storedRate());
   const [fxStatus, setFxStatus] = useState('idle');
 
+  const [writeError, setWriteError] = useState(false);
+
+  useEffect(() => {
+    if (!writeError) return;
+    const t = setTimeout(() => setWriteError(false), 5000);
+    return () => clearTimeout(t);
+  }, [writeError]);
+
   // Persisted to localStorage so locally-added rows survive page refreshes.
   const [addedExpenses, setAddedExpenses] = useState(() => {
     try { return JSON.parse(localStorage.getItem('ngs_added') || '{}'); } catch { return {}; }
@@ -113,7 +121,7 @@ function Navigator() {
       try { localStorage.setItem('ngs_added', JSON.stringify(updated)); } catch {}
       return updated;
     });
-    writeExpense(scholar, exp);
+    writeExpense(scholar, exp).catch(() => setWriteError(true));
   }
 
   return (
@@ -143,7 +151,7 @@ function Navigator() {
           <ActionsSection />
           <EnglishSection />
         </main>
-        <NavFooter sheetsStatus={sheetsStatus} />
+        <NavFooter sheetsStatus={sheetsStatus} writeError={writeError} />
       </FxCtx.Provider>
     </DataCtx.Provider>
   );

@@ -1,19 +1,17 @@
-// Replace the empty string with your Apps Script Web App URL after deploying doPost.
-// Apps Script → Deploy → New deployment → Web app
-//   Execute as: Me  |  Who has access: Anyone with the link
-// Paste the generated URL here, then hard-refresh the navigator.
+// Apps Script Web App URL. Must be updated here whenever the Apps Script is redeployed
+// (each new deployment generates a new URL). Apps Script → Manage deployments → copy URL.
 export const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzOrJyFROMg2HQGjAVYF84VjeN7Q_ZOpX6b3tNh-dP3HcpeH3tekYrPJI3T9lnWqaZd/exec';
 
-// Fire-and-forget POST to the Apps Script web app.
-// Apps Script blocks CORS on the response, so we use no-cors (can't read the reply).
-// UI updates optimistically; the write still goes through.
+// POST to the Apps Script web app. Returns the fetch Promise so callers can handle network errors.
+// Apps Script blocks CORS on the response (no-cors), so server-side errors are not detectable;
+// only network-level failures (no connectivity, DNS) will reject the Promise.
 export function writeToSheets(payload) {
-  if (!WEB_APP_URL) return;
-  fetch(WEB_APP_URL, {
+  if (!WEB_APP_URL) return Promise.resolve();
+  return fetch(WEB_APP_URL, {
     method: 'POST',
     body: JSON.stringify(payload),
     mode: 'no-cors',
-  }).catch(() => {});
+  });
 }
 
 // Convenience wrappers for each write action.

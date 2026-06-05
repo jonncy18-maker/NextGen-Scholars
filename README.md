@@ -34,7 +34,6 @@ Page sources live under `src/`. The navigator is the primary feature surface:
 | `src/fx.js` | FX rate utilities — market fetch + localStorage persistence |
 | `src/constants.js` | Shared UI constants (`EXPENSE_CATS`, `NAMECLASS`) |
 | `scholars-data.js` | Static fallback data + narrative copy + program config |
-| `project/` | Claude Design split-source reference (not deployed directly) |
 
 ## Data architecture
 

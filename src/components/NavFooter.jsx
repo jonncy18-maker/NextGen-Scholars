@@ -7,7 +7,7 @@ const SHEETS_LABEL = {
   static:  { text: 'Sheets · offline',  cls: 'sheets-static'  },
 };
 
-export function NavFooter({ sheetsStatus }) {
+export function NavFooter({ sheetsStatus, writeError }) {
   const { D } = useData();
   const pill = SHEETS_LABEL[sheetsStatus] || SHEETS_LABEL.static;
   return (
@@ -20,6 +20,7 @@ export function NavFooter({ sheetsStatus }) {
         <div className="footer-fine">
           <span>Pathway Navigator · Mentor View · Phase 1</span>
           <span className={`sheets-pill ${pill.cls}`}>{pill.text}</span>
+          {writeError && <span className="sheets-pill sheets-write-err">Write · failed</span>}
           <span>Last updated · {D.config.lastUpdated}</span>
         </div>
       </div>
