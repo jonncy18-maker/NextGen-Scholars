@@ -211,51 +211,53 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
             <button className="exp-clear-btn" onClick={clearFilters}>Clear filters</button>
           )}
         </div>
-        <table className="exp">
-          <thead>
-            <tr>
-              <SortTh label="Item"       field="item"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-              <SortTh label="Category"  field="cat"    sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-              <SortTh label="Date"      field="date"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-              <SortTh label="Unit Price" field="amount" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="right" />
-              <SortTh label="Qty"       field="qty"    sortField={sortField} sortDir={sortDir} onSort={handleSort} className="right" />
-              <SortTh label="Total"     field="total"  sortField={sortField} sortDir={sortDir} onSort={handleSort} className="right" />
-              <SortTh label="Status"    field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-              <SortTh label="Sent"      field="sent"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-              <th className="exp-th-del" />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.length === 0
-              ? <tr className="exp-none"><td colSpan={9}>No matching expenses.</td></tr>
-              : rows.map((r, i) => {
-                const isSent = r.sent === 'Yes' || sentOverrides.has(String(r.id));
-                const qty = r.qty || 1;
-                const total = (r.amount || 0) * qty;
-                return (
-                  <tr key={i}>
-                    <td><span className="exp-item">{r.item}</span></td>
-                    <td><span className="exp-cat">{r.cat}</span></td>
-                    <td className="exp-date">{r.date}</td>
-                    <td className="right exp-amount">{$fmt(r.amount, currency)}</td>
-                    <td className="right exp-qty">{qty}</td>
-                    <td className="right exp-total">{$fmt(total, currency)}</td>
-                    <td><span className={`exp-status ${r.status}`}>{r.status}</span></td>
-                    <td>
-                      {isSent
-                        ? <span className="exp-sent is-yes">✓ Sent</span>
-                        : <button className="exp-sent is-no mark-sent-btn" title="Mark as sent in Sheets" onClick={() => handleMarkSent(r)}>Mark Sent →</button>
-                      }
-                    </td>
-                    <td className="exp-del-cell">
-                      <button className="exp-del-btn" title="Delete expense" onClick={() => handleDeleteExpense(r)}>Delete</button>
-                    </td>
-                  </tr>
-                );
-              })
-            }
-          </tbody>
-        </table>
+        <div className="exp-table-scroll">
+          <table className="exp">
+            <thead>
+              <tr>
+                <SortTh label="Item"       field="item"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                <SortTh label="Category"   field="cat"    sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                <SortTh label="Date"       field="date"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                <SortTh label="Unit Price" field="amount" sortField={sortField} sortDir={sortDir} onSort={handleSort} className="right" />
+                <SortTh label="Qty"        field="qty"    sortField={sortField} sortDir={sortDir} onSort={handleSort} className="right exp-col-hide-mobile" />
+                <SortTh label="Total"      field="total"  sortField={sortField} sortDir={sortDir} onSort={handleSort} className="right" />
+                <SortTh label="Status"     field="status" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                <SortTh label="Sent"       field="sent"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                <th className="exp-th-del" />
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0
+                ? <tr className="exp-none"><td colSpan={9}>No matching expenses.</td></tr>
+                : rows.map((r, i) => {
+                  const isSent = r.sent === 'Yes' || sentOverrides.has(String(r.id));
+                  const qty = r.qty || 1;
+                  const total = (r.amount || 0) * qty;
+                  return (
+                    <tr key={i}>
+                      <td><span className="exp-item">{r.item}</span></td>
+                      <td><span className="exp-cat">{r.cat}</span></td>
+                      <td className="exp-date">{r.date}</td>
+                      <td className="right exp-amount">{$fmt(r.amount, currency)}</td>
+                      <td className="right exp-qty exp-col-hide-mobile">{qty}</td>
+                      <td className="right exp-total">{$fmt(total, currency)}</td>
+                      <td><span className={`exp-status ${r.status}`}>{r.status}</span></td>
+                      <td>
+                        {isSent
+                          ? <span className="exp-sent is-yes">✓ Sent</span>
+                          : <button className="exp-sent is-no mark-sent-btn" title="Mark as sent in Sheets" onClick={() => handleMarkSent(r)}>Mark Sent →</button>
+                        }
+                      </td>
+                      <td className="exp-del-cell">
+                        <button className="exp-del-btn" title="Delete expense" onClick={() => handleDeleteExpense(r)}>Delete</button>
+                      </td>
+                    </tr>
+                  );
+                })
+              }
+            </tbody>
+          </table>
+        </div>
         {rows.length > 0 && (
           <div className="exp-count">{rows.length} row{rows.length !== 1 ? 's' : ''}</div>
         )}

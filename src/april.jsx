@@ -54,7 +54,7 @@ function App() {
       .catch(() => {});
   }, []);
 
-  return <ScholarProfile data={profileData} isMobile={!isDesktop}/>;
+  return <ScholarProfile data={profileData} isMobile={!isDesktop} relatedProfiles={[{ name: 'Claire', href: 'claire.html' }]}/>;
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
