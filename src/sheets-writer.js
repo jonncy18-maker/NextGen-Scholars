@@ -21,7 +21,7 @@ export function writeSent(id, scholar) {
 }
 
 export function writeExpense(scholar, exp) {
-  writeToSheets({
+  return writeToSheets({
     action: 'addExpense',
     scholar,
     sem:    exp.sem,
