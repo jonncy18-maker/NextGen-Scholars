@@ -11,7 +11,7 @@ function fmtPhp(amountPhp, currency, rate) {
 
 // ── root export ───────────────────────────────────────────────────────────────
 
-export function ScholarProfile({ data, isMobile }) {
+export function ScholarProfile({ data, isMobile, relatedProfiles }) {
   const fx = useFxState();
 
   return (
@@ -29,7 +29,7 @@ export function ScholarProfile({ data, isMobile }) {
       {data.travels && <TravelsSection items={data.travels}/>}
       {data.english && <EnglishSection data={data.english}/>}
       {data.pathway && <PathwaySection data={data.pathway}/>}
-      <ProfileFooter data={data}/>
+      <ProfileFooter data={data} relatedProfiles={relatedProfiles}/>
     </div>
   );
 }
@@ -446,13 +446,16 @@ function EnglishSection({ data }) {
 }
 
 function PathwaySection({ data }) {
+  const pathRef = React.useRef(null);
+  const scroll = dir => pathRef.current?.scrollBy({ left: dir * 200, behavior: 'smooth' });
+
   return (
     <section className="ngs-psection">
       <SectionEyebrow>Long arc</SectionEyebrow>
       <h2>{data.title}</h2>
       <p className="ngs-psection-intro">{data.intro}</p>
 
-      <div className="ngs-pathway">
+      <div className="ngs-pathway" ref={pathRef}>
         <div className="ngs-pathway-track">
           {data.steps.map((s, i) => {
             const isLast = i === data.steps.length - 1;
@@ -480,14 +483,30 @@ function PathwaySection({ data }) {
           })}
         </div>
       </div>
+      <div className="ngs-pathway-footer">
+        <p className="ngs-pathway-hint">← Swipe to explore the full pathway</p>
+        <div className="ngs-pathway-nav">
+          <button className="ngs-pathway-nav-btn" onClick={() => scroll(-1)} aria-label="Scroll pathway left">‹</button>
+          <button className="ngs-pathway-nav-btn" onClick={() => scroll(1)} aria-label="Scroll pathway right">›</button>
+        </div>
+      </div>
     </section>
   );
 }
 
-function ProfileFooter({ data }) {
+function ProfileFooter({ data, relatedProfiles }) {
   return (
     <footer className="ngs-pfooter">
       <div className="ngs-pfooter-left">One generation lifts another.</div>
+      {relatedProfiles?.length > 0 && (
+        <div className="ngs-pfooter-links">
+          {relatedProfiles.map(p => (
+            <a key={p.href} href={p.href} className="ngs-pfooter-link">
+              View {p.name}'s profile →
+            </a>
+          ))}
+        </div>
+      )}
       <div className="ngs-pfooter-meta">
         <span>{data.trackName} · {data.firstName} · {data.cohort}</span>
         <span>{data.updated || 'Updated May 2026'}</span>

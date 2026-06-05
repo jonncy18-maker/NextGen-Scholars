@@ -20,6 +20,7 @@ export function AddExpenseForm({ scholar, onAdd, onCancel }) {
     vendor: '',
   });
   const [saved, setSaved] = useState(false);
+  const [toast, setToast] = useState(false);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const valid = form.item.trim() && form.amount && !isNaN(parseFloat(form.amount)) && parseFloat(form.amount) > 0 && form.sem.trim();
@@ -42,6 +43,8 @@ export function AddExpenseForm({ scholar, onAdd, onCancel }) {
     };
     onAdd(scholar, exp);
     setSaved(true);
+    setToast(true);
+    setTimeout(() => setToast(false), 2200);
     setTimeout(() => {
       setSaved(false);
       setForm(f => ({ ...f, item: '', amount: '', qty: '1', vendor: '' }));
@@ -49,6 +52,8 @@ export function AddExpenseForm({ scholar, onAdd, onCancel }) {
   }
 
   return (
+    <>
+    {toast && <div className="add-exp-toast">✓ Expense saved</div>}
     <div className="add-exp-card">
       <div className="add-exp-title">Add Expense — {s.firstName}</div>
       <form className="add-exp-form" onSubmit={handleSubmit}>
@@ -125,5 +130,6 @@ export function AddExpenseForm({ scholar, onAdd, onCancel }) {
         </div>
       </form>
     </div>
+    </>
   );
 }

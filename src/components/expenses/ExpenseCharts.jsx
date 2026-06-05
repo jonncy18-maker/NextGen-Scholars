@@ -41,7 +41,12 @@ export function ChartSem({ s, currency, extraRows }) {
   });
   const max = Math.max(1, ...data.flatMap(d => [d.actual, d.budget]));
   const [ready, setReady] = useState(false);
+  const [activeTip, setActiveTip] = useState(null);
   useEffect(() => { const id = requestAnimationFrame(() => setReady(true)); return () => cancelAnimationFrame(id); }, []);
+
+  function toggleTip(key) {
+    setActiveTip(prev => prev === key ? null : key);
+  }
 
   return (
     <>
@@ -49,11 +54,19 @@ export function ChartSem({ s, currency, extraRows }) {
         {data.map(d => (
           <div key={d.sem} className="bar-group">
             <div className="bar-pair">
-              <div className="bar actual" style={{ height: ready ? Math.round(d.actual / max * 100) + '%' : '0%' }}>
-                <span className="bar-tip">{$fmt(d.actual, currency)}</span>
+              <div
+                className="bar actual"
+                style={{ height: ready ? Math.round(d.actual / max * 100) + '%' : '0%' }}
+                onClick={() => toggleTip(d.sem + '-actual')}
+              >
+                <span className={`bar-tip${activeTip === d.sem + '-actual' ? ' is-visible' : ''}`}>{$fmt(d.actual, currency)}</span>
               </div>
-              <div className="bar budget" style={{ height: ready ? Math.round(d.budget / max * 100) + '%' : '0%' }}>
-                <span className="bar-tip">{$fmt(d.budget, currency)}</span>
+              <div
+                className="bar budget"
+                style={{ height: ready ? Math.round(d.budget / max * 100) + '%' : '0%' }}
+                onClick={() => toggleTip(d.sem + '-budget')}
+              >
+                <span className={`bar-tip${activeTip === d.sem + '-budget' ? ' is-visible' : ''}`}>{$fmt(d.budget, currency)}</span>
               </div>
             </div>
           </div>

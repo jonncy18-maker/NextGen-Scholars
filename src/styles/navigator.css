@@ -353,6 +353,12 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 
 /* ════════════════ 4. EXPENSE DASHBOARD ════════════════ */
 
+/* scrollable wrapper so the table never overflows its card on mobile */
+.exp-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* filter toggle button in section head */
 .filter-toggle-btn {
   font-family: var(--ngs-mono); font-size: 11px; letter-spacing: 0.06em;
@@ -616,6 +622,21 @@ table.exp tbody tr:hover { background: var(--ngs-paper-2); }
   .add-exp-form { grid-template-columns: 1fr 1fr; }
 }
 
+/* toast notification on save */
+.add-exp-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--ngs-green); color: #fff;
+  font-family: var(--ngs-mono); font-size: 12px; font-weight: 600;
+  letter-spacing: 0.06em; padding: 10px 24px; border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18); z-index: 500;
+  white-space: nowrap; pointer-events: none;
+  animation: toast-in 0.2s ease both;
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 /* ════════════════ 5. DEADLINES ════════════════ */
 .dl-card { background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px; overflow: hidden; }
 table.dl { width: 100%; border-collapse: collapse; }
@@ -629,7 +650,7 @@ table.dl tbody tr:last-child td { border-bottom: 0; }
 table.dl tbody tr:hover { background: var(--ngs-paper-2); }
 .dl-event { font-family: var(--ngs-display); font-size: 16px; color: var(--ngs-ink); }
 .dl-when, .dl-cat { font-family: var(--ngs-mono); font-size: 12.5px; color: var(--ngs-ink-soft); }
-.urg { font-family: var(--ngs-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; padding: 4px 10px; border-radius: 999px; }
+.urg { font-family: var(--ngs-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; padding: 4px 10px; border-radius: 999px; }
 .urg.now      { background: rgba(177,27,42,0.10); color: var(--ngs-red); border: 1px solid rgba(177,27,42,0.3); }
 .urg.soon     { background: rgba(181,134,42,0.12); color: var(--ngs-amber); border: 1px solid rgba(181,134,42,0.3); }
 .urg.upcoming { background: rgba(201,168,76,0.14); color: #8A6F1E; border: 1px solid rgba(201,168,76,0.35); }
@@ -683,6 +704,10 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
 .sheets-static    { background: rgba(255,200,60,0.15);  color: #f5c842; }
 .sheets-write-err { background: rgba(255,80,80,0.18);   color: #ff9a9a; }
 
+/* ════════════════ KEYBOARD FOCUS ════════════════ */
+button:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
+
 /* ════════════════ RESPONSIVE ════════════════ */
 @media (max-width: 980px) {
   .status-grid, .totals-row { grid-template-columns: 1fr 1fr; }
@@ -701,4 +726,13 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
   .log-form { grid-template-columns: 1fr; }
   .nav-back { display: none; }
   .filter-grid { grid-template-columns: 1fr; }
+
+  /* Wider bars + touch-activated tooltips */
+  .bar { width: 40px; }
+  .bar-pair { gap: 5px; }
+  .bars { gap: 14px; }
+  .bar-tip.is-visible { opacity: 1 !important; }
+
+  /* Hide Qty column in expense table to save space */
+  .exp-col-hide-mobile { display: none; }
 }
