@@ -447,7 +447,7 @@ const NGS_DATA = {
         trialBanner:
           'April is in her <strong>2-year trial period</strong> (Grade 11–12). ' +
           'Full NGN scholarship begins on successful Senior High completion with a ' +
-          'minimum <strong>85% average</strong>. Trial started May/June 2025.',
+          'minimum <strong>85% average</strong>. Trial started June 2026.',
         trialProgress: {
           title: 'Four semesters to clear.',
           intro:
@@ -473,7 +473,7 @@ const NGS_DATA = {
           title: 'Grade 11, Semester One.',
           intro: 'Six core subjects. The first semester of a four-semester trial.',
           period: 'G11',
-          year: '2025',
+          year: '2026',
           subjects: [
             'Oral Communication',
             '21st Century Literature',
@@ -496,14 +496,14 @@ const NGS_DATA = {
             progress: 0.04,
           },
           categories: [
-            { icon: 'phone', name: 'Smartphone',    amount: '₱7.5K',     amountPhp: 7500, detail: 'Redmi Note 14 · 6+128GB · Provided at trial entry, April 2026.' },
+            { icon: 'phone', name: 'Smartphone',    amount: '₱7.5K',     amountPhp: 7500, detail: 'Redmi Note 14 · 6+128GB · Provided at trial entry, June 2026.' },
             { icon: 'card',  name: 'Mobile data plan', amount: 'Ongoing', detail: 'Maintained throughout trial to support daily mentor check-ins.' },
             { icon: 'cap',   name: 'Full scholarship',  amount: 'From 2027', detail: 'Tuition, board, milestone rewards, and travel program activate on BSN entry.' },
           ],
         },
         milestones: [
           { icon: 'check',  name: 'Grade 10 Completed', detail: '85% average · Triggered trial period entry',              state: 'done',   badge: 'Done'     },
-          { icon: 'phone',  name: 'Smartphone',          detail: 'Redmi Note 14 · 6+128GB · Trial G11 entry · April 2026', state: 'done',   badge: 'Done'     },
+          { icon: 'phone',  name: 'Smartphone',          detail: 'Redmi Note 14 · 6+128GB · Trial G11 entry · June 2026',  state: 'done',   badge: 'Done'     },
           { icon: 'cap',    name: 'Complete Grade 11',   detail: '85% minimum required to continue trial',                 state: 'future', badge: 'In Trial' },
           { icon: 'cap',    name: 'Complete Grade 12',   detail: '85% minimum · Unlocks full scholarship',                 state: 'future', badge: '2027'     },
           { icon: 'laptop', name: 'Chromebook',          detail: 'Upon completing Grade 12',                               state: 'future', badge: '2027'     },
@@ -599,7 +599,7 @@ const NGS_DATA = {
   deadlines: [
     { event:'Y2S2 Final Exams',              scholar:'claire', when:'Jun 2026',     sort:'2026-06-01', cat:'Academic',   urgency:'now'      },
     { event:'Credit Card Milestone',          scholar:'claire', when:'Jun 2026',     sort:'2026-06-15', cat:'Milestone',  urgency:'now'      },
-    { event:'April G11 S1 — confirm 85%',    scholar:'april',  when:'~Nov 2025',    sort:'2025-11-01', cat:'Academic',   urgency:'soon'     },
+    { event:'April G11 S1 — confirm 85%',    scholar:'april',  when:'~Nov 2026',    sort:'2026-11-01', cat:'Academic',   urgency:'soon'     },
     { event:'ChatGPT Plus Bootcamp',          scholar:'claire', when:'Summer 2026',  sort:'2026-07-01', cat:'English',    urgency:'soon'     },
     { event:'B2 Visa Process Begins',         scholar:'claire', when:'Aug 2026',     sort:'2026-08-01', cat:'Visa',       urgency:'soon'     },
     { event:'Taiwan Cruise — MSC Bellissima', scholar:'claire', when:'Jan 2027',     sort:'2027-01-05', cat:'Travel',     urgency:'upcoming' },
