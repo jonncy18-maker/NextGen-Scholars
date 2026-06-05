@@ -700,17 +700,31 @@ function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
   const [sortField, setSortField] = useState(null);
   const [sortDir, setSortDir] = useState('asc');
 
-  const [sentOverrides, setSentOverrides] = useState(() => new Set());
-  const [deletedIds, setDeletedIds] = useState(() => new Set());
+  const [sentAll, setSentAll] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ngs_sent') || '{}'); } catch { return {}; }
+  });
+  const [deletedAll, setDeletedAll] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ngs_deleted') || '{}'); } catch { return {}; }
+  });
+  const sentOverrides = new Set(sentAll[expScholar] || []);
+  const deletedIds = new Set(deletedAll[expScholar] || []);
   const [showAddForm, setShowAddForm] = useState(false);
 
   function handleMarkSent(r) {
-    setSentOverrides(prev => new Set([...prev, String(r.id)]));
+    setSentAll(prev => {
+      const updated = { ...prev, [expScholar]: [...new Set([...(prev[expScholar] || []), String(r.id)])] };
+      try { localStorage.setItem('ngs_sent', JSON.stringify(updated)); } catch {}
+      return updated;
+    });
     writeSent(r.id, expScholar);
   }
 
   function handleDeleteExpense(r) {
-    setDeletedIds(prev => new Set([...prev, String(r.id)]));
+    setDeletedAll(prev => {
+      const updated = { ...prev, [expScholar]: [...new Set([...(prev[expScholar] || []), String(r.id)])] };
+      try { localStorage.setItem('ngs_deleted', JSON.stringify(updated)); } catch {}
+      return updated;
+    });
   }
 
   const s = { ...D.scholars[expScholar], _key: expScholar };
@@ -731,8 +745,7 @@ function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
     setFilters(EMPTY_FILTERS);
     setSortField(null);
     setSortDir('asc');
-    setSentOverrides(new Set());
-    setDeletedIds(new Set());
+
     setShowAddForm(false);
   }
 
@@ -1058,7 +1071,10 @@ function Navigator() {
   const [fxStatus, setFxStatus] = useState('idle');
 
   // addedExpenses tracks locally-added rows across scholar switches: { claire: [], april: [], ... }
-  const [addedExpenses, setAddedExpenses] = useState({});
+  // Persisted to localStorage so they survive page refreshes.
+  const [addedExpenses, setAddedExpenses] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ngs_added') || '{}'); } catch { return {}; }
+  });
 
   // Fetch market rate when mode is 'market'
   useEffect(() => {
@@ -1125,10 +1141,11 @@ function Navigator() {
   }
 
   function handleAddExpense(scholar, exp) {
-    setAddedExpenses(prev => ({
-      ...prev,
-      [scholar]: [...(prev[scholar] || []), exp],
-    }));
+    setAddedExpenses(prev => {
+      const updated = { ...prev, [scholar]: [...(prev[scholar] || []), exp] };
+      try { localStorage.setItem('ngs_added', JSON.stringify(updated)); } catch {}
+      return updated;
+    });
     writeExpense(scholar, exp);
   }
 
