@@ -14,8 +14,7 @@ async function loadConfig() {
     const res = await fetch(url);
     const text = await res.text();
     const map = {};
-    text.trim().split('\n').slice(1).forEach(line => {
-      // Simple key,value rows — no embedded commas expected in Config
+    text.trim().split(/\r?\n/).slice(1).forEach(line => {
       const comma = line.indexOf(',');
       if (comma === -1) return;
       const key = line.slice(0, comma).replace(/^"|"$/g, '').trim();
@@ -31,7 +30,7 @@ async function loadConfig() {
 const SCHOLARS = [
   {
     key: 'claire',
-    display: 'Claire Buenconsejo',
+    display: 'Claire',
     sems: ['Y2S1', 'Y2S2', 'Y3S1', 'Y3S2'],
     defaultSem: 'Y2S2',
   },
