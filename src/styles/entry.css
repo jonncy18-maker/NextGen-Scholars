@@ -1,0 +1,178 @@
+@import './tokens.css';
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; min-height: 100%; }
+body {
+  font-family: var(--ngs-sans);
+  font-feature-settings: 'ss01','cv11';
+  color: var(--ngs-ink);
+  background: var(--ngs-paper);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+  font-size: 15px;
+}
+h1,h2,h3 { margin: 0; font-weight: 500; }
+p { margin: 0; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+input, select { font-family: inherit; }
+
+/* ── badge / monogram ── */
+.el-badge {
+  display: inline-flex; padding: 10px 14px;
+  background: rgba(201,168,76,0.12);
+  border: 1px solid rgba(201,168,76,0.3);
+  color: var(--ngs-gold); border-radius: 6px;
+  font-family: var(--ngs-display); font-size: 17px; font-weight: 600;
+  letter-spacing: 0.2em; margin-bottom: 28px;
+}
+.el-badge-sm { font-size: 12px; padding: 6px 9px; margin-bottom: 0; }
+
+/* ════════════════ LOCK SCREEN ════════════════ */
+.el-lock {
+  position: fixed; inset: 0;
+  background: var(--ngs-navy-ink);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+.el-lock-bg {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(60% 45% at 50% 30%, rgba(201,168,76,0.09), transparent 60%),
+    radial-gradient(50% 40% at 50% 100%, rgba(177,27,42,0.05), transparent 70%);
+}
+.el-lock-inner {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; max-width: 400px; width: 100%;
+}
+.el-title {
+  font-family: var(--ngs-display);
+  font-size: 38px; line-height: 1.05; font-weight: 400;
+  color: var(--ngs-paper); margin-bottom: 10px;
+}
+.el-title em { color: var(--ngs-gold); font-style: italic; }
+.el-sub {
+  font-family: var(--ngs-mono); font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.2em;
+  color: rgba(228,201,122,0.65); margin-bottom: 36px;
+}
+.el-form { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+.el-field { display: flex; flex-direction: column; gap: 7px; text-align: left; }
+.el-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.1em; color: rgba(228,201,122,0.75);
+}
+.el-radio-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.el-radio {
+  padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 500;
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.04);
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.el-radio.is-active {
+  border-color: var(--ngs-gold);
+  color: var(--ngs-gold);
+  background: rgba(201,168,76,0.1);
+}
+.el-input {
+  width: 100%; padding: 11px 14px; border-radius: 6px; font-size: 15px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--ngs-paper); outline: none;
+  transition: border-color 0.15s;
+}
+.el-input:focus { border-color: var(--ngs-gold); }
+.el-form.is-error .el-input { border-color: var(--ngs-red); }
+.el-err {
+  font-size: 12px; color: rgba(177,27,42,0.85); display: none; text-align: left;
+}
+.el-err.show { display: block; }
+.el-btn {
+  margin-top: 4px; padding: 13px; border-radius: 6px; font-size: 15px; font-weight: 600;
+  background: var(--ngs-gold); color: var(--ngs-navy-ink);
+  transition: opacity 0.15s;
+}
+.el-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.el-back {
+  margin-top: 28px; font-size: 12px; color: rgba(255,255,255,0.35);
+  font-family: var(--ngs-mono); letter-spacing: 0.05em;
+  transition: color 0.15s;
+}
+.el-back:hover { color: rgba(255,255,255,0.6); }
+
+/* ════════════════ EXPENSE FORM PAGE ════════════════ */
+.ef-page { min-height: 100vh; display: flex; flex-direction: column; }
+
+.ef-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px;
+  background: var(--ngs-navy-ink);
+  border-bottom: 1px solid rgba(201,168,76,0.2);
+  gap: 12px;
+}
+.ef-header-left { display: flex; align-items: center; gap: 12px; }
+.ef-header-title {
+  font-size: 14px; color: rgba(228,201,122,0.85);
+  font-family: var(--ngs-mono); letter-spacing: 0.04em;
+}
+.ef-header-title strong { color: var(--ngs-gold); }
+.ef-logout {
+  font-size: 12px; color: rgba(255,255,255,0.4); padding: 6px 10px;
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 5px;
+  transition: color 0.15s, border-color 0.15s; white-space: nowrap;
+}
+.ef-logout:hover { color: rgba(255,255,255,0.7); border-color: rgba(255,255,255,0.3); }
+
+.ef-main {
+  flex: 1; padding: 28px 20px;
+  max-width: 640px; width: 100%; margin: 0 auto;
+}
+
+.ef-toast {
+  margin-bottom: 18px; padding: 10px 16px; border-radius: 6px;
+  background: rgba(47,125,85,0.12); border: 1px solid rgba(47,125,85,0.35);
+  color: #2F7D55; font-size: 13px; font-weight: 500;
+}
+
+.ef-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 480px) {
+  .ef-grid { grid-template-columns: 1fr; }
+  .ef-field-wide { grid-column: 1; }
+}
+.ef-field { display: flex; flex-direction: column; gap: 5px; }
+.ef-field-wide { grid-column: 1 / -1; }
+.ef-field label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--ngs-muted);
+}
+.ef-optional { font-weight: 400; text-transform: none; letter-spacing: 0; }
+.ef-field input,
+.ef-field select {
+  width: 100%; padding: 9px 12px; border-radius: 6px; font-size: 14px;
+  background: #fff;
+  border: 1px solid rgba(27,42,74,0.2);
+  color: var(--ngs-ink); outline: none;
+  transition: border-color 0.15s;
+}
+.ef-field input:focus,
+.ef-field select:focus { border-color: var(--ngs-navy); }
+
+.ef-submit-row {
+  grid-column: 1 / -1;
+  display: flex; justify-content: flex-end;
+  padding-top: 4px;
+}
+.ef-save {
+  padding: 11px 28px; border-radius: 6px; font-size: 14px; font-weight: 600;
+  background: var(--ngs-navy); color: var(--ngs-gold);
+  border: 1px solid transparent;
+  transition: background 0.15s, color 0.15s;
+}
+.ef-save:disabled { opacity: 0.4; cursor: not-allowed; }
+.ef-save.is-saved { background: rgba(47,125,85,0.12); color: #2F7D55; border-color: rgba(47,125,85,0.3); }

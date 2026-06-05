@@ -77,9 +77,13 @@ function QuickMenu() {
             <span className="ngs-qmenu-icon" aria-hidden="true">⌂</span>
             <span>Home</span>
           </a>
+          <a href="entry.html" className="ngs-qmenu-item" role="menuitem">
+            <span className="ngs-qmenu-icon" aria-hidden="true">+</span>
+            <span>Enter Expenses</span>
+          </a>
           <a href="navigator.html" className="ngs-qmenu-item" role="menuitem">
             <span className="ngs-qmenu-icon" aria-hidden="true">₱</span>
-            <span>Expenses</span>
+            <span>Expenses (Mentor)</span>
           </a>
         </div>
       )}
@@ -618,7 +622,8 @@ function TopNav({ isDesktop }) {
           <a href="#apply" className="ngs-nav-menu-cta">Apply</a>
           <div className="ngs-nav-menu-divider"></div>
           <a href="#top" className="ngs-nav-menu-item">Home</a>
-          <a href="navigator.html" className="ngs-nav-menu-item">Expenses →</a>
+          <a href="entry.html" className="ngs-nav-menu-item">Enter Expenses →</a>
+          <a href="navigator.html" className="ngs-nav-menu-item">Expenses (Mentor) →</a>
         </nav>
       )}
     </header>

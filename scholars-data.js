@@ -11,7 +11,7 @@ const NGS_DATA = {
   // ── PROGRAM CONFIG ──────────────────────────────────────────────────────────
   config: {
     exchangeRate: 56,          // PHP per USD — update as needed
-    password: 'ngs2026',       // navigator access password
+    password: '',              // loaded from Config sheet at runtime
     lastUpdated: '2026-05-30',
   },
 
