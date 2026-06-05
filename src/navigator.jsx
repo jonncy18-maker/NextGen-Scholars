@@ -4,7 +4,7 @@ import './styles/navigator.css';
 import { NGS_DATA } from '../scholars-data.js';
 import { loadFromSheets } from './sheets-loader.js';
 import { storedMode, storedRate, persistFx, fetchMarketRate } from './fx.js';
-import { writeExpense } from './sheets-writer.js';
+import { writeExpense, writeSemester } from './sheets-writer.js';
 import { FxCtx } from './context/FxContext.jsx';
 import { DataCtx } from './context/DataContext.jsx';
 import { LockScreen } from './components/LockScreen.jsx';
@@ -124,6 +124,17 @@ function Navigator() {
     writeExpense(scholar, exp).catch(() => setWriteError(true));
   }
 
+  function handleSemesterChange(scholar, sem) {
+    writeSemester(scholar, sem);
+    setD(prev => ({
+      ...prev,
+      scholars: {
+        ...prev.scholars,
+        [scholar]: { ...prev.scholars[scholar], currentSem: sem },
+      },
+    }));
+  }
+
   return (
     <DataCtx.Provider value={{ D, scholarKeys }}>
       <FxCtx.Provider value={fxRate}>
@@ -141,7 +152,7 @@ function Navigator() {
         />
         <main className="wrap">
           <AlertsSection alerts={alerts} onDismiss={handleDismiss} />
-          <StatusSection currency={currency} liveGpa={liveGpa} />
+          <StatusSection currency={currency} liveGpa={liveGpa} onSemesterChange={handleSemesterChange} />
           <ExpenseSection
             currency={currency}
             addedExpenses={addedExpenses}

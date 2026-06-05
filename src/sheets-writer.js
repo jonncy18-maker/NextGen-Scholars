@@ -49,3 +49,7 @@ export function writeLog(entry) {
     detail:  entry.detail,
   });
 }
+
+export function writeSemester(scholar, sem) {
+  writeToSheets({ action: 'setSemester', scholar, sem });
+}

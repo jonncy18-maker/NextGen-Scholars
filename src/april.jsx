@@ -7,6 +7,7 @@ import { loadFromSheets } from './sheets-loader.js';
 import { scholarTotals } from './utils.js';
 
 const STATIC = NGS_DATA.scholars.april.publicProfile;
+const STATIC_SCHOLAR = NGS_DATA.scholars.april;
 
 function mergeSheetData(base, s) {
   if (!s) return base;
@@ -28,6 +29,8 @@ function mergeSheetData(base, s) {
           return { ...stat, state: m.state === 'done' ? 'done' : 'future' };
         })
       : base.milestones,
+    currentSem: s.currentSem,
+    semesterExpenses: s.expenses?.[s.currentSem] || [],
   };
 }
 
@@ -35,7 +38,7 @@ function App() {
   const [isDesktop, setIsDesktop] = useState(
     () => window.matchMedia('(min-width: 960px)').matches
   );
-  const [profileData, setProfileData] = useState(STATIC);
+  const [profileData, setProfileData] = useState(() => mergeSheetData(STATIC, STATIC_SCHOLAR));
 
   useEffect(() => {
     const mq = window.matchMedia('(min-width: 960px)');
@@ -51,7 +54,7 @@ function App() {
           setProfileData(mergeSheetData(STATIC, data.scholars.april));
         }
       })
-      .catch(() => {});
+      .catch(() => { setProfileData(mergeSheetData(STATIC, STATIC_SCHOLAR)); });
   }, []);
 
   return <ScholarProfile data={profileData} isMobile={!isDesktop} relatedProfiles={[{ name: 'Claire', href: 'claire.html' }]}/>;

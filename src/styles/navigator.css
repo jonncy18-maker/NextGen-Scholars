@@ -305,6 +305,10 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .scard-next-lbl { font-family: var(--ngs-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ngs-gold); margin-bottom: 5px; }
 .scard-next-name { font-family: var(--ngs-display); font-size: 17px; color: var(--ngs-navy); margin-bottom: 2px; }
 .scard-next-detail { font-size: 12px; color: var(--ngs-ink-soft); }
+.scard-sem-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--ngs-rule); }
+.scard-sem-lbl { font-family: var(--ngs-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ngs-gold); white-space: nowrap; }
+.scard-sem-select { font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-navy); background: var(--ngs-paper); border: 1px solid var(--ngs-rule); border-radius: 4px; padding: 5px 8px; cursor: pointer; outline: none; transition: border-color 0.15s; }
+.scard-sem-select:hover, .scard-sem-select:focus { border-color: var(--ngs-gold); }
 
 /* ════════════════ 3. LOG UPDATE ════════════════ */
 .log-card {
