@@ -91,7 +91,7 @@ export async function loadFromSheets() {
         const sem = e.sem;
         if (!expenses[sem]) expenses[sem] = [];
         expenses[sem].push({
-          id: e.id,
+          id: e.id || `${key}_${sem}_${expenses[sem].length}`,
           item: e.item,
           amount: num(e.amount),
           qty: num(e.qty) || 1,

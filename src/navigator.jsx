@@ -732,6 +732,7 @@ function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
     setSortField(null);
     setSortDir('asc');
     setSentOverrides(new Set());
+    setDeletedIds(new Set());
     setShowAddForm(false);
   }
 
