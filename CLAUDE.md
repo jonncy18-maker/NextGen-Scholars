@@ -7,79 +7,88 @@ licensure abroad (PH → OET → NCLEX → AHPRA Australia).
 - **Repo:** `jonncy18-maker/NextGen-Scholars` (renamed from `NexGen`)
 - **Live:** https://jonncy18-maker.github.io/NextGen-Scholars/ (GitHub Pages, `main`)
 
-## ⚠️ Critical constraint: Claude Design round-trip
+## Build system
 
-The HTML files are intentionally **standalone, browser-runnable files** (CDN
-React + ReactDOM + Babel Standalone, JSX compiled in-browser). This is a
-deliberate choice so the owner can re-import/edit them in **Claude Design** and
-re-export. **Do NOT introduce a build system (Vite/Next/Astro/bundler) or
-convert to precompiled modules without explicitly discussing it first** — it
-breaks the Claude Design workflow. Performance/"best practice" arguments for a
-build step are understood and intentionally deferred (see ROADMAP.md).
+The repo uses **Vite + React 18 + JSX** under `src/`. All four HTML pages are
+Vite entry points (`index.html`, `claire.html`, `april.html`, `navigator.html`).
+The `project/` directory is the Claude Design split-source reference — it is kept
+for round-trip design iteration but is **not** the deployed source; the root HTML
+files and `src/` are what Vite builds and GitHub Pages serves.
 
 ## Files
 
-| File | Role |
+| File/Path | Role |
 |---|---|
-| `index.html` | Public homepage (hero, tracks, journey, "Meet the Scholars", apply form). Auto-responsive. Scholar cards link to `claire.html` / `april.html`. |
+| `index.html` | Public homepage (hero, tracks, journey, "Meet the Scholars", apply form). |
 | `claire.html` | Public scholar dashboard — Claire (active BSN). |
 | `april.html` | Public scholar dashboard — April (trial period, Grade 11). |
-| `navigator.html` | **Private** mentor ops dashboard. Reads `scholars-data.js`. Has a cosmetic password lock. |
-| `scholars-data.js` | Data for the navigator (scholars, expenses, milestones, travels, budgets, alerts, deadlines, actions). |
-| `project/` | Claude Design split source (jsx/css). Reference only; root files are what deploy. |
-| `chats/`, `README.md` | Original Claude Design handoff transcripts + notes. |
+| `navigator.html` | **Private** mentor ops dashboard. Cosmetic password lock. |
+| `src/navigator.jsx` | Root `Navigator` component — manages data state, FX state, and renders all sections. |
+| `src/components/` | Section-level components (alerts, status cards, nav bar, footer, etc.). |
+| `src/components/expenses/` | Expense sub-components (charts, filter panel, add form, sort/filter helpers). |
+| `src/context/FxContext.jsx` | FX rate context + `useFmt()` formatting hook. |
+| `src/context/DataContext.jsx` | Data context (`DataCtx`) holding the live merged NGS_DATA snapshot. |
+| `src/constants.js` | Shared UI constants (`EXPENSE_CATS`, `NAMECLASS`). |
+| `src/styles/` | CSS (token-based `--ngs-*` vars, Newsreader/Manrope/IBM Plex Mono, navy + gold). |
+| `src/sheets-loader.js` | Fetches all operational data from Google Sheets. |
+| `src/sheets-writer.js` | Fire-and-forget write-back to Sheets via Apps Script. |
+| `src/utils.js` | Pure computation helpers (`scholarTotals`, `nextMilestone`, `accentFor`, etc.). |
+| `src/fx.js` | FX rate helpers — market fetch, localStorage persistence. |
+| `scholars-data.js` | Static fallback + narrative/profile/display copy + cosmetic lock password. |
+| `project/` | Claude Design split source (jsx/css). Reference only; sync manually if needed. |
+| `chats/` | Original Claude Design handoff transcripts. |
 
-## How the standalone HTML files are built
+## Data architecture
 
-- Each page inlines its JSX in `<script type="text/babel">` blocks.
-- **Separate `<script>` blocks are separate compilation units.** A `const`/
-  function in one block is NOT visible by name in another unless exported via
-  `window.*` and re-read there. (This caused real bugs — duplicate `const`
-  declarations, and cross-block `undefined` references.)
-- Auto-responsive (mobile ↔ desktop) is done with
-  `window.matchMedia('(min-width: 960px)')` + a resize listener, toggling
-  `is-desktop` / `is-mobile` classes. No device frames in the deployed files.
+Three layers, merged at runtime:
 
-## navigator.html + scholars-data.js gotchas
+- **`scholars-data.js`** — static fallback and narrative fields: scholar bio, English
+  profile, public profile copy, program config (`lastUpdated`, `exchangeRate`), and
+  the cosmetic lock password. This file is the source of truth for fields that are
+  hand-authored and not held in Sheets.
+- **Google Sheets** — operational data: expenses, GPA history, milestone and travel
+  states, budgets, alerts, deadlines, action items. Sheets is the source of truth for
+  anything the mentor edits week-to-week.
+- **Frontend merge layer** — `sheets-loader.js` fetches all Sheets tabs in parallel,
+  then `Navigator` merges the result with the static narrative fields from
+  `scholars-data.js` and stores it in React state (`const [D, setD] = useState(NGS_DATA)`).
+  All sections read from this merged state via `DataCtx`.
 
-- `scholars-data.js` declares `const NGS_DATA = {...}`. A top-level `const`
-  lives in the shared global **lexical** scope (accessible by bare name in a
-  later classic `<script>`) but is **NOT** a property of `window`. So
-  `window.NGS_DATA` is `undefined` — reference `NGS_DATA` directly (navigator
-  binds `const D = (typeof NGS_DATA !== 'undefined') ? NGS_DATA : window.NGS_DATA`
-  and mirrors it back onto `window`). There is a guard that fails visibly on the
-  lock screen if the data file doesn't load.
-- The navigator's render logic was adapted to the real `scholars-data.js` shape
-  (rolled-up totals from `scholarTotals()`, `nextMilestone()`, `accentFor()`,
-  expense status read from `e.avb`). `scholars-data.js` is treated as the source
-  of truth and must not be modified to match the template — adapt the template.
-- **Security note:** the `password: 'ngs2026'` in `scholars-data.js` is
-  **cosmetic only**. The file is a public static asset — anyone can read it and
-  the data directly. Do not treat this as real access control (see ROADMAP #1).
+When Sheets is unreachable, the app falls back to `scholars-data.js` as a static
+snapshot (nav shows "Sheets · offline").
 
-## Known issue: duplicated scholar data
+## navigator.jsx + DataContext
 
-Scholar facts are hand-duplicated across `index.html` cards, `claire.html`,
-`april.html`, `scholars-data.js`, and `project/site.jsx`. They drift. The
-highest-value safe refactor is consolidating to one data source (ROADMAP #2).
+- The data snapshot is held in React state inside `Navigator` (not a mutable module
+  variable), so Sheets updates trigger a full re-render of all sections.
+- Components read the live snapshot via `useData()` from `DataContext`.
+- `scholars-data.js` exports a named ES module export: `export const NGS_DATA = {...}`.
+  Import it as `import { NGS_DATA } from '../scholars-data.js'`.
+- **Security note:** the `password` in `scholars-data.js` is **cosmetic only**. The file
+  is a public static asset — anyone can read it. Do not treat this as real access control
+  (see ROADMAP #1).
+
+## Known issue: scholar data still partially duplicated
+
+Scholar facts are hand-duplicated across `claire.html`, `april.html`, `scholars-data.js`,
+and `project/site.jsx`. They drift. The highest-value safe refactor is consolidating all
+public profile payloads to read exclusively from `scholars-data.js`.
 
 ## Working in this environment
 
 - **Commits:** GPG signing fails here — commit with
   `git -c commit.gpgsign=false commit -m "..."`.
 - **Push:** uses the owner's fine-grained PAT (Contents: write). The token is
-  NOT stored in the repo — never commit secrets. `git push origin main`.
+  NOT stored in the repo — never commit secrets. `git push origin <branch>`.
 - **GitHub Pages:** legacy build. After disruptive changes the Fastly CDN can
-  lag or return `host_not_allowed` (renaming the repo once reset routing).
-  Builds usually finish in seconds; confirm via the Pages API
+  lag. Builds usually finish in seconds; confirm via the Pages API
   (`/repos/.../pages/builds/latest`) that the latest commit SHA is built.
 - **Browser cache:** after a deploy, a normal reload often serves the old file.
   Tell the user to **hard-refresh** (Cmd/Ctrl+Shift+R).
 - **Verifying behavior:** there's a headless Chromium available for real
   browser testing —
   `node` + `/opt/node22/lib/node_modules/playwright` (CommonJS `require`) +
-  executablePath `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`. Used to
-  confirm the navigator unlocks and renders with zero page errors.
+  executablePath `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 
 ## Conventions
 
