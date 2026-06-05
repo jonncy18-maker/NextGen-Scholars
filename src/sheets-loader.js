@@ -57,6 +57,13 @@ function maybeNum(v) {
   return isNaN(n) ? null : n;
 }
 
+export async function fetchConfigMap() {
+  const rows = await fetchCSV('Config');
+  const map = {};
+  rows.forEach(r => { map[r.key] = r.value; });
+  return map;
+}
+
 export async function loadFromSheets() {
   const [
     configRows, scholarRows, academicRows, milestoneRows,

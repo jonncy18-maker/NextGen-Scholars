@@ -2,26 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import { WEB_APP_URL, writeToSheets } from './sheets-writer.js';
 import { EXPENSE_CATS } from './constants.js';
+import { fetchConfigMap } from './sheets-loader.js';
 import './styles/entry.css';
-
-const SHEET_ID = '1EuTStd26Ret7E9ph1syI_YMKAPIEuPeNjMN6G4b7Cuw';
 
 async function loadConfig() {
   try {
-    const url =
-      `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq` +
-      `?tqx=out:csv&sheet=Config`;
-    const res = await fetch(url);
-    const text = await res.text();
-    const map = {};
-    text.trim().split(/\r?\n/).slice(1).forEach(line => {
-      const comma = line.indexOf(',');
-      if (comma === -1) return;
-      const key = line.slice(0, comma).replace(/^"|"$/g, '').trim();
-      const val = line.slice(comma + 1).replace(/^"|"$/g, '').trim();
-      map[key] = val;
-    });
-    return map;
+    return await fetchConfigMap();
   } catch {
     return {};
   }
