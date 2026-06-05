@@ -56,20 +56,28 @@ function doPost(e) {
   // ── addExpense ────────────────────────────────────────────────────────────
   // Appends a new expense row to the Expenses sheet.
   // Payload: { action, scholar, sem, item, cat, amount, qty, date, avb, sent, vendor }
+  // Uses header-based column insertion so it is robust to any column order.
   } else if (payload.action === 'addExpense') {
     var addSheet = ss.getSheetByName('Expenses');
-    addSheet.appendRow([
-      payload.scholar,
-      payload.sem,
-      payload.item,
-      payload.cat,
-      Number(payload.amount) || 0,
-      Number(payload.qty)    || 1,
-      payload.date,
-      payload.avb,
-      payload.sent ? 'Yes' : 'No',
-      payload.vendor || '',
-    ]);
+    var addHdrs  = addSheet.getDataRange().getValues()[0];
+    var newRow   = new Array(addHdrs.length).fill('');
+    var fieldMap = {
+      id:      'exp_' + Date.now(),
+      scholar: payload.scholar,
+      sem:     payload.sem,
+      item:    payload.item,
+      cat:     payload.cat,
+      amount:  Number(payload.amount) || 0,
+      qty:     Number(payload.qty)    || 1,
+      date:    payload.date,
+      avb:     payload.avb,
+      sent:    payload.sent === 'Yes' ? 'Yes' : 'No',
+      vendor:  payload.vendor || '',
+    };
+    addHdrs.forEach(function(h, i) {
+      if (fieldMap.hasOwnProperty(h)) newRow[i] = fieldMap[h];
+    });
+    addSheet.appendRow(newRow);
 
   // ── toggleAction ──────────────────────────────────────────────────────────
   // Flips the done column on an Actions row identified by id.
@@ -109,11 +117,11 @@ function doPost(e) {
 
 | Sheet | Expected columns |
 |---|---|
-| `Expenses` | `id`, `scholar`, `sem`, `item`, `cat`, `amount`, `qty`, `date`, `avb`, `sent`, `vendor` (plus any others) |
+| `Expenses` | `id`, `scholar`, `sem`, `item`, `cat`, `amount`, `qty`, `date`, `avb`, `sent`, `vendor` (any order — the script maps by header name) |
 | `Actions` | `id`, `done` (plus any others) |
 | `Log` | `ts`, `scholar`, `type`, `detail` (optional — sheet may not exist) |
 
-If your column names differ, update the `indexOf` lookups in the script above.
+Column order no longer matters for `addExpense` — it maps values by header name. If your column names differ, update `fieldMap` keys in the script above.
 
 ---
 
