@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useData } from '../context/DataContext.jsx';
 import { useFmt } from '../context/FxContext.jsx';
 import { scholarTotals, nextMilestone, accentFor } from '../utils.js';
+import { SEMESTER_OPTIONS } from '../constants.js';
 
 function gpaClass(gpa, floor) {
   if (gpa == null) return '';
@@ -25,7 +26,7 @@ function ProgBar({ pct }) {
   return <div className="scard-prog-fill" style={{ width: w + '%' }} />;
 }
 
-function ScholarCard({ sk, currency, liveGpa }) {
+function ScholarCard({ sk, currency, liveGpa, onSemesterChange }) {
   const $fmt = useFmt();
   const { D } = useData();
   const s = { ...D.scholars[sk], _key: sk };
@@ -71,12 +72,28 @@ function ScholarCard({ sk, currency, liveGpa }) {
           <div className="scard-next-name">{next.name}</div>
           <div className="scard-next-detail">{next.detail}</div>
         </div>
+        <div className="scard-sem-row">
+          <label className="scard-sem-lbl" htmlFor={`sem-${sk}`}>Active semester</label>
+          <select
+            id={`sem-${sk}`}
+            className="scard-sem-select"
+            value={s.currentSem || ''}
+            onChange={e => onSemesterChange(sk, e.target.value)}
+          >
+            {s.currentSem && !SEMESTER_OPTIONS.includes(s.currentSem) && (
+              <option value={s.currentSem}>{s.currentSem}</option>
+            )}
+            {SEMESTER_OPTIONS.map(opt => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
+          </select>
+        </div>
       </div>
     </article>
   );
 }
 
-export function StatusSection({ currency, liveGpa }) {
+export function StatusSection({ currency, liveGpa, onSemesterChange }) {
   const { scholarKeys } = useData();
   return (
     <section className="section">
@@ -86,7 +103,9 @@ export function StatusSection({ currency, liveGpa }) {
         <span className="section-note">Live academic &amp; investment snapshot.</span>
       </div>
       <div className="status-grid">
-        {scholarKeys.map(k => <ScholarCard key={k} sk={k} currency={currency} liveGpa={liveGpa} />)}
+        {scholarKeys.map(k => (
+          <ScholarCard key={k} sk={k} currency={currency} liveGpa={liveGpa} onSemesterChange={onSemesterChange} />
+        ))}
       </div>
     </section>
   );
