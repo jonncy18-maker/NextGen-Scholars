@@ -275,6 +275,12 @@ body { background: var(--ngs-paper); }
 .ngs-pline.is-done { background: var(--ngs-gold); }
 .ngs-pline.is-dashed { background: none; border-top: 1.5px dashed rgba(255,255,255,0.25); height: 0; }
 
+/* ── semester expense section header ── */
+.ngs-semexp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.ngs-semexp-header .ngs-psection-eyebrow { margin-bottom: 0; }
+.ngs-semexp-home-btn { font-family: var(--ngs-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ngs-muted); padding: 6px 12px; border-radius: 999px; border: 1px solid var(--ngs-rule); transition: all 0.18s ease; white-space: nowrap; }
+.ngs-semexp-home-btn:hover { color: var(--ngs-navy); border-color: var(--ngs-navy); }
+
 /* ── semester expense table ── */
 .ngs-semexp-table-wrap { overflow-x: auto; margin-bottom: 16px; border: 1px solid var(--ngs-rule); border-radius: 6px; }
 .ngs-semexp-table { width: 100%; border-collapse: collapse; font-size: 13px; }

@@ -99,7 +99,7 @@ function Navigator() {
         const merged = {
           ...data,
           scholars: mergedScholars,
-          config: { ...data.config, password: NGS_DATA.config.password },
+          config: { ...data.config, password: data.config.password || NGS_DATA.config.password },
         };
         setD(merged);
         setAlerts((merged.alerts || []).map(a => ({ ...a })));

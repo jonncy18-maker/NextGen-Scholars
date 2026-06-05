@@ -511,7 +511,10 @@ function SemesterExpenseSection({ expenses, currentSem, currency, fxRate }) {
 
   return (
     <section className="ngs-psection">
-      <SectionEyebrow>Semester expenses · {currentSem || '—'}</SectionEyebrow>
+      <div className="ngs-semexp-header">
+        <SectionEyebrow>Semester expenses · {currentSem || '—'}</SectionEyebrow>
+        <a href="index.html" className="ngs-semexp-home-btn">← Home</a>
+      </div>
       <h2>This semester's spending.</h2>
       {allRows.length === 0 ? (
         <p className="ngs-psection-intro">No expenses recorded for this semester yet.</p>
