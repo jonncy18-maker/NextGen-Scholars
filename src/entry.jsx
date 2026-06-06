@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import { WEB_APP_URL, writeToSheets } from './sheets-writer.js';
 import { EXPENSE_CATS } from './constants.js';
-import { fetchConfigMap } from './sheets-loader.js';
+import { fetchConfigMap, loadFromSheets } from './sheets-loader.js';
 import './styles/entry.css';
 
 async function loadConfig() {
@@ -142,6 +142,13 @@ function ExpenseForm({ scholar, password, onLogout }) {
     vendor: '',
   });
   const [saveState, setSaveState] = useState('idle'); // 'idle' | 'saved'
+  const [expensesBySem, setExpensesBySem] = useState(null);
+
+  useEffect(() => {
+    loadFromSheets()
+      .then(data => setExpensesBySem(data.scholars?.[scholar.key]?.expenses || {}))
+      .catch(() => setExpensesBySem({}));
+  }, [scholar.key]);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const valid =
@@ -176,6 +183,10 @@ function ExpenseForm({ scholar, password, onLogout }) {
     }, 1800);
   }
 
+  const semExpenses = expensesBySem?.[form.sem] || [];
+  const actualTotal = semExpenses.filter(e => e.avb === 'Actual').reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
+  const budgetTotal = semExpenses.filter(e => e.avb !== 'Actual').reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
+
   return (
     <div className="ef-page">
       <header className="ef-header">
@@ -183,10 +194,33 @@ function ExpenseForm({ scholar, password, onLogout }) {
           <div className="el-badge el-badge-sm"><span>N</span><span>G</span><span>S</span></div>
           <span className="ef-header-title">Add Expense — <strong>{scholar.display}</strong></span>
         </div>
-        <button className="ef-logout" onClick={onLogout}>Switch scholar</button>
+        <div className="ef-header-right">
+          <a href="index.html" className="ef-home-link">← Home</a>
+          <button className="ef-logout" onClick={onLogout}>Switch scholar</button>
+        </div>
       </header>
 
       <main className="ef-main">
+        {expensesBySem !== null && (
+          <div className="ef-summary">
+            <div className="ef-summary-stat">
+              <span className="ef-summary-label">Actual spend</span>
+              <strong className="ef-summary-val">₱{Math.round(actualTotal).toLocaleString('en-US')}</strong>
+            </div>
+            {budgetTotal > 0 && (
+              <div className="ef-summary-stat">
+                <span className="ef-summary-label">Pending</span>
+                <strong className="ef-summary-val">₱{Math.round(budgetTotal).toLocaleString('en-US')}</strong>
+              </div>
+            )}
+            <div className="ef-summary-stat">
+              <span className="ef-summary-label">Items</span>
+              <strong className="ef-summary-val">{semExpenses.length}</strong>
+            </div>
+            <span className="ef-summary-sem">{form.sem}</span>
+          </div>
+        )}
+
         {saveState === 'saved' && <div className="ef-toast">✓ Expense saved</div>}
 
         <form className="ef-grid" onSubmit={handleSubmit}>

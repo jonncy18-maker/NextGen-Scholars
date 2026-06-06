@@ -319,7 +319,7 @@ function Milestones() {
               key={i}
               id={`journey-stage-${i}`}
               href={s.href}
-              onClick={() => setActive(i)}
+              onClick={e => { e.preventDefault(); setActive(i); }}
               className={`ngs-stage ngs-stage-${state}`}
             >
               <div className="ngs-stage-node" aria-hidden="true">
