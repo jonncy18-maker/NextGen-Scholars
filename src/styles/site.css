@@ -104,6 +104,65 @@ body { margin: 0; }
   justify-content: center; font-size: 14px; flex-shrink: 0;
 }
 
+/* ── journey dropdown (desktop) ── */
+.ngs-jdrop { position: relative; }
+.ngs-jdrop-trigger { display: inline-flex; align-items: center; }
+.ngs-jdrop-label {
+  padding: 8px 3px 8px 14px;
+  font-family: var(--ngs-sans); font-size: 14px; font-weight: 500;
+  color: var(--ngs-navy); text-decoration: none; border-radius: 4px 0 0 4px;
+  transition: background 0.15s;
+}
+.ngs-jdrop-label:hover { background: rgba(27,42,74,0.07); }
+.ngs-jdrop-chevron {
+  display: inline-flex; align-items: center;
+  padding: 8px 10px 8px 4px;
+  background: none; border: none; cursor: pointer;
+  color: var(--ngs-navy); border-radius: 0 4px 4px 0;
+  transition: background 0.15s ease;
+}
+.ngs-jdrop-chevron:hover,
+.ngs-jdrop-chevron.is-open { background: rgba(27,42,74,0.10); }
+.ngs-jdrop-panel {
+  position: absolute; top: calc(100% + 8px); left: 0;
+  min-width: 210px; background: #fff;
+  border: 1px solid var(--ngs-rule); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06);
+  overflow: hidden; z-index: 200;
+  animation: qmenu-in 0.15s ease both;
+}
+.ngs-jdrop-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 16px; font-size: 13.5px; font-weight: 500;
+  color: var(--ngs-navy); text-decoration: none;
+  transition: background 0.12s ease;
+}
+.ngs-jdrop-item:hover { background: var(--ngs-paper-2); }
+.ngs-jdrop-item + .ngs-jdrop-item { border-top: 1px solid var(--ngs-rule); }
+.ngs-jdrop-num {
+  font-family: var(--ngs-mono); font-size: 10.5px; letter-spacing: 0.1em;
+  color: var(--ngs-gold); min-width: 22px; flex-shrink: 0;
+}
+
+/* ── mobile journey accordion ── */
+.ngs-nav-journey-toggle {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 0; font-size: 17px; color: var(--ngs-navy);
+  border: none; border-bottom: 1px solid var(--ngs-rule);
+  background: none; cursor: pointer; font-family: var(--ngs-sans); font-weight: 400;
+  text-align: left;
+}
+.ngs-nav-journey-sub { padding-bottom: 4px; }
+.ngs-nav-journey-sub-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 16px; font-size: 14.5px; color: var(--ngs-navy);
+  border-bottom: 1px solid var(--ngs-rule); text-decoration: none;
+}
+.ngs-nav-journey-sub-item::after { content: '→'; opacity: 0.35; margin-left: auto; }
+
+/* ── mentor nav link ── */
+.ngs-nav-desktop .ngs-nav-mentor-link { color: var(--ngs-muted); font-size: 13px; }
+
 /* ── monogram ── */
 .ngs-mark {
   display: inline-flex; padding: 6px 9px;
@@ -233,7 +292,7 @@ body { margin: 0; }
 .ngs-timeline { position: relative; margin-top: 40px; padding-left: 4px; }
 .ngs-timeline-rail { position: absolute; left: 13px; top: 12px; bottom: 12px; width: 2px; background: var(--ngs-rule); border-radius: 1px; }
 .ngs-timeline-fill { width: 100%; border-radius: 1px; transition: height 0.4s ease; }
-.ngs-stage { display: flex; gap: 18px; align-items: flex-start; padding: 10px 0 18px; width: 100%; text-align: left; position: relative; color: inherit; }
+.ngs-stage { display: flex; gap: 18px; align-items: flex-start; padding: 10px 0 18px; width: 100%; text-align: left; position: relative; color: inherit; text-decoration: none; }
 .ngs-stage-node { width: 28px; height: 28px; border-radius: 999px; background: var(--ngs-paper); border: 2px solid var(--ngs-rule); flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; transition: all 0.25s ease; }
 .ngs-stage-done .ngs-stage-node { background: var(--ngs-gold); border-color: var(--ngs-gold); }
 .ngs-stage-now .ngs-stage-node { background: var(--ngs-navy); border-color: var(--ngs-navy); }
