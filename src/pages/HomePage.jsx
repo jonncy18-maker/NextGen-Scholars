@@ -45,11 +45,11 @@ const IconArrow = ({ size = 14, color = 'currentColor' }) => (
 // ── journey stages ────────────────────────────────────────────────────────────
 
 const JOURNEY_STAGES = [
-  { label: 'High school',             href: '#journey' },
-  { label: 'University / Bootcamp',   href: '#journey' },
-  { label: 'Licensure',               href: '#journey' },
-  { label: 'Domestic Placement',      href: '#journey' },
-  { label: 'International Placement', href: '#journey' },
+  { label: 'High school',             detail: 'Identification, family interview, trial period',                             href: '#journey-stage-0' },
+  { label: 'University / Bootcamp',   detail: 'Full tuition + board, monthly check-ins',                                   href: '#journey-stage-1' },
+  { label: 'Licensure',               detail: 'PRC board / TESDA NC II / NCLEX-USA',                                       href: '#journey-stage-2' },
+  { label: 'Domestic Placement',      detail: 'PH hospital rotation or luxury hotel',                                      href: '#journey-stage-3' },
+  { label: 'International Placement', detail: 'USA hospital, Australian hospital, or international cruise contract',       href: '#journey-stage-4' },
 ];
 
 function JourneyDropdown() {
@@ -70,20 +70,23 @@ function JourneyDropdown() {
 
   return (
     <div className="ngs-jdrop" ref={ref}>
-      <button
-        className={`ngs-jdrop-btn${open ? ' is-open' : ''}`}
-        onClick={() => setOpen(v => !v)}
-        aria-expanded={open}
-        aria-haspopup="menu"
-      >
-        Journey
-        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
-          <path
-            d={open ? 'M1 8l4.5-4.5L10 8' : 'M1 3l4.5 4.5L10 3'}
-            stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
-          />
-        </svg>
-      </button>
+      <div className="ngs-jdrop-trigger">
+        <a href="#journey" className="ngs-jdrop-label">Journey</a>
+        <button
+          className={`ngs-jdrop-chevron${open ? ' is-open' : ''}`}
+          onClick={() => setOpen(v => !v)}
+          aria-expanded={open}
+          aria-haspopup="menu"
+          aria-label="Journey sub-sections"
+        >
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+            <path
+              d={open ? 'M1 8l4.5-4.5L10 8' : 'M1 3l4.5 4.5L10 3'}
+              stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
       {open && (
         <div className="ngs-jdrop-panel" role="menu">
           {JOURNEY_STAGES.map((s, i) => (
@@ -348,14 +351,6 @@ function Tracks({ onSelectTrack }) {
 }
 
 function Milestones() {
-  const stages = [
-    { label: 'High school', detail: 'Identification, family interview, trial period' },
-    { label: 'University / Bootcamp', detail: 'Full tuition + board, monthly check-ins' },
-    { label: 'Licensure', detail: 'PRC board / TESDA NC II / NCLEX-USA' },
-    { label: 'Domestic placement', detail: 'PH hospital rotation or luxury hotel' },
-    { label: 'International placement', detail: 'USA hospital, Australian hospital, or international cruise contract' },
-  ];
-
   const [active, setActive] = useState(2);
 
   return (
@@ -379,11 +374,13 @@ function Milestones() {
           }}/>
         </div>
 
-        {stages.map((s, i) => {
+        {JOURNEY_STAGES.map((s, i) => {
           const state = i < active ? 'done' : i === active ? 'now' : 'next';
           return (
-            <button
+            <a
               key={i}
+              id={`journey-stage-${i}`}
+              href={s.href}
               onClick={() => setActive(i)}
               className={`ngs-stage ngs-stage-${state}`}
             >
@@ -400,7 +397,7 @@ function Milestones() {
                 <div className="ngs-stage-label">{s.label}</div>
                 <div className="ngs-stage-detail">{s.detail}</div>
               </div>
-            </button>
+            </a>
           );
         })}
       </div>

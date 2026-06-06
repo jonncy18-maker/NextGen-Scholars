@@ -106,15 +106,23 @@ body { margin: 0; }
 
 /* ── journey dropdown (desktop) ── */
 .ngs-jdrop { position: relative; }
-.ngs-jdrop-btn {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 8px 14px; border-radius: 4px;
+.ngs-jdrop-trigger { display: inline-flex; align-items: center; }
+.ngs-jdrop-label {
+  padding: 8px 3px 8px 14px;
   font-family: var(--ngs-sans); font-size: 14px; font-weight: 500;
-  color: var(--ngs-navy); background: none; border: none; cursor: pointer;
+  color: var(--ngs-navy); text-decoration: none; border-radius: 4px 0 0 4px;
+  transition: background 0.15s;
+}
+.ngs-jdrop-label:hover { background: rgba(27,42,74,0.07); }
+.ngs-jdrop-chevron {
+  display: inline-flex; align-items: center;
+  padding: 8px 10px 8px 4px;
+  background: none; border: none; cursor: pointer;
+  color: var(--ngs-navy); border-radius: 0 4px 4px 0;
   transition: background 0.15s ease;
 }
-.ngs-jdrop-btn:hover { background: rgba(27,42,74,0.07); }
-.ngs-jdrop-btn.is-open { background: rgba(27,42,74,0.10); }
+.ngs-jdrop-chevron:hover,
+.ngs-jdrop-chevron.is-open { background: rgba(27,42,74,0.10); }
 .ngs-jdrop-panel {
   position: absolute; top: calc(100% + 8px); left: 0;
   min-width: 210px; background: #fff;
@@ -284,7 +292,7 @@ body { margin: 0; }
 .ngs-timeline { position: relative; margin-top: 40px; padding-left: 4px; }
 .ngs-timeline-rail { position: absolute; left: 13px; top: 12px; bottom: 12px; width: 2px; background: var(--ngs-rule); border-radius: 1px; }
 .ngs-timeline-fill { width: 100%; border-radius: 1px; transition: height 0.4s ease; }
-.ngs-stage { display: flex; gap: 18px; align-items: flex-start; padding: 10px 0 18px; width: 100%; text-align: left; position: relative; color: inherit; }
+.ngs-stage { display: flex; gap: 18px; align-items: flex-start; padding: 10px 0 18px; width: 100%; text-align: left; position: relative; color: inherit; text-decoration: none; }
 .ngs-stage-node { width: 28px; height: 28px; border-radius: 999px; background: var(--ngs-paper); border: 2px solid var(--ngs-rule); flex-shrink: 0; display: flex; align-items: center; justify-content: center; position: relative; z-index: 1; transition: all 0.25s ease; }
 .ngs-stage-done .ngs-stage-node { background: var(--ngs-gold); border-color: var(--ngs-gold); }
 .ngs-stage-now .ngs-stage-node { background: var(--ngs-navy); border-color: var(--ngs-navy); }

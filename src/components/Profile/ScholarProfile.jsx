@@ -520,6 +520,22 @@ function SemesterExpenseSection({ expenses, currentSem, currency, fxRate }) {
         <p className="ngs-psection-intro">No expenses recorded for this semester yet.</p>
       ) : (
         <>
+          <div className="ngs-semexp-summary">
+            <div className="ngs-semexp-summary-stat">
+              <span className="ngs-semexp-summary-label">Actual spend</span>
+              <strong className="ngs-semexp-summary-val">{fmtPhp(actualTotal, currency, fxRate)}</strong>
+            </div>
+            {budgetTotal > 0 && (
+              <div className="ngs-semexp-summary-stat ngs-semexp-summary-stat-budget">
+                <span className="ngs-semexp-summary-label">Pending</span>
+                <strong className="ngs-semexp-summary-val">{fmtPhp(budgetTotal, currency, fxRate)}</strong>
+              </div>
+            )}
+            <div className="ngs-semexp-summary-stat ngs-semexp-summary-stat-count">
+              <span className="ngs-semexp-summary-label">Items</span>
+              <strong className="ngs-semexp-summary-val">{allRows.length}</strong>
+            </div>
+          </div>
           <p className="ngs-psection-intro">
             All items logged for {currentSem}. Actuals only count toward totals.
           </p>
@@ -549,18 +565,6 @@ function SemesterExpenseSection({ expenses, currentSem, currency, fxRate }) {
                 })}
               </tbody>
             </table>
-          </div>
-          <div className="ngs-semexp-totals">
-            <div className="ngs-semexp-total-row">
-              <span>Actual spend</span>
-              <strong>{fmtPhp(actualTotal, currency, fxRate)}</strong>
-            </div>
-            {budgetTotal > 0 && (
-              <div className="ngs-semexp-total-row ngs-semexp-total-budget">
-                <span>Budgeted (not yet sent)</span>
-                <strong>{fmtPhp(budgetTotal, currency, fxRate)}</strong>
-              </div>
-            )}
           </div>
         </>
       )}
