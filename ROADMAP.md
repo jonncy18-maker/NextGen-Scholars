@@ -57,44 +57,34 @@ Options when real protection is needed:
 
 ### Top navigation (all pages)
 
-#### 2.2 NGS brand mark — consistent across all pages
-- Right now each page has a slightly different logo size, font weight, or spacing.
-- Extract one canonical treatment: same navy/gold mark, same Newsreader display font,
-  same size and padding — applied identically to `index.html`, `claire.html`,
-  `april.html`, and `navigator.html`.
+#### 2.2 NGS brand mark — consistent across all pages ✅ Done
+- All four pages now use `.ngs-mark.ngs-mark-sm` — same 11px navy/gold monogram at
+  5px/8px padding. The navigator's `NavBar.jsx` was updated to include `ngs-mark-sm`.
 
-#### 2.3 Journey dropdown in top nav
-- Change the "Journey" nav item from a plain anchor to a dropdown with 5 sub-items:
-  1. High school
-  2. University / Bootcamp
-  3. Licensure
-  4. Domestic Placement
-  5. International Placement
-- For Phase 2: sub-items anchor-link to the closest existing section on the current
-  page. Items with no matching section yet render greyed/disabled ("coming soon").
-- For Phase 3: each sub-item links to its own dedicated page.
+#### 2.3 Journey dropdown in top nav ✅ Done
+- Dropdown with 5 sub-items lives in the shared `src/components/JourneyDropdown.jsx`
+  component (extracted from HomePage). Stage data is in `src/constants.js`.
+- Desktop: chevron-triggered panel; mobile: accordion toggle in the slide-out menu.
+- For Phase 3: update `JOURNEY_STAGES[i].href` to point to dedicated journey pages.
 
-#### 2.4 Additional nav shells
-- **Scholars** — scrolls to / links to `index.html#scholars`.
-- **Navigator** — links to `navigator.html` (password-protected mentor dashboard).
-- These are shells; internal linking is sufficient for Phase 2.
+#### 2.4 Additional nav shells ✅ Done
+- Scholar profile pages (`claire.html`, `april.html`) now share the same nav format
+  as the homepage: About · Tracks · Journey ▾ · Scholars · Navigator · Apply.
+- All anchors prefixed with `index.html` since profiles are on a different page.
+- FX widget stays in the nav (right side) per design decision.
+- Mobile: hamburger → slide-out menu with Journey accordion.
+- Navigator page nav is unchanged (operational UI with FX widget + Refresh + Sheets
+  status is kept separate from the decorative public nav).
 
 ### Scholar profile pages (claire.html / april.html)
 
-#### 2.5 Expense summary above the semester expense table
-- Add a compact summary row above the expense table showing:
-  - Total actual spend for the semester
-  - Total pending (budget) items
-  - Item count
-- Decision: **top summary preferred over right panel** — profile pages are
-  mobile-first single-column; a sticky sidebar would require hiding below ~900px and
-  doubles layout complexity for no gain on mobile.
+#### 2.5 Expense summary above the semester expense table ✅ Done
+- `SemesterExpenseSection` in `ScholarProfile.jsx` renders `.ngs-semexp-summary`
+  above the table: Actual spend · Pending (budget items) · Item count.
 
-#### 2.6 Homepage link
-- A `← Home` button was added to the semester expense section header in Phase 1
-  (PR #29). Confirm it is visible on the deployed page.
-- If a more prominent placement is needed (e.g. persistent in the top nav or page
-  footer), elevate it in the next implementation pass.
+#### 2.6 Homepage link ✅ Done
+- `← Home` button exists in the semester expense section header
+  (`ScholarProfile.jsx`, `SemesterExpenseSection`). Links to `index.html`.
 
 ---
 

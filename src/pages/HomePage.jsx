@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NGS_DATA } from '../../scholars-data.js';
+import { JOURNEY_STAGES } from '../constants.js';
+import { JourneyDropdown } from '../components/JourneyDropdown.jsx';
 
 const PALETTE = {
   navy: '#1B2A4A',
@@ -42,70 +44,6 @@ const IconArrow = ({ size = 14, color = 'currentColor' }) => (
   </svg>
 );
 
-// ── journey stages ────────────────────────────────────────────────────────────
-
-const JOURNEY_STAGES = [
-  { label: 'High school',             detail: 'Identification, family interview, trial period',                             href: '#journey-stage-0' },
-  { label: 'University / Bootcamp',   detail: 'Full tuition + board, monthly check-ins',                                   href: '#journey-stage-1' },
-  { label: 'Licensure',               detail: 'PRC board / TESDA NC II / NCLEX-USA',                                       href: '#journey-stage-2' },
-  { label: 'Domestic Placement',      detail: 'PH hospital rotation or luxury hotel',                                      href: '#journey-stage-3' },
-  { label: 'International Placement', detail: 'USA hospital, Australian hospital, or international cruise contract',       href: '#journey-stage-4' },
-];
-
-function JourneyDropdown() {
-  const [open, setOpen] = useState(false);
-  const ref = useRef();
-
-  useEffect(() => {
-    if (!open) return;
-    const onMouse = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    const onKey  = e => { if (e.key === 'Escape') setOpen(false); };
-    document.addEventListener('mousedown', onMouse);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onMouse);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
-
-  return (
-    <div className="ngs-jdrop" ref={ref}>
-      <div className="ngs-jdrop-trigger">
-        <a href="#journey" className="ngs-jdrop-label">Journey</a>
-        <button
-          className={`ngs-jdrop-chevron${open ? ' is-open' : ''}`}
-          onClick={() => setOpen(v => !v)}
-          aria-expanded={open}
-          aria-haspopup="menu"
-          aria-label="Journey sub-sections"
-        >
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
-            <path
-              d={open ? 'M1 8l4.5-4.5L10 8' : 'M1 3l4.5 4.5L10 3'}
-              stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-      </div>
-      {open && (
-        <div className="ngs-jdrop-panel" role="menu">
-          {JOURNEY_STAGES.map((s, i) => (
-            <a
-              key={i}
-              href={s.href}
-              className="ngs-jdrop-item"
-              role="menuitem"
-              onClick={() => setOpen(false)}
-            >
-              <span className="ngs-jdrop-num">0{i + 1}</span>
-              <span>{s.label}</span>
-            </a>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── quick menu (Home + Expenses) ──────────────────────────────────────────────
 

@@ -33,6 +33,97 @@ body { background: var(--ngs-paper); }
 .ngs-pnav-back:hover { color: var(--ngs-navy); border-color: var(--ngs-navy); }
 .ngs-pnav-back::before { content: '←'; opacity: 0.5; }
 
+/* desktop nav links */
+.ngs-pnav-desktop { flex: 1; display: flex; align-items: center; justify-content: center; gap: 2px; }
+.ngs-pnav-desktop a { padding: 8px 14px; font-size: 14px; font-weight: 500; color: var(--ngs-navy); border-radius: 4px; transition: background 0.15s; text-decoration: none; }
+.ngs-pnav-desktop a:hover { background: rgba(27,42,74,0.07); }
+.ngs-pnav-desktop .ngs-pnav-mentor-link { color: var(--ngs-muted); font-size: 13px; }
+.ngs-pnav-desktop .ngs-pnav-cta-link { color: var(--ngs-gold); font-weight: 600; }
+
+/* mobile hamburger button */
+.ngs-pnav-btn {
+  display: inline-flex; flex-direction: column; justify-content: center; gap: 5px;
+  width: 36px; height: 36px; border-radius: 6px; padding: 8px;
+  background: var(--ngs-navy); border: none; cursor: pointer; flex-shrink: 0;
+}
+.ngs-pnav-btn span { display: block; width: 14px; height: 1.5px; background: var(--ngs-gold); border-radius: 1px; }
+.ngs-pnav-btn:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
+
+/* mobile dropdown menu */
+.ngs-pnav-menu {
+  display: flex; flex-direction: column;
+  padding: 8px 20px 20px;
+  background: rgba(250,247,240,0.97);
+  border-top: 1px solid var(--ngs-rule);
+}
+.ngs-pnav-menu a {
+  padding: 12px 0; font-size: 17px; color: var(--ngs-navy);
+  border-bottom: 1px solid var(--ngs-rule); text-decoration: none;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.ngs-pnav-menu a::after { content: '→'; opacity: 0.4; }
+.ngs-pnav-menu-cta { color: var(--ngs-gold) !important; font-weight: 600; }
+.ngs-pnav-journey-toggle {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 0; font-size: 17px; color: var(--ngs-navy);
+  border: none; border-bottom: 1px solid var(--ngs-rule);
+  background: none; cursor: pointer; font-family: var(--ngs-sans); font-weight: 400;
+  text-align: left;
+}
+.ngs-pnav-journey-sub { padding-bottom: 4px; }
+.ngs-pnav-journey-sub-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 16px; font-size: 14.5px; color: var(--ngs-navy);
+  border-bottom: 1px solid var(--ngs-rule); text-decoration: none;
+}
+.ngs-pnav-journey-sub-item::after { content: '→'; opacity: 0.35; margin-left: auto; }
+
+/* journey dropdown panel (desktop) — mirrors site.css ngs-jdrop */
+.ngs-jdrop { position: relative; }
+.ngs-jdrop-trigger { display: inline-flex; align-items: center; }
+.ngs-jdrop-label {
+  padding: 8px 3px 8px 14px;
+  font-family: var(--ngs-sans); font-size: 14px; font-weight: 500;
+  color: var(--ngs-navy); text-decoration: none; border-radius: 4px 0 0 4px;
+  transition: background 0.15s;
+}
+.ngs-jdrop-label:hover { background: rgba(27,42,74,0.07); }
+.ngs-jdrop-chevron {
+  display: inline-flex; align-items: center;
+  padding: 8px 10px 8px 4px;
+  background: none; border: none; cursor: pointer;
+  color: var(--ngs-navy); border-radius: 0 4px 4px 0;
+  transition: background 0.15s ease;
+}
+.ngs-jdrop-chevron:hover, .ngs-jdrop-chevron.is-open { background: rgba(27,42,74,0.10); }
+.ngs-jdrop-panel {
+  position: absolute; top: calc(100% + 8px); left: 0;
+  min-width: 210px; background: #fff;
+  border: 1px solid var(--ngs-rule); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06);
+  overflow: hidden; z-index: 200;
+  animation: jdrop-in 0.15s ease both;
+}
+@keyframes jdrop-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+.ngs-jdrop-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 16px; font-size: 13.5px; font-weight: 500;
+  color: var(--ngs-navy); text-decoration: none;
+  transition: background 0.12s ease;
+}
+.ngs-jdrop-item:hover { background: var(--ngs-paper-2); }
+.ngs-jdrop-item + .ngs-jdrop-item { border-top: 1px solid var(--ngs-rule); }
+.ngs-jdrop-num {
+  font-family: var(--ngs-mono); font-size: 10.5px; letter-spacing: 0.1em;
+  color: var(--ngs-gold); min-width: 22px; flex-shrink: 0;
+}
+
+/* desktop nav padding */
+.ngs-profile.is-desktop .ngs-pnav-inner { padding: 12px 48px; }
+
 /* profile nav FX widget */
 .ngs-pnav-fx { display: flex; align-items: center; gap: 8px; }
 .ngs-pnav-curtoggle {

@@ -1,3 +1,11 @@
+export const JOURNEY_STAGES = [
+  { label: 'High school',             detail: 'Identification, family interview, trial period',                        href: '#journey-stage-0' },
+  { label: 'University / Bootcamp',   detail: 'Full tuition + board, monthly check-ins',                               href: '#journey-stage-1' },
+  { label: 'Licensure',               detail: 'PRC board / TESDA NC II / NCLEX-USA',                                   href: '#journey-stage-2' },
+  { label: 'Domestic Placement',      detail: 'PH hospital rotation or luxury hotel',                                  href: '#journey-stage-3' },
+  { label: 'International Placement', detail: 'USA hospital, Australian hospital, or international cruise contract',   href: '#journey-stage-4' },
+];
+
 export const EXPENSE_CATS = [
   'Tuition', 'Enrollment', 'Uniforms', 'Books', 'Living Expenses',
   'Printing & Research', 'School Supplies', 'Activities',

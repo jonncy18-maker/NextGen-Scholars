@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { NGSIcons } from './icons.jsx';
 import { DEFAULT_RATE } from '../../fx.js';
 import { useFxState } from '../../context/FxContext.jsx';
+import { JourneyDropdown } from '../JourneyDropdown.jsx';
+import { JOURNEY_STAGES } from '../../constants.js';
 
 function fmtPhp(amountPhp, currency, rate) {
   if (amountPhp == null) return null;
@@ -17,7 +19,7 @@ export function ScholarProfile({ data, isMobile, relatedProfiles }) {
   return (
     <div className={`ngs-profile ${isMobile ? 'is-mobile' : 'is-desktop'}`}
          data-screen-label={`${data.firstName} — Profile`}>
-      <TopNav data={data} fx={fx} />
+      <TopNav data={data} fx={fx} isMobile={isMobile} />
       <PhotoHeader data={data}/>
       {data.quote && <PullQuote quote={data.quote}/>}
       {data.trialBanner && <TrialBanner text={data.trialBanner}/>}
@@ -42,10 +44,12 @@ export function ScholarProfile({ data, isMobile, relatedProfiles }) {
   );
 }
 
-// ── top nav with FX widget ────────────────────────────────────────────────────
+// ── top nav ───────────────────────────────────────────────────────────────────
 
-function TopNav({ data, fx }) {
+function TopNav({ data, fx, isMobile }) {
   const [inputVal, setInputVal] = useState(String(fx.fxRate));
+  const [open, setOpen] = useState(false);
+  const [journeyOpen, setJourneyOpen] = useState(false);
 
   useEffect(() => { setInputVal(fx.fxRate.toFixed(2)); }, [fx.fxRate]);
 
@@ -54,6 +58,43 @@ function TopNav({ data, fx }) {
     const n = parseFloat(e.target.value);
     if (!isNaN(n) && n > 0) fx.handleRateChange(n);
   }
+
+  const fxWidget = (
+    <div className="ngs-pnav-fx">
+      <div className="ngs-pnav-curtoggle">
+        {['PHP', 'USD'].map(cur => (
+          <button
+            key={cur}
+            className={fx.currency === cur ? 'active' : ''}
+            onClick={() => fx.setCurrency(cur)}
+          >
+            {cur === 'PHP' ? 'PHP ₱' : 'USD $'}
+          </button>
+        ))}
+      </div>
+      <div className="ngs-pnav-fxwidget">
+        <span className="ngs-pnav-fxlabel">$1 = ₱</span>
+        <div className="ngs-pnav-fxmode">
+          <button className={fx.fxMode === 'market' ? 'active' : ''} onClick={() => fx.handleModeChange('market')}>
+            {fx.fxStatus === 'loading' ? '⟳' : 'Market'}
+          </button>
+          <button className={fx.fxMode === 'manual' ? 'active' : ''} onClick={() => fx.handleModeChange('manual')}>
+            Manual
+          </button>
+        </div>
+        <input
+          type="number"
+          className={`ngs-pnav-fxinput${fx.fxMode === 'market' ? ' is-market' : ''}`}
+          value={inputVal}
+          disabled={fx.fxMode === 'market'}
+          min="1" max="999" step="0.01"
+          onChange={handleRateInput}
+          title={fx.fxMode === 'market' ? 'Rate set by market — switch to Manual to edit' : 'PHP per 1 USD'}
+        />
+        {fx.fxStatus === 'error' && <span className="ngs-pnav-fxerr" title="Could not fetch market rate">!</span>}
+      </div>
+    </div>
+  );
 
   return (
     <header className="ngs-pnav">
@@ -64,44 +105,60 @@ function TopNav({ data, fx }) {
           </div>
           <span className="ngs-pnav-name">NextGen Scholars</span>
         </a>
-
-        <div className="ngs-pnav-fx">
-          <div className="ngs-pnav-curtoggle">
-            {['PHP', 'USD'].map(cur => (
-              <button
-                key={cur}
-                className={fx.currency === cur ? 'active' : ''}
-                onClick={() => fx.setCurrency(cur)}
-              >
-                {cur === 'PHP' ? 'PHP ₱' : 'USD $'}
-              </button>
-            ))}
-          </div>
-          <div className="ngs-pnav-fxwidget">
-            <span className="ngs-pnav-fxlabel">$1 = ₱</span>
-            <div className="ngs-pnav-fxmode">
-              <button className={fx.fxMode === 'market' ? 'active' : ''} onClick={() => fx.handleModeChange('market')}>
-                {fx.fxStatus === 'loading' ? '⟳' : 'Market'}
-              </button>
-              <button className={fx.fxMode === 'manual' ? 'active' : ''} onClick={() => fx.handleModeChange('manual')}>
-                Manual
-              </button>
-            </div>
-            <input
-              type="number"
-              className={`ngs-pnav-fxinput${fx.fxMode === 'market' ? ' is-market' : ''}`}
-              value={inputVal}
-              disabled={fx.fxMode === 'market'}
-              min="1" max="999" step="0.01"
-              onChange={handleRateInput}
-              title={fx.fxMode === 'market' ? 'Rate set by market — switch to Manual to edit' : 'PHP per 1 USD'}
-            />
-            {fx.fxStatus === 'error' && <span className="ngs-pnav-fxerr" title="Could not fetch market rate">!</span>}
-          </div>
-        </div>
-
-        <a href="index.html#scholars" className="ngs-pnav-back">← All scholars</a>
+        {isMobile ? (
+          <button
+            className="ngs-pnav-btn"
+            onClick={() => setOpen(v => !v)}
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            aria-expanded={open}
+            aria-controls="ngs-pnav-mobile-menu"
+          >
+            <span></span><span></span>
+          </button>
+        ) : (
+          <nav className="ngs-pnav-desktop">
+            <a href="index.html#about">About</a>
+            <a href="index.html#tracks">Tracks</a>
+            <JourneyDropdown baseHref="index.html" />
+            <a href="index.html#scholars">Scholars</a>
+            <a href="navigator.html" className="ngs-pnav-mentor-link">Navigator</a>
+            <a href="index.html#apply" className="ngs-pnav-cta-link">Apply</a>
+          </nav>
+        )}
+        {fxWidget}
       </div>
+      {isMobile && open && (
+        <nav className="ngs-pnav-menu" id="ngs-pnav-mobile-menu" onClick={() => setOpen(false)}>
+          <a href="index.html#about">About</a>
+          <a href="index.html#tracks">Tracks</a>
+          <button
+            className={`ngs-pnav-journey-toggle${journeyOpen ? ' is-open' : ''}`}
+            onClick={e => { e.stopPropagation(); setJourneyOpen(v => !v); }}
+            aria-expanded={journeyOpen}
+          >
+            <span>Journey</span>
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+              <path
+                d={journeyOpen ? 'M1 8l4.5-4.5L10 8' : 'M1 3l4.5 4.5L10 3'}
+                stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+          {journeyOpen && (
+            <div className="ngs-pnav-journey-sub">
+              {JOURNEY_STAGES.map((s, i) => (
+                <a key={i} href={`index.html${s.href}`} className="ngs-pnav-journey-sub-item">
+                  <span className="ngs-jdrop-num">0{i + 1}</span>
+                  {s.label}
+                </a>
+              ))}
+            </div>
+          )}
+          <a href="index.html#scholars">Scholars</a>
+          <a href="navigator.html">Navigator</a>
+          <a href="index.html#apply" className="ngs-pnav-menu-cta">Apply</a>
+        </nav>
+      )}
     </header>
   );
 }
