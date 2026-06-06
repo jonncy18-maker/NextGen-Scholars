@@ -104,6 +104,57 @@ body { margin: 0; }
   justify-content: center; font-size: 14px; flex-shrink: 0;
 }
 
+/* ── journey dropdown (desktop) ── */
+.ngs-jdrop { position: relative; }
+.ngs-jdrop-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 8px 14px; border-radius: 4px;
+  font-family: var(--ngs-sans); font-size: 14px; font-weight: 500;
+  color: var(--ngs-navy); background: none; border: none; cursor: pointer;
+  transition: background 0.15s ease;
+}
+.ngs-jdrop-btn:hover { background: rgba(27,42,74,0.07); }
+.ngs-jdrop-btn.is-open { background: rgba(27,42,74,0.10); }
+.ngs-jdrop-panel {
+  position: absolute; top: calc(100% + 8px); left: 0;
+  min-width: 210px; background: #fff;
+  border: 1px solid var(--ngs-rule); border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.06);
+  overflow: hidden; z-index: 200;
+  animation: qmenu-in 0.15s ease both;
+}
+.ngs-jdrop-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 16px; font-size: 13.5px; font-weight: 500;
+  color: var(--ngs-navy); text-decoration: none;
+  transition: background 0.12s ease;
+}
+.ngs-jdrop-item:hover { background: var(--ngs-paper-2); }
+.ngs-jdrop-item + .ngs-jdrop-item { border-top: 1px solid var(--ngs-rule); }
+.ngs-jdrop-num {
+  font-family: var(--ngs-mono); font-size: 10.5px; letter-spacing: 0.1em;
+  color: var(--ngs-gold); min-width: 22px; flex-shrink: 0;
+}
+
+/* ── mobile journey accordion ── */
+.ngs-nav-journey-toggle {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 0; font-size: 17px; color: var(--ngs-navy);
+  border: none; border-bottom: 1px solid var(--ngs-rule);
+  background: none; cursor: pointer; font-family: var(--ngs-sans); font-weight: 400;
+  text-align: left;
+}
+.ngs-nav-journey-sub { padding-bottom: 4px; }
+.ngs-nav-journey-sub-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 16px; font-size: 14.5px; color: var(--ngs-navy);
+  border-bottom: 1px solid var(--ngs-rule); text-decoration: none;
+}
+.ngs-nav-journey-sub-item::after { content: '→'; opacity: 0.35; margin-left: auto; }
+
+/* ── mentor nav link ── */
+.ngs-nav-desktop .ngs-nav-mentor-link { color: var(--ngs-muted); font-size: 13px; }
+
 /* ── monogram ── */
 .ngs-mark {
   display: inline-flex; padding: 6px 9px;

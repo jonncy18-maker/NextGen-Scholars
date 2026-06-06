@@ -42,6 +42,68 @@ const IconArrow = ({ size = 14, color = 'currentColor' }) => (
   </svg>
 );
 
+// ── journey stages ────────────────────────────────────────────────────────────
+
+const JOURNEY_STAGES = [
+  { label: 'High school',             href: '#journey' },
+  { label: 'University / Bootcamp',   href: '#journey' },
+  { label: 'Licensure',               href: '#journey' },
+  { label: 'Domestic Placement',      href: '#journey' },
+  { label: 'International Placement', href: '#journey' },
+];
+
+function JourneyDropdown() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef();
+
+  useEffect(() => {
+    if (!open) return;
+    const onMouse = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const onKey  = e => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onMouse);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onMouse);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="ngs-jdrop" ref={ref}>
+      <button
+        className={`ngs-jdrop-btn${open ? ' is-open' : ''}`}
+        onClick={() => setOpen(v => !v)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+      >
+        Journey
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+          <path
+            d={open ? 'M1 8l4.5-4.5L10 8' : 'M1 3l4.5 4.5L10 3'}
+            stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      {open && (
+        <div className="ngs-jdrop-panel" role="menu">
+          {JOURNEY_STAGES.map((s, i) => (
+            <a
+              key={i}
+              href={s.href}
+              className="ngs-jdrop-item"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+            >
+              <span className="ngs-jdrop-num">0{i + 1}</span>
+              <span>{s.label}</span>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── quick menu (Home + Expenses) ──────────────────────────────────────────────
 
 function QuickMenu() {
@@ -587,6 +649,7 @@ function Footer() {
 
 function TopNav({ isDesktop }) {
   const [open, setOpen] = useState(false);
+  const [journeyOpen, setJourneyOpen] = useState(false);
   return (
     <header className="ngs-nav">
       <div className="ngs-nav-inner">
@@ -600,8 +663,9 @@ function TopNav({ isDesktop }) {
           <nav className="ngs-nav-desktop">
             <a href="#about">About</a>
             <a href="#tracks">Tracks</a>
-            <a href="#journey">Journey</a>
+            <JourneyDropdown />
             <a href="#scholars">Scholars</a>
+            <a href="navigator.html" className="ngs-nav-mentor-link">Navigator</a>
             <a href="#apply" className="ngs-nav-cta-link">Apply</a>
             <QuickMenu />
           </nav>
@@ -617,8 +681,31 @@ function TopNav({ isDesktop }) {
         <nav className="ngs-nav-menu" id="ngs-nav-mobile-menu" onClick={() => setOpen(false)}>
           <a href="#about">About</a>
           <a href="#tracks">Tracks</a>
-          <a href="#journey">Journey</a>
+          <button
+            className={`ngs-nav-journey-toggle${journeyOpen ? ' is-open' : ''}`}
+            onClick={e => { e.stopPropagation(); setJourneyOpen(v => !v); }}
+            aria-expanded={journeyOpen}
+          >
+            <span>Journey</span>
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+              <path
+                d={journeyOpen ? 'M1 8l4.5-4.5L10 8' : 'M1 3l4.5 4.5L10 3'}
+                stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+          {journeyOpen && (
+            <div className="ngs-nav-journey-sub">
+              {JOURNEY_STAGES.map((s, i) => (
+                <a key={i} href={s.href} className="ngs-nav-journey-sub-item">
+                  <span className="ngs-jdrop-num">0{i + 1}</span>
+                  {s.label}
+                </a>
+              ))}
+            </div>
+          )}
           <a href="#scholars">Scholars</a>
+          <a href="navigator.html">Navigator</a>
           <a href="#apply" className="ngs-nav-menu-cta">Apply</a>
           <div className="ngs-nav-menu-divider"></div>
           <a href="#top" className="ngs-nav-menu-item">Home</a>
