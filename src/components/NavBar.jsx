@@ -17,7 +17,7 @@ export function NavBar({ currency, onCurrencyChange, fxMode, fxRate, fxStatus, o
     <header className="nav">
       <div className="nav-inner">
         <a className="nav-brand" href="index.html">
-          <span className="ngs-mark"><span>N</span><span>G</span><span>S</span></span>
+          <span className="ngs-mark ngs-mark-sm"><span>N</span><span>G</span><span>S</span></span>
           <span className="nav-name">Pathway Navigator</span>
         </a>
         <div className="nav-right">
