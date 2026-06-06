@@ -369,7 +369,7 @@ function Milestones() {
       <div className="ngs-timeline">
         <div className="ngs-timeline-rail" aria-hidden="true">
           <div className="ngs-timeline-fill" style={{
-            height: `${(active / (stages.length - 1)) * 100}%`,
+            height: `${(active / (JOURNEY_STAGES.length - 1)) * 100}%`,
             background: PALETTE.gold,
           }}/>
         </div>
