@@ -11,9 +11,8 @@ licensure abroad (PH → OET → NCLEX → AHPRA Australia).
 
 The repo uses **Vite + React 18 + JSX** under `src/`. All four HTML pages are
 Vite entry points (`index.html`, `claire.html`, `april.html`, `navigator.html`).
-The `project/` directory is the Claude Design split-source reference — it is kept
-for round-trip design iteration but is **not** the deployed source; the root HTML
-files and `src/` are what Vite builds and GitHub Pages serves.
+The root HTML files and `src/` are what Vite builds and GitHub Pages serves.
+`project/` and `chats/` have been removed — `src/` is the single canonical source tree.
 
 ## Files
 
@@ -35,8 +34,6 @@ files and `src/` are what Vite builds and GitHub Pages serves.
 | `src/utils.js` | Pure computation helpers (`scholarTotals`, `nextMilestone`, `accentFor`, etc.). |
 | `src/fx.js` | FX rate helpers — market fetch, localStorage persistence. |
 | `scholars-data.js` | Static fallback + narrative/profile/display copy + cosmetic lock password. |
-| `project/` | Claude Design split source (jsx/css). Reference only; sync manually if needed. |
-| `chats/` | Original Claude Design handoff transcripts. |
 
 ## Data architecture
 
@@ -68,11 +65,12 @@ snapshot (nav shows "Sheets · offline").
   is a public static asset — anyone can read it. Do not treat this as real access control
   (see ROADMAP #1).
 
-## Known issue: scholar data still partially duplicated
+## Data drift watch
 
-Scholar facts are hand-duplicated across `claire.html`, `april.html`, `scholars-data.js`,
-and `project/site.jsx`. They drift. The highest-value safe refactor is consolidating all
-public profile payloads to read exclusively from `scholars-data.js`.
+`scholars-data.js` is the source of truth for narrative/profile fields. The profile
+pages (`claire.jsx`, `april.jsx`) merge Sheets operational data on top at runtime.
+Keep `publicProfile` blocks in `scholars-data.js` in sync with any Sheets-controlled
+fields (e.g. `currentSem`, GPA) that are also referenced in the static copy.
 
 ## Working in this environment
 
