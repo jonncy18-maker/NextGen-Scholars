@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useData } from '../context/DataContext.jsx';
+import { supabase } from '../lib/supabase.js';
 
 export function LockScreen({ isHiding, onUnlock }) {
-  const { D } = useData();
-  const [value, setValue] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(false);
   const inputRef = useRef();
 
   useEffect(() => {
@@ -16,13 +17,16 @@ export function LockScreen({ isHiding, onUnlock }) {
     return () => clearTimeout(t);
   }, []);
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    if (value === D.config.password) {
-      onUnlock();
-    } else {
+    setLoading(true);
+    setError(false);
+    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (authError) {
       setError(true);
-      inputRef.current?.select();
+    } else {
+      onUnlock();
     }
   }
 
@@ -37,14 +41,24 @@ export function LockScreen({ isHiding, onUnlock }) {
           <input
             ref={inputRef}
             className="lock-input"
-            type="password"
-            placeholder="Enter passphrase"
-            aria-label="Passphrase"
-            value={value}
-            onChange={e => { setValue(e.target.value); setError(false); }}
+            type="email"
+            placeholder="Email"
+            aria-label="Email"
+            value={email}
+            onChange={e => { setEmail(e.target.value); setError(false); }}
           />
-          <div className={`lock-err${error ? ' show' : ''}`}>Incorrect passphrase — try again.</div>
-          <button className="lock-btn" type="submit">Unlock dashboard</button>
+          <input
+            className="lock-input"
+            type="password"
+            placeholder="Password"
+            aria-label="Password"
+            value={password}
+            onChange={e => { setPassword(e.target.value); setError(false); }}
+          />
+          <div className={`lock-err${error ? ' show' : ''}`}>Incorrect credentials — try again.</div>
+          <button className="lock-btn" type="submit" disabled={loading}>
+            {loading ? 'Signing in…' : 'Unlock dashboard'}
+          </button>
         </form>
         <div className="lock-hint">Private operations console · NextGen Scholars · Phase 1</div>
       </div>

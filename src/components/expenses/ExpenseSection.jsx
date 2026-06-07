@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../../context/DataContext.jsx';
 import { useFmt } from '../../context/FxContext.jsx';
 import { allExpenses } from '../../utils.js';
-import { writeSent } from '../../sheets-writer.js';
+import { writeSent } from '../../supabase-writer.js';
 import { FilterPanel } from './FilterPanel.jsx';
 import { AddExpenseForm } from './AddExpenseForm.jsx';
 import { TotalsRow, ChartSem, ChartCat } from './ExpenseCharts.jsx';

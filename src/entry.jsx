@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
-import { WEB_APP_URL, writeToSheets } from './sheets-writer.js';
 import { EXPENSE_CATS } from './constants.js';
-import { fetchConfigMap, loadFromSheets } from './sheets-loader.js';
+import { writeExpense } from './supabase-writer.js';
+import { loadFromSupabase } from './supabase-loader.js';
+import { supabase } from './lib/supabase.js';
 import './styles/entry.css';
 
 async function loadConfig() {
   try {
-    return await fetchConfigMap();
+    const { data } = await supabase.from('config').select('key, value');
+    const map = {};
+    (data || []).forEach(r => { map[r.key] = r.value; });
+    return map;
   } catch {
     return {};
   }
@@ -145,7 +149,7 @@ function ExpenseForm({ scholar, password, onLogout }) {
   const [expensesBySem, setExpensesBySem] = useState(null);
 
   useEffect(() => {
-    loadFromSheets()
+    loadFromSupabase()
       .then(data => setExpensesBySem(data.scholars?.[scholar.key]?.expenses || {}))
       .catch(() => setExpensesBySem({}));
   }, [scholar.key]);
@@ -161,21 +165,18 @@ function ExpenseForm({ scholar, password, onLogout }) {
   function handleSubmit(e) {
     e.preventDefault();
     if (!valid) return;
-    // Password travels with the payload so Apps Script can validate before writing
-    writeToSheets({
-      action:  'addExpense',
-      scholar: scholar.key,
-      password,
-      sem:     form.sem.trim(),
-      item:    form.item.trim(),
-      cat:     form.cat,
-      amount:  form.amount,
-      qty:     form.qty,
-      date:    form.date,
-      avb:     form.avb,
-      sent:    'No',
-      vendor:  form.vendor.trim(),
-    });
+    writeExpense(scholar.key, {
+      id:     `${scholar.key}_${form.sem.trim()}_${Date.now()}`,
+      sem:    form.sem.trim(),
+      item:   form.item.trim(),
+      cat:    form.cat,
+      amount: parseFloat(form.amount),
+      qty:    parseInt(form.qty, 10) || 1,
+      date:   form.date,
+      avb:    form.avb,
+      sent:   'No',
+      vendor: form.vendor.trim(),
+    }).catch(err => console.error('writeExpense failed:', err));
     setSaveState('saved');
     setTimeout(() => {
       setSaveState('idle');

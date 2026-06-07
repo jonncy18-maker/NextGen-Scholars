@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './styles/profile.css';
 import { NGS_DATA } from '../scholars-data.js';
 import { ScholarProfile } from './components/Profile/ScholarProfile.jsx';
-import { loadFromSheets } from './sheets-loader.js';
+import { loadFromSupabase } from './supabase-loader.js';
 import { scholarTotals } from './utils.js';
 
 const STATIC = NGS_DATA.scholars.april.publicProfile;
@@ -46,7 +46,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    loadFromSheets()
+    loadFromSupabase()
       .then(data => {
         if (data.scholars?.april) {
           setProfileData(mergeSheetData(STATIC, data.scholars.april));
