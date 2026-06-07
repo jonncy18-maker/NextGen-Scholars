@@ -264,3 +264,62 @@ input, select { font-family: inherit; }
 .ef-subtotal td { padding: 6px 12px; background: var(--ngs-paper-2); border-top: 1px dashed var(--ngs-rule); }
 .ef-subtotal-label { font-family: var(--ngs-mono); font-size: 10px; color: var(--ngs-muted); text-transform: uppercase; letter-spacing: 0.06em; }
 .ef-subtotal-amt { font-family: var(--ngs-mono); font-size: 12px; font-weight: 600; color: var(--ngs-navy); }
+
+/* ── row actions column ── */
+.ef-entries-actions { white-space: nowrap; text-align: right; padding-right: 10px !important; }
+.ef-row-edit, .ef-row-del, .ef-row-cancel {
+  font-family: var(--ngs-mono); font-size: 10px; padding: 3px 8px; border-radius: 3px;
+  border: 1px solid; cursor: pointer; transition: all 0.12s;
+}
+.ef-row-edit {
+  border-color: rgba(27,42,74,0.25); color: var(--ngs-navy); background: none; margin-right: 4px;
+}
+.ef-row-edit:hover { background: var(--ngs-navy); color: #fff; }
+.ef-row-del {
+  border-color: rgba(177,27,42,0.3); color: var(--ngs-red); background: none;
+}
+.ef-row-del:hover { background: var(--ngs-red); color: #fff; }
+.ef-row-cancel {
+  border-color: rgba(0,0,0,0.15); color: var(--ngs-muted); background: none;
+}
+
+/* pending-delete row */
+.ef-entries-pending-del { opacity: 0.5; }
+.ef-del-pending {
+  font-family: var(--ngs-mono); font-size: 9px; text-transform: uppercase;
+  letter-spacing: 0.07em; padding: 2px 6px; border-radius: 3px;
+  background: rgba(177,27,42,0.1); color: var(--ngs-red); white-space: nowrap;
+}
+
+/* ── inline edit row ── */
+.ef-entries-editing-hd { background: rgba(201,168,76,0.06); }
+.ef-edit-row { background: rgba(201,168,76,0.04); border-top: 1px solid rgba(201,168,76,0.25) !important; }
+.ef-edit-row td { padding: 14px 12px !important; }
+.ef-edit-form {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;
+  align-items: end;
+}
+.ef-edit-field {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.ef-edit-field span {
+  font-family: var(--ngs-mono); font-size: 9px; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--ngs-muted);
+}
+.ef-edit-field input, .ef-edit-field select {
+  padding: 6px 8px; border-radius: 4px; font-size: 12.5px;
+  border: 1px solid rgba(27,42,74,0.2); background: #fff;
+  color: var(--ngs-ink); outline: none;
+}
+.ef-edit-field input:focus, .ef-edit-field select:focus { border-color: var(--ngs-navy); }
+.ef-edit-actions { display: flex; gap: 6px; align-items: flex-end; padding-bottom: 1px; }
+.ef-edit-save {
+  padding: 7px 14px; border-radius: 4px; font-size: 12px; font-weight: 600;
+  background: var(--ngs-navy); color: var(--ngs-gold); border: none; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.ef-edit-save:hover { opacity: 0.85; }
+.ef-edit-cancel {
+  padding: 7px 12px; border-radius: 4px; font-size: 12px;
+  background: none; border: 1px solid rgba(0,0,0,0.15); color: var(--ngs-muted); cursor: pointer;
+}

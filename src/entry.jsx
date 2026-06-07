@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
 import { EXPENSE_CATS } from './constants.js';
-import { writeExpense } from './supabase-writer.js';
+import { writeExpense, updateExpense, writeActivityLog } from './supabase-writer.js';
 import { loadFromSupabase } from './supabase-loader.js';
 import { supabase } from './lib/supabase.js';
 import { groupExpenses } from './components/expenses/filterHelpers.js';
@@ -151,6 +151,10 @@ function ExpenseForm({ scholar, password, onLogout }) {
   const [groupBy, setGroupBy] = useState('none');
   const [expandedGroups, setExpandedGroups] = useState(new Set());
 
+  const [editingId, setEditingId] = useState(null);
+  const [editDraft, setEditDraft] = useState({});
+  const [pendingDeletes, setPendingDeletes] = useState(new Set());
+
   useEffect(() => {
     loadFromSupabase()
       .then(data => setExpensesBySem(data.scholars?.[scholar.key]?.expenses || {}))
@@ -164,6 +168,72 @@ function ExpenseForm({ scholar, password, onLogout }) {
     form.amount &&
     !isNaN(parseFloat(form.amount)) &&
     parseFloat(form.amount) > 0;
+
+  function startEdit(exp) {
+    setEditingId(exp.id);
+    setEditDraft({
+      item:   exp.item   || '',
+      cat:    exp.cat    || '',
+      date:   exp.date   || '',
+      amount: String(exp.amount || ''),
+      qty:    String(exp.qty    || 1),
+      avb:    exp.avb    || 'Actual',
+      vendor: exp.vendor || '',
+    });
+  }
+
+  function cancelEdit() { setEditingId(null); setEditDraft({}); }
+
+  function saveEdit(originalExp) {
+    const fields = {
+      item:   editDraft.item.trim(),
+      cat:    editDraft.cat,
+      date:   editDraft.date,
+      amount: parseFloat(editDraft.amount) || 0,
+      qty:    parseInt(editDraft.qty, 10)  || 1,
+      avb:    editDraft.avb,
+      vendor: editDraft.vendor.trim(),
+    };
+    const updated = { ...originalExp, ...fields };
+
+    // Optimistic local update
+    setExpensesBySem(prev => {
+      const sem = originalExp.sem;
+      return { ...prev, [sem]: (prev[sem] || []).map(e => e.id === originalExp.id ? updated : e) };
+    });
+
+    // Persist to DB
+    updateExpense(originalExp.id, fields).catch(err => console.error('updateExpense failed:', err));
+
+    // Log to activity feed (mentor will see this in navigator)
+    const changes = {};
+    ['item', 'cat', 'date', 'amount', 'qty', 'avb', 'vendor'].forEach(k => {
+      if (String(originalExp[k]) !== String(updated[k])) changes[k] = [originalExp[k], updated[k]];
+    });
+    writeActivityLog({
+      scholar: scholar.key,
+      type: 'edited',
+      expense_id: String(originalExp.id),
+      expense_data: updated,
+      changes,
+    }).catch(err => console.error('writeActivityLog failed:', err));
+
+    setEditingId(null);
+    setEditDraft({});
+  }
+
+  function requestDelete(exp) {
+    if (pendingDeletes.has(String(exp.id))) return;
+    setPendingDeletes(prev => new Set([...prev, String(exp.id)]));
+
+    // Notify mentor via activity log — expense is NOT deleted from DB
+    writeActivityLog({
+      scholar: scholar.key,
+      type: 'delete_request',
+      expense_id: String(exp.id),
+      expense_data: exp,
+    }).catch(err => console.error('writeActivityLog failed:', err));
+  }
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -186,6 +256,8 @@ function ExpenseForm({ scholar, password, onLogout }) {
       return { ...prev, [sem]: [...(prev[sem] || []), newExp] };
     });
     writeExpense(scholar.key, newExp).catch(err => console.error('writeExpense failed:', err));
+    writeActivityLog({ scholar: scholar.key, type: 'added', expense_id: String(newExp.id), expense_data: newExp })
+      .catch(err => console.error('writeActivityLog failed:', err));
     setSaveState('saved');
     setTimeout(() => {
       setSaveState('idle');
@@ -336,13 +408,92 @@ function ExpenseForm({ scholar, password, onLogout }) {
           }
           function renderEntryRow(e, i) {
             const total = (e.amount || 0) * (e.qty || 1);
+            const isPending = pendingDeletes.has(String(e.id));
+            const isEditing = editingId === e.id;
+
+            if (isEditing) {
+              return (
+                <React.Fragment key={e.id || i}>
+                  <tr className="ef-entries-editing-hd">
+                    <td className="ef-entries-item">{e.item}</td>
+                    <td><span className="ef-entries-cat">{e.cat}</span></td>
+                    <td className="ef-entries-date">{e.date}</td>
+                    <td className="ef-entries-right ef-entries-amount">₱{Math.round(total).toLocaleString('en-US')}</td>
+                    <td><span className={`ef-entries-status is-${(e.avb || '').toLowerCase()}`}>{e.avb}</span></td>
+                    <td className="ef-entries-actions">
+                      <button className="ef-row-cancel" onClick={cancelEdit}>Cancel</button>
+                    </td>
+                  </tr>
+                  <tr className="ef-edit-row">
+                    <td colSpan={6}>
+                      <div className="ef-edit-form">
+                        <label className="ef-edit-field">
+                          <span>Item</span>
+                          <input value={editDraft.item} onChange={ev => setEditDraft(d => ({ ...d, item: ev.target.value }))} />
+                        </label>
+                        <label className="ef-edit-field">
+                          <span>Category</span>
+                          <select value={editDraft.cat} onChange={ev => setEditDraft(d => ({ ...d, cat: ev.target.value }))}>
+                            {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}
+                          </select>
+                        </label>
+                        <label className="ef-edit-field">
+                          <span>Amount (₱)</span>
+                          <input type="number" step="0.01" min="0" value={editDraft.amount} onChange={ev => setEditDraft(d => ({ ...d, amount: ev.target.value }))} />
+                        </label>
+                        <label className="ef-edit-field">
+                          <span>Qty</span>
+                          <input type="number" min="1" value={editDraft.qty} onChange={ev => setEditDraft(d => ({ ...d, qty: ev.target.value }))} />
+                        </label>
+                        <label className="ef-edit-field">
+                          <span>Date</span>
+                          <input type="date" value={editDraft.date} onChange={ev => setEditDraft(d => ({ ...d, date: ev.target.value }))} />
+                        </label>
+                        <label className="ef-edit-field">
+                          <span>Status</span>
+                          <select value={editDraft.avb} onChange={ev => setEditDraft(d => ({ ...d, avb: ev.target.value }))}>
+                            <option value="Actual">Actual</option>
+                            <option value="Budget">Budget</option>
+                          </select>
+                        </label>
+                        <label className="ef-edit-field">
+                          <span>Vendor</span>
+                          <input value={editDraft.vendor} onChange={ev => setEditDraft(d => ({ ...d, vendor: ev.target.value }))} />
+                        </label>
+                        <div className="ef-edit-actions">
+                          <button className="ef-edit-save" onClick={() => saveEdit(e)}>Save changes</button>
+                          <button className="ef-edit-cancel" onClick={cancelEdit}>Cancel</button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </React.Fragment>
+              );
+            }
+
             return (
-              <tr key={i} className={e.avb !== 'Actual' ? 'ef-entries-budget' : ''}>
+              <tr key={i} className={[
+                e.avb !== 'Actual' ? 'ef-entries-budget' : '',
+                isPending ? 'ef-entries-pending-del' : '',
+              ].filter(Boolean).join(' ')}>
                 <td className="ef-entries-item">{e.item}</td>
                 <td><span className="ef-entries-cat">{e.cat}</span></td>
                 <td className="ef-entries-date">{e.date}</td>
                 <td className="ef-entries-right ef-entries-amount">₱{Math.round(total).toLocaleString('en-US')}</td>
-                <td><span className={`ef-entries-status is-${(e.avb || '').toLowerCase()}`}>{e.avb}</span></td>
+                <td>
+                  {isPending
+                    ? <span className="ef-del-pending">Delete requested</span>
+                    : <span className={`ef-entries-status is-${(e.avb || '').toLowerCase()}`}>{e.avb}</span>
+                  }
+                </td>
+                <td className="ef-entries-actions">
+                  {!isPending && (
+                    <>
+                      <button className="ef-row-edit" onClick={() => startEdit(e)}>Edit</button>
+                      <button className="ef-row-del" onClick={() => requestDelete(e)}>Delete</button>
+                    </>
+                  )}
+                </td>
               </tr>
             );
           }
@@ -379,6 +530,7 @@ function ExpenseForm({ scholar, password, onLogout }) {
                       <th>Date</th>
                       <th className="ef-entries-right">Total</th>
                       <th>Status</th>
+                      <th />
                     </tr>
                   </thead>
                   {groups
@@ -388,7 +540,7 @@ function ExpenseForm({ scholar, password, onLogout }) {
                           <React.Fragment key={group.key}>
                             <tbody>
                               <tr className="ef-group-hd" onClick={() => toggleGroup(group.key)}>
-                                <td colSpan={5}>
+                                <td colSpan={6}>
                                   <span>{collapsed ? '▶' : '▼'}</span>
                                   <span className="ef-group-label">{group.label}</span>
                                   <span className="ef-group-meta">{group.rows.length} item{group.rows.length !== 1 ? 's' : ''}</span>
@@ -402,7 +554,7 @@ function ExpenseForm({ scholar, password, onLogout }) {
                                 <tr className="ef-subtotal">
                                   <td colSpan={3} className="ef-subtotal-label">Subtotal — {group.label}</td>
                                   <td className="ef-subtotal-amt ef-entries-right">₱{Math.round(group.total).toLocaleString('en-US')}</td>
-                                  <td />
+                                  <td /><td />
                                 </tr>
                               </tbody>
                             )}

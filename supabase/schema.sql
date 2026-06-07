@@ -147,6 +147,30 @@ begin
 end
 $$;
 
+-- ── ACTIVITY LOG ─────────────────────────────────────────────────────────────
+-- Records scholar-initiated expense changes (add/edit/delete_request) so the
+-- mentor can review them in real time inside navigator.html.
+create table if not exists activity_log (
+  id           bigint generated always as identity primary key,
+  scholar_key  text not null,
+  type         text not null,  -- 'added' | 'edited' | 'delete_request'
+  expense_id   text,
+  expense_data jsonb,
+  changes      jsonb,
+  read         boolean default false,
+  created_at   timestamptz default now()
+);
+
+alter table activity_log enable row level security;
+
+-- Mentor gets full access.
+create policy "auth_all_activity" on activity_log
+  for all to authenticated using (true) with check (true);
+
+-- Scholars (anon) can only insert new log entries.
+create policy "anon_insert_activity" on activity_log
+  for insert to anon with check (true);
+
 -- ── ANON READ POLICIES ────────────────────────────────────────────────────────
 -- Public scholar profile pages (claire.html, april.html) and the scholar
 -- expense-entry form (entry.html) use the anon key without logging in.

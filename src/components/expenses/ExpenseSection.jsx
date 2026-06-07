@@ -7,6 +7,7 @@ import { FilterPanel } from './FilterPanel.jsx';
 import { AddExpenseForm } from './AddExpenseForm.jsx';
 import { TotalsRow, ChartSem, ChartCat } from './ExpenseCharts.jsx';
 import { EMPTY_FILTERS, countActiveFilters, applyFilters, applySorting, groupExpenses } from './filterHelpers.js';
+import { EXPENSE_CATS } from '../../constants.js';
 
 function SortTh({ label, field, sortField, sortDir, onSort, className }) {
   const active = sortField === field;
@@ -22,7 +23,7 @@ function SortTh({ label, field, sortField, sortDir, onSort, className }) {
   );
 }
 
-export function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
+export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditExpense }) {
   const $fmt = useFmt();
   const { D, scholarKeys } = useData();
 
@@ -48,6 +49,9 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [groupBy, setGroupBy] = useState('none');
   const [expandedGroups, setExpandedGroups] = useState(new Set());
+
+  const [editingId, setEditingId] = useState(null);
+  const [editDraft, setEditDraft] = useState({});
 
   function handleMarkSent(r) {
     setSentAll(prev => {
@@ -77,6 +81,36 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
   const uniqueStatuses = [...new Set(allRows.map(r => r.status))].sort();
   const uniqueSents = [...new Set(allRows.map(r => r.sent).filter(Boolean))].sort();
 
+  function startEdit(r) {
+    setEditingId(r.id);
+    setEditDraft({
+      item:   r.item   || '',
+      cat:    r.cat    || '',
+      date:   r.date   || '',
+      amount: String(r.amount || ''),
+      qty:    String(r.qty    || 1),
+      avb:    r.avb    || r.status || 'Actual',
+      vendor: r.vendor || '',
+    });
+  }
+
+  function cancelEdit() { setEditingId(null); setEditDraft({}); }
+
+  function saveEdit(r) {
+    const fields = {
+      item:   editDraft.item.trim(),
+      cat:    editDraft.cat,
+      date:   editDraft.date,
+      amount: parseFloat(editDraft.amount) || 0,
+      qty:    parseInt(editDraft.qty, 10)  || 1,
+      avb:    editDraft.avb,
+      vendor: editDraft.vendor.trim(),
+    };
+    if (onEditExpense) onEditExpense(expScholar, r.id, fields);
+    setEditingId(null);
+    setEditDraft({});
+  }
+
   function switchScholar(k) {
     setExpScholar(k);
     setExpSem('all');
@@ -87,6 +121,8 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
     setShowAddForm(false);
     setGroupBy('none');
     setExpandedGroups(new Set());
+    setEditingId(null);
+    setEditDraft({});
   }
 
   function handleGroupBy(mode) {
@@ -139,6 +175,71 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
     const isSent = r.sent === 'Yes' || sentOverrides.has(String(r.id));
     const qty = r.qty || 1;
     const total = (r.amount || 0) * qty;
+    const isEditing = editingId === r.id;
+
+    if (isEditing) {
+      return (
+        <React.Fragment key={r.id || i}>
+          <tr>
+            <td><span className="exp-item">{r.item}</span></td>
+            <td><span className="exp-cat">{r.cat}</span></td>
+            <td className="exp-date">{r.date}</td>
+            <td className="right exp-amount">{$fmt(r.amount, currency)}</td>
+            <td className="right exp-qty exp-col-hide-mobile">{qty}</td>
+            <td className="right exp-total">{$fmt(total, currency)}</td>
+            <td><span className={`exp-status ${r.status}`}>{r.status}</span></td>
+            <td><span className="exp-sent is-yes">editing…</span></td>
+            <td className="exp-del-cell">
+              <button className="exp-del-btn" onClick={cancelEdit}>Cancel</button>
+            </td>
+          </tr>
+          <tr className="exp-edit-row">
+            <td colSpan={9}>
+              <div className="exp-edit-form">
+                <label className="exp-edit-field">
+                  <span>Item</span>
+                  <input value={editDraft.item} onChange={ev => setEditDraft(d => ({ ...d, item: ev.target.value }))} />
+                </label>
+                <label className="exp-edit-field">
+                  <span>Category</span>
+                  <select value={editDraft.cat} onChange={ev => setEditDraft(d => ({ ...d, cat: ev.target.value }))}>
+                    {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </label>
+                <label className="exp-edit-field">
+                  <span>Amount (₱)</span>
+                  <input type="number" step="0.01" min="0" value={editDraft.amount} onChange={ev => setEditDraft(d => ({ ...d, amount: ev.target.value }))} />
+                </label>
+                <label className="exp-edit-field">
+                  <span>Qty</span>
+                  <input type="number" min="1" value={editDraft.qty} onChange={ev => setEditDraft(d => ({ ...d, qty: ev.target.value }))} />
+                </label>
+                <label className="exp-edit-field">
+                  <span>Date</span>
+                  <input type="date" value={editDraft.date} onChange={ev => setEditDraft(d => ({ ...d, date: ev.target.value }))} />
+                </label>
+                <label className="exp-edit-field">
+                  <span>Status</span>
+                  <select value={editDraft.avb} onChange={ev => setEditDraft(d => ({ ...d, avb: ev.target.value }))}>
+                    <option value="Actual">Actual</option>
+                    <option value="Budget">Budget</option>
+                  </select>
+                </label>
+                <label className="exp-edit-field">
+                  <span>Vendor</span>
+                  <input value={editDraft.vendor} onChange={ev => setEditDraft(d => ({ ...d, vendor: ev.target.value }))} />
+                </label>
+                <div className="exp-edit-actions">
+                  <button className="exp-edit-save" onClick={() => saveEdit(r)}>Save</button>
+                  <button className="exp-edit-cancel" onClick={cancelEdit}>Cancel</button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </React.Fragment>
+      );
+    }
+
     return (
       <tr key={r.id || i}>
         <td><span className="exp-item">{r.item}</span></td>
@@ -155,6 +256,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
           }
         </td>
         <td className="exp-del-cell">
+          <button className="exp-edit-btn" title="Edit expense" onClick={() => startEdit(r)}>Edit</button>
           <button className="exp-del-btn" title="Delete expense" onClick={() => handleDeleteExpense(r)}>Delete</button>
         </td>
       </tr>
