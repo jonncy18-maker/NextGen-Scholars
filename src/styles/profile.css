@@ -26,7 +26,7 @@ body { background: var(--ngs-paper); }
 /* ── top nav ── */
 .ngs-pnav { position: sticky; top: 0; z-index: 30; background: rgba(250,247,240,0.86); backdrop-filter: blur(14px) saturate(180%); -webkit-backdrop-filter: blur(14px) saturate(180%); border-bottom: 1px solid var(--ngs-rule); }
 .ngs-profile.is-mobile .ngs-pnav-inner { padding-top: 64px; }
-.ngs-pnav-inner { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 20px; flex-wrap: wrap; }
+.ngs-pnav-inner { display: flex; align-items: center; justify-content: flex-start; gap: 10px; padding: 10px 20px; }
 .ngs-pnav-brand { display: flex; align-items: center; gap: 10px; color: var(--ngs-navy); }
 .ngs-pnav-name { font-family: var(--ngs-display); font-size: 16px; font-weight: 500; letter-spacing: -0.01em; }
 .ngs-pnav-back { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ngs-muted); padding: 8px 12px; border-radius: 999px; border: 1px solid var(--ngs-rule); transition: all 0.18s ease; }
@@ -34,7 +34,7 @@ body { background: var(--ngs-paper); }
 .ngs-pnav-back::before { content: '←'; opacity: 0.5; }
 
 /* desktop nav links */
-.ngs-pnav-desktop { flex: 1; display: flex; align-items: center; justify-content: center; gap: 2px; }
+.ngs-pnav-desktop { display: flex; align-items: center; gap: 2px; }
 .ngs-pnav-desktop a { padding: 8px 14px; font-size: 14px; font-weight: 500; color: var(--ngs-navy); border-radius: 4px; transition: background 0.15s; text-decoration: none; }
 .ngs-pnav-desktop a:hover { background: rgba(27,42,74,0.07); }
 .ngs-pnav-desktop .ngs-pnav-mentor-link { color: var(--ngs-muted); font-size: 13px; }
@@ -125,7 +125,7 @@ body { background: var(--ngs-paper); }
 .ngs-profile.is-desktop .ngs-pnav-inner { padding: 12px 48px; }
 
 /* profile nav FX widget */
-.ngs-pnav-fx { display: flex; align-items: center; gap: 8px; }
+.ngs-pnav-fx { display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .ngs-pnav-curtoggle {
   display: inline-flex; border: 1px solid var(--ngs-rule); border-radius: 4px; overflow: hidden;
   font-family: var(--ngs-mono); font-size: 11px;
@@ -382,6 +382,8 @@ body { background: var(--ngs-paper); }
 @media (max-width: 959px) {
   /* Cap the photo placeholder so it doesn't dominate on small screens */
   .ngs-phead-photo { max-height: 280px; }
+  /* Hide the rate/mode/input widget on small screens — keep only the PHP/USD toggle */
+  .ngs-pnav-fxwidget { display: none; }
 }
 
 /* ── keyboard focus ── */
