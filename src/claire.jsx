@@ -55,8 +55,6 @@ function mergeSheetData(base, s) {
           return { ...stat, state: t.state };
         })
       : base.travels,
-    currentSem: s.currentSem,
-    semesterExpenses: s.expenses?.[s.currentSem] || [],
   };
 }
 

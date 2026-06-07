@@ -366,41 +366,6 @@ body { background: var(--ngs-paper); }
 .ngs-pline.is-done { background: var(--ngs-gold); }
 .ngs-pline.is-dashed { background: none; border-top: 1.5px dashed rgba(255,255,255,0.25); height: 0; }
 
-/* ── semester expense section header ── */
-.ngs-semexp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-.ngs-semexp-header .ngs-psection-eyebrow { margin-bottom: 0; }
-.ngs-semexp-home-btn { font-family: var(--ngs-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ngs-muted); padding: 6px 12px; border-radius: 999px; border: 1px solid var(--ngs-rule); transition: all 0.18s ease; white-space: nowrap; }
-.ngs-semexp-home-btn:hover { color: var(--ngs-navy); border-color: var(--ngs-navy); }
-
-/* ── semester expense table ── */
-.ngs-semexp-table-wrap { overflow-x: auto; margin-bottom: 16px; border: 1px solid var(--ngs-rule); border-radius: 6px; }
-.ngs-semexp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.ngs-semexp-table thead th { font-family: var(--ngs-mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ngs-muted); padding: 10px 12px; background: var(--ngs-paper-2); border-bottom: 1px solid var(--ngs-rule); text-align: left; white-space: nowrap; }
-.ngs-semexp-table thead th.ngs-semexp-right { text-align: right; }
-.ngs-semexp-table tbody tr { border-bottom: 1px solid var(--ngs-rule); }
-.ngs-semexp-table tbody tr:last-child { border-bottom: 0; }
-.ngs-semexp-table tbody tr.ngs-semexp-budget { opacity: 0.65; }
-.ngs-semexp-table td { padding: 10px 12px; vertical-align: middle; }
-.ngs-semexp-item { font-family: var(--ngs-display); font-size: 14px; color: var(--ngs-navy); }
-.ngs-semexp-cat { font-family: var(--ngs-mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 7px; border: 1px solid var(--ngs-rule); border-radius: 3px; color: var(--ngs-ink-soft); white-space: nowrap; }
-.ngs-semexp-date { font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-ink-soft); white-space: nowrap; }
-.ngs-semexp-right { text-align: right; }
-.ngs-semexp-amount { font-family: var(--ngs-mono); font-size: 13px; color: var(--ngs-navy); white-space: nowrap; }
-.ngs-semexp-status { font-family: var(--ngs-mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 7px; border-radius: 3px; white-space: nowrap; }
-.ngs-semexp-status.is-actual { background: rgba(47,125,85,0.12); color: #2C7A4B; }
-.ngs-semexp-status.is-budget { background: rgba(181,134,42,0.14); color: #B57E1E; }
-.ngs-semexp-summary {
-  display: flex; margin-bottom: 16px;
-  background: var(--ngs-paper-2); border: 1px solid var(--ngs-rule); border-radius: 6px;
-  overflow: hidden;
-}
-.ngs-semexp-summary-stat { flex: 1; padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; }
-.ngs-semexp-summary-stat + .ngs-semexp-summary-stat { border-left: 1px solid var(--ngs-rule); }
-.ngs-semexp-summary-label { font-family: var(--ngs-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ngs-muted); }
-.ngs-semexp-summary-val { font-family: var(--ngs-mono); font-size: 14.5px; color: var(--ngs-navy); }
-.ngs-semexp-summary-stat-budget .ngs-semexp-summary-val { color: #B57E1E; }
-.ngs-semexp-summary-stat-count .ngs-semexp-summary-val { font-size: 16px; }
-
 /* ── footer ── */
 .ngs-pfooter { padding: 36px 24px 28px; background: var(--ngs-navy-ink); color: rgba(250,247,240,0.7); }
 .ngs-pfooter-left { font-family: var(--ngs-display); font-size: 17px; color: var(--ngs-gold-soft); margin-bottom: 8px; }

@@ -314,6 +314,41 @@ function ExpenseForm({ scholar, password, onLogout }) {
             </button>
           </div>
         </form>
+
+        {semExpenses.length > 0 && (
+          <div className="ef-entries">
+            <div className="ef-entries-header">
+              <span className="ef-entries-title">{form.sem} · {semExpenses.length} item{semExpenses.length !== 1 ? 's' : ''}</span>
+            </div>
+            <div className="ef-entries-scroll">
+              <table className="ef-entries-table">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th>Category</th>
+                    <th>Date</th>
+                    <th className="ef-entries-right">Total</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {semExpenses.map((e, i) => {
+                    const total = (e.amount || 0) * (e.qty || 1);
+                    return (
+                      <tr key={i} className={e.avb !== 'Actual' ? 'ef-entries-budget' : ''}>
+                        <td className="ef-entries-item">{e.item}</td>
+                        <td><span className="ef-entries-cat">{e.cat}</span></td>
+                        <td className="ef-entries-date">{e.date}</td>
+                        <td className="ef-entries-right ef-entries-amount">₱{Math.round(total).toLocaleString('en-US')}</td>
+                        <td><span className={`ef-entries-status is-${(e.avb || '').toLowerCase()}`}>{e.avb}</span></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

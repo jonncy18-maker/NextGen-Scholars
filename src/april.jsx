@@ -29,8 +29,6 @@ function mergeSheetData(base, s) {
           return { ...stat, state: m.state === 'done' ? 'done' : 'future' };
         })
       : base.milestones,
-    currentSem: s.currentSem,
-    semesterExpenses: s.expenses?.[s.currentSem] || [],
   };
 }
 

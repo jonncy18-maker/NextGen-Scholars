@@ -26,14 +26,6 @@ export function ScholarProfile({ data, isMobile, relatedProfiles }) {
       {data.trialProgress && <TrialProgressSection data={data.trialProgress}/>}
       {data.currentSemester && <SemesterSection data={data.currentSemester}/>}
       {data.academics && <AcademicSection data={data.academics}/>}
-      {data.semesterExpenses !== undefined && (
-        <SemesterExpenseSection
-          expenses={data.semesterExpenses}
-          currentSem={data.currentSem}
-          currency={fx.currency}
-          fxRate={fx.fxRate}
-        />
-      )}
       {data.support && <SupportSection data={data.support} currency={fx.currency} fxRate={fx.fxRate} />}
       {data.milestones && <MilestonesSection items={data.milestones}/>}
       {data.travels && <TravelsSection items={data.travels}/>}
@@ -555,76 +547,6 @@ function PathwaySection({ data }) {
           <button className="ngs-pathway-nav-btn" onClick={() => scroll(1)} aria-label="Scroll pathway right">›</button>
         </div>
       </div>
-    </section>
-  );
-}
-
-function SemesterExpenseSection({ expenses, currentSem, currency, fxRate }) {
-  const actualRows = (expenses || []).filter(e => e.avb === 'Actual');
-  const budgetRows = (expenses || []).filter(e => e.avb !== 'Actual');
-  const allRows = [...actualRows, ...budgetRows];
-  const actualTotal = actualRows.reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
-  const budgetTotal = budgetRows.reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
-
-  return (
-    <section className="ngs-psection">
-      <div className="ngs-semexp-header">
-        <SectionEyebrow>Semester expenses · {currentSem || '—'}</SectionEyebrow>
-        <a href="index.html" className="ngs-semexp-home-btn">← Home</a>
-      </div>
-      <h2>This semester's spending.</h2>
-      {allRows.length === 0 ? (
-        <p className="ngs-psection-intro">No expenses recorded for this semester yet.</p>
-      ) : (
-        <>
-          <div className="ngs-semexp-summary">
-            <div className="ngs-semexp-summary-stat">
-              <span className="ngs-semexp-summary-label">Actual spend</span>
-              <strong className="ngs-semexp-summary-val">{fmtPhp(actualTotal, currency, fxRate)}</strong>
-            </div>
-            {budgetTotal > 0 && (
-              <div className="ngs-semexp-summary-stat ngs-semexp-summary-stat-budget">
-                <span className="ngs-semexp-summary-label">Pending</span>
-                <strong className="ngs-semexp-summary-val">{fmtPhp(budgetTotal, currency, fxRate)}</strong>
-              </div>
-            )}
-            <div className="ngs-semexp-summary-stat ngs-semexp-summary-stat-count">
-              <span className="ngs-semexp-summary-label">Items</span>
-              <strong className="ngs-semexp-summary-val">{allRows.length}</strong>
-            </div>
-          </div>
-          <p className="ngs-psection-intro">
-            All items logged for {currentSem}. Actuals only count toward totals.
-          </p>
-          <div className="ngs-semexp-table-wrap">
-            <table className="ngs-semexp-table">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Category</th>
-                  <th>Date</th>
-                  <th className="ngs-semexp-right">Total</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allRows.map((e, i) => {
-                  const total = (e.amount || 0) * (e.qty || 1);
-                  return (
-                    <tr key={i} className={e.avb !== 'Actual' ? 'ngs-semexp-budget' : ''}>
-                      <td className="ngs-semexp-item">{e.item}</td>
-                      <td><span className="ngs-semexp-cat">{e.cat}</span></td>
-                      <td className="ngs-semexp-date">{e.date}</td>
-                      <td className="ngs-semexp-right ngs-semexp-amount">{fmtPhp(total, currency, fxRate)}</td>
-                      <td><span className={`ngs-semexp-status is-${(e.avb || '').toLowerCase()}`}>{e.avb}</span></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
     </section>
   );
 }
