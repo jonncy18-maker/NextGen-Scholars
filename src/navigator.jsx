@@ -4,7 +4,7 @@ import './styles/navigator.css';
 import { NGS_DATA } from '../scholars-data.js';
 import { loadFromSupabase } from './supabase-loader.js';
 import { storedMode, storedRate, persistFx, fetchMarketRate } from './fx.js';
-import { writeExpense, writeSemester } from './supabase-writer.js';
+import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead } from './supabase-writer.js';
 import { supabase } from './lib/supabase.js';
 import { FxCtx } from './context/FxContext.jsx';
 import { DataCtx } from './context/DataContext.jsx';
@@ -17,6 +17,7 @@ import { DeadlinesSection } from './components/DeadlinesSection.jsx';
 import { ActionsSection } from './components/ActionsSection.jsx';
 import { EnglishSection } from './components/EnglishSection.jsx';
 import { NavFooter } from './components/NavFooter.jsx';
+import { ActivityFeed } from './components/ActivityFeed.jsx';
 
 if (!NGS_DATA || !NGS_DATA.config) {
   throw new Error('NGS_DATA missing — hard-refresh (Ctrl/Cmd+Shift+R)');
@@ -49,11 +50,86 @@ function Navigator() {
 
   const [writeError, setWriteError] = useState(false);
 
+  // Activity feed — scholar-initiated changes from entry.html
+  const [activityFeed, setActivityFeed] = useState([]);
+
   useEffect(() => {
     if (!writeError) return;
     const t = setTimeout(() => setWriteError(false), 5000);
     return () => clearTimeout(t);
   }, [writeError]);
+
+  // Load unread activity on unlock + subscribe to realtime inserts.
+  useEffect(() => {
+    if (!unlocked) return;
+    supabase
+      .from('activity_log')
+      .select('*')
+      .eq('read', false)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => setActivityFeed(data || []));
+
+    const channel = supabase
+      .channel('ngs_activity')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_log' }, payload => {
+        setActivityFeed(prev => [payload.new, ...prev]);
+      })
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, [unlocked]);
+
+  function removeExpenseFromD(scholarKey, expenseId) {
+    setD(prev => {
+      const sd = prev.scholars[scholarKey];
+      if (!sd) return prev;
+      const newExp = {};
+      Object.entries(sd.expenses || {}).forEach(([sem, list]) => {
+        newExp[sem] = list.filter(e => String(e.id) !== String(expenseId));
+      });
+      return { ...prev, scholars: { ...prev.scholars, [scholarKey]: { ...sd, expenses: newExp } } };
+    });
+  }
+
+  function updateExpenseInD(scholarKey, expenseId, fields) {
+    setD(prev => {
+      const sd = prev.scholars[scholarKey];
+      if (!sd) return prev;
+      const newExp = {};
+      Object.entries(sd.expenses || {}).forEach(([sem, list]) => {
+        newExp[sem] = list.map(e => String(e.id) === String(expenseId) ? { ...e, ...fields } : e);
+      });
+      return { ...prev, scholars: { ...prev.scholars, [scholarKey]: { ...sd, expenses: newExp } } };
+    });
+  }
+
+  async function handleApproveDelete(item) {
+    try {
+      await deleteExpense(item.expense_id);
+      await markActivityRead([item.id]);
+      setActivityFeed(prev => prev.filter(f => f.id !== item.id));
+      removeExpenseFromD(item.scholar_key, item.expense_id);
+    } catch (err) { console.error('approveDelete failed:', err); }
+  }
+
+  async function handleDenyDelete(item) {
+    try {
+      await markActivityRead([item.id]);
+      setActivityFeed(prev => prev.filter(f => f.id !== item.id));
+    } catch (err) { console.error('denyDelete failed:', err); }
+  }
+
+  async function handleMarkFeedRead(ids) {
+    try {
+      await markActivityRead(ids);
+      setActivityFeed(prev => prev.filter(f => !ids.includes(f.id)));
+    } catch (err) { console.error('markRead failed:', err); }
+  }
+
+  function handleEditExpense(scholarKey, expenseId, fields) {
+    updateExpenseInD(scholarKey, expenseId, fields);
+    updateExpense(expenseId, fields).catch(() => setWriteError(true));
+  }
 
   // Persisted to localStorage so locally-added rows survive page refreshes.
   const [addedExpenses, setAddedExpenses] = useState(() => {
@@ -165,12 +241,21 @@ function Navigator() {
             currency={currency}
             addedExpenses={addedExpenses}
             onAddExpense={handleAddExpense}
+            onEditExpense={handleEditExpense}
           />
           <DeadlinesSection />
           <ActionsSection />
           <EnglishSection />
         </main>
         <NavFooter sheetsStatus={sheetsStatus} writeError={writeError} />
+        {unlocked && (
+          <ActivityFeed
+            feed={activityFeed}
+            onApprove={handleApproveDelete}
+            onDeny={handleDenyDelete}
+            onMarkRead={handleMarkFeedRead}
+          />
+        )}
       </FxCtx.Provider>
     </DataCtx.Provider>
   );
