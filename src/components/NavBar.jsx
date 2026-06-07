@@ -5,8 +5,7 @@ const SECTION_NAV = [
   { id: 'sec-status',    label: '02  Status' },
   { id: 'sec-expenses',  label: '03  Expenses' },
   { id: 'sec-deadlines', label: '04  Deadlines' },
-  { id: 'sec-actions',   label: '05  Actions' },
-  { id: 'sec-english',   label: '06  English' },
+  { id: 'sec-english',   label: '05  English' },
 ];
 
 export function NavBar({

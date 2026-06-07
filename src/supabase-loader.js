@@ -161,3 +161,25 @@ export async function loadFromSupabase() {
     })),
   };
 }
+
+export async function loadPendingSubmissions() {
+  const { data, error } = await supabase
+    .from('expense_submissions')
+    .select('*')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function loadScholarSubmissions(scholarKey) {
+  const { data, error } = await supabase
+    .from('expense_submissions')
+    .select('*')
+    .eq('scholar_key', scholarKey)
+    .not('status', 'eq', 'approved')
+    .not('status', 'eq', 'resubmitted')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}

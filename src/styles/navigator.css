@@ -296,7 +296,41 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .activity-type-added          { background: rgba(39,174,96,0.12); color: var(--ngs-green); }
 .activity-type-edited         { background: rgba(181,134,42,0.12); color: var(--ngs-amber); }
 .activity-type-delete_request { background: rgba(177,27,42,0.10); color: var(--ngs-red); }
+.activity-type-new            { background: rgba(44,90,160,0.12); color: var(--ngs-blue-nav); }
+.activity-item-submission     { border-left-color: var(--ngs-blue-nav); background: rgba(44,90,160,0.04); }
 .activity-time { font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-muted); margin-left: auto; }
+.activity-sub-actions { display: flex; gap: 8px; margin-top: 10px; }
+.sub-approve-btn {
+  padding: 7px 14px; border-radius: 4px; font-size: 12px; font-weight: 600;
+  background: rgba(47,125,85,0.12); color: var(--ngs-green);
+  border: 1px solid rgba(47,125,85,0.3); cursor: pointer; transition: all 0.15s;
+}
+.sub-approve-btn:hover { background: var(--ngs-green); color: #fff; }
+.sub-reject-btn {
+  padding: 7px 14px; border-radius: 4px; font-size: 12px;
+  background: none; color: var(--ngs-muted);
+  border: 1px solid var(--ngs-rule); cursor: pointer; transition: all 0.15s;
+}
+.sub-reject-btn:hover { color: var(--ngs-red); border-color: rgba(177,27,42,0.4); }
+.activity-reject-form { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.activity-reject-comment {
+  width: 100%; padding: 8px 10px; border-radius: 5px; font-size: 13px;
+  border: 1px solid rgba(177,27,42,0.3); background: #fff; outline: none;
+  font-family: var(--ngs-sans); color: var(--ngs-ink); resize: vertical;
+}
+.activity-reject-comment:focus { border-color: var(--ngs-red); }
+.activity-reject-actions { display: flex; gap: 8px; }
+.sub-reject-confirm-btn {
+  padding: 7px 14px; border-radius: 4px; font-size: 12px; font-weight: 600;
+  background: rgba(177,27,42,0.1); color: var(--ngs-red);
+  border: 1px solid rgba(177,27,42,0.25); cursor: pointer; transition: all 0.15s;
+}
+.sub-reject-confirm-btn:hover { background: var(--ngs-red); color: #fff; }
+.sub-reject-cancel-btn {
+  padding: 7px 12px; border-radius: 4px; font-size: 12px;
+  background: none; color: var(--ngs-muted);
+  border: 1px solid var(--ngs-rule); cursor: pointer; transition: all 0.15s;
+}
 .activity-item-body { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; }
 .activity-exp-name { font-weight: 500; color: var(--ngs-ink); }
 .activity-exp-amt { font-family: var(--ngs-mono); font-size: 13px; color: var(--ngs-navy); }
@@ -929,6 +963,70 @@ table.exp tbody tr:hover { background: var(--ngs-paper-2); }
   from { opacity: 0; transform: translateX(-50%) translateY(8px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+
+/* ── add-expense mode chooser ── */
+.add-exp-mode-chooser {
+  display: flex; gap: 12px; margin-bottom: 20px;
+}
+.add-exp-mode-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 16px 14px; border-radius: 6px; cursor: pointer;
+  border: 1.5px solid var(--ngs-rule); background: var(--ngs-paper-2);
+  transition: border-color 0.15s, background 0.15s;
+}
+.add-exp-mode-btn:hover { border-color: var(--ngs-gold); background: rgba(201,168,76,0.06); }
+.add-exp-mode-icon { font-size: 20px; }
+.add-exp-mode-label {
+  font-family: var(--ngs-mono); font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--ngs-navy);
+}
+.add-exp-mode-sub {
+  font-family: var(--ngs-mono); font-size: 10px; color: var(--ngs-muted);
+}
+
+/* ── multi-expense table ── */
+.add-exp-card-multi { max-width: 100%; overflow: hidden; }
+.add-exp-multi-scroll { overflow-x: auto; margin-bottom: 0; }
+.add-exp-multi-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 12.5px; min-width: 820px;
+}
+.add-exp-multi-table thead th {
+  font-family: var(--ngs-mono); font-size: 9px; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--ngs-muted);
+  padding: 8px 8px; border-bottom: 1px solid var(--ngs-rule);
+  text-align: left; white-space: nowrap; background: var(--ngs-paper-2);
+}
+.add-exp-multi-table tbody tr { border-bottom: 1px solid var(--ngs-rule); transition: background 0.1s; }
+.add-exp-multi-table tbody tr.add-exp-row-valid { background: rgba(47,125,85,0.04); }
+.add-exp-multi-table tbody td { padding: 6px 6px; vertical-align: middle; }
+.add-exp-multi-input {
+  width: 100%; padding: 6px 8px; border-radius: 4px; font-size: 12.5px;
+  border: 1px solid rgba(27,42,74,0.2); background: #fff;
+  color: var(--ngs-ink); outline: none; font-family: var(--ngs-sans);
+  transition: border-color 0.12s;
+}
+.add-exp-multi-input:focus { border-color: var(--ngs-navy); }
+.add-exp-multi-num { max-width: 90px; }
+.add-exp-multi-sm  { max-width: 80px; }
+.add-exp-multi-del {
+  width: 24px; height: 24px; border-radius: 50%; font-size: 16px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--ngs-muted); background: none; border: 1px solid var(--ngs-rule);
+  cursor: pointer; transition: all 0.12s; padding: 0;
+}
+.add-exp-multi-del:hover:not(:disabled) { background: var(--ngs-red); color: #fff; border-color: var(--ngs-red); }
+.add-exp-multi-del:disabled { opacity: 0.3; cursor: not-allowed; }
+.add-exp-multi-footer {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding-top: 14px; border-top: 1px solid var(--ngs-rule); margin-top: 4px;
+}
+.add-exp-multi-add-row {
+  font-family: var(--ngs-mono); font-size: 11px; letter-spacing: 0.06em;
+  padding: 8px 14px; border-radius: 5px; border: 1px dashed var(--ngs-rule);
+  color: var(--ngs-muted); background: none; cursor: pointer; transition: all 0.15s;
+}
+.add-exp-multi-add-row:hover { border-color: var(--ngs-navy); color: var(--ngs-navy); }
 
 /* ════════════════ 5. DEADLINES ════════════════ */
 .dl-card { background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px; overflow: hidden; }

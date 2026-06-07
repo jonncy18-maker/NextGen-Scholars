@@ -27,6 +27,10 @@ export function DeadlinesSection({ id, collapsed, onToggle }) {
     try { return JSON.parse(localStorage.getItem('ngs_dl_local') || '[]'); } catch { return []; }
   });
 
+  const [sheetsOverrides, setSheetsOverrides] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ngs_dl_overrides') || '{}'); } catch { return {}; }
+  });
+
   const [editingKey, setEditingKey] = useState(null);
   const [editDraft, setEditDraft] = useState({});
 
@@ -35,7 +39,11 @@ export function DeadlinesSection({ id, collapsed, onToggle }) {
 
   const sheetsEvents = D.deadlines || [];
   const allEvents = [
-    ...sheetsEvents.map((d, i) => ({ ...d, _key: dlKey(d, i), _local: false })),
+    ...sheetsEvents.map((d, i) => {
+      const key = dlKey(d, i);
+      const override = sheetsOverrides[key];
+      return { ...d, ...(override || {}), _key: key, _local: false };
+    }),
     ...localEvents.map(d => ({ ...d, _key: d.id, _local: true })),
   ].sort((a, b) => (a.sort || '').localeCompare(b.sort || ''));
 
@@ -67,6 +75,10 @@ export function DeadlinesSection({ id, collapsed, onToggle }) {
       const updated = localEvents.map(e => e.id === d._key ? { ...e, ...editDraft } : e);
       setLocalEvents(updated);
       try { localStorage.setItem('ngs_dl_local', JSON.stringify(updated)); } catch {}
+    } else {
+      const updated = { ...sheetsOverrides, [d._key]: editDraft };
+      setSheetsOverrides(updated);
+      try { localStorage.setItem('ngs_dl_overrides', JSON.stringify(updated)); } catch {}
     }
     cancelEdit();
   }
@@ -223,9 +235,7 @@ export function DeadlinesSection({ id, collapsed, onToggle }) {
                                 </select>
                               </div>
                               <div className="dl-edit-actions">
-                                {d._local && (
-                                  <button className="exp-edit-save" onClick={() => saveEdit(d)}>Save</button>
-                                )}
+                                <button className="exp-edit-save" onClick={() => saveEdit(d)}>Save</button>
                                 <button className="exp-edit-cancel" onClick={cancelEdit}>Cancel</button>
                               </div>
                             </div>

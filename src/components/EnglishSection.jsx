@@ -29,7 +29,7 @@ export function EnglishSection({ id, collapsed, onToggle }) {
   return (
     <section className="section" id={id}>
       <div className="eyebrow">
-        <span className="num">06</span> English Development Pulse
+        <span className="num">05</span> English Development Pulse
         <span className="eyebrow-rule" />
         <button className="section-collapse-btn" onClick={onToggle} title={collapsed ? 'Expand section' : 'Collapse section'}>
           {collapsed ? '▶' : '▼'}
