@@ -97,6 +97,7 @@ function TopNav({ data, fx, isMobile }) {
           </div>
           <span className="ngs-pnav-name">NextGen Scholars</span>
         </a>
+        {fxWidget}
         {isMobile ? (
           <button
             className="ngs-pnav-btn"
@@ -117,7 +118,6 @@ function TopNav({ data, fx, isMobile }) {
             <a href="index.html#apply" className="ngs-pnav-cta-link">Apply</a>
           </nav>
         )}
-        {fxWidget}
       </div>
       {isMobile && open && (
         <nav className="ngs-pnav-menu" id="ngs-pnav-mobile-menu" onClick={() => setOpen(false)}>
