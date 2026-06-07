@@ -323,3 +323,154 @@ input, select { font-family: inherit; }
   padding: 7px 12px; border-radius: 4px; font-size: 12px;
   background: none; border: 1px solid rgba(0,0,0,0.15); color: var(--ngs-muted); cursor: pointer;
 }
+
+/* ════════════════ ADD EXPENSE MODE CHOOSER ════════════════ */
+.ef-mode-chooser {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin-bottom: 22px; padding: 14px 16px;
+  background: var(--ngs-paper-2); border: 1px solid var(--ngs-rule); border-radius: 6px;
+}
+.ef-mode-label {
+  font-family: var(--ngs-mono); font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--ngs-muted); margin-right: 4px;
+}
+.ef-mode-btn {
+  padding: 9px 20px; border-radius: 5px; font-size: 13px; font-weight: 600;
+  background: var(--ngs-navy); color: var(--ngs-gold);
+  border: none; cursor: pointer; transition: background 0.15s;
+}
+.ef-mode-btn:hover { background: #0f1b3d; }
+
+/* ── entry card (single / multi wrapper) ── */
+.ef-entry-card {
+  background: #fff; border: 1px solid rgba(201,168,76,0.55);
+  border-radius: 8px; padding: 20px; margin-bottom: 22px;
+  animation: efIn 0.18s ease both;
+}
+@keyframes efIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ef-entry-card-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.ef-entry-card-title {
+  font-family: var(--ngs-display); font-size: 18px; color: var(--ngs-navy);
+}
+.ef-entry-card-close {
+  font-size: 16px; color: var(--ngs-muted); padding: 4px 8px; border-radius: 4px;
+  transition: background 0.12s, color 0.12s; cursor: pointer;
+}
+.ef-entry-card-close:hover { background: rgba(0,0,0,0.07); color: var(--ngs-ink); }
+
+/* ── multi-expense table ── */
+.ef-multi-card { padding-bottom: 0; }
+.ef-multi-scroll { overflow-x: auto; margin: 0 -20px; padding: 0 20px; }
+.ef-multi-table {
+  width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 680px;
+}
+.ef-multi-table thead th {
+  font-family: var(--ngs-mono); font-size: 9px; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--ngs-muted);
+  padding: 8px 8px; border-bottom: 1px solid var(--ngs-rule);
+  text-align: left; white-space: nowrap; background: var(--ngs-paper-2);
+}
+.ef-multi-row { border-bottom: 1px solid var(--ngs-rule); }
+.ef-multi-row td { padding: 6px 6px; vertical-align: middle; }
+.ef-multi-input {
+  width: 100%; padding: 6px 8px; border-radius: 4px; font-size: 12.5px;
+  border: 1px solid rgba(27,42,74,0.2); background: #fff; color: var(--ngs-ink);
+  outline: none; font-family: var(--ngs-sans); transition: border-color 0.12s;
+}
+.ef-multi-input:focus { border-color: var(--ngs-navy); }
+.ef-multi-wide { min-width: 130px; }
+.ef-multi-num  { max-width: 90px; }
+.ef-multi-sm   { max-width: 76px; }
+.ef-multi-remove {
+  width: 24px; height: 24px; border-radius: 50%; font-size: 16px; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--ngs-muted); background: none; border: 1px solid var(--ngs-rule);
+  cursor: pointer; transition: all 0.12s; padding: 0;
+}
+.ef-multi-remove:hover:not(:disabled) { background: var(--ngs-red); color: #fff; border-color: var(--ngs-red); }
+.ef-multi-remove:disabled { opacity: 0.3; cursor: not-allowed; }
+.ef-multi-footer {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  padding: 14px 0; border-top: 1px solid var(--ngs-rule); margin-top: 4px;
+}
+.ef-multi-add-row {
+  font-family: var(--ngs-mono); font-size: 11px; letter-spacing: 0.06em;
+  padding: 8px 14px; border-radius: 5px; border: 1px dashed rgba(27,42,74,0.25);
+  color: rgba(27,42,74,0.6); background: none; cursor: pointer; transition: all 0.15s;
+}
+.ef-multi-add-row:hover { border-color: var(--ngs-navy); color: var(--ngs-navy); }
+
+/* ════════════════ PENDING REVIEW SECTION ════════════════ */
+.ef-pending-section {
+  margin-bottom: 22px;
+  border: 1px solid var(--ngs-rule); border-radius: 8px; overflow: hidden;
+}
+.ef-pending-header {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  padding: 10px 14px; background: var(--ngs-paper-2); border-bottom: 1px solid var(--ngs-rule);
+}
+.ef-pending-title {
+  font-family: var(--ngs-mono); font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--ngs-navy); font-weight: 600;
+}
+.ef-pending-count {
+  font-family: var(--ngs-mono); font-size: 10px; color: var(--ngs-muted);
+}
+.ef-pending-list { display: flex; flex-direction: column; }
+.ef-pending-item {
+  padding: 12px 14px; border-bottom: 1px solid var(--ngs-rule);
+  transition: background 0.12s;
+}
+.ef-pending-item:last-child { border-bottom: 0; }
+.ef-pending-item.is-rejected { background: rgba(177,27,42,0.03); }
+.ef-pending-item-main {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.ef-pending-item-name {
+  font-family: var(--ngs-display); font-size: 14px; color: var(--ngs-navy);
+}
+.ef-pending-item-amt {
+  font-family: var(--ngs-mono); font-size: 13px; color: var(--ngs-ink);
+}
+.ef-pending-item-meta {
+  font-family: var(--ngs-mono); font-size: 10px; color: var(--ngs-muted);
+  background: var(--ngs-paper-2); border: 1px solid var(--ngs-rule);
+  padding: 2px 6px; border-radius: 3px;
+}
+.ef-pending-badge {
+  font-family: var(--ngs-mono); font-size: 9.5px; text-transform: uppercase;
+  letter-spacing: 0.08em; padding: 2px 8px; border-radius: 3px; font-weight: 500;
+  white-space: nowrap;
+}
+.ef-pending-badge.pending  { background: rgba(44,90,160,0.1);  color: #2C5AA0; }
+.ef-pending-badge.rejected { background: rgba(177,27,42,0.1);  color: var(--ngs-red); }
+.ef-pending-comment-btn {
+  font-size: 14px; padding: 2px 6px; border-radius: 3px;
+  cursor: pointer; transition: background 0.12s;
+}
+.ef-pending-comment-btn:hover { background: rgba(0,0,0,0.07); }
+.ef-pending-comment {
+  margin-top: 8px; padding: 9px 12px; border-radius: 5px;
+  background: rgba(177,27,42,0.06); border-left: 3px solid rgba(177,27,42,0.4);
+  font-size: 13px; color: var(--ngs-ink); line-height: 1.5;
+}
+.ef-pending-actions { margin-top: 10px; }
+.ef-resubmit-btn {
+  padding: 7px 16px; border-radius: 5px; font-size: 12.5px; font-weight: 600;
+  background: var(--ngs-navy); color: var(--ngs-gold);
+  border: none; cursor: pointer; transition: background 0.15s;
+}
+.ef-resubmit-btn:hover { background: #0f1b3d; }
+.ef-resubmit-form {
+  margin-top: 12px; display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;
+  align-items: end;
+  padding: 14px; border-radius: 6px;
+  background: rgba(27,42,74,0.03); border: 1px solid var(--ngs-rule);
+}
