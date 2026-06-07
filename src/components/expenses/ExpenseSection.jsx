@@ -47,7 +47,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
   const deletedIds = new Set(deletedAll[expScholar] || []);
   const [showAddForm, setShowAddForm] = useState(false);
   const [groupBy, setGroupBy] = useState('none');
-  const [collapsedGroups, setCollapsedGroups] = useState(new Set());
+  const [expandedGroups, setExpandedGroups] = useState(new Set());
 
   function handleMarkSent(r) {
     setSentAll(prev => {
@@ -86,16 +86,16 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
     setSortDir('asc');
     setShowAddForm(false);
     setGroupBy('none');
-    setCollapsedGroups(new Set());
+    setExpandedGroups(new Set());
   }
 
   function handleGroupBy(mode) {
     setGroupBy(mode);
-    setCollapsedGroups(new Set());
+    setExpandedGroups(new Set());
   }
 
   function toggleGroup(key) {
-    setCollapsedGroups(prev => {
+    setExpandedGroups(prev => {
       const next = new Set(prev);
       next.has(key) ? next.delete(key) : next.add(key);
       return next;
@@ -270,6 +270,14 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
               <button key={val} className={groupBy === val ? 'active' : ''} onClick={() => handleGroupBy(val)}>{lbl}</button>
             ))}
           </div>
+          {groups && groups.length > 0 && (
+            <button className="exp-groupby-all-btn" onClick={() => {
+              const allExpanded = groups.every(g => expandedGroups.has(g.key));
+              setExpandedGroups(allExpanded ? new Set() : new Set(groups.map(g => g.key)));
+            }}>
+              {groups.every(g => expandedGroups.has(g.key)) ? 'Collapse All' : 'Expand All'}
+            </button>
+          )}
         </div>
         <div className="exp-table-scroll">
           <table className="exp">
@@ -288,7 +296,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
             </thead>
             {groups
               ? groups.map(group => {
-                  const collapsed = collapsedGroups.has(group.key);
+                  const collapsed = !expandedGroups.has(group.key);
                   return (
                     <React.Fragment key={group.key}>
                       <tbody>

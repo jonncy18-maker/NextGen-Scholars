@@ -149,7 +149,7 @@ function ExpenseForm({ scholar, password, onLogout }) {
   const [saveState, setSaveState] = useState('idle'); // 'idle' | 'saved'
   const [expensesBySem, setExpensesBySem] = useState(null);
   const [groupBy, setGroupBy] = useState('none');
-  const [collapsedGroups, setCollapsedGroups] = useState(new Set());
+  const [expandedGroups, setExpandedGroups] = useState(new Set());
 
   useEffect(() => {
     loadFromSupabase()
@@ -168,7 +168,7 @@ function ExpenseForm({ scholar, password, onLogout }) {
   function handleSubmit(e) {
     e.preventDefault();
     if (!valid) return;
-    writeExpense(scholar.key, {
+    const newExp = {
       id:     `${scholar.key}_${form.sem.trim()}_${Date.now()}`,
       sem:    form.sem.trim(),
       item:   form.item.trim(),
@@ -179,7 +179,13 @@ function ExpenseForm({ scholar, password, onLogout }) {
       avb:    form.avb,
       sent:   'No',
       vendor: form.vendor.trim(),
-    }).catch(err => console.error('writeExpense failed:', err));
+    };
+    // Optimistically add to local list so it appears immediately
+    setExpensesBySem(prev => {
+      const sem = newExp.sem;
+      return { ...prev, [sem]: [...(prev[sem] || []), newExp] };
+    });
+    writeExpense(scholar.key, newExp).catch(err => console.error('writeExpense failed:', err));
     setSaveState('saved');
     setTimeout(() => {
       setSaveState('idle');
@@ -322,7 +328,7 @@ function ExpenseForm({ scholar, password, onLogout }) {
         {semExpenses.length > 0 && (() => {
           const groups = groupExpenses(semExpenses, groupBy);
           function toggleGroup(key) {
-            setCollapsedGroups(prev => {
+            setExpandedGroups(prev => {
               const next = new Set(prev);
               next.has(key) ? next.delete(key) : next.add(key);
               return next;
@@ -340,6 +346,7 @@ function ExpenseForm({ scholar, password, onLogout }) {
               </tr>
             );
           }
+          const allExpanded = groups && groups.length > 0 && groups.every(g => expandedGroups.has(g.key));
           return (
             <div className="ef-entries">
               <div className="ef-entries-header">
@@ -350,10 +357,17 @@ function ExpenseForm({ scholar, password, onLogout }) {
                     {[['none','None'],['month','Month'],['category','Category']].map(([val, lbl]) => (
                       <button key={val}
                         className={groupBy === val ? 'active' : ''}
-                        onClick={() => { setGroupBy(val); setCollapsedGroups(new Set()); }}
+                        onClick={() => { setGroupBy(val); setExpandedGroups(new Set()); }}
                       >{lbl}</button>
                     ))}
                   </div>
+                  {groups && groups.length > 0 && (
+                    <button className="ef-groupby-all-btn" onClick={() =>
+                      setExpandedGroups(allExpanded ? new Set() : new Set(groups.map(g => g.key)))
+                    }>
+                      {allExpanded ? 'Collapse All' : 'Expand All'}
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="ef-entries-scroll">
@@ -369,7 +383,7 @@ function ExpenseForm({ scholar, password, onLogout }) {
                   </thead>
                   {groups
                     ? groups.map(group => {
-                        const collapsed = collapsedGroups.has(group.key);
+                        const collapsed = !expandedGroups.has(group.key);
                         return (
                           <React.Fragment key={group.key}>
                             <tbody>
