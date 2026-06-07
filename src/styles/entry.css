@@ -203,3 +203,46 @@ input, select { font-family: inherit; }
 }
 .ef-save:disabled { opacity: 0.4; cursor: not-allowed; }
 .ef-save.is-saved { background: rgba(47,125,85,0.12); color: #2F7D55; border-color: rgba(47,125,85,0.3); }
+
+/* ════════════════ EXPENSE DETAIL TABLE ════════════════ */
+.ef-entries {
+  margin-top: 32px;
+  border: 1px solid var(--ngs-rule); border-radius: 8px; overflow: hidden;
+}
+.ef-entries-header {
+  display: flex; align-items: center; padding: 10px 14px;
+  background: var(--ngs-paper-2); border-bottom: 1px solid var(--ngs-rule);
+}
+.ef-entries-title {
+  font-family: var(--ngs-mono); font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--ngs-muted);
+}
+.ef-entries-scroll { overflow-x: auto; }
+.ef-entries-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.ef-entries-table thead th {
+  font-family: var(--ngs-mono); font-size: 9px; text-transform: uppercase;
+  letter-spacing: 0.14em; color: var(--ngs-muted);
+  padding: 8px 12px; border-bottom: 1px solid var(--ngs-rule);
+  text-align: left; white-space: nowrap; background: #fff;
+}
+.ef-entries-table thead th.ef-entries-right { text-align: right; }
+.ef-entries-table tbody tr { border-bottom: 1px solid var(--ngs-rule); }
+.ef-entries-table tbody tr:last-child { border-bottom: 0; }
+.ef-entries-table tbody tr.ef-entries-budget { opacity: 0.6; }
+.ef-entries-table td { padding: 9px 12px; vertical-align: middle; }
+.ef-entries-item { font-family: var(--ngs-display); font-size: 13.5px; color: var(--ngs-navy); }
+.ef-entries-cat {
+  font-family: var(--ngs-mono); font-size: 9px; text-transform: uppercase;
+  letter-spacing: 0.08em; padding: 2px 6px;
+  border: 1px solid var(--ngs-rule); border-radius: 3px;
+  color: var(--ngs-ink-soft); white-space: nowrap;
+}
+.ef-entries-date { font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-ink-soft); white-space: nowrap; }
+.ef-entries-right { text-align: right; }
+.ef-entries-amount { font-family: var(--ngs-mono); font-size: 12.5px; color: var(--ngs-navy); white-space: nowrap; }
+.ef-entries-status {
+  font-family: var(--ngs-mono); font-size: 9px; text-transform: uppercase;
+  letter-spacing: 0.08em; padding: 2px 7px; border-radius: 3px; white-space: nowrap;
+}
+.ef-entries-status.is-actual { background: rgba(47,125,85,0.12); color: #2C7A4B; }
+.ef-entries-status.is-budget { background: rgba(181,134,42,0.14); color: #B57E1E; }
