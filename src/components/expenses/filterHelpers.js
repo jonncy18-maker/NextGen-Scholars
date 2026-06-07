@@ -57,6 +57,34 @@ function getGroupLabel(key, groupBy) {
   return key;
 }
 
+function buildLevelGroups(rows, dimensions, parentKey) {
+  const [dim, ...rest] = dimensions;
+  const map = new Map();
+  rows.forEach(row => {
+    const rawKey = getGroupKey(row, dim);
+    if (!map.has(rawKey)) map.set(rawKey, []);
+    map.get(rawKey).push(row);
+  });
+  const groups = Array.from(map.entries()).map(([rawKey, grpRows]) => {
+    const fullKey = parentKey ? `${parentKey}|${rawKey}` : rawKey;
+    const total = grpRows.reduce((s, r) => s + (r.amount || 0) * (r.qty || 1), 0);
+    if (rest.length > 0) {
+      return { key: fullKey, rawKey, label: getGroupLabel(rawKey, dim), dim, total,
+               subgroups: buildLevelGroups(grpRows, rest, fullKey) };
+    }
+    return { key: fullKey, rawKey, label: getGroupLabel(rawKey, dim), dim, total, rows: grpRows };
+  });
+  if (dim === 'month' || dim === 'year' || dim === 'semester') {
+    groups.sort((a, b) => a.rawKey.localeCompare(b.rawKey));
+  }
+  return groups;
+}
+
+export function groupMultiLevel(rows, dimensions) {
+  if (!dimensions || dimensions.length === 0) return null;
+  return buildLevelGroups(rows, dimensions, '');
+}
+
 export function groupExpenses(rows, groupBy) {
   if (!groupBy || groupBy === 'none') return null;
   const map = new Map();

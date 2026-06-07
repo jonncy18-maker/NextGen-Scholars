@@ -24,28 +24,28 @@ if (!NGS_DATA || !NGS_DATA.config) {
 }
 
 const STATIC_SCHOLAR_KEYS = ['claire', 'april', 'aljane'];
+const ALL_SECTION_IDS = ['alerts', 'status', 'expenses', 'deadlines', 'actions', 'english'];
 
 function Navigator() {
-  // D is held in React state so Sheets updates trigger re-renders across all sections.
   const [D, setD] = useState(NGS_DATA);
   const scholarKeys = STATIC_SCHOLAR_KEYS.filter(k => D.scholars[k]);
 
   const [unlocked, setUnlocked] = useState(false);
 
-  // Auto-unlock if Supabase session already exists (e.g. after page refresh).
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) setUnlocked(true);
     });
   }, []);
-  const [currency, setCurrency] = useState('PHP');
-  const [alerts, setAlerts] = useState(() => (NGS_DATA.alerts || []).map(a => ({ ...a })));
-  const [liveGpa, setLiveGpa] = useState({});
-  const [sheetsStatus, setSheetsStatus] = useState('loading');
-  const [refreshKey, setRefreshKey] = useState(0);
 
-  const [fxMode, setFxMode] = useState(() => storedMode());
-  const [fxRate, setFxRate] = useState(() => storedRate());
+  const [currency, setCurrency] = useState('PHP');
+  const [alerts, setAlerts]     = useState(() => (NGS_DATA.alerts || []).map(a => ({ ...a })));
+  const [liveGpa, setLiveGpa]   = useState({});
+  const [sheetsStatus, setSheetsStatus] = useState('loading');
+  const [refreshKey, setRefreshKey]     = useState(0);
+
+  const [fxMode, setFxMode]     = useState(() => storedMode());
+  const [fxRate, setFxRate]     = useState(() => storedRate());
   const [fxStatus, setFxStatus] = useState('idle');
 
   const [writeError, setWriteError] = useState(false);
@@ -136,6 +136,18 @@ function Navigator() {
     try { return JSON.parse(localStorage.getItem('ngs_added') || '{}'); } catch { return {}; }
   });
 
+  // Section collapse state (persisted)
+  const [collapsedSections, setCollapsedSections] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('ngs_collapsed_sections') || '[]')); }
+    catch { return new Set(); }
+  });
+
+  // FX panel open state (persisted, default collapsed)
+  const [fxPanelOpen, setFxPanelOpen] = useState(() => {
+    try { return localStorage.getItem('ngs_fx_panel') === 'true'; }
+    catch { return false; }
+  });
+
   useEffect(() => {
     if (fxMode !== 'market') return;
     setFxStatus('loading');
@@ -161,6 +173,34 @@ function Navigator() {
     persistFx('manual', rate);
   }
 
+  function handleFxPanelToggle() {
+    setFxPanelOpen(v => {
+      const next = !v;
+      try { localStorage.setItem('ngs_fx_panel', String(next)); } catch {}
+      return next;
+    });
+  }
+
+  function toggleSection(sectionId) {
+    setCollapsedSections(prev => {
+      const next = new Set(prev);
+      next.has(sectionId) ? next.delete(sectionId) : next.add(sectionId);
+      try { localStorage.setItem('ngs_collapsed_sections', JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  }
+
+  function expandAll() {
+    setCollapsedSections(new Set());
+    try { localStorage.setItem('ngs_collapsed_sections', '[]'); } catch {}
+  }
+
+  function collapseAll() {
+    const all = new Set(ALL_SECTION_IDS);
+    setCollapsedSections(all);
+    try { localStorage.setItem('ngs_collapsed_sections', JSON.stringify(ALL_SECTION_IDS)); } catch {}
+  }
+
   useEffect(() => {
     setSheetsStatus('loading');
     loadFromSupabase()
@@ -171,7 +211,6 @@ function Navigator() {
           setSheetsStatus('static');
           return;
         }
-        // Merge Sheets operational data with static narrative fields not held in Sheets.
         const mergedScholars = {};
         Object.keys(data.scholars).forEach(k => {
           mergedScholars[k] = {
@@ -219,6 +258,12 @@ function Navigator() {
     }));
   }
 
+  const sec = (id) => ({
+    id: `sec-${id}`,
+    collapsed: collapsedSections.has(id),
+    onToggle: () => toggleSection(id),
+  });
+
   return (
     <DataCtx.Provider value={{ D, scholarKeys }}>
       <FxCtx.Provider value={fxRate}>
@@ -233,19 +278,24 @@ function Navigator() {
           onFxRateChange={handleFxRateChange}
           sheetsStatus={sheetsStatus}
           onRefresh={() => setRefreshKey(k => k + 1)}
+          fxPanelOpen={fxPanelOpen}
+          onFxPanelToggle={handleFxPanelToggle}
+          onExpandAll={expandAll}
+          onCollapseAll={collapseAll}
         />
         <main className="wrap">
-          <AlertsSection alerts={alerts} onDismiss={handleDismiss} />
-          <StatusSection currency={currency} liveGpa={liveGpa} onSemesterChange={handleSemesterChange} />
+          <AlertsSection alerts={alerts} onDismiss={handleDismiss} {...sec('alerts')} />
+          <StatusSection currency={currency} liveGpa={liveGpa} onSemesterChange={handleSemesterChange} {...sec('status')} />
           <ExpenseSection
             currency={currency}
             addedExpenses={addedExpenses}
             onAddExpense={handleAddExpense}
             onEditExpense={handleEditExpense}
+            {...sec('expenses')}
           />
-          <DeadlinesSection />
-          <ActionsSection />
-          <EnglishSection />
+          <DeadlinesSection {...sec('deadlines')} />
+          <ActionsSection {...sec('actions')} />
+          <EnglishSection {...sec('english')} />
         </main>
         <NavFooter sheetsStatus={sheetsStatus} writeError={writeError} />
         {unlocked && (

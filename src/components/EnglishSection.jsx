@@ -23,16 +23,26 @@ function EnglishCard({ sk }) {
   );
 }
 
-export function EnglishSection() {
+export function EnglishSection({ id, collapsed, onToggle }) {
   const { D, scholarKeys } = useData();
   const withEnglish = scholarKeys.filter(k => D.scholars[k]?.english);
   return (
-    <section className="section">
-      <div className="eyebrow"><span className="num">06</span> English Development Pulse <span className="eyebrow-rule" /></div>
-      <div className="section-head"><h2 className="section-title">From Cebu to the world</h2></div>
-      <div className="eng-grid">
-        {withEnglish.map(k => <EnglishCard key={k} sk={k} />)}
+    <section className="section" id={id}>
+      <div className="eyebrow">
+        <span className="num">06</span> English Development Pulse
+        <span className="eyebrow-rule" />
+        <button className="section-collapse-btn" onClick={onToggle} title={collapsed ? 'Expand section' : 'Collapse section'}>
+          {collapsed ? '▶' : '▼'}
+        </button>
       </div>
+      {!collapsed && (
+        <>
+          <div className="section-head"><h2 className="section-title">From Cebu to the world</h2></div>
+          <div className="eng-grid">
+            {withEnglish.map(k => <EnglishCard key={k} sk={k} />)}
+          </div>
+        </>
+      )}
     </section>
   );
 }
