@@ -453,6 +453,8 @@ table.exp thead th.sort-active { color: var(--ngs-navy); }
 .exp-groupby-chips button { font-family: var(--ngs-mono); font-size: 11.5px; padding: 5px 12px; color: var(--ngs-muted); background: none; border: none; cursor: pointer; transition: background 0.12s, color 0.12s; }
 .exp-groupby-chips button.active { background: var(--ngs-navy); color: var(--ngs-gold); }
 .exp-groupby-chips button:hover:not(.active) { background: var(--ngs-paper-3); color: var(--ngs-ink); }
+.exp-groupby-all-btn { font-family: var(--ngs-mono); font-size: 11px; padding: 5px 11px; color: var(--ngs-muted); background: none; border: 1px solid var(--ngs-rule); border-radius: 4px; cursor: pointer; transition: all 0.12s; }
+.exp-groupby-all-btn:hover { color: var(--ngs-navy); border-color: var(--ngs-navy); }
 .exp-group-hd { cursor: pointer; user-select: none; }
 .exp-group-hd:hover .exp-group-hd-inner { background: #eef0f4; }
 .exp-group-hd td { padding: 0; }

@@ -149,7 +149,7 @@ function ExpenseForm({ scholar, password, onLogout }) {
   const [saveState, setSaveState] = useState('idle'); // 'idle' | 'saved'
   const [expensesBySem, setExpensesBySem] = useState(null);
   const [groupBy, setGroupBy] = useState('none');
-  const [collapsedGroups, setCollapsedGroups] = useState(new Set());
+  const [expandedGroups, setExpandedGroups] = useState(new Set());
 
   useEffect(() => {
     loadFromSupabase()
@@ -322,7 +322,7 @@ function ExpenseForm({ scholar, password, onLogout }) {
         {semExpenses.length > 0 && (() => {
           const groups = groupExpenses(semExpenses, groupBy);
           function toggleGroup(key) {
-            setCollapsedGroups(prev => {
+            setExpandedGroups(prev => {
               const next = new Set(prev);
               next.has(key) ? next.delete(key) : next.add(key);
               return next;
@@ -340,6 +340,7 @@ function ExpenseForm({ scholar, password, onLogout }) {
               </tr>
             );
           }
+          const allExpanded = groups && groups.length > 0 && groups.every(g => expandedGroups.has(g.key));
           return (
             <div className="ef-entries">
               <div className="ef-entries-header">
@@ -350,10 +351,17 @@ function ExpenseForm({ scholar, password, onLogout }) {
                     {[['none','None'],['month','Month'],['category','Category']].map(([val, lbl]) => (
                       <button key={val}
                         className={groupBy === val ? 'active' : ''}
-                        onClick={() => { setGroupBy(val); setCollapsedGroups(new Set()); }}
+                        onClick={() => { setGroupBy(val); setExpandedGroups(new Set()); }}
                       >{lbl}</button>
                     ))}
                   </div>
+                  {groups && groups.length > 0 && (
+                    <button className="ef-groupby-all-btn" onClick={() =>
+                      setExpandedGroups(allExpanded ? new Set() : new Set(groups.map(g => g.key)))
+                    }>
+                      {allExpanded ? 'Collapse All' : 'Expand All'}
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="ef-entries-scroll">
@@ -369,7 +377,7 @@ function ExpenseForm({ scholar, password, onLogout }) {
                   </thead>
                   {groups
                     ? groups.map(group => {
-                        const collapsed = collapsedGroups.has(group.key);
+                        const collapsed = !expandedGroups.has(group.key);
                         return (
                           <React.Fragment key={group.key}>
                             <tbody>
