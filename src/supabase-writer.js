@@ -23,7 +23,7 @@ export async function writeExpense(scholar, exp) {
 export async function writeSent(id, _scholar) {
   const { error } = await supabase
     .from('expenses')
-    .update({ sent: 'yes' })
+    .update({ sent: 'Yes' })
     .eq('id', id);
   if (error) throw error;
 }
