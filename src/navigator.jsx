@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import './styles/navigator.css';
 import { NGS_DATA } from '../scholars-data.js';
-import { loadFromSupabase } from './supabase-loader.js';
+import { loadFromSupabase, loadPendingSubmissions } from './supabase-loader.js';
 import { storedMode, storedRate, persistFx, fetchMarketRate } from './fx.js';
-import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead } from './supabase-writer.js';
+import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead, approveSubmission, rejectSubmission } from './supabase-writer.js';
 import { supabase } from './lib/supabase.js';
 import { FxCtx } from './context/FxContext.jsx';
 import { DataCtx } from './context/DataContext.jsx';
@@ -47,8 +47,10 @@ function Navigator() {
 
   const [writeError, setWriteError] = useState(false);
 
-  // Activity feed — scholar-initiated changes from entry.html
+  // Activity feed — edits/delete requests from entry.html
   const [activityFeed, setActivityFeed] = useState([]);
+  // Pending expense submissions awaiting approval
+  const [pendingSubmissions, setPendingSubmissions] = useState([]);
 
   useEffect(() => {
     if (!writeError) return;
@@ -56,24 +58,31 @@ function Navigator() {
     return () => clearTimeout(t);
   }, [writeError]);
 
-  // Load unread activity on unlock + subscribe to realtime inserts.
+  // Load activity + pending submissions on unlock, subscribe to realtime.
   useEffect(() => {
     if (!unlocked) return;
-    supabase
-      .from('activity_log')
-      .select('*')
-      .eq('read', false)
+
+    supabase.from('activity_log').select('*').eq('read', false)
       .order('created_at', { ascending: false })
       .then(({ data }) => setActivityFeed(data || []));
 
-    const channel = supabase
-      .channel('ngs_activity')
+    loadPendingSubmissions()
+      .then(setPendingSubmissions)
+      .catch(err => console.warn('loadPendingSubmissions failed:', err.message));
+
+    const actChannel = supabase.channel('ngs_activity')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_log' }, payload => {
         setActivityFeed(prev => [payload.new, ...prev]);
       })
       .subscribe();
 
-    return () => supabase.removeChannel(channel);
+    const subChannel = supabase.channel('ngs_submissions')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'expense_submissions' }, payload => {
+        if (payload.new.status === 'pending') setPendingSubmissions(prev => [payload.new, ...prev]);
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(actChannel); supabase.removeChannel(subChannel); };
   }, [unlocked]);
 
   function removeExpenseFromD(scholarKey, expenseId) {
@@ -98,6 +107,20 @@ function Navigator() {
       });
       return { ...prev, scholars: { ...prev.scholars, [scholarKey]: { ...sd, expenses: newExp } } };
     });
+  }
+
+  async function handleApproveSubmission(sub) {
+    try {
+      await approveSubmission(sub.id, sub.expense_data, sub.scholar_key);
+      setPendingSubmissions(prev => prev.filter(s => s.id !== sub.id));
+    } catch (err) { console.error('approveSubmission failed:', err); setWriteError(true); }
+  }
+
+  async function handleRejectSubmission(sub, comment) {
+    try {
+      await rejectSubmission(sub.id, comment);
+      setPendingSubmissions(prev => prev.filter(s => s.id !== sub.id));
+    } catch (err) { console.error('rejectSubmission failed:', err); setWriteError(true); }
   }
 
   async function handleApproveDelete(item) {
@@ -277,9 +300,12 @@ function Navigator() {
         />
         <main className="wrap">
           <AlertsSection
+            submissions={pendingSubmissions}
             feed={activityFeed}
-            onApprove={handleApproveDelete}
-            onDeny={handleDenyDelete}
+            onApprove={handleApproveSubmission}
+            onReject={handleRejectSubmission}
+            onApproveDelete={handleApproveDelete}
+            onDenyDelete={handleDenyDelete}
             onMarkRead={handleMarkFeedRead}
             {...sec('alerts')}
           />

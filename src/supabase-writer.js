@@ -78,3 +78,45 @@ export async function markActivityRead(ids) {
     .in('id', ids);
   if (error) throw error;
 }
+
+// ── Expense submission approval workflow ──────────────────────────────────
+
+export async function writeSubmission(scholar, expenseData) {
+  const { data, error } = await supabase
+    .from('expense_submissions')
+    .insert({ scholar_key: scholar, expense_data: expenseData, status: 'pending' })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function approveSubmission(submissionId, expenseData, scholarKey) {
+  await writeExpense(scholarKey, expenseData);
+  const { error } = await supabase
+    .from('expense_submissions')
+    .update({ status: 'approved', reviewed_at: new Date().toISOString() })
+    .eq('id', submissionId);
+  if (error) throw error;
+}
+
+export async function rejectSubmission(submissionId, comment) {
+  const { error } = await supabase
+    .from('expense_submissions')
+    .update({ status: 'rejected', rejection_comment: comment || null, reviewed_at: new Date().toISOString() })
+    .eq('id', submissionId);
+  if (error) throw error;
+}
+
+export async function resubmitExpense(originalId, scholar, expenseData) {
+  await supabase.from('expense_submissions').update({ status: 'resubmitted' }).eq('id', originalId);
+  return writeSubmission(scholar, expenseData);
+}
+
+export async function markSubmissionReadByScholar(id) {
+  const { error } = await supabase
+    .from('expense_submissions')
+    .update({ read_by_scholar: true })
+    .eq('id', id);
+  if (error) throw error;
+}
