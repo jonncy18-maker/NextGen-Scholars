@@ -93,20 +93,30 @@ function ScholarCard({ sk, currency, liveGpa, onSemesterChange }) {
   );
 }
 
-export function StatusSection({ currency, liveGpa, onSemesterChange }) {
+export function StatusSection({ currency, liveGpa, onSemesterChange, id, collapsed, onToggle }) {
   const { scholarKeys } = useData();
   return (
-    <section className="section">
-      <div className="eyebrow"><span className="num">02</span> Scholar Status <span className="eyebrow-rule" /></div>
-      <div className="section-head">
-        <h2 className="section-title">Three lives in motion</h2>
-        <span className="section-note">Live academic &amp; investment snapshot.</span>
+    <section className="section" id={id}>
+      <div className="eyebrow">
+        <span className="num">02</span> Scholar Status
+        <span className="eyebrow-rule" />
+        <button className="section-collapse-btn" onClick={onToggle} title={collapsed ? 'Expand section' : 'Collapse section'}>
+          {collapsed ? '▶' : '▼'}
+        </button>
       </div>
-      <div className="status-grid">
-        {scholarKeys.map(k => (
-          <ScholarCard key={k} sk={k} currency={currency} liveGpa={liveGpa} onSemesterChange={onSemesterChange} />
-        ))}
-      </div>
+      {!collapsed && (
+        <>
+          <div className="section-head">
+            <h2 className="section-title">Three lives in motion</h2>
+            <span className="section-note">Live academic &amp; investment snapshot.</span>
+          </div>
+          <div className="status-grid">
+            {scholarKeys.map(k => (
+              <ScholarCard key={k} sk={k} currency={currency} liveGpa={liveGpa} onSemesterChange={onSemesterChange} />
+            ))}
+          </div>
+        </>
+      )}
     </section>
   );
 }
