@@ -414,9 +414,9 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
           </div>
 
           {(() => {
-            const pendingRows    = rows.filter(r => r.sent !== 'Yes');
+            const pendingRows    = rows.filter(r => r.sent !== 'Yes' && !sentOverrides.has(String(r.id)));
             const pendingTotal   = pendingRows.reduce((t, r) => t + (r.amount || 0) * (r.qty || 1), 0);
-            const allUnsent      = allRows.filter(r => r.sent !== 'Yes');
+            const allUnsent      = allRows.filter(r => r.sent !== 'Yes' && !sentOverrides.has(String(r.id)));
             const allUnsentTotal = allUnsent.reduce((t, r) => t + (r.amount || 0) * (r.qty || 1), 0);
             const isFiltered = activeFilters > 0;
             return (
