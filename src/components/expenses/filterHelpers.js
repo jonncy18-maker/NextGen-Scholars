@@ -32,6 +32,50 @@ export function applyFilters(rows, f) {
   });
 }
 
+function getGroupKey(row, groupBy) {
+  if (groupBy === 'month') {
+    if (!row.date) return 'Unknown';
+    const parts = row.date.split('-');
+    return parts.length >= 2 ? `${parts[0]}-${parts[1]}` : 'Unknown';
+  }
+  if (groupBy === 'year') {
+    if (!row.date) return 'Unknown';
+    return row.date.split('-')[0] || 'Unknown';
+  }
+  if (groupBy === 'category') return row.cat || 'Uncategorized';
+  if (groupBy === 'semester') return row.sem || 'Unknown';
+  return 'All';
+}
+
+function getGroupLabel(key, groupBy) {
+  if (groupBy === 'month') {
+    const [year, month] = key.split('-');
+    if (!year || !month) return key;
+    return new Date(parseInt(year), parseInt(month) - 1, 1)
+      .toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
+  return key;
+}
+
+export function groupExpenses(rows, groupBy) {
+  if (!groupBy || groupBy === 'none') return null;
+  const map = new Map();
+  rows.forEach(row => {
+    const key = getGroupKey(row, groupBy);
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(row);
+  });
+  const groups = Array.from(map.entries()).map(([key, grpRows]) => ({
+    key,
+    label: getGroupLabel(key, groupBy),
+    rows: grpRows,
+    total: grpRows.reduce((s, r) => s + (r.amount || 0) * (r.qty || 1), 0),
+  }));
+  if (groupBy === 'month' || groupBy === 'year') groups.sort((a, b) => a.key.localeCompare(b.key));
+  if (groupBy === 'semester') groups.sort((a, b) => a.key.localeCompare(b.key));
+  return groups;
+}
+
 export function applySorting(rows, field, dir) {
   if (!field) return rows;
   return [...rows].sort((a, b) => {

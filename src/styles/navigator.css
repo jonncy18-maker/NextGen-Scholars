@@ -447,6 +447,23 @@ table.exp thead th.sort-active { color: var(--ngs-navy); }
   font-family: var(--ngs-mono); font-size: 10.5px; color: var(--ngs-muted);
   letter-spacing: 0.06em; text-align: right;
 }
+.exp-groupby { display: flex; align-items: center; gap: 10px; padding: 10px 18px; border-bottom: 1px solid var(--ngs-rule); background: var(--ngs-paper-2); }
+.exp-groupby-label { font-family: var(--ngs-mono); font-size: 10.5px; color: var(--ngs-muted); text-transform: uppercase; letter-spacing: 0.07em; white-space: nowrap; }
+.exp-groupby-chips { display: inline-flex; border: 1px solid var(--ngs-rule); border-radius: 5px; overflow: hidden; }
+.exp-groupby-chips button { font-family: var(--ngs-mono); font-size: 11.5px; padding: 5px 12px; color: var(--ngs-muted); background: none; border: none; cursor: pointer; transition: background 0.12s, color 0.12s; }
+.exp-groupby-chips button.active { background: var(--ngs-navy); color: var(--ngs-gold); }
+.exp-groupby-chips button:hover:not(.active) { background: var(--ngs-paper-3); color: var(--ngs-ink); }
+.exp-group-hd { cursor: pointer; user-select: none; }
+.exp-group-hd:hover .exp-group-hd-inner { background: #eef0f4; }
+.exp-group-hd td { padding: 0; }
+.exp-group-hd-inner { display: flex; align-items: center; gap: 10px; padding: 9px 14px; background: var(--ngs-paper-2); border-top: 2px solid var(--ngs-rule); transition: background 0.12s; }
+.exp-group-arrow { font-size: 10px; color: var(--ngs-muted); flex-shrink: 0; width: 12px; }
+.exp-group-label { font-family: var(--ngs-display); font-size: 13px; font-weight: 600; color: var(--ngs-navy); }
+.exp-group-meta { font-family: var(--ngs-mono); font-size: 10.5px; color: var(--ngs-muted); }
+.exp-group-total { font-family: var(--ngs-mono); font-size: 13px; font-weight: 600; color: var(--ngs-navy); margin-left: auto; }
+.exp-subtotal td { padding: 7px 14px; background: var(--ngs-paper-2); border-top: 1px dashed var(--ngs-rule); }
+.exp-subtotal-label { font-family: var(--ngs-mono); font-size: 10px; color: var(--ngs-muted); text-transform: uppercase; letter-spacing: 0.07em; }
+.exp-subtotal-amt { font-family: var(--ngs-mono); font-size: 13px; font-weight: 600; color: var(--ngs-navy); }
 
 .exp-controls { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
 .exp-controls-right { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }

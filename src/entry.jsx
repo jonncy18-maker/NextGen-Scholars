@@ -4,6 +4,7 @@ import { EXPENSE_CATS } from './constants.js';
 import { writeExpense } from './supabase-writer.js';
 import { loadFromSupabase } from './supabase-loader.js';
 import { supabase } from './lib/supabase.js';
+import { groupExpenses } from './components/expenses/filterHelpers.js';
 import './styles/entry.css';
 
 async function loadConfig() {
@@ -147,6 +148,8 @@ function ExpenseForm({ scholar, password, onLogout }) {
   });
   const [saveState, setSaveState] = useState('idle'); // 'idle' | 'saved'
   const [expensesBySem, setExpensesBySem] = useState(null);
+  const [groupBy, setGroupBy] = useState('none');
+  const [collapsedGroups, setCollapsedGroups] = useState(new Set());
 
   useEffect(() => {
     loadFromSupabase()
@@ -316,40 +319,89 @@ function ExpenseForm({ scholar, password, onLogout }) {
           </div>
         </form>
 
-        {semExpenses.length > 0 && (
-          <div className="ef-entries">
-            <div className="ef-entries-header">
-              <span className="ef-entries-title">{form.sem} · {semExpenses.length} item{semExpenses.length !== 1 ? 's' : ''}</span>
+        {semExpenses.length > 0 && (() => {
+          const groups = groupExpenses(semExpenses, groupBy);
+          function toggleGroup(key) {
+            setCollapsedGroups(prev => {
+              const next = new Set(prev);
+              next.has(key) ? next.delete(key) : next.add(key);
+              return next;
+            });
+          }
+          function renderEntryRow(e, i) {
+            const total = (e.amount || 0) * (e.qty || 1);
+            return (
+              <tr key={i} className={e.avb !== 'Actual' ? 'ef-entries-budget' : ''}>
+                <td className="ef-entries-item">{e.item}</td>
+                <td><span className="ef-entries-cat">{e.cat}</span></td>
+                <td className="ef-entries-date">{e.date}</td>
+                <td className="ef-entries-right ef-entries-amount">₱{Math.round(total).toLocaleString('en-US')}</td>
+                <td><span className={`ef-entries-status is-${(e.avb || '').toLowerCase()}`}>{e.avb}</span></td>
+              </tr>
+            );
+          }
+          return (
+            <div className="ef-entries">
+              <div className="ef-entries-header">
+                <span className="ef-entries-title">{form.sem} · {semExpenses.length} item{semExpenses.length !== 1 ? 's' : ''}</span>
+                <div className="ef-groupby">
+                  <span className="ef-groupby-label">Group</span>
+                  <div className="ef-groupby-chips">
+                    {[['none','None'],['month','Month'],['category','Category']].map(([val, lbl]) => (
+                      <button key={val}
+                        className={groupBy === val ? 'active' : ''}
+                        onClick={() => { setGroupBy(val); setCollapsedGroups(new Set()); }}
+                      >{lbl}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="ef-entries-scroll">
+                <table className="ef-entries-table">
+                  <thead>
+                    <tr>
+                      <th>Item</th>
+                      <th>Category</th>
+                      <th>Date</th>
+                      <th className="ef-entries-right">Total</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  {groups
+                    ? groups.map(group => {
+                        const collapsed = collapsedGroups.has(group.key);
+                        return (
+                          <React.Fragment key={group.key}>
+                            <tbody>
+                              <tr className="ef-group-hd" onClick={() => toggleGroup(group.key)}>
+                                <td colSpan={5}>
+                                  <span>{collapsed ? '▶' : '▼'}</span>
+                                  <span className="ef-group-label">{group.label}</span>
+                                  <span className="ef-group-meta">{group.rows.length} item{group.rows.length !== 1 ? 's' : ''}</span>
+                                  <span className="ef-group-total">₱{Math.round(group.total).toLocaleString('en-US')}</span>
+                                </td>
+                              </tr>
+                            </tbody>
+                            {!collapsed && (
+                              <tbody>
+                                {group.rows.map(renderEntryRow)}
+                                <tr className="ef-subtotal">
+                                  <td colSpan={3} className="ef-subtotal-label">Subtotal — {group.label}</td>
+                                  <td className="ef-subtotal-amt ef-entries-right">₱{Math.round(group.total).toLocaleString('en-US')}</td>
+                                  <td />
+                                </tr>
+                              </tbody>
+                            )}
+                          </React.Fragment>
+                        );
+                      })
+                    : <tbody>{semExpenses.map(renderEntryRow)}</tbody>
+                  }
+                </table>
+              </div>
             </div>
-            <div className="ef-entries-scroll">
-              <table className="ef-entries-table">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Category</th>
-                    <th>Date</th>
-                    <th className="ef-entries-right">Total</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {semExpenses.map((e, i) => {
-                    const total = (e.amount || 0) * (e.qty || 1);
-                    return (
-                      <tr key={i} className={e.avb !== 'Actual' ? 'ef-entries-budget' : ''}>
-                        <td className="ef-entries-item">{e.item}</td>
-                        <td><span className="ef-entries-cat">{e.cat}</span></td>
-                        <td className="ef-entries-date">{e.date}</td>
-                        <td className="ef-entries-right ef-entries-amount">₱{Math.round(total).toLocaleString('en-US')}</td>
-                        <td><span className={`ef-entries-status is-${(e.avb || '').toLowerCase()}`}>{e.avb}</span></td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+          );
+        })()}
       </main>
     </div>
   );

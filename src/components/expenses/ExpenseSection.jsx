@@ -6,7 +6,7 @@ import { writeSent } from '../../supabase-writer.js';
 import { FilterPanel } from './FilterPanel.jsx';
 import { AddExpenseForm } from './AddExpenseForm.jsx';
 import { TotalsRow, ChartSem, ChartCat } from './ExpenseCharts.jsx';
-import { EMPTY_FILTERS, countActiveFilters, applyFilters, applySorting } from './filterHelpers.js';
+import { EMPTY_FILTERS, countActiveFilters, applyFilters, applySorting, groupExpenses } from './filterHelpers.js';
 
 function SortTh({ label, field, sortField, sortDir, onSort, className }) {
   const active = sortField === field;
@@ -46,6 +46,8 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
   const sentOverrides = new Set(sentAll[expScholar] || []);
   const deletedIds = new Set(deletedAll[expScholar] || []);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [groupBy, setGroupBy] = useState('none');
+  const [collapsedGroups, setCollapsedGroups] = useState(new Set());
 
   function handleMarkSent(r) {
     setSentAll(prev => {
@@ -83,6 +85,21 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
     setSortField(null);
     setSortDir('asc');
     setShowAddForm(false);
+    setGroupBy('none');
+    setCollapsedGroups(new Set());
+  }
+
+  function handleGroupBy(mode) {
+    setGroupBy(mode);
+    setCollapsedGroups(new Set());
+  }
+
+  function toggleGroup(key) {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
   }
 
   function handleSort(field) {
@@ -108,6 +125,41 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
   rows = applySorting(rows, sortField, sortDir);
 
   const activeFilters = countActiveFilters(filters) + (expSearch ? 1 : 0) + (expSem !== 'all' ? 1 : 0);
+  const groups = groupExpenses(rows, groupBy);
+
+  const GROUP_BY_OPTIONS = [
+    ['none', 'None'],
+    ['month', 'Month'],
+    ['category', 'Category'],
+    ['year', 'Year'],
+    ['semester', 'Semester'],
+  ];
+
+  function renderExpRow(r, i) {
+    const isSent = r.sent === 'Yes' || sentOverrides.has(String(r.id));
+    const qty = r.qty || 1;
+    const total = (r.amount || 0) * qty;
+    return (
+      <tr key={r.id || i}>
+        <td><span className="exp-item">{r.item}</span></td>
+        <td><span className="exp-cat">{r.cat}</span></td>
+        <td className="exp-date">{r.date}</td>
+        <td className="right exp-amount">{$fmt(r.amount, currency)}</td>
+        <td className="right exp-qty exp-col-hide-mobile">{qty}</td>
+        <td className="right exp-total">{$fmt(total, currency)}</td>
+        <td><span className={`exp-status ${r.status}`}>{r.status}</span></td>
+        <td>
+          {isSent
+            ? <span className="exp-sent is-yes">✓ Sent</span>
+            : <button className="exp-sent is-no mark-sent-btn" title="Mark as sent" onClick={() => handleMarkSent(r)}>Mark Sent →</button>
+          }
+        </td>
+        <td className="exp-del-cell">
+          <button className="exp-del-btn" title="Delete expense" onClick={() => handleDeleteExpense(r)}>Delete</button>
+        </td>
+      </tr>
+    );
+  }
 
   return (
     <section className="section">
@@ -211,6 +263,14 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
             <button className="exp-clear-btn" onClick={clearFilters}>Clear filters</button>
           )}
         </div>
+        <div className="exp-groupby">
+          <span className="exp-groupby-label">Group by</span>
+          <div className="exp-groupby-chips">
+            {GROUP_BY_OPTIONS.map(([val, lbl]) => (
+              <button key={val} className={groupBy === val ? 'active' : ''} onClick={() => handleGroupBy(val)}>{lbl}</button>
+            ))}
+          </div>
+        </div>
         <div className="exp-table-scroll">
           <table className="exp">
             <thead>
@@ -226,36 +286,43 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense }) {
                 <th className="exp-th-del" />
               </tr>
             </thead>
-            <tbody>
-              {rows.length === 0
-                ? <tr className="exp-none"><td colSpan={9}>No matching expenses.</td></tr>
-                : rows.map((r, i) => {
-                  const isSent = r.sent === 'Yes' || sentOverrides.has(String(r.id));
-                  const qty = r.qty || 1;
-                  const total = (r.amount || 0) * qty;
+            {groups
+              ? groups.map(group => {
+                  const collapsed = collapsedGroups.has(group.key);
                   return (
-                    <tr key={i}>
-                      <td><span className="exp-item">{r.item}</span></td>
-                      <td><span className="exp-cat">{r.cat}</span></td>
-                      <td className="exp-date">{r.date}</td>
-                      <td className="right exp-amount">{$fmt(r.amount, currency)}</td>
-                      <td className="right exp-qty exp-col-hide-mobile">{qty}</td>
-                      <td className="right exp-total">{$fmt(total, currency)}</td>
-                      <td><span className={`exp-status ${r.status}`}>{r.status}</span></td>
-                      <td>
-                        {isSent
-                          ? <span className="exp-sent is-yes">✓ Sent</span>
-                          : <button className="exp-sent is-no mark-sent-btn" title="Mark as sent in Sheets" onClick={() => handleMarkSent(r)}>Mark Sent →</button>
-                        }
-                      </td>
-                      <td className="exp-del-cell">
-                        <button className="exp-del-btn" title="Delete expense" onClick={() => handleDeleteExpense(r)}>Delete</button>
-                      </td>
-                    </tr>
+                    <React.Fragment key={group.key}>
+                      <tbody>
+                        <tr className="exp-group-hd" onClick={() => toggleGroup(group.key)}>
+                          <td colSpan={9}>
+                            <div className="exp-group-hd-inner">
+                              <span className="exp-group-arrow">{collapsed ? '▶' : '▼'}</span>
+                              <span className="exp-group-label">{group.label}</span>
+                              <span className="exp-group-meta">{group.rows.length} item{group.rows.length !== 1 ? 's' : ''}</span>
+                              <span className="exp-group-total">{$fmt(group.total, currency)}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                      {!collapsed && (
+                        <tbody>
+                          {group.rows.map(renderExpRow)}
+                          <tr className="exp-subtotal">
+                            <td colSpan={5} className="exp-subtotal-label">Subtotal — {group.label}</td>
+                            <td className="right exp-subtotal-amt">{$fmt(group.total, currency)}</td>
+                            <td colSpan={3} />
+                          </tr>
+                        </tbody>
+                      )}
+                    </React.Fragment>
                   );
                 })
-              }
-            </tbody>
+              : <tbody>
+                  {rows.length === 0
+                    ? <tr className="exp-none"><td colSpan={9}>No matching expenses.</td></tr>
+                    : rows.map(renderExpRow)
+                  }
+                </tbody>
+            }
           </table>
         </div>
         {rows.length > 0 && (
