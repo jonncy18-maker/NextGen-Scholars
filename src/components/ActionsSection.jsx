@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useData } from '../context/DataContext.jsx';
-import { writeActionToggle } from '../sheets-writer.js';
+import { writeActionToggle } from '../supabase-writer.js';
 import { NAMECLASS } from '../constants.js';
 
 export function ActionsSection() {

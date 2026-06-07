@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import './styles/navigator.css';
 import { NGS_DATA } from '../scholars-data.js';
-import { loadFromSheets } from './sheets-loader.js';
+import { loadFromSupabase } from './supabase-loader.js';
 import { storedMode, storedRate, persistFx, fetchMarketRate } from './fx.js';
-import { writeExpense, writeSemester } from './sheets-writer.js';
+import { writeExpense, writeSemester } from './supabase-writer.js';
+import { supabase } from './lib/supabase.js';
 import { FxCtx } from './context/FxContext.jsx';
 import { DataCtx } from './context/DataContext.jsx';
 import { LockScreen } from './components/LockScreen.jsx';
@@ -29,6 +30,13 @@ function Navigator() {
   const scholarKeys = STATIC_SCHOLAR_KEYS.filter(k => D.scholars[k]);
 
   const [unlocked, setUnlocked] = useState(false);
+
+  // Auto-unlock if Supabase session already exists (e.g. after page refresh).
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setUnlocked(true);
+    });
+  }, []);
   const [currency, setCurrency] = useState('PHP');
   const [alerts, setAlerts] = useState(() => (NGS_DATA.alerts || []).map(a => ({ ...a })));
   const [liveGpa, setLiveGpa] = useState({});
@@ -79,7 +87,7 @@ function Navigator() {
 
   useEffect(() => {
     setSheetsStatus('loading');
-    loadFromSheets()
+    loadFromSupabase()
       .then(data => {
         const hasScholars = data.scholars && Object.keys(data.scholars).length > 0;
         if (!hasScholars) {
@@ -99,14 +107,14 @@ function Navigator() {
         const merged = {
           ...data,
           scholars: mergedScholars,
-          config: { ...data.config, password: data.config.password || NGS_DATA.config.password },
+          config: { ...data.config },
         };
         setD(merged);
         setAlerts((merged.alerts || []).map(a => ({ ...a })));
         setSheetsStatus('live');
       })
       .catch(err => {
-        console.warn('Sheets unavailable, using static data:', err.message);
+        console.warn('Supabase unavailable, using static data:', err.message);
         setSheetsStatus('static');
       });
   }, [refreshKey]);

@@ -64,7 +64,7 @@ export function NavBar({ currency, onCurrencyChange, fxMode, fxRate, fxStatus, o
           <button
             className={`nav-refresh${sheetsStatus === 'loading' ? ' is-loading' : ''}`}
             onClick={onRefresh}
-            title="Reload data from Google Sheets"
+            title="Reload data from Supabase"
           >
             <span className="refresh-icon">↻</span> Refresh
           </button>
