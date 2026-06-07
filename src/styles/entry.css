@@ -210,8 +210,9 @@ input, select { font-family: inherit; }
   border: 1px solid var(--ngs-rule); border-radius: 8px; overflow: hidden;
 }
 .ef-entries-header {
-  display: flex; align-items: center; padding: 10px 14px;
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px;
   background: var(--ngs-paper-2); border-bottom: 1px solid var(--ngs-rule);
+  flex-wrap: wrap;
 }
 .ef-entries-title {
   font-family: var(--ngs-mono); font-size: 10px; text-transform: uppercase;
@@ -246,3 +247,18 @@ input, select { font-family: inherit; }
 }
 .ef-entries-status.is-actual { background: rgba(47,125,85,0.12); color: #2C7A4B; }
 .ef-entries-status.is-budget { background: rgba(181,134,42,0.14); color: #B57E1E; }
+.ef-groupby { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
+.ef-groupby-label { font-family: var(--ngs-mono); font-size: 10px; color: var(--ngs-muted); text-transform: uppercase; letter-spacing: 0.07em; }
+.ef-groupby-chips { display: inline-flex; border: 1px solid var(--ngs-rule); border-radius: 4px; overflow: hidden; }
+.ef-groupby-chips button { font-family: var(--ngs-mono); font-size: 10.5px; padding: 4px 10px; color: var(--ngs-muted); background: none; border: none; cursor: pointer; transition: background 0.12s, color 0.12s; }
+.ef-groupby-chips button.active { background: var(--ngs-navy); color: var(--ngs-gold); }
+.ef-groupby-chips button:hover:not(.active) { background: #eef0f4; color: var(--ngs-ink); }
+.ef-group-hd { cursor: pointer; user-select: none; background: var(--ngs-paper-2); }
+.ef-group-hd:hover { background: #eef0f4; }
+.ef-group-hd td { padding: 8px 12px; font-family: var(--ngs-mono); font-size: 11.5px; border-top: 2px solid var(--ngs-rule); }
+.ef-group-label { font-weight: 600; color: var(--ngs-navy); margin: 0 10px 0 6px; }
+.ef-group-meta { color: var(--ngs-muted); font-size: 10.5px; }
+.ef-group-total { float: right; font-weight: 600; color: var(--ngs-navy); }
+.ef-subtotal td { padding: 6px 12px; background: var(--ngs-paper-2); border-top: 1px dashed var(--ngs-rule); }
+.ef-subtotal-label { font-family: var(--ngs-mono); font-size: 10px; color: var(--ngs-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.ef-subtotal-amt { font-family: var(--ngs-mono); font-size: 12px; font-weight: 600; color: var(--ngs-navy); }
