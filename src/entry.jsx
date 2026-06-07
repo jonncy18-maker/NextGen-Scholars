@@ -168,7 +168,7 @@ function ExpenseForm({ scholar, password, onLogout }) {
   function handleSubmit(e) {
     e.preventDefault();
     if (!valid) return;
-    writeExpense(scholar.key, {
+    const newExp = {
       id:     `${scholar.key}_${form.sem.trim()}_${Date.now()}`,
       sem:    form.sem.trim(),
       item:   form.item.trim(),
@@ -179,7 +179,13 @@ function ExpenseForm({ scholar, password, onLogout }) {
       avb:    form.avb,
       sent:   'No',
       vendor: form.vendor.trim(),
-    }).catch(err => console.error('writeExpense failed:', err));
+    };
+    // Optimistically add to local list so it appears immediately
+    setExpensesBySem(prev => {
+      const sem = newExp.sem;
+      return { ...prev, [sem]: [...(prev[sem] || []), newExp] };
+    });
+    writeExpense(scholar.key, newExp).catch(err => console.error('writeExpense failed:', err));
     setSaveState('saved');
     setTimeout(() => {
       setSaveState('idle');
