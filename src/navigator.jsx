@@ -14,17 +14,15 @@ import { AlertsSection } from './components/AlertsSection.jsx';
 import { StatusSection } from './components/StatusSection.jsx';
 import { ExpenseSection } from './components/expenses/ExpenseSection.jsx';
 import { DeadlinesSection } from './components/DeadlinesSection.jsx';
-import { ActionsSection } from './components/ActionsSection.jsx';
 import { EnglishSection } from './components/EnglishSection.jsx';
 import { NavFooter } from './components/NavFooter.jsx';
-import { ActivityFeed } from './components/ActivityFeed.jsx';
 
 if (!NGS_DATA || !NGS_DATA.config) {
   throw new Error('NGS_DATA missing — hard-refresh (Ctrl/Cmd+Shift+R)');
 }
 
 const STATIC_SCHOLAR_KEYS = ['claire', 'april', 'aljane'];
-const ALL_SECTION_IDS = ['alerts', 'status', 'expenses', 'deadlines', 'actions', 'english'];
+const ALL_SECTION_IDS = ['alerts', 'status', 'expenses', 'deadlines', 'english'];
 
 function Navigator() {
   const [D, setD] = useState(NGS_DATA);
@@ -39,7 +37,6 @@ function Navigator() {
   }, []);
 
   const [currency, setCurrency] = useState('PHP');
-  const [alerts, setAlerts]     = useState(() => (NGS_DATA.alerts || []).map(a => ({ ...a })));
   const [liveGpa, setLiveGpa]   = useState({});
   const [sheetsStatus, setSheetsStatus] = useState('loading');
   const [refreshKey, setRefreshKey]     = useState(0);
@@ -225,7 +222,6 @@ function Navigator() {
           config: { ...data.config },
         };
         setD(merged);
-        setAlerts((merged.alerts || []).map(a => ({ ...a })));
         setSheetsStatus('live');
       })
       .catch(err => {
@@ -233,10 +229,6 @@ function Navigator() {
         setSheetsStatus('static');
       });
   }, [refreshKey]);
-
-  function handleDismiss(id) {
-    setAlerts(prev => prev.map(a => a.id === id ? { ...a, _dismissed: true } : a));
-  }
 
   function handleAddExpense(scholar, exp) {
     setAddedExpenses(prev => {
@@ -284,7 +276,13 @@ function Navigator() {
           onCollapseAll={collapseAll}
         />
         <main className="wrap">
-          <AlertsSection alerts={alerts} onDismiss={handleDismiss} {...sec('alerts')} />
+          <AlertsSection
+            feed={activityFeed}
+            onApprove={handleApproveDelete}
+            onDeny={handleDenyDelete}
+            onMarkRead={handleMarkFeedRead}
+            {...sec('alerts')}
+          />
           <StatusSection currency={currency} liveGpa={liveGpa} onSemesterChange={handleSemesterChange} {...sec('status')} />
           <ExpenseSection
             currency={currency}
@@ -294,18 +292,9 @@ function Navigator() {
             {...sec('expenses')}
           />
           <DeadlinesSection {...sec('deadlines')} />
-          <ActionsSection {...sec('actions')} />
           <EnglishSection {...sec('english')} />
         </main>
         <NavFooter sheetsStatus={sheetsStatus} writeError={writeError} />
-        {unlocked && (
-          <ActivityFeed
-            feed={activityFeed}
-            onApprove={handleApproveDelete}
-            onDeny={handleDenyDelete}
-            onMarkRead={handleMarkFeedRead}
-          />
-        )}
       </FxCtx.Provider>
     </DataCtx.Provider>
   );

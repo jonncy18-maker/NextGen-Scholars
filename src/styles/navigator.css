@@ -279,24 +279,44 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 }
 .section-note { font-size: 13px; color: var(--ngs-muted); }
 
-/* ════════════════ 1. ALERTS ════════════════ */
-.alert-list { display: flex; flex-direction: column; gap: 12px; }
-.alert {
-  display: flex; align-items: flex-start; gap: 16px;
-  padding: 16px 18px; border-radius: 6px;
-  border-left: 3px solid var(--ngs-muted);
+/* ════════════════ 1. SCHOLAR UPDATES (activity feed) ════════════════ */
+.activity-list { display: flex; flex-direction: column; gap: 10px; }
+.activity-item {
+  padding: 14px 18px; border-radius: 6px; border-left: 3px solid var(--ngs-rule);
   background: var(--ngs-paper-2);
-  transition: opacity 0.4s ease, transform 0.4s ease, margin 0.4s ease, padding 0.4s ease, max-height 0.4s ease;
-  overflow: hidden;
 }
-.alert.critical { border-left-color: var(--ngs-red);   background: rgba(177,27,42,0.06); }
-.alert.watch    { border-left-color: var(--ngs-amber); background: rgba(181,134,42,0.08); }
-.alert.info     { border-left-color: var(--ngs-blue-nav);  background: rgba(44,90,160,0.06); }
-.alert.dismissing { opacity: 0; transform: translateX(20px); max-height: 0; padding-top: 0; padding-bottom: 0; margin-bottom: -12px; }
-.alert-icon { font-size: 20px; line-height: 1.2; flex-shrink: 0; }
-.alert-body { flex: 1; }
-.alert-title { font-weight: 600; font-size: 15px; color: var(--ngs-ink); margin-bottom: 3px; }
-.alert-sub { font-size: 13.5px; color: var(--ngs-ink-soft); line-height: 1.5; max-width: 70ch; }
+.activity-item.af-type-added          { border-left-color: var(--ngs-green); }
+.activity-item.af-type-edited         { border-left-color: var(--ngs-amber); }
+.activity-item.af-type-delete_request { border-left-color: var(--ngs-red);   background: rgba(177,27,42,0.05); }
+.activity-item-hd { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.activity-type-badge {
+  font-family: var(--ngs-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 3px 8px; border-radius: 3px; font-weight: 500;
+}
+.activity-type-added          { background: rgba(39,174,96,0.12); color: var(--ngs-green); }
+.activity-type-edited         { background: rgba(181,134,42,0.12); color: var(--ngs-amber); }
+.activity-type-delete_request { background: rgba(177,27,42,0.10); color: var(--ngs-red); }
+.activity-time { font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-muted); margin-left: auto; }
+.activity-item-body { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; }
+.activity-exp-name { font-weight: 500; color: var(--ngs-ink); }
+.activity-exp-amt { font-family: var(--ngs-mono); font-size: 13px; color: var(--ngs-navy); }
+.activity-exp-sem, .activity-exp-cat {
+  font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-muted);
+  background: var(--ngs-paper); border: 1px solid var(--ngs-rule); padding: 2px 6px; border-radius: 3px;
+}
+.activity-changes { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.activity-change-row { display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
+.activity-change-field { font-family: var(--ngs-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ngs-muted); width: 72px; flex-shrink: 0; }
+.activity-change-from { color: var(--ngs-red); text-decoration: line-through; }
+.activity-change-arrow { color: var(--ngs-muted); }
+.activity-change-to { color: var(--ngs-green); font-weight: 500; }
+.activity-del-actions { display: flex; gap: 10px; margin-top: 10px; }
+.activity-clear-all {
+  font-family: var(--ngs-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 4px 10px; border-radius: 3px; border: 1px solid var(--ngs-rule);
+  background: transparent; color: var(--ngs-muted); cursor: pointer; margin-right: 4px;
+}
+.activity-clear-all:hover { border-color: var(--ngs-navy); color: var(--ngs-navy); }
 .alert-meta { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 .scholar-tag {
   font-family: var(--ngs-mono); font-size: 10px; font-weight: 500;
