@@ -27,7 +27,10 @@ export function applyFilters(rows, f) {
     if (f.amtMin !== '' && r.amount < parseFloat(f.amtMin)) return false;
     if (f.amtMax !== '' && r.amount > parseFloat(f.amtMax)) return false;
     if (f.statuses.length > 0 && !f.statuses.includes(r.status)) return false;
-    if (f.sents.length > 0 && !f.sents.includes(r.sent)) return false;
+    if (f.sents.length > 0) {
+      const normSent = r.sent ? r.sent.charAt(0).toUpperCase() + r.sent.slice(1).toLowerCase() : '';
+      if (!f.sents.includes(normSent)) return false;
+    }
     return true;
   });
 }

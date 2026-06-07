@@ -65,7 +65,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
   const [singleDim, setSingleDim]           = useState('month');
   const [multiDims, setMultiDims]           = useState([]);
   const [showMultiModal, setShowMultiModal] = useState(false);
-  const [collapsedGroups, setCollapsedGroups] = useState(new Set());
+  const [expandedGroups, setExpandedGroups] = useState(new Set());
 
   function handleMarkSent(r) {
     setSentAll(prev => {
@@ -90,9 +90,9 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
   const localRows = (addedExpenses[expScholar] || []).map(e => ({ ...e, status: e.avb }));
   const allRows   = [...baseRows, ...localRows].filter(r => !deletedIds.has(String(r.id)));
 
-  const uniqueCats    = [...new Set(allRows.map(r => r.cat))].sort();
+  const uniqueCats    = EXPENSE_CATS;
   const uniqueStatuses = [...new Set(allRows.map(r => r.status))].sort();
-  const uniqueSents   = [...new Set(allRows.map(r => r.sent).filter(Boolean))].sort();
+  const uniqueSents   = [...new Set(allRows.map(r => r.sent).filter(Boolean).map(v => v.charAt(0).toUpperCase() + v.slice(1).toLowerCase()))].sort();
 
   function startEdit(r) {
     setEditingId(r.id);
@@ -134,7 +134,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
     setShowAddForm(false);
     setGroupMode('none');
     setMultiDims([]);
-    setCollapsedGroups(new Set());
+    setExpandedGroups(new Set());
     setEditingId(null);
     setEditDraft({});
   }
@@ -144,7 +144,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
       setShowMultiModal(true);
     } else {
       setGroupMode(mode);
-      setCollapsedGroups(new Set());
+      setExpandedGroups(new Set());
     }
   }
 
@@ -156,7 +156,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
       setMultiDims(dims);
       setGroupMode('multi');
     }
-    setCollapsedGroups(new Set());
+    setExpandedGroups(new Set());
     setShowMultiModal(false);
   }
 
@@ -165,7 +165,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
   }
 
   function toggleGroup(key) {
-    setCollapsedGroups(prev => {
+    setExpandedGroups(prev => {
       const next = new Set(prev);
       next.has(key) ? next.delete(key) : next.add(key);
       return next;
@@ -303,7 +303,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
 
   function renderGroupRows(groups, depth) {
     return groups.map(group => {
-      const isCollapsed = collapsedGroups.has(group.key);
+      const isCollapsed = !expandedGroups.has(group.key);
       const rowCount    = countGroupRows(group);
       const indent      = depth * 18;
       const depthCls    = `exp-group-depth-${depth}`;

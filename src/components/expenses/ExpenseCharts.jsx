@@ -13,7 +13,7 @@ export function TotalsRow({ s, currency }) {
       </div>
       <div className="total-card">
         <div className="total-val">{$fmt(b.university, currency)}</div>
-        <div className="total-lbl">Universidad</div>
+        <div className="total-lbl">University</div>
       </div>
       <div className="total-card">
         <div className="total-val">{$fmt(b.milestones, currency)}</div>
@@ -21,7 +21,7 @@ export function TotalsRow({ s, currency }) {
       </div>
       <div className="total-card">
         <div className="total-val">{$fmt(b.travel, currency)}</div>
-        <div className="total-lbl">Viajes</div>
+        <div className="total-lbl">Trips</div>
       </div>
     </div>
   );
