@@ -104,6 +104,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
       qty:    String(r.qty    || 1),
       avb:    r.avb    || r.status || 'Actual',
       vendor: r.vendor || '',
+      sem:    r.sem    || '',
     });
   }
 
@@ -118,6 +119,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
       qty:    parseInt(editDraft.qty, 10)  || 1,
       avb:    editDraft.avb,
       vendor: editDraft.vendor.trim(),
+      sem:    editDraft.sem.trim(),
     };
     if (onEditExpense) onEditExpense(expScholar, r.id, fields);
     setEditingId(null);
@@ -266,6 +268,20 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
                 <label className="exp-edit-field">
                   <span>Vendor</span>
                   <input value={editDraft.vendor} onChange={ev => setEditDraft(d => ({ ...d, vendor: ev.target.value }))} />
+                </label>
+                <label className="exp-edit-field">
+                  <span>Semester</span>
+                  <input
+                    list="edit-sem-list"
+                    value={editDraft.sem}
+                    onChange={ev => setEditDraft(d => ({ ...d, sem: ev.target.value }))}
+                    placeholder="e.g. Y3S1"
+                  />
+                  <datalist id="edit-sem-list">
+                    {[...new Set(allRows.map(r => r.sem).filter(Boolean))].sort().map(s => (
+                      <option key={s} value={s} />
+                    ))}
+                  </datalist>
                 </label>
                 <div className="exp-edit-actions">
                   <button className="exp-edit-save" onClick={() => saveEdit(r)}>Save</button>
