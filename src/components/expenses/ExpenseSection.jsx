@@ -7,7 +7,7 @@ import { FilterPanel } from './FilterPanel.jsx';
 import { AddExpenseForm } from './AddExpenseForm.jsx';
 import { TotalsRow, ChartSem, ChartCat } from './ExpenseCharts.jsx';
 import { EMPTY_FILTERS, countActiveFilters, applyFilters, applySorting, groupExpenses, groupMultiLevel } from './filterHelpers.js';
-import { EXPENSE_CATS } from '../../constants.js';
+import { EXPENSE_CATS, SEMESTER_OPTIONS } from '../../constants.js';
 import { MultiGroupModal } from './MultiGroupModal.jsx';
 
 const SINGLE_DIM_OPTIONS = [
@@ -271,17 +271,9 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
                 </label>
                 <label className="exp-edit-field">
                   <span>Semester</span>
-                  <input
-                    list="edit-sem-list"
-                    value={editDraft.sem}
-                    onChange={ev => setEditDraft(d => ({ ...d, sem: ev.target.value }))}
-                    placeholder="e.g. Y3S1"
-                  />
-                  <datalist id="edit-sem-list">
-                    {[...new Set(allRows.map(r => r.sem).filter(Boolean))].sort().map(s => (
-                      <option key={s} value={s} />
-                    ))}
-                  </datalist>
+                  <select value={editDraft.sem} onChange={ev => setEditDraft(d => ({ ...d, sem: ev.target.value }))}>
+                    {SEMESTER_OPTIONS.map(s => <option key={s}>{s}</option>)}
+                  </select>
                 </label>
                 <div className="exp-edit-actions">
                   <button className="exp-edit-save" onClick={() => saveEdit(r)}>Save</button>

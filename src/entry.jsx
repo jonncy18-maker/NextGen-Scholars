@@ -137,9 +137,12 @@ function LockGate({ scholarKey, setScholarKey, password, setPassword, onSubmit, 
 }
 
 function ExpenseForm({ scholar, onLogout }) {
+  // ─── Current semester (set by mentor in navigator) ───────────────────────
+  const [currentSem, setCurrentSem] = useState(scholar.defaultSem);
+
   // ─── Single-entry form state ──────────────────────────────────────────────
   const [form, setForm] = useState({
-    sem: scholar.defaultSem, item: '', cat: EXPENSE_CATS[0],
+    item: '', cat: EXPENSE_CATS[0],
     amount: '', qty: '1', date: TODAY_ISO, avb: 'Actual', vendor: '',
   });
   const [entryMode, setEntryMode] = useState(null); // null | 'single' | 'multiple'
@@ -166,7 +169,11 @@ function ExpenseForm({ scholar, onLogout }) {
   // ─── Load data & subscribe ────────────────────────────────────────────────
   useEffect(() => {
     loadFromSupabase()
-      .then(data => setExpensesBySem(data.scholars?.[scholar.key]?.expenses || {}))
+      .then(data => {
+        const sd = data.scholars?.[scholar.key];
+        setExpensesBySem(sd?.expenses || {});
+        if (sd?.currentSem) setCurrentSem(sd.currentSem);
+      })
       .catch(() => setExpensesBySem({}));
 
     loadScholarSubmissions(scholar.key)
@@ -201,15 +208,15 @@ function ExpenseForm({ scholar, onLogout }) {
 
   // ─── Single submit ────────────────────────────────────────────────────────
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-  const singleValid = form.item.trim() && form.sem.trim() && form.amount &&
+  const singleValid = form.item.trim() && form.amount &&
     !isNaN(parseFloat(form.amount)) && parseFloat(form.amount) > 0;
 
   async function handleSingleSubmit(e) {
     e.preventDefault();
     if (!singleValid) return;
     const expData = {
-      id:     `${scholar.key}_${form.sem.trim()}_${Date.now()}`,
-      sem:    form.sem.trim(),
+      id:     `${scholar.key}_${currentSem}_${Date.now()}`,
+      sem:    currentSem,
       item:   form.item.trim(),
       cat:    form.cat,
       amount: parseFloat(form.amount),
@@ -254,8 +261,8 @@ function ExpenseForm({ scholar, onLogout }) {
     try {
       const subs = await Promise.all(filledRows.map(r => {
         const expData = {
-          id:     `${scholar.key}_${r.sem.trim()}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-          sem:    r.sem.trim(),
+          id:     `${scholar.key}_${currentSem}_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+          sem:    currentSem,
           item:   r.item.trim(),
           cat:    r.cat,
           amount: parseFloat(r.amount),
@@ -319,7 +326,7 @@ function ExpenseForm({ scholar, onLogout }) {
     setResubmitingId(sub.id);
     setResubmitDraft({ item: exp.item || '', cat: exp.cat || EXPENSE_CATS[0],
       amount: String(exp.amount || ''), qty: String(exp.qty || 1),
-      date: exp.date || TODAY_ISO, sem: exp.sem || scholar.defaultSem,
+      date: exp.date || TODAY_ISO,
       avb: exp.avb || 'Actual', vendor: exp.vendor || '' });
     if (!sub.read_by_scholar) markSubmissionReadByScholar(sub.id).catch(() => {});
   }
@@ -327,8 +334,8 @@ function ExpenseForm({ scholar, onLogout }) {
 
   async function handleResubmit(sub) {
     const expData = {
-      id:     `${scholar.key}_${resubmitDraft.sem.trim()}_${Date.now()}`,
-      sem:    resubmitDraft.sem.trim(),
+      id:     `${scholar.key}_${currentSem}_${Date.now()}`,
+      sem:    currentSem,
       item:   resubmitDraft.item.trim(),
       cat:    resubmitDraft.cat,
       amount: parseFloat(resubmitDraft.amount) || 0,
@@ -355,7 +362,7 @@ function ExpenseForm({ scholar, onLogout }) {
   }
 
   // ─── Render helpers ───────────────────────────────────────────────────────
-  const semExpenses = expensesBySem?.[form.sem] || [];
+  const semExpenses = expensesBySem?.[currentSem] || [];
   const actualTotal = semExpenses.filter(e => e.avb === 'Actual').reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
   const budgetTotal = semExpenses.filter(e => e.avb !== 'Actual').reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
 
@@ -451,7 +458,7 @@ function ExpenseForm({ scholar, onLogout }) {
               <span className="ef-summary-label">Items</span>
               <strong className="ef-summary-val">{semExpenses.length}</strong>
             </div>
-            <span className="ef-summary-sem">{form.sem}</span>
+            <span className="ef-summary-sem">{currentSem}</span>
           </div>
         )}
 
@@ -522,11 +529,6 @@ function ExpenseForm({ scholar, onLogout }) {
                         <label className="ef-edit-field"><span>Date</span>
                           <input type="date" value={resubmitDraft.date}
                             onChange={e => setResubmitDraft(d => ({ ...d, date: e.target.value }))} /></label>
-                        <label className="ef-edit-field"><span>Semester</span>
-                          <input list="rsub-sems" value={resubmitDraft.sem}
-                            onChange={e => setResubmitDraft(d => ({ ...d, sem: e.target.value }))} />
-                          <datalist id="rsub-sems">{scholar.sems.map(s => <option key={s} value={s} />)}</datalist>
-                        </label>
                         <label className="ef-edit-field"><span>Status</span>
                           <select value={resubmitDraft.avb} onChange={e => setResubmitDraft(d => ({ ...d, avb: e.target.value }))}>
                             <option value="Actual">Actual</option><option value="Budget">Budget</option></select></label>
@@ -588,12 +590,6 @@ function ExpenseForm({ scholar, onLogout }) {
                 <input type="date" value={form.date} onChange={e => set('date', e.target.value)} />
               </div>
               <div className="ef-field">
-                <label>Semester</label>
-                <input list="ef-sems" value={form.sem} placeholder="e.g. Y3S1"
-                  onChange={e => set('sem', e.target.value)} />
-                <datalist id="ef-sems">{scholar.sems.map(s => <option key={s} value={s} />)}</datalist>
-              </div>
-              <div className="ef-field">
                 <label>Status</label>
                 <select value={form.avb} onChange={e => set('avb', e.target.value)}>
                   <option value="Actual">Actual</option>
@@ -633,7 +629,6 @@ function ExpenseForm({ scholar, onLogout }) {
                       <th>Amount (₱)</th>
                       <th>Qty</th>
                       <th>Date</th>
-                      <th>Semester</th>
                       <th>Status</th>
                       <th>Vendor</th>
                       <th />
@@ -652,12 +647,6 @@ function ExpenseForm({ scholar, onLogout }) {
                           value={row.qty} onChange={e => updateMultiRow(idx, 'qty', e.target.value)} /></td>
                         <td><input className="ef-multi-input" type="date"
                           value={row.date} onChange={e => updateMultiRow(idx, 'date', e.target.value)} /></td>
-                        <td>
-                          <input className="ef-multi-input ef-multi-sm" list={`ef-sems-multi-${idx}`}
-                            value={row.sem} placeholder="e.g. Y3S1"
-                            onChange={e => updateMultiRow(idx, 'sem', e.target.value)} />
-                          <datalist id={`ef-sems-multi-${idx}`}>{scholar.sems.map(s => <option key={s} value={s} />)}</datalist>
-                        </td>
                         <td><select className="ef-multi-input" value={row.avb} onChange={e => updateMultiRow(idx, 'avb', e.target.value)}>
                           <option value="Actual">Actual</option>
                           <option value="Budget">Budget</option>
@@ -699,7 +688,7 @@ function ExpenseForm({ scholar, onLogout }) {
           return (
             <div className="ef-entries">
               <div className="ef-entries-header">
-                <span className="ef-entries-title">{form.sem} · {semExpenses.length} item{semExpenses.length !== 1 ? 's' : ''}</span>
+                <span className="ef-entries-title">{currentSem} · {semExpenses.length} item{semExpenses.length !== 1 ? 's' : ''}</span>
                 <div className="ef-groupby">
                   <span className="ef-groupby-label">Group</span>
                   <div className="ef-groupby-chips">
