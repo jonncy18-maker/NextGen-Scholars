@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext.jsx';
-import { EXPENSE_CATS } from '../../constants.js';
+import { EXPENSE_CATS, SEMESTER_OPTIONS } from '../../constants.js';
 
 function makeEmptyRow(defaultSem) {
   return {
@@ -185,15 +185,10 @@ export function AddExpenseForm({ scholar, onAdd, onCancel }) {
           </div>
           <div className="field">
             <label>Semester</label>
-            <input
-              list="add-exp-sems"
-              value={form.sem}
-              placeholder="e.g. Y3S1"
-              onChange={e => set('sem', e.target.value)}
-            />
-            <datalist id="add-exp-sems">
-              {existingSems.map(s => <option key={s} value={s} />)}
-            </datalist>
+            <select value={form.sem} onChange={e => set('sem', e.target.value)}>
+              <option value="">— select —</option>
+              {SEMESTER_OPTIONS.map(s => <option key={s}>{s}</option>)}
+            </select>
           </div>
           <div className="field">
             <label>Status</label>
@@ -289,16 +284,10 @@ export function AddExpenseForm({ scholar, onAdd, onCancel }) {
                   />
                 </td>
                 <td>
-                  <input
-                    className="add-exp-multi-input add-exp-multi-sm"
-                    list="add-exp-multi-sems"
-                    placeholder="e.g. Y3S1"
-                    value={r.sem}
-                    onChange={e => setRow(r._id, 'sem', e.target.value)}
-                  />
-                  <datalist id="add-exp-multi-sems">
-                    {existingSems.map(s => <option key={s} value={s} />)}
-                  </datalist>
+                  <select className="add-exp-multi-input add-exp-multi-sm" value={r.sem} onChange={e => setRow(r._id, 'sem', e.target.value)}>
+                    <option value="">—</option>
+                    {SEMESTER_OPTIONS.map(s => <option key={s}>{s}</option>)}
+                  </select>
                 </td>
                 <td>
                   <select className="add-exp-multi-input add-exp-multi-sm" value={r.avb} onChange={e => setRow(r._id, 'avb', e.target.value)}>
