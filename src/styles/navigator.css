@@ -690,6 +690,57 @@ table.exp thead th.sort-active { color: var(--ngs-navy); }
 .pending-send-allnote {
   font-family: var(--ngs-mono); font-size: 10.5px; color: var(--ngs-muted);
 }
+.pending-send-due-btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.pending-send-due-btn {
+  font-family: var(--ngs-mono); font-size: 10.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 4px 11px; border-radius: 20px; border: 1px solid rgba(181,134,42,0.45);
+  background: transparent; color: var(--ngs-amber); cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.pending-send-due-btn:hover { background: rgba(181,134,42,0.12); }
+.pending-send-due-btn.active {
+  background: var(--ngs-amber); color: #fff; border-color: var(--ngs-amber);
+}
+
+/* Due-date expanded list */
+.pending-due-list {
+  background: rgba(181,134,42,0.04); border: 1px solid rgba(181,134,42,0.22);
+  border-radius: 8px; padding: 14px 18px; margin-bottom: 18px; margin-top: -12px;
+}
+.pending-due-list-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 10px;
+}
+.pending-due-list-title {
+  font-family: var(--ngs-mono); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.14em; color: var(--ngs-amber);
+}
+.pending-due-list-total {
+  font-family: var(--ngs-display); font-size: 16px; font-weight: 500;
+  color: var(--ngs-amber);
+}
+.pending-due-empty { font-size: 13px; color: var(--ngs-ink-soft); }
+.pending-due-rows { display: flex; flex-direction: column; gap: 6px; }
+.pending-due-row {
+  display: grid; grid-template-columns: 110px 1fr auto auto;
+  gap: 10px; align-items: baseline;
+  font-size: 13px; color: var(--ngs-ink);
+  padding: 6px 8px; border-radius: 5px; background: rgba(181,134,42,0.05);
+}
+.pending-due-day {
+  font-family: var(--ngs-mono); font-size: 10.5px; font-weight: 600;
+  color: var(--ngs-amber); white-space: nowrap;
+}
+.pending-due-item { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pending-due-cat {
+  font-family: var(--ngs-mono); font-size: 10.5px; color: var(--ngs-ink-soft);
+  white-space: nowrap;
+}
+.pending-due-amt {
+  font-family: var(--ngs-mono); font-size: 12px; font-weight: 600;
+  color: var(--ngs-navy); white-space: nowrap; text-align: right;
+}
 
 .exp-table-card { background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px; overflow: hidden; }
 .exp-toolbar { display: flex; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--ngs-rule); background: var(--ngs-paper-2); }
