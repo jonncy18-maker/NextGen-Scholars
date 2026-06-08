@@ -66,6 +66,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
   const [multiDims, setMultiDims]           = useState([]);
   const [showMultiModal, setShowMultiModal] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState(new Set());
+  const [dueView, setDueView] = useState(null); // null | 'now' | 'week'
 
   function handleMarkSent(r) {
     setSentAll(prev => {
@@ -427,25 +428,86 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
             const allUnsent      = allRows.filter(r => r.sent !== 'Yes' && !sentOverrides.has(String(r.id)));
             const allUnsentTotal = allUnsent.reduce((t, r) => t + (r.amount || 0) * (r.qty || 1), 0);
             const isFiltered = activeFilters > 0;
+
+            const todayMs = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
+            const MS_DAY  = 86400000;
+            const dayOffset = r => {
+              if (!r.date) return null;
+              const d = new Date(r.date + 'T00:00:00'); d.setHours(0,0,0,0);
+              return Math.round((d.getTime() - todayMs) / MS_DAY);
+            };
+            const dueNowRows  = pendingRows.filter(r => { const o = dayOffset(r); return o !== null && o >= 0 && o <= 2; });
+            const weekOutRows = pendingRows.filter(r => { const o = dayOffset(r); return o !== null && o >= 3 && o <= 7; });
+            const dueNowTotal  = dueNowRows.reduce((t, r)  => t + (r.amount || 0) * (r.qty || 1), 0);
+            const weekOutTotal = weekOutRows.reduce((t, r) => t + (r.amount || 0) * (r.qty || 1), 0);
+
+            const activeList = dueView === 'now' ? dueNowRows : dueView === 'week' ? weekOutRows : [];
+
             return (
-              <div className="pending-send-card">
-                <div className="pending-send-left">
-                  <div className="pending-send-label">Pending to Send</div>
-                  <div className="pending-send-note">
-                    {isFiltered
-                      ? `${pendingRows.length} item${pendingRows.length !== 1 ? 's' : ''} not yet sent · filtered view`
-                      : `${pendingRows.length} item${pendingRows.length !== 1 ? 's' : ''} not yet sent · all rows`}
+              <>
+                <div className="pending-send-card">
+                  <div className="pending-send-left">
+                    <div className="pending-send-label">Pending to Send</div>
+                    <div className="pending-send-note">
+                      {isFiltered
+                        ? `${pendingRows.length} item${pendingRows.length !== 1 ? 's' : ''} not yet sent · filtered view`
+                        : `${pendingRows.length} item${pendingRows.length !== 1 ? 's' : ''} not yet sent · all rows`}
+                    </div>
+                    <div className="pending-send-due-btns">
+                      <button
+                        className={`pending-send-due-btn${dueView === 'now' ? ' active' : ''}`}
+                        onClick={() => setDueView(v => v === 'now' ? null : 'now')}
+                        title="Today, tomorrow, and the day after"
+                      >
+                        Due Now{dueNowRows.length > 0 ? ` (${dueNowRows.length})` : ''}
+                      </button>
+                      <button
+                        className={`pending-send-due-btn${dueView === 'week' ? ' active' : ''}`}
+                        onClick={() => setDueView(v => v === 'week' ? null : 'week')}
+                        title="Due in 3–7 days"
+                      >
+                        1 Week Out{weekOutRows.length > 0 ? ` (${weekOutRows.length})` : ''}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="pending-send-right">
+                    <div className="pending-send-amount">{$fmt(pendingTotal, currency)}</div>
+                    {isFiltered && allUnsentTotal !== pendingTotal && (
+                      <div className="pending-send-allnote">
+                        {$fmt(allUnsentTotal, currency)} total unfiltered
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="pending-send-right">
-                  <div className="pending-send-amount">{$fmt(pendingTotal, currency)}</div>
-                  {isFiltered && allUnsentTotal !== pendingTotal && (
-                    <div className="pending-send-allnote">
-                      {$fmt(allUnsentTotal, currency)} total unfiltered
+                {dueView && (
+                  <div className="pending-due-list">
+                    <div className="pending-due-list-header">
+                      <span className="pending-due-list-title">
+                        {dueView === 'now' ? 'Due Now — next 3 days' : '1 Week Out — days 3–7'}
+                      </span>
+                      <span className="pending-due-list-total">{$fmt(dueView === 'now' ? dueNowTotal : weekOutTotal, currency)}</span>
                     </div>
-                  )}
-                </div>
-              </div>
+                    {activeList.length === 0 ? (
+                      <div className="pending-due-empty">No expenses in this window.</div>
+                    ) : (
+                      <div className="pending-due-rows">
+                        {activeList.map(r => {
+                          const offset = dayOffset(r);
+                          const dayLabel = offset === 0 ? 'Today' : offset === 1 ? 'Tomorrow' : offset === 2 ? 'Day after tomorrow' : `In ${offset} days`;
+                          return (
+                            <div key={r.id} className="pending-due-row">
+                              <span className="pending-due-day">{dayLabel}</span>
+                              <span className="pending-due-item">{r.item}</span>
+                              <span className="pending-due-cat">{r.cat}</span>
+                              <span className="pending-due-amt">{$fmt((r.amount || 0) * (r.qty || 1), currency)}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
             );
           })()}
 
