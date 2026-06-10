@@ -16,6 +16,8 @@ export default defineConfig({
         april: resolve(__dirname, 'april.html'),
         navigator: resolve(__dirname, 'navigator.html'),
         entry: resolve(__dirname, 'entry.html'),
+        'claire-home': resolve(__dirname, 'claire-home.html'),
+        'april-home': resolve(__dirname, 'april-home.html'),
       },
     },
   },

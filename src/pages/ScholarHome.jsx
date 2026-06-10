@@ -1,0 +1,184 @@
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase.js';
+import {
+  IconExpenses, IconGrades, IconClock, IconIsland,
+  IconBriefcase, IconTrophy, IconMessage, IconDocument, IconArrow,
+} from '../components/ScholarIcons.jsx';
+
+const CONFIGS = {
+  claire: {
+    name: 'Claire',
+    track: 'NextGen Nurses',
+    trackCode: 'NGN',
+    stage: 'Year 2 · Semester 2',
+    tagline: <>Four semesters to clear — <em>steady as you go.</em></>,
+    expensesHref: 'entry.html',
+    gradesHref: 'claire.html',
+    semKey: 'Y2S2',
+  },
+  april: {
+    name: 'April',
+    track: 'NextGen Nurses',
+    trackCode: 'NGN',
+    stage: 'Grade 11 · Semester 1',
+    tagline: <>Trial period in progress — <em>one step at a time.</em></>,
+    expensesHref: 'entry.html',
+    gradesHref: 'april.html',
+    semKey: 'TG11S1',
+  },
+};
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning,';
+  if (h < 17) return 'Good afternoon,';
+  return 'Good evening,';
+}
+
+function formatDate(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+export function ScholarHome({ scholarKey }) {
+  const config = CONFIGS[scholarKey];
+  const [liveData, setLiveData] = useState(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [{ data: expenses }, { data: academics }, { data: scholars }] = await Promise.all([
+          supabase.from('expenses')
+            .select('date')
+            .eq('scholar', scholarKey)
+            .order('date', { ascending: false })
+            .limit(1),
+          supabase.from('academics')
+            .select('gpa, status, sem')
+            .eq('scholar', scholarKey)
+            .order('id', { ascending: false }),
+          supabase.from('scholars')
+            .select('current_sem')
+            .eq('scholar_key', scholarKey)
+            .limit(1),
+        ]);
+
+        const latestExpenseDate = expenses?.[0]?.date ?? null;
+        const latestGpa = academics?.find(a => a.gpa != null)?.gpa ?? null;
+        const gpaStatus = academics?.find(a => a.gpa != null)?.status ?? null;
+        const milestonesRes = await supabase.from('milestones')
+          .select('state')
+          .eq('scholar', scholarKey)
+          .eq('state', 'done');
+        const rewardsCount = milestonesRes.data?.length ?? 0;
+
+        setLiveData({ latestExpenseDate, latestGpa, gpaStatus, rewardsCount });
+      } catch {
+        setLiveData({});
+      }
+    }
+    load();
+  }, [scholarKey]);
+
+  const lastEntry = liveData?.latestExpenseDate
+    ? `Last entry · ${formatDate(liveData.latestExpenseDate)}`
+    : 'Tap to add expenses';
+
+  const gpaBlurb = liveData?.latestGpa != null
+    ? <>GPA <b>{liveData.latestGpa.toFixed(2)}</b> · {liveData.gpaStatus === 'warn' ? 'near floor' : 'above floor'}</>
+    : 'View your record';
+
+  const rewardsCount = liveData?.rewardsCount ?? 0;
+
+  const PRIMARY = [
+    {
+      key: 'expenses',
+      icon: <IconExpenses size={25} />,
+      label: 'Enter Expenses',
+      blurb: lastEntry,
+      href: config.expensesHref,
+    },
+    {
+      key: 'grades',
+      icon: <IconGrades size={25} />,
+      label: 'View Grades',
+      blurb: gpaBlurb,
+      href: config.gradesHref,
+    },
+  ];
+
+  const TRACKERS = [
+    { key: 'english',  icon: <IconClock size={19} />,     label: 'English Hours',    sub: 'Tracking hours', href: '#' },
+    { key: 'vacation', icon: <IconIsland size={19} />,    label: 'Vacation Tracker', sub: 'Trip log', href: '#' },
+    { key: 'career',   icon: <IconBriefcase size={19} />, label: 'Career Tracker',   sub: 'Pathway steps', href: '#' },
+    { key: 'rewards',  icon: <IconTrophy size={19} />,    label: 'Rewards Tracker',  sub: `${rewardsCount} unlocked`, reward: true, href: '#' },
+    { key: 'messages', icon: <IconMessage size={19} />,   label: 'Messages',         sub: 'No new messages', href: '#' },
+    { key: 'docs',     icon: <IconDocument size={19} />,  label: 'Documents',        sub: 'Files & records', href: '#' },
+  ];
+
+  return (
+    <div className="sp-page">
+      <div className="sp">
+        <header className="sp-head">
+          <div className="sp-track">
+            <span className="sp-track-dot" />
+            {config.track}
+            <span className="sp-track-sep">·</span>
+            {config.trackCode}
+          </div>
+          <p className="sp-greet-kicker">{getGreeting()}</p>
+          <h1 className="sp-greet-name">{config.name}.</h1>
+          <div className="sp-head-rule" />
+          <div className="sp-head-meta">
+            <span className="sp-stage">{config.stage}</span>
+            <p className="sp-tagline">{config.tagline}</p>
+          </div>
+        </header>
+
+        <section className="sp-section">
+          <div className="sp-eyebrow">
+            <span className="sp-eyebrow-rule" />
+            Most used
+          </div>
+          <div className="sp-primary-grid">
+            {PRIMARY.map(card => (
+              <a key={card.key} className="sp-card" href={card.href}>
+                <div className="sp-card-icon">{card.icon}</div>
+                <div className="sp-card-arrow"><IconArrow size={16} /></div>
+                <div className="sp-card-label">{card.label}</div>
+                <div className="sp-card-blurb">{card.blurb}</div>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <section className="sp-section is-trackers">
+          <div className="sp-eyebrow">
+            <span className="sp-eyebrow-rule" />
+            Trackers
+            <span className="sp-eyebrow-count">06</span>
+          </div>
+          <div className="sp-tracker-grid">
+            {TRACKERS.map(tile => (
+              <a key={tile.key} className={`sp-tile${tile.reward ? ' is-reward' : ''}`} href={tile.href}>
+                <div className="sp-tile-icon">
+                  {tile.icon}
+                </div>
+                <div className="sp-tile-body">
+                  <div className="sp-tile-label">{tile.label}</div>
+                  <div className="sp-tile-sub">{tile.sub}</div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <footer className="sp-footer">
+          <div className="sp-mark">NGS</div>
+          <div className="sp-footer-tag">One generation lifts another.</div>
+        </footer>
+      </div>
+    </div>
+  );
+}
