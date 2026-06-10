@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-import './styles/site.css';
-import { NGSSite } from './pages/HomePage.jsx';
+import '../styles/site.css';
+import { NGSSite } from '../pages/HomePage.jsx';
 
 function App() {
   const [isDesktop, setIsDesktop] = useState(

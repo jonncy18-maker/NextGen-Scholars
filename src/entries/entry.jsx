@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactDOM from 'react-dom/client';
-import { EXPENSE_CATS } from './constants.js';
-import { updateExpense, writeActivityLog, writeSubmission, resubmitExpense, markSubmissionReadByScholar } from './supabase-writer.js';
-import { loadFromSupabase, loadScholarSubmissions } from './supabase-loader.js';
-import { supabase } from './lib/supabase.js';
-import { groupExpenses } from './components/expenses/filterHelpers.js';
-import './styles/entry.css';
+import { EXPENSE_CATS } from '../constants.js';
+import { updateExpense, writeActivityLog, writeSubmission, resubmitExpense, markSubmissionReadByScholar } from '../supabase-writer.js';
+import { loadFromSupabase, loadScholarSubmissions } from '../supabase-loader.js';
+import { supabase } from '../lib/supabase.js';
+import { groupExpenses } from '../components/expenses/filterHelpers.js';
+import '../styles/entry.css';
 
 async function loadConfig() {
   try {
