@@ -120,22 +120,22 @@ Before connecting any API key, the following foundation work is needed. Each ite
 - **P1 — Required:** needed before LLM keys are wired
 - **P2 — Important:** needed before production use, not before initial wiring
 
-### P0 · Consolidate to Supabase as single source of truth
-Currently data is split between Google Sheets (operational writes via Apps Script) and Supabase (reads + new writes). The AI layer needs one place to query.
+### ✅ P0 · Consolidate to Supabase as single source of truth
+~~Currently data is split between Google Sheets (operational writes via Apps Script) and Supabase (reads + new writes). The AI layer needs one place to query.~~
 
-- Add the `expense_submissions` table to `supabase/schema.sql` (currently referenced in code but missing from schema)
-- Migrate remaining Sheets-dependent writes to Supabase
-- Deprecate or archive the Apps Script web app once migration is done
+- ✅ `expense_submissions` table added to `supabase/schema.sql` and deployed
+- ✅ Sheets migration complete — all operational writes go through Supabase
+- ✅ Apps Script web app deprecated
 
-### P0 · Edge Function layer
-Replace direct Supabase client calls with a thin Edge Function API. This is the interface the AI layer will use — and where API keys are securely stored server-side.
+### ✅ P0 · Edge Function layer
+Edge Functions deployed to Supabase. API keys are stored server-side in Supabase secrets and never reach the client.
 
 ```
-/api/scholar/:key/summary     → multi-table data bundle
-/api/scholar/:key/expenses    → filtered + aggregated expenses
-/api/scholar/:key/academics   → GPA history
-/api/ask                      → orchestrator entry point
-/api/ingest                   → multimodal ingestion entry point
+✅ scholar-summary   → full context bundle for a scholar (profile, academics,
+                        milestones, travels, budgets, expenses, alerts,
+                        deadlines, open actions, pending submissions)
+✅ ask               → orchestrator shell (routes query → Tier 1/2,
+                        ingest → Tier 3; tiers wired in P1)
 ```
 
 ### P1 · Structured scholar context builder
@@ -159,13 +159,13 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 
 ## Are we ready to start?
 
-**Short answer: yes for the foundation; not yet for the LLM keys.**
+**P0 complete. Ready to build P1.**
 
 | Layer | Priority | Status | Gap |
 |---|---|---|---|
-| Schema & data | P0 | ~80% ready | `expense_submissions` missing from schema; Sheets/Supabase split |
-| Edge Functions | P0 | Not started | Most critical prerequisite — API keys live here |
-| Auth / RLS | P0 (service key) · P2 (hardening) | Partial | Supabase Auth works for mentor; service-role key needed for Edge Functions |
+| Schema & data | P0 | ✅ Done | — |
+| Edge Functions | P0 | ✅ Done | — |
+| Auth / RLS | P0 (service key) · P2 (hardening) | ✅ / Pending | Service-role key auto-injected in Edge Functions; RLS hardening deferred to P2 |
 | Context builder | P1 | Not started | Needed before any LLM prompt |
 | Tier 1 resolver | P1 | Not started | Must be solid before LLM keys are wired |
 | Review UI | P2 | Not started | Needed before AI writes go to production |
