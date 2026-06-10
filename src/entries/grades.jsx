@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './styles/scholar-home.css';
-import './styles/english-tracking.css';
-import './styles/grade-entry.css';
-import { GradeEntry } from './pages/GradeEntry.jsx';
+import '../styles/scholar-home.css';
+import '../styles/english-tracking.css';
+import '../styles/grade-entry.css';
+import { GradeEntry } from '../pages/GradeEntry.jsx';
 
 const params = new URLSearchParams(location.search);
 const scholarKey = params.get('scholar') || 'claire';

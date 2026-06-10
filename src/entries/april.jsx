@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-import './styles/profile.css';
-import { NGS_DATA } from '../scholars-data.js';
-import { ScholarProfile } from './components/Profile/ScholarProfile.jsx';
-import { loadFromSupabase } from './supabase-loader.js';
-import { scholarTotals } from './utils.js';
+import '../styles/profile.css';
+import { NGS_DATA } from '../../scholars-data.js';
+import { ScholarProfile } from '../components/Profile/ScholarProfile.jsx';
+import { loadFromSupabase } from '../supabase-loader.js';
+import { scholarTotals } from '../utils.js';
 
 const STATIC = NGS_DATA.scholars.april.publicProfile;
 const STATIC_SCHOLAR = NGS_DATA.scholars.april;

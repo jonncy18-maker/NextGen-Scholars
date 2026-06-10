@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-import './styles/navigator.css';
-import { NGS_DATA } from '../scholars-data.js';
-import { loadFromSupabase, loadPendingSubmissions } from './supabase-loader.js';
-import { storedMode, storedRate, persistFx, fetchMarketRate } from './fx.js';
-import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead, approveSubmission, rejectSubmission } from './supabase-writer.js';
-import { supabase } from './lib/supabase.js';
-import { FxCtx } from './context/FxContext.jsx';
-import { DataCtx } from './context/DataContext.jsx';
-import { LockScreen } from './components/LockScreen.jsx';
-import { NavBar } from './components/NavBar.jsx';
-import { AlertsSection } from './components/AlertsSection.jsx';
-import { StatusSection } from './components/StatusSection.jsx';
-import { ExpenseSection } from './components/expenses/ExpenseSection.jsx';
-import { DeadlinesSection } from './components/DeadlinesSection.jsx';
-import { EnglishSection } from './components/EnglishSection.jsx';
-import { NavFooter } from './components/NavFooter.jsx';
+import '../styles/navigator.css';
+import { NGS_DATA } from '../../scholars-data.js';
+import { loadFromSupabase, loadPendingSubmissions } from '../supabase-loader.js';
+import { storedMode, storedRate, persistFx, fetchMarketRate } from '../fx.js';
+import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead, approveSubmission, rejectSubmission } from '../supabase-writer.js';
+import { supabase } from '../lib/supabase.js';
+import { FxCtx } from '../context/FxContext.jsx';
+import { DataCtx } from '../context/DataContext.jsx';
+import { LockScreen } from '../components/LockScreen.jsx';
+import { NavBar } from '../components/NavBar.jsx';
+import { AlertsSection } from '../components/AlertsSection.jsx';
+import { StatusSection } from '../components/StatusSection.jsx';
+import { ExpenseSection } from '../components/expenses/ExpenseSection.jsx';
+import { DeadlinesSection } from '../components/DeadlinesSection.jsx';
+import { EnglishSection } from '../components/EnglishSection.jsx';
+import { NavFooter } from '../components/NavFooter.jsx';
 
 if (!NGS_DATA || !NGS_DATA.config) {
   throw new Error('NGS_DATA missing — hard-refresh (Ctrl/Cmd+Shift+R)');
