@@ -42,6 +42,7 @@ export function EnglishTracking({ scholarKey }) {
     date: today(),
     duration: '',
     activity_type: ACTIVITY_TYPES[0],
+    category: 'input',
     notes: '',
   });
   const [submitting, setSubmitting] = useState(false);
@@ -61,6 +62,8 @@ export function EnglishTracking({ scholarKey }) {
   }, [scholarKey, config.semKey]);
 
   const totalMinutes = sessions ? sessions.reduce((s, r) => s + (r.duration_minutes || 0), 0) : 0;
+  const convMinutes  = sessions ? sessions.filter(s => s.category === 'conversation').reduce((s, r) => s + (r.duration_minutes || 0), 0) : 0;
+  const inputMinutes = sessions ? sessions.filter(s => s.category !== 'conversation').reduce((s, r) => s + (r.duration_minutes || 0), 0) : 0;
   const pct = config.target ? Math.min(100, (totalMinutes / 60 / config.target) * 100) : null;
 
   async function handleSubmit(e) {
@@ -78,6 +81,7 @@ export function EnglishTracking({ scholarKey }) {
       date: form.date,
       duration_minutes: minutes,
       activity_type: form.activity_type,
+      category: form.category,
       notes: form.notes.trim() || null,
     };
 
@@ -162,6 +166,17 @@ export function EnglishTracking({ scholarKey }) {
                 {pct === null && (
                   <div className="et-progress-meta">No semester target set</div>
                 )}
+                <div className="et-cat-breakdown">
+                  <div className="et-cat-stat">
+                    <span className="et-cat-val">{fmtHours(convMinutes)}</span>
+                    <span className="et-cat-label">Conversation</span>
+                  </div>
+                  <div className="et-cat-divider" />
+                  <div className="et-cat-stat">
+                    <span className="et-cat-val">{fmtHours(inputMinutes)}</span>
+                    <span className="et-cat-label">Input</span>
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -201,6 +216,19 @@ export function EnglishTracking({ scholarKey }) {
                   onChange={e => setForm(f => ({ ...f, duration: e.target.value }))}
                   required
                 />
+              </div>
+
+              <div className="et-field">
+                <label>Type</label>
+                <div className="et-cat-pick">
+                  {[['conversation', 'Conversation'], ['input', 'Input']].map(([val, lbl]) => (
+                    <button key={val} type="button"
+                      className={`et-cat-btn${form.category === val ? ' is-active' : ''}`}
+                      onClick={() => setForm(f => ({ ...f, category: val }))}>
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="et-field">

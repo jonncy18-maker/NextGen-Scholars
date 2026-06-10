@@ -63,6 +63,75 @@
   color: rgba(250,247,240,0.5);
 }
 
+/* ── conversation / input breakdown ── */
+.et-cat-breakdown {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 14px;
+}
+
+.et-cat-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: center;
+}
+
+.et-cat-val {
+  font-family: var(--ngs-display);
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  color: var(--ngs-paper);
+}
+
+.et-cat-label {
+  font-family: var(--ngs-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(250,247,240,0.45);
+}
+
+.et-cat-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(255,255,255,0.12);
+  flex-shrink: 0;
+  margin: 0 12px;
+}
+
+/* ── category picker in form ── */
+.et-cat-pick {
+  display: flex;
+  gap: 8px;
+}
+
+.et-cat-btn {
+  flex: 1;
+  padding: 9px 12px;
+  border: 1.5px solid var(--ngs-rule);
+  border-radius: 5px;
+  background: var(--ngs-paper);
+  font-family: var(--ngs-sans);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ngs-muted);
+  cursor: pointer;
+  transition: border-color 180ms, color 180ms, background 180ms;
+}
+
+.et-cat-btn.is-active {
+  border-color: var(--ngs-navy);
+  background: var(--ngs-navy);
+  color: var(--ngs-paper);
+}
+
 /* ── log button ── */
 .et-log-btn {
   width: 100%;

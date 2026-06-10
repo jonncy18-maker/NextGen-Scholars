@@ -1,0 +1,214 @@
+/* ── GPA card ── */
+.ge-gpa-card {
+  background: var(--ngs-navy);
+  color: var(--ngs-paper);
+  border-radius: 8px;
+  padding: 28px 24px 22px;
+  margin-bottom: 20px;
+}
+
+.ge-gpa-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.ge-gpa-num {
+  font-family: var(--ngs-display);
+  font-size: 64px;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--ngs-paper);
+  flex-shrink: 0;
+}
+
+.ge-gpa-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+}
+
+.ge-gpa-label {
+  font-family: var(--ngs-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(250,247,240,0.5);
+}
+
+.ge-gpa-pct {
+  font-family: var(--ngs-mono);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--ngs-gold);
+  letter-spacing: -0.01em;
+}
+
+.ge-gpa-desc {
+  font-family: var(--ngs-display);
+  font-size: 14px;
+  font-style: italic;
+  color: rgba(250,247,240,0.6);
+}
+
+.ge-gpa-footer {
+  font-family: var(--ngs-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(250,247,240,0.4);
+}
+
+/* ── grade input row ── */
+.ge-grade-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+/* ── live preview strip ── */
+.ge-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(201,168,76,0.1);
+  border: 1px solid rgba(201,168,76,0.25);
+  border-radius: 5px;
+  padding: 10px 14px;
+  font-family: var(--ngs-mono);
+  font-size: 12px;
+}
+
+.ge-preview-avg { font-weight: 600; color: var(--ngs-navy); }
+.ge-preview-sep { color: var(--ngs-muted); }
+.ge-preview-pct { font-weight: 600; color: var(--ngs-gold); }
+.ge-preview-desc { color: var(--ngs-muted); font-style: italic; font-family: var(--ngs-sans); }
+
+/* ── grades table ── */
+.ge-grades-section { padding-bottom: 8px; }
+.ge-prior-section  { padding-bottom: 32px; }
+
+.ge-table-wrap {
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-radius: 6px;
+  border: 1px solid var(--ngs-rule);
+}
+
+/* scrollable on hover */
+.ge-table-wrap:hover {
+  overflow-y: auto;
+}
+
+.ge-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ge-table th {
+  font-family: var(--ngs-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ngs-muted);
+  background: var(--ngs-paper-2);
+  padding: 10px 12px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--ngs-rule);
+}
+
+.ge-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ngs-rule);
+  color: var(--ngs-ink);
+  vertical-align: middle;
+}
+
+.ge-table tbody tr:last-child td { border-bottom: none; }
+.ge-table tbody tr:hover td { background: rgba(27,42,74,0.03); }
+
+.ge-table.ge-table-sm th,
+.ge-table.ge-table-sm td { padding: 8px 12px; font-size: 12.5px; }
+
+.ge-n { text-align: right !important; white-space: nowrap; }
+.ge-subject { font-weight: 500; color: var(--ngs-navy); }
+.ge-grade { font-family: var(--ngs-mono); color: var(--ngs-muted); }
+.ge-avg   { font-family: var(--ngs-mono); font-weight: 600; color: var(--ngs-navy); }
+.ge-pct   { font-family: var(--ngs-mono); font-weight: 600; color: var(--ngs-gold); }
+
+.ge-total-row td {
+  font-family: var(--ngs-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ngs-navy);
+  background: var(--ngs-paper-2);
+  border-top: 2px solid var(--ngs-rule);
+}
+
+/* ── prior semesters ── */
+.ge-prior {
+  border: 1px solid var(--ngs-rule);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.ge-prior-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--ngs-paper);
+  border: none;
+  cursor: pointer;
+  font-family: var(--ngs-sans);
+  text-align: left;
+  transition: background 180ms;
+}
+.ge-prior-btn:hover { background: var(--ngs-paper-2); }
+
+.ge-prior-sem {
+  font-family: var(--ngs-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ngs-navy);
+}
+
+.ge-prior-gpa {
+  font-size: 13px;
+  color: var(--ngs-muted);
+  flex: 1;
+  padding-left: 4px;
+}
+
+.ge-prior-pct {
+  font-family: var(--ngs-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ngs-gold);
+}
+
+.ge-chevron {
+  font-size: 9px;
+  color: var(--ngs-muted);
+  margin-left: 4px;
+}
+
+.ge-prior-detail {
+  border-top: 1px solid var(--ngs-rule);
+  background: var(--ngs-paper-2);
+  overflow-x: auto;
+}
