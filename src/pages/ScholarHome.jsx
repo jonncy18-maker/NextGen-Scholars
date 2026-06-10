@@ -15,6 +15,7 @@ const CONFIGS = {
     expensesHref: 'entry.html',
     gradesHref: 'claire.html',
     semKey: 'Y2S2',
+    englishTarget: 200,
   },
   april: {
     name: 'April',
@@ -25,6 +26,7 @@ const CONFIGS = {
     expensesHref: 'entry.html',
     gradesHref: 'april.html',
     semKey: 'TG11S1',
+    englishTarget: null,
   },
 };
 
@@ -48,7 +50,7 @@ export function ScholarHome({ scholarKey }) {
   useEffect(() => {
     async function load() {
       try {
-        const [{ data: expenses }, { data: academics }, { data: scholars }] = await Promise.all([
+        const [{ data: expenses }, { data: academics }, { data: scholars }, { data: englishData }] = await Promise.all([
           supabase.from('expenses')
             .select('date')
             .eq('scholar', scholarKey)
@@ -62,6 +64,10 @@ export function ScholarHome({ scholarKey }) {
             .select('current_sem')
             .eq('scholar_key', scholarKey)
             .limit(1),
+          supabase.from('english_sessions')
+            .select('duration_minutes')
+            .eq('scholar', scholarKey)
+            .eq('sem', config.semKey),
         ]);
 
         const latestExpenseDate = expenses?.[0]?.date ?? null;
@@ -72,8 +78,9 @@ export function ScholarHome({ scholarKey }) {
           .eq('scholar', scholarKey)
           .eq('state', 'done');
         const rewardsCount = milestonesRes.data?.length ?? 0;
+        const englishMinutes = englishData?.reduce((s, r) => s + (r.duration_minutes || 0), 0) ?? null;
 
-        setLiveData({ latestExpenseDate, latestGpa, gpaStatus, rewardsCount });
+        setLiveData({ latestExpenseDate, latestGpa, gpaStatus, rewardsCount, englishMinutes });
       } catch {
         setLiveData({});
       }
@@ -90,6 +97,15 @@ export function ScholarHome({ scholarKey }) {
     : 'View your record';
 
   const rewardsCount = liveData?.rewardsCount ?? 0;
+
+  const englishSub = (() => {
+    if (!liveData) return 'Tracking hours';
+    const mins = liveData.englishMinutes;
+    if (mins === null || mins === undefined) return 'Log hours';
+    const h = mins / 60;
+    const display = h % 1 === 0 ? String(h) : h.toFixed(1);
+    return config.englishTarget ? `${display} / ${config.englishTarget} hrs` : `${display} hrs`;
+  })();
 
   const PRIMARY = [
     {
@@ -109,10 +125,10 @@ export function ScholarHome({ scholarKey }) {
   ];
 
   const TRACKERS = [
-    { key: 'english',  icon: <IconClock size={19} />,     label: 'English Hours',    sub: 'Tracking hours', href: '#' },
-    { key: 'vacation', icon: <IconIsland size={19} />,    label: 'Vacation Tracker', sub: 'Trip log', href: '#' },
+    { key: 'english',  icon: <IconClock size={19} />,     label: 'English Hours',    sub: englishSub, href: `english.html?scholar=${scholarKey}` },
+    { key: 'vacation', icon: <IconIsland size={19} />,    label: 'Vacation Tracker', sub: 'Trip log', href: `${scholarKey}.html#travel` },
     { key: 'career',   icon: <IconBriefcase size={19} />, label: 'Career Tracker',   sub: 'Pathway steps', href: '#' },
-    { key: 'rewards',  icon: <IconTrophy size={19} />,    label: 'Rewards Tracker',  sub: `${rewardsCount} unlocked`, reward: true, href: '#' },
+    { key: 'rewards',  icon: <IconTrophy size={19} />,    label: 'Rewards Tracker',  sub: `${rewardsCount} unlocked`, reward: true, href: `${scholarKey}.html#milestones` },
     { key: 'messages', icon: <IconMessage size={19} />,   label: 'Messages',         sub: 'No new messages', href: '#' },
     { key: 'docs',     icon: <IconDocument size={19} />,  label: 'Documents',        sub: 'Files & records', href: '#' },
   ];
