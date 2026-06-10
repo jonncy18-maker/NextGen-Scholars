@@ -209,10 +209,9 @@ function Hero() {
         <div className="ngs-hero-meta">
           <div><strong>2</strong><span>active tracks</span></div>
           <div className="ngs-hero-meta-rule"></div>
-          <div>
-            <strong>2</strong><span>active</span>
-            <strong style={{marginLeft:'10px'}}>1</strong><span>paused</span>
-          </div>
+          <div><strong>2</strong><span>active</span></div>
+          <div className="ngs-hero-meta-rule"></div>
+          <div><strong>1</strong><span>paused</span></div>
           <div className="ngs-hero-meta-rule"></div>
           <div><strong>100%</strong><span>privately funded</span></div>
         </div>
