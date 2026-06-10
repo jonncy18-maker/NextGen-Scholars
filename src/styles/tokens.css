@@ -19,4 +19,8 @@
   --ngs-display: 'Newsreader', 'Source Serif Pro', 'Iowan Old Style', Georgia, serif;
   --ngs-sans: 'Manrope', 'Helvetica Neue', Helvetica, system-ui, sans-serif;
   --ngs-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --ngs-warn: #B57E1E;
+  --dur-default: 180ms;
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
 }
