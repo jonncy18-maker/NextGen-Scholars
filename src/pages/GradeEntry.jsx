@@ -3,9 +3,9 @@ import { supabase } from '../lib/supabase.js';
 
 const CONFIGS = {
   claire: { name: 'Claire', semKey: 'Y2S2', semLabel: 'Year 2 · Semester 2', homeHref: 'claire-home.html',
-    semOrder: ['Y2S1', 'Y2S2', 'Y3S1', 'Y3S2'] },
+    semOrder: ['Y2S1', 'Y2S2', 'Y3S1', 'Y3S2'], defaultSchool: 'uv' },
   april:  { name: 'April',  semKey: 'TG11S1', semLabel: 'Grade 11 · Semester 1', homeHref: 'april-home.html',
-    semOrder: ['TG11S1', 'TG11S2', 'TG12S1', 'TG12S2'] },
+    semOrder: ['TG11S1', 'TG11S2', 'TG12S1', 'TG12S2'], defaultSchool: 'k12' },
 };
 
 // UV grade scale — linear interpolation within each bracket
@@ -35,6 +35,21 @@ export function uvDesc(grade) {
   return UV_BRACKETS.find(b => g >= b.min && g <= b.max)?.desc ?? '';
 }
 
+function k12Desc(pct) {
+  const p = parseFloat(pct);
+  if (isNaN(p)) return '';
+  if (p >= 90) return 'Outstanding';
+  if (p >= 85) return 'Very Satisfactory';
+  if (p >= 80) return 'Satisfactory';
+  if (p >= 75) return 'Fairly Satisfactory';
+  return 'Did Not Meet Expectations';
+}
+
+const SCHOOLS = [
+  { value: 'uv',  label: 'UV (1.0 – 5.0 scale)' },
+  { value: 'k12', label: 'K-12 DepEd (% grade)'  },
+];
+
 function weightedGpa(rows) {
   const valid = rows.filter(r => r.period_avg && r.units);
   if (!valid.length) return null;
@@ -42,13 +57,13 @@ function weightedGpa(rows) {
   return totalUnits ? valid.reduce((s, r) => s + r.period_avg * r.units, 0) / totalUnits : null;
 }
 
-const emptyForm = () => ({ subject: '', units: '3', prelim: '', midterm: '', final_grade: '' });
+const emptyForm = (school = 'uv') => ({ subject: '', units: '3', prelim: '', midterm: '', final_grade: '', school });
 
 export function GradeEntry({ scholarKey }) {
   const config = CONFIGS[scholarKey] || CONFIGS.claire;
   const [rows, setRows] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(emptyForm());
+  const [form, setForm] = useState(() => emptyForm(config.defaultSchool));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
@@ -62,15 +77,22 @@ export function GradeEntry({ scholarKey }) {
       .then(({ data }) => setRows(data ?? []));
   }, [scholarKey]);
 
-  // live preview
+  // live preview — ranges differ per school
+  const isK12 = form.school === 'k12';
   const p = parseFloat(form.prelim), m = parseFloat(form.midterm), f = parseFloat(form.final_grade);
-  const allThree = [p, m, f].every(v => !isNaN(v) && v >= 1 && v <= 5);
+  const gradeMin = isK12 ? 0 : 1, gradeMax = isK12 ? 100 : 5;
+  const allThree = [p, m, f].every(v => !isNaN(v) && v >= gradeMin && v <= gradeMax);
   const previewAvg = allThree ? Math.round(((p + m + f) / 3) * 10000) / 10000 : null;
-  const previewPct = previewAvg ? uvToPct(previewAvg) : null;
+  const previewPct = previewAvg != null
+    ? (isK12 ? Math.round(previewAvg * 100) / 100 : uvToPct(previewAvg))
+    : null;
 
   const currentRows = (rows ?? []).filter(r => r.sem === config.semKey);
+  const semIsK12 = currentRows.length > 0 && currentRows.every(r => r.school === 'k12');
   const currentGpa = weightedGpa(currentRows);
-  const currentPct = currentGpa ? uvToPct(currentGpa) : null;
+  const currentPct = currentGpa != null
+    ? (semIsK12 ? Math.round(currentGpa * 100) / 100 : uvToPct(currentGpa))
+    : null;
   const totalUnits = currentRows.reduce((s, r) => s + (r.units || 0), 0);
 
   const priorSems = (config.semOrder || [])
@@ -87,6 +109,7 @@ export function GradeEntry({ scholarKey }) {
     const entry = {
       scholar: scholarKey,
       sem: config.semKey,
+      school: form.school,
       subject: form.subject.trim(),
       units,
       prelim: p || null,
@@ -98,7 +121,7 @@ export function GradeEntry({ scholarKey }) {
     const tempId = `temp-${Date.now()}`;
     setRows(prev => [...(prev ?? []), { ...entry, id: tempId }]);
     setShowForm(false);
-    setForm(emptyForm());
+    setForm(emptyForm(form.school));
 
     const { data, error: err } = await supabase
       .from('grade_entries').insert(entry).select().single();
@@ -146,11 +169,19 @@ export function GradeEntry({ scholarKey }) {
             ) : (
               <>
                 <div className="ge-gpa-row">
-                  <span className="ge-gpa-num">{currentGpa ? currentGpa.toFixed(2) : '—'}</span>
+                  <span className="ge-gpa-num">
+                    {currentGpa != null
+                      ? (semIsK12 ? `${currentGpa.toFixed(1)}%` : currentGpa.toFixed(2))
+                      : '—'}
+                  </span>
                   <div className="ge-gpa-meta">
-                    <span className="ge-gpa-label">Weighted GPA</span>
-                    {currentPct !== null && <span className="ge-gpa-pct">{currentPct.toFixed(1)}%</span>}
-                    {currentGpa && <span className="ge-gpa-desc">{uvDesc(currentGpa)}</span>}
+                    <span className="ge-gpa-label">{semIsK12 ? 'Weighted Average' : 'Weighted GPA'}</span>
+                    {!semIsK12 && currentPct !== null && <span className="ge-gpa-pct">{currentPct.toFixed(1)}%</span>}
+                    {currentGpa != null && (
+                      <span className="ge-gpa-desc">
+                        {semIsK12 ? k12Desc(currentGpa) : uvDesc(currentGpa)}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="ge-gpa-footer">
@@ -174,6 +205,13 @@ export function GradeEntry({ scholarKey }) {
               </div>
 
               <div className="et-field">
+                <label>School / Scale</label>
+                <select value={form.school} onChange={set('school')}>
+                  {SCHOOLS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </div>
+
+              <div className="et-field">
                 <label>Subject name</label>
                 <input type="text" placeholder="e.g. Anatomy & Physiology I"
                   value={form.subject} onChange={set('subject')} required />
@@ -186,32 +224,27 @@ export function GradeEntry({ scholarKey }) {
               </div>
 
               <div className="ge-grade-row">
-                <div className="et-field">
-                  <label>Prelim</label>
-                  <input type="number" min="1" max="5" step="0.01" placeholder="1.00"
-                    value={form.prelim} onChange={set('prelim')} />
-                </div>
-                <div className="et-field">
-                  <label>Midterm</label>
-                  <input type="number" min="1" max="5" step="0.01" placeholder="1.00"
-                    value={form.midterm} onChange={set('midterm')} />
-                </div>
-                <div className="et-field">
-                  <label>Final</label>
-                  <input type="number" min="1" max="5" step="0.01" placeholder="1.00"
-                    value={form.final_grade} onChange={set('final_grade')} />
-                </div>
+                {['prelim', 'midterm', 'final_grade'].map((field, i) => (
+                  <div className="et-field" key={field}>
+                    <label>{['Prelim', 'Midterm', 'Final'][i]}</label>
+                    <input type="number"
+                      min={isK12 ? 0 : 1} max={isK12 ? 100 : 5} step="0.01"
+                      placeholder={isK12 ? '0–100' : '1.00'}
+                      value={form[field]} onChange={set(field)} />
+                  </div>
+                ))}
               </div>
 
               {previewAvg !== null && (
                 <div className="ge-preview">
-                  <span className="ge-preview-avg">Avg: {previewAvg.toFixed(2)}</span>
-                  <span className="ge-preview-sep">·</span>
-                  <span className="ge-preview-pct">{previewPct !== null ? `${previewPct.toFixed(1)}%` : '—'}</span>
-                  {previewPct !== null && (
+                  {!isK12 && <><span className="ge-preview-avg">Avg: {previewAvg.toFixed(2)}</span><span className="ge-preview-sep">·</span></>}
+                  <span className="ge-preview-pct">{previewPct != null ? `${previewPct.toFixed(1)}%` : '—'}</span>
+                  {previewPct != null && (
                     <>
                       <span className="ge-preview-sep">·</span>
-                      <span className="ge-preview-desc">{uvDesc(previewAvg)}</span>
+                      <span className="ge-preview-desc">
+                        {isK12 ? k12Desc(previewPct) : uvDesc(previewAvg)}
+                      </span>
                     </>
                   )}
                 </div>
