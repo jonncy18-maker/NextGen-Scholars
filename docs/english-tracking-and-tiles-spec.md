@@ -17,17 +17,13 @@ see their running total vs. target, and review history. Linked from the
 Add to Vite config the same way `claire-home` and `april-home` were added.
 
 ### Supabase data needed
-The navigator already has an `EnglishSection` component at
-`src/components/EnglishSection.jsx` — read that first. It likely already
-reads from a Supabase table. The scholar-facing page should read the same
-table (read-only display + a log-session form).
+The navigator has an `EnglishSection` component at
+`src/components/EnglishSection.jsx` — **it does not use Supabase**. It reads
+static qualitative data from `scholars-data.js` via `useData()`:
+`D.scholars[sk].english` → `{ scholar, stage, desc, observations[] }`.
+That is narrative text, not session hours. The two pages have nothing to share.
 
-Check the existing table schema:
-```sql
-select * from english_sessions limit 5;   -- or whatever the table is named
-```
-
-If no table exists yet, create it with at minimum:
+**No `english_sessions` table exists yet.** Create it with at minimum:
 | column | type | notes |
 |---|---|---|
 | id | uuid | pk |
@@ -57,10 +53,14 @@ If no table exists yet, create it with at minimum:
 5. **Footer** — same `.sp-footer` NGS mark pattern
 
 ### Auth
-The page should check sessionStorage for auth state (same pattern to be
-established by the login modal). If not authenticated, redirect to `index.html`.
-For now, if session auth isn't wired yet, load the page with scholar key
-from a URL param (`?scholar=claire`) — the tile href can pass that.
+The scholar home pages (`claire-home.html`, `april-home.html`) currently have
+**no auth guard** — they render `ScholarHome` directly with no session check.
+The LockScreen / `supabase.auth.getSession()` pattern exists only in
+`navigator.html`. Until a shared auth layer is built for scholar-facing pages,
+load the page with the scholar key from a URL param (`?scholar=claire`) — the
+tile href passes it, and the page reads it from `new URLSearchParams(location.search)`.
+Do **not** redirect to `index.html` for now; that will be wired when scholar auth
+is added globally.
 
 ### Files to create
 - `english.html`
@@ -115,11 +115,20 @@ The href can point to the scholar profile travel section:
 
 ## Notes for the next session
 
-- Read `src/components/EnglishSection.jsx` first — it may have the Supabase
-  table name, query patterns, and existing data shape.
-- Check `src/supabase-loader.js` for any existing English data loading.
-- The scholar home `TRACKERS` array is in `src/pages/ScholarHome.jsx` around
-  line 70. The `scholarKey` variable is in scope so URL params are easy.
+**Verified codebase state (2026-06-10):**
+
+- `src/components/EnglishSection.jsx` — qualitative static data only (stage
+  label + observation bullets from `scholars-data.js`). No Supabase. Skip it
+  for this task.
+- `src/supabase-loader.js` — no English data loaded anywhere. The `english`
+  property on each scholar object comes entirely from `scholars-data.js`.
+- `src/pages/ScholarHome.jsx` TRACKERS (lines 111–118) — all six tiles still
+  point to `href: '#'`. Nothing has been wired yet.
+- Vite config currently has entries: `main`, `claire`, `april`, `navigator`,
+  `entry`, `claire-home`, `april-home`. Add `english` following that pattern.
+- Scholar home pages have no auth at all — URL param approach is correct for now.
+- The `rewardsCount` live data is already loaded in `ScholarHome.jsx` via
+  Supabase (lines 70–74); the rewards tile href update is a one-liner.
 - Keep the CSS in the `--ngs-*` token system. Reuse `.sp-*` classes from
   `src/styles/scholar-home.css` where the pattern fits (header, footer,
   eyebrow, cards).

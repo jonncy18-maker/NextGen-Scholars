@@ -147,6 +147,31 @@ begin
 end
 $$;
 
+-- ── ENGLISH SESSIONS ─────────────────────────────────────────────────────────
+-- Scholar-facing English hours log. Anon (scholar) can read + insert;
+-- authenticated (mentor) has full access.
+create table if not exists english_sessions (
+  id               uuid default gen_random_uuid() primary key,
+  scholar          text references scholars(scholar_key) on delete cascade,
+  sem              text,
+  date             date not null,
+  duration_minutes int  not null check (duration_minutes > 0),
+  activity_type    text not null,
+  notes            text,
+  created_at       timestamptz default now()
+);
+
+alter table english_sessions enable row level security;
+
+create policy "auth_all_english" on english_sessions
+  for all to authenticated using (true) with check (true);
+
+create policy "anon_read_english" on english_sessions
+  for select to anon using (true);
+
+create policy "anon_insert_english" on english_sessions
+  for insert to anon with check (true);
+
 -- ── ACTIVITY LOG ─────────────────────────────────────────────────────────────
 -- Records scholar-initiated expense changes (add/edit/delete_request) so the
 -- mentor can review them in real time inside navigator.html.
