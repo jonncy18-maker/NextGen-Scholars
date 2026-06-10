@@ -95,29 +95,32 @@ function EntryApp() {
 
 function LockGate({ scholarKey, setScholarKey, password, setPassword, onSubmit, error, ready }) {
   const inputRef = useRef();
-  useEffect(() => { if (ready) inputRef.current?.focus(); }, [ready]);
+  useEffect(() => { if (ready) inputRef.current?.focus(); }, [ready, scholarKey]);
+
+  const scholar = SCHOLARS.find(s => s.key === scholarKey);
 
   return (
-    <div className="el-lock">
+    <div className="el-lock" data-scholar={scholarKey}>
       <div className="el-lock-bg" />
       <div className="el-lock-inner">
         <div className="el-badge"><span>N</span><span>G</span><span>S</span></div>
-        <h1 className="el-title">Add <em>Expense</em></h1>
+
+        <div className="el-scholar-pick">
+          {SCHOLARS.map(s => (
+            <button key={s.key} type="button"
+              className={`el-scholar-btn${scholarKey === s.key ? ' is-active' : ''}`}
+              onClick={() => setScholarKey(s.key)}
+            >
+              <span className="el-scholar-initial">{s.display[0]}</span>
+              <span className="el-scholar-name">{s.display}</span>
+            </button>
+          ))}
+        </div>
+
+        <h1 className="el-title">Welcome, <em>{scholar.display}</em></h1>
         <p className="el-sub">Enter your password to continue</p>
 
         <form className={`el-form${error ? ' is-error' : ''}`} onSubmit={onSubmit} autoComplete="off">
-          <div className="el-field">
-            <label className="el-label">Who are you?</label>
-            <div className="el-radio-row">
-              {SCHOLARS.map(s => (
-                <button key={s.key} type="button"
-                  className={`el-radio${scholarKey === s.key ? ' is-active' : ''}`}
-                  onClick={() => setScholarKey(s.key)}>
-                  {s.display}
-                </button>
-              ))}
-            </div>
-          </div>
           <div className="el-field">
             <label className="el-label" htmlFor="el-pw">Password</label>
             <input id="el-pw" ref={inputRef} className="el-input" type="password"
@@ -127,7 +130,7 @@ function LockGate({ scholarKey, setScholarKey, password, setPassword, onSubmit, 
           </div>
           <div className={`el-err${error ? ' show' : ''}`}>Incorrect password — try again.</div>
           <button type="submit" disabled={!ready || !password} className="el-btn">
-            {ready ? 'Continue →' : 'Loading…'}
+            {ready ? `Continue as ${scholar.display} →` : 'Loading…'}
           </button>
         </form>
         <a href="index.html" className="el-back">← Back to NextGen Scholars</a>
@@ -375,7 +378,7 @@ function ExpenseForm({ scholar, onLogout }) {
         <React.Fragment key={e.id || i}>
           <tr className="ef-entries-editing-hd">
             <td className="ef-entries-item">{e.item}</td>
-            <td><span className="ef-entries-cat">{e.cat}</span></td>
+            <td><span className="ef-entries-cat" data-cat={e.cat}>{e.cat}</span></td>
             <td className="ef-entries-date">{e.date}</td>
             <td className="ef-entries-right ef-entries-amount">₱{Math.round(total).toLocaleString('en-US')}</td>
             <td><span className={`ef-entries-status is-${(e.avb || '').toLowerCase()}`}>{e.avb}</span></td>
@@ -413,7 +416,7 @@ function ExpenseForm({ scholar, onLogout }) {
     return (
       <tr key={i} className={[e.avb !== 'Actual' ? 'ef-entries-budget' : '', isPending ? 'ef-entries-pending-del' : ''].filter(Boolean).join(' ')}>
         <td className="ef-entries-item">{e.item}</td>
-        <td><span className="ef-entries-cat">{e.cat}</span></td>
+        <td><span className="ef-entries-cat" data-cat={e.cat}>{e.cat}</span></td>
         <td className="ef-entries-date">{e.date}</td>
         <td className="ef-entries-right ef-entries-amount">₱{Math.round(total).toLocaleString('en-US')}</td>
         <td>{isPending ? <span className="ef-del-pending">Delete requested</span>
@@ -429,7 +432,7 @@ function ExpenseForm({ scholar, onLogout }) {
   }
 
   return (
-    <div className="ef-page">
+    <div className="ef-page" data-scholar={scholar.key}>
       <header className="ef-header">
         <div className="ef-header-left">
           <div className="el-badge el-badge-sm"><span>N</span><span>G</span><span>S</span></div>
@@ -550,9 +553,21 @@ function ExpenseForm({ scholar, onLogout }) {
         {/* ── Add Expense: mode chooser ── */}
         {entryMode === null && (
           <div className="ef-mode-chooser">
-            <span className="ef-mode-label">Add expense</span>
-            <button className="ef-mode-btn" onClick={() => setEntryMode('single')}>Single</button>
-            <button className="ef-mode-btn" onClick={() => setEntryMode('multiple')}>Multiple</button>
+            <button className="ef-mode-card" onClick={() => setEntryMode('single')}>
+              <svg className="ef-mode-card-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <span className="ef-mode-card-label">Single expense</span>
+              <span className="ef-mode-card-desc">One item · quick form</span>
+            </button>
+            <button className="ef-mode-card" onClick={() => setEntryMode('multiple')}>
+              <svg className="ef-mode-card-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M3 6h18M3 10h18M3 14h12M3 18h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <span className="ef-mode-card-label">Batch entry</span>
+              <span className="ef-mode-card-desc">Multiple items · spreadsheet style</span>
+            </button>
           </div>
         )}
 
