@@ -20,7 +20,7 @@ body { margin: 0; }
 }
 .ngs-site p { margin: 0; }
 .ngs-site a { color: inherit; text-decoration: none; }
-.ngs-site button { font-family: inherit; cursor: pointer; border: 0; background: none; }
+.ngs-site button { font-family: inherit; cursor: pointer; border: 0; }
 .ngs-site ol, .ngs-site ul { margin: 0; padding: 0; list-style: none; }
 .ngs-site em, .ngs-italic {
   font-family: var(--ngs-display);
@@ -227,6 +227,7 @@ body { margin: 0; }
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   padding: 13px 18px; border-radius: 4px; font-size: 14px; font-weight: 600;
   letter-spacing: 0.02em; transition: transform 0.15s ease, background 0.2s ease, color 0.2s ease;
+  background: none;
 }
 .ngs-btn-gold { background: var(--ngs-gold); color: var(--ngs-navy); }
 .ngs-btn-gold:active { transform: scale(0.98); }
