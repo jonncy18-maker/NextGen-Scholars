@@ -311,7 +311,7 @@ body { margin: 0; }
 
 /* ── scholars ── */
 .ngs-scholars { background: var(--ngs-paper-2); }
-.ngs-scholar-list { display: flex; flex-direction: column; gap: 18px; margin-top: 36px; }
+.ngs-scholar-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 36px; }
 .ngs-scholar-card { background: var(--ngs-paper); border: 1px solid var(--ngs-rule); border-radius: 6px; overflow: hidden; }
 .ngs-scholar-photo {
   position: relative; aspect-ratio: 4 / 3;
