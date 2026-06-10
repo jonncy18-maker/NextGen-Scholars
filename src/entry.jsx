@@ -58,6 +58,16 @@ function EntryApp() {
 
   useEffect(() => { loadConfig().then(setConfig); }, []);
 
+  // Auto-auth if arriving from the scholar portal (sessionStorage set by ScholarHome)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const preauth = params.get('scholar');
+    if (preauth && sessionStorage.getItem('ngs_auth_scholar') === preauth) {
+      const s = SCHOLARS.find(s => s.key === preauth);
+      if (s) { setScholarKey(preauth); setAuthed(true); }
+    }
+  }, []);
+
   function unlock(e) {
     e.preventDefault();
     if (!config) return;
@@ -439,7 +449,7 @@ function ExpenseForm({ scholar, onLogout }) {
           <span className="ef-header-title">Add Expense — <strong>{scholar.display}</strong></span>
         </div>
         <div className="ef-header-right">
-          <a href="index.html" className="ef-home-link">← Home</a>
+          <a href={`${scholar.key}-home.html`} className="ef-home-link">← Portal home</a>
           <button className="ef-logout" onClick={onLogout}>Switch scholar</button>
         </div>
       </header>

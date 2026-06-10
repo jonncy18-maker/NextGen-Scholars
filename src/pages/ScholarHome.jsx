@@ -48,6 +48,10 @@ export function ScholarHome({ scholarKey }) {
   const [liveData, setLiveData] = useState(null);
 
   useEffect(() => {
+    sessionStorage.setItem('ngs_auth_scholar', scholarKey);
+  }, [scholarKey]);
+
+  useEffect(() => {
     async function load() {
       try {
         const [{ data: expenses }, { data: academics }, { data: scholars }, { data: englishData }] = await Promise.all([
@@ -120,7 +124,7 @@ export function ScholarHome({ scholarKey }) {
       icon: <IconGrades size={25} />,
       label: 'View Grades',
       blurb: gpaBlurb,
-      href: config.gradesHref,
+      href: `grades.html?scholar=${scholarKey}`,
     },
   ];
 

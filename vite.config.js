@@ -19,6 +19,7 @@ export default defineConfig({
         'claire-home': resolve(__dirname, 'claire-home.html'),
         'april-home': resolve(__dirname, 'april-home.html'),
         english: resolve(__dirname, 'english.html'),
+        grades: resolve(__dirname, 'grades.html'),
       },
     },
   },
