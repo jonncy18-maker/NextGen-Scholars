@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { NGS_DATA } from '../../scholars-data.js';
 import { JOURNEY_STAGES } from '../constants.js';
 import { JourneyDropdown } from '../components/JourneyDropdown.jsx';
+import { supabase } from '../lib/supabase.js';
 
 const PALETTE = {
   navy: '#1B2A4A',
@@ -45,51 +46,114 @@ const IconArrow = ({ size = 14, color = 'currentColor' }) => (
 );
 
 
-// ── quick menu (Home + Expenses) ──────────────────────────────────────────────
+// ── login modal ───────────────────────────────────────────────────────────────
 
-function QuickMenu() {
-  const [open, setOpen] = useState(false);
-  const ref = useRef();
+const ROLES = [
+  { key: 'claire', label: 'Claire', configKey: 'claire_password', dest: 'claire-home.html' },
+  { key: 'april',  label: 'April',  configKey: 'april_password',  dest: 'april-home.html'  },
+  { key: 'mentor', label: 'Mentor', configKey: 'password',        dest: 'navigator.html'   },
+];
+
+function LoginModal({ onClose }) {
+  const [role, setRole] = useState('claire');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(false);
+  const [config, setConfig] = useState(null);
+  const inputRef = useRef();
+  const overlayRef = useRef();
 
   useEffect(() => {
-    if (!open) return;
-    const handle = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', handle);
-    return () => document.removeEventListener('mousedown', handle);
-  }, [open]);
+    supabase.from('config').select('key, value').then(({ data }) => {
+      const map = {};
+      (data || []).forEach(r => { map[r.key] = r.value; });
+      setConfig(map);
+    });
+    inputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    setPassword('');
+    setError(false);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, [role]);
+
+  useEffect(() => {
+    const handler = e => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!config) return;
+    const { configKey, dest } = ROLES.find(r => r.key === role);
+    const expected = config[configKey];
+    if (expected && password === expected) {
+      window.location.href = dest;
+    } else {
+      setError(true);
+    }
+  }
+
+  const selectedRole = ROLES.find(r => r.key === role);
 
   return (
-    <div className="ngs-qmenu" ref={ref}>
-      <button
-        className={`ngs-qmenu-btn${open ? ' is-open' : ''}`}
-        onClick={() => setOpen(v => !v)}
-        aria-expanded={open}
-        aria-label="Site menu"
-      >
-        <span>Menu</span>
-        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
-          <path
-            d={open ? 'M1 8l4.5-4.5L10 8' : 'M1 3l4.5 4.5L10 3'}
-            stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-      {open && (
-        <div className="ngs-qmenu-dropdown" role="menu">
-          <a href="#top" className="ngs-qmenu-item" role="menuitem" onClick={() => setOpen(false)}>
-            <span className="ngs-qmenu-icon" aria-hidden="true">⌂</span>
-            <span>Home</span>
-          </a>
-          <a href="entry.html" className="ngs-qmenu-item" role="menuitem">
-            <span className="ngs-qmenu-icon" aria-hidden="true">+</span>
-            <span>Enter Expenses</span>
-          </a>
-          <a href="navigator.html" className="ngs-qmenu-item" role="menuitem">
-            <span className="ngs-qmenu-icon" aria-hidden="true">₱</span>
-            <span>Expenses (Mentor)</span>
-          </a>
+    <div
+      className="ngs-modal-overlay"
+      ref={overlayRef}
+      onClick={e => { if (e.target === overlayRef.current) onClose(); }}
+      role="dialog" aria-modal="true" aria-label="Sign in"
+    >
+      <div className="ngs-modal" data-role={role}>
+        <div className="ngs-modal-bg" />
+        <div className="ngs-modal-inner">
+          <div className="ngs-modal-brand">
+            <div className="ngs-mark ngs-mark-sm"><span>N</span><span>G</span><span>S</span></div>
+          </div>
+
+          <div className="ngs-modal-role-grid">
+            {ROLES.map(r => (
+              <button
+                key={r.key}
+                type="button"
+                className={`ngs-modal-role-btn${role === r.key ? ' is-active' : ''}`}
+                onClick={() => setRole(r.key)}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+
+          <h2 className="ngs-modal-title">
+            Welcome, <em>{selectedRole.label}</em>
+          </h2>
+
+          <form className={`ngs-modal-form${error ? ' is-error' : ''}`} onSubmit={handleSubmit}>
+            <label className="ngs-modal-label" htmlFor="ngs-modal-pw">Password</label>
+            <input
+              id="ngs-modal-pw"
+              ref={inputRef}
+              type="password"
+              className="ngs-modal-input"
+              placeholder="Enter your password"
+              value={password}
+              onChange={e => { setPassword(e.target.value); setError(false); }}
+              disabled={!config}
+              autoComplete="current-password"
+            />
+            {error && <p className="ngs-modal-error">Incorrect password — try again.</p>}
+            <button
+              type="submit"
+              disabled={!config || !password}
+              className="ngs-modal-btn"
+            >
+              {config ? `Continue as ${selectedRole.label} →` : 'Loading…'}
+            </button>
+          </form>
+
+          <button className="ngs-modal-close" onClick={onClose} aria-label="Close">✕</button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -582,7 +646,7 @@ function Footer() {
   );
 }
 
-function TopNav({ isDesktop }) {
+function TopNav({ isDesktop, onLoginOpen }) {
   const [open, setOpen] = useState(false);
   const [journeyOpen, setJourneyOpen] = useState(false);
   return (
@@ -600,9 +664,8 @@ function TopNav({ isDesktop }) {
             <a href="#tracks">Tracks</a>
             <JourneyDropdown />
             <a href="#scholars">Scholars</a>
-            <a href="navigator.html" className="ngs-nav-mentor-link">Navigator</a>
             <a href="#apply" className="ngs-nav-cta-link">Apply</a>
-            <QuickMenu />
+            <button className="ngs-nav-login-btn" onClick={onLoginOpen}>Login</button>
           </nav>
         ) : (
           <button className="ngs-nav-btn" onClick={() => setOpen(!open)}
@@ -640,12 +703,11 @@ function TopNav({ isDesktop }) {
             </div>
           )}
           <a href="#scholars">Scholars</a>
-          <a href="navigator.html">Navigator</a>
           <a href="#apply" className="ngs-nav-menu-cta">Apply</a>
           <div className="ngs-nav-menu-divider"></div>
-          <a href="#top" className="ngs-nav-menu-item">Home</a>
-          <a href="entry.html" className="ngs-nav-menu-item">Enter Expenses →</a>
-          <a href="navigator.html" className="ngs-nav-menu-item">Expenses (Mentor) →</a>
+          <button className="ngs-nav-menu-login" onClick={() => { setOpen(false); onLoginOpen(); }}>
+            Login →
+          </button>
         </nav>
       )}
     </header>
@@ -654,10 +716,11 @@ function TopNav({ isDesktop }) {
 
 export function NGSSite({ isDesktop }) {
   const [defaultTrack, setDefaultTrack] = useState('');
+  const [loginOpen, setLoginOpen] = useState(false);
 
   return (
     <div className={`ngs-site ${isDesktop ? 'is-desktop' : ''}`} id="top">
-      <TopNav isDesktop={isDesktop}/>
+      <TopNav isDesktop={isDesktop} onLoginOpen={() => setLoginOpen(true)}/>
       <Hero/>
       <About/>
       <Tracks onSelectTrack={setDefaultTrack}/>
@@ -665,6 +728,7 @@ export function NGSSite({ isDesktop }) {
       <Scholars/>
       <Apply defaultTrack={defaultTrack}/>
       <Footer/>
+      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
     </div>
   );
 }
