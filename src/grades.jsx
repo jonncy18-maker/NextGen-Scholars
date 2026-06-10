@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import './styles/scholar-home.css';
 import './styles/english-tracking.css';
 import './styles/grade-entry.css';
 import { GradeEntry } from './pages/GradeEntry.jsx';
