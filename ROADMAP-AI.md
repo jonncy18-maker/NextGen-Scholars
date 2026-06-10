@@ -114,17 +114,21 @@ The intent classifier is a small rule-based function (keywords + structure heuri
 
 ## Backend Prerequisites (build these first)
 
-Before connecting any API key, the following foundation work is needed:
+Before connecting any API key, the following foundation work is needed. Each item is tagged with a priority level:
 
-### 1. Consolidate to Supabase as single source of truth
+- **P0 — Blocker:** nothing downstream works without this
+- **P1 — Required:** needed before LLM keys are wired
+- **P2 — Important:** needed before production use, not before initial wiring
+
+### P0 · Consolidate to Supabase as single source of truth
 Currently data is split between Google Sheets (operational writes via Apps Script) and Supabase (reads + new writes). The AI layer needs one place to query.
 
+- Add the `expense_submissions` table to `supabase/schema.sql` (currently referenced in code but missing from schema)
 - Migrate remaining Sheets-dependent writes to Supabase
 - Deprecate or archive the Apps Script web app once migration is done
-- Add the `expense_submissions` table to `supabase/schema.sql` (currently referenced in code but missing from schema)
 
-### 2. Edge Function layer
-Replace direct Supabase client calls with a thin Edge Function API. This is the interface the AI layer will use.
+### P0 · Edge Function layer
+Replace direct Supabase client calls with a thin Edge Function API. This is the interface the AI layer will use — and where API keys are securely stored server-side.
 
 ```
 /api/scholar/:key/summary     → multi-table data bundle
@@ -134,16 +138,19 @@ Replace direct Supabase client calls with a thin Edge Function API. This is the 
 /api/ingest                   → multimodal ingestion entry point
 ```
 
-### 3. Tighten Row Level Security
-Current RLS policies are overly permissive for anon users. Before exposing an AI query layer:
+### P1 · Structured scholar context builder
+A function that takes a scholar key and returns a compact JSON context block — GPA, expenses, milestones, budgets, alerts — suitable for injecting into an LLM prompt. Called by Tiers 2 and 3 before every LLM call.
+
+### P1 · Tier 1 query resolver
+The rule-based function that pattern-matches question types to SQL queries and returns answers without an LLM. Must be solid before wiring any LLM — this is what keeps costs low and responses fast.
+
+### P2 · Tighten Row Level Security
+Current RLS policies are overly permissive for anon users. Before exposing the AI layer publicly:
 - Restrict anon to `config` table read only
 - All scholar data reads require authenticated session
 - Add service-role key for Edge Functions (never exposed to client)
 
-### 4. Structured scholar context builder
-A function that takes a scholar key and returns a compact JSON context block — GPA, expenses, milestones, budgets, alerts — suitable for injecting into an LLM prompt. This is called by Tiers 2 and 3 before every LLM call.
-
-### 5. Human-in-the-loop review UI
+### P2 · Human-in-the-loop review UI
 Before any AI-generated write hits the database, the mentor or scholar reviews a diff card:
 - "Claude read this receipt and extracted 3 expenses. Confirm?"
 - Edit fields inline, then confirm or discard
@@ -154,23 +161,28 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 
 **Short answer: yes for the foundation; not yet for the LLM keys.**
 
-| Layer | Status | Gap |
-|---|---|---|
-| Schema & data | ~80% ready | `expense_submissions` missing from schema; Sheets/Supabase split |
-| Auth | Partial | Supabase Auth works for mentor; needs service-role key for Edge Functions |
-| Edge Functions | Not started | Most critical prerequisite |
-| Context builder | Not started | Needed before any LLM prompt |
-| Review UI | Not started | Needed before any AI writes |
+| Layer | Priority | Status | Gap |
+|---|---|---|---|
+| Schema & data | P0 | ~80% ready | `expense_submissions` missing from schema; Sheets/Supabase split |
+| Edge Functions | P0 | Not started | Most critical prerequisite — API keys live here |
+| Auth / RLS | P0 (service key) · P2 (hardening) | Partial | Supabase Auth works for mentor; service-role key needed for Edge Functions |
+| Context builder | P1 | Not started | Needed before any LLM prompt |
+| Tier 1 resolver | P1 | Not started | Must be solid before LLM keys are wired |
+| Review UI | P2 | Not started | Needed before AI writes go to production |
 
 **Recommended build order:**
 
-1. Add `expense_submissions` to schema, verify Supabase migration
-2. Build the `/api/scholar/:key/summary` Edge Function (single fetch that returns the full context bundle)
-3. Build the Tier 1 query resolver — a function that pattern-matches question types to SQL and returns answers without an LLM
-4. Test the Tier 1 layer end-to-end with the mentor dashboard; get it returning useful answers from DB alone
-5. Wire Gemini for Tier 2 (advisory) — add the Google AI key to Supabase secrets
-6. Wire Claude for Tier 3 (ingestion) — add the Anthropic key to Supabase secrets, start with receipt parsing
-7. Build the confirmation UI for AI-proposed writes
+| Step | Priority | Task |
+|---|---|---|
+| 1 | P0 | Add `expense_submissions` to schema; verify Supabase migration is complete |
+| 2 | P0 | Build `/api/scholar/:key/summary` Edge Function — single call returning full context bundle |
+| 3 | P1 | Build Tier 1 query resolver — pattern-match question types to SQL, return answers without LLM |
+| 4 | P1 | Test Tier 1 end-to-end on the mentor dashboard; tune until it handles 80%+ of common queries |
+| 5 | P1 | Build scholar context builder (compact JSON for LLM injection) |
+| 6 | P1 | Wire Gemini for Tier 2 (advisory) — add `GOOGLE_AI_KEY` to Supabase secrets |
+| 7 | P1 | Wire Claude for Tier 3 (ingestion) — add `ANTHROPIC_KEY` to Supabase secrets; start with receipt parsing |
+| 8 | P2 | Build confirmation UI for AI-proposed writes |
+| 9 | P2 | Tighten RLS; audit anon access; rotate any exposed keys |
 
 ---
 
