@@ -4,7 +4,7 @@ import './styles/profile.css';
 import { NGS_DATA } from '../scholars-data.js';
 import { ScholarProfile } from './components/Profile/ScholarProfile.jsx';
 import { loadFromSupabase } from './supabase-loader.js';
-import { scholarTotals } from './utils.js';
+import { scholarTotals, buildAcademicsHistory } from './utils.js';
 
 const STATIC = NGS_DATA.scholars.claire.publicProfile;
 const STATIC_SCHOLAR = NGS_DATA.scholars.claire;
@@ -33,16 +33,17 @@ function mergeSheetData(base, s) {
         { icon: 'trophy', name: 'Milestone Rewards', amountPhp: tots.milestones, detail: base.support.categories[2]?.detail || '' },
       ],
     },
-    ...(latestGpa ? {
-      academics: {
-        ...base.academics,
+    academics: {
+      ...base.academics,
+      ...(latestGpa ? {
         current: {
           label: `${latestGpa.sem} — Latest GPA`,
           value: latestGpa.gpa,
           floor: s.gpaFloor ?? base.academics.current.floor,
         },
-      },
-    } : {}),
+      } : {}),
+      ...(academics.length ? { history: buildAcademicsHistory(academics) } : {}),
+    },
     milestones: s.milestones?.length
       ? s.milestones.map((m, i) => {
           const stat = base.milestones[i] || {};

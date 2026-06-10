@@ -97,14 +97,7 @@ const NGS_DATA = {
         academics: {
           title: 'Holding the line.',
           intro: 'Claire must maintain an 81% floor to remain in the BSN program. Every semester clears it.',
-          current: { label: 'Year 2 · S1 — Latest GPA', value: 81.36, floor: 81 },
-          history: [
-            { label: 'Trial · Grade 12',  value: '85%+',        status: 'good'   },
-            { label: 'Year 1 · S1',       value: '83.25%',      status: 'good'   },
-            { label: 'Year 1 · S2',       value: '88.16%',      status: 'good'   },
-            { label: 'Year 2 · S1',       value: '81.36%',      status: 'warn'   },
-            { label: 'Year 2 · S2',       value: 'In progress', status: 'active' },
-          ],
+          current: { label: 'Y2S2 — Latest GPA', value: null, floor: 81 },
         },
         support: {
           title: 'What it takes to lift one.',
