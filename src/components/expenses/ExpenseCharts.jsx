@@ -35,7 +35,7 @@ export function ChartSem({ s, currency, extraRows }) {
 
   const data = allSems.map(sem => {
     let actual = 0, budget = 0;
-    (s.expenses[sem] || []).forEach(e => { const tot = (e.amount || 0) * (e.qty || 1); if (e.avb === 'Actual') actual += tot; else budget += tot; });
+    (s.expenses?.[sem] || []).forEach(e => { const tot = (e.amount || 0) * (e.qty || 1); if (e.avb === 'Actual') actual += tot; else budget += tot; });
     (extraRows || []).filter(r => r.sem === sem).forEach(e => { const tot = (e.amount || 0) * (e.qty || 1); if (e.avb === 'Actual') actual += tot; else budget += tot; });
     return { sem, actual, budget };
   });
