@@ -14,6 +14,233 @@ const QUICK_PROMPTS = [
   { label: 'Open actions',    tpl: () => 'What action items are still open?' },
 ];
 
+// ── Intent-specific result renderers ─────────────────────────────────────────
+
+function phpStr(n) {
+  const abs = Math.abs(n);
+  const fmt = abs.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return (n < 0 ? '-₱' : '₱') + fmt;
+}
+
+function UrgencyChip({ urgency }) {
+  return <span className={`nai-badge nai-urgency-${urgency || 'future'}`}>{urgency || 'future'}</span>;
+}
+
+function CatChip({ cat }) {
+  return <span className="nai-badge nai-cat">{cat || 'general'}</span>;
+}
+
+function StateChip({ state }) {
+  return <span className={`nai-badge nai-state-${state}`}>{state}</span>;
+}
+
+function SeverityChip({ severity }) {
+  return <span className={`nai-badge nai-sev-${severity}`}>{severity}</span>;
+}
+
+function DeadlinesResult({ data }) {
+  if (!Array.isArray(data) || !data.length) return <p className="nai-empty">No upcoming deadlines.</p>;
+  return (
+    <div className="nai-rows">
+      {data.map((d, i) => (
+        <div key={i} className="nai-row-item">
+          <UrgencyChip urgency={d.urgency} />
+          <span className="nai-row-primary">{d.event}</span>
+          <span className="nai-row-date">{d.when_date}</span>
+          <CatChip cat={d.cat} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MilestonesResult({ data }) {
+  if (!Array.isArray(data) || !data.length) return <p className="nai-empty">No milestones found.</p>;
+  return (
+    <div className="nai-rows">
+      {data.map((m, i) => (
+        <div key={i} className="nai-row-item">
+          <StateChip state={m.state} />
+          <span className="nai-row-primary">{m.name}</span>
+          <span className="nai-row-date">{m.sem}</span>
+          {m.amount_php ? <span className="nai-row-amount">{phpStr(m.amount_php)}</span> : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AlertsResult({ data }) {
+  if (!Array.isArray(data) || !data.length) return <p className="nai-empty">No active alerts.</p>;
+  return (
+    <div className="nai-rows">
+      {data.map((a, i) => (
+        <div key={i} className="nai-row-item">
+          <SeverityChip severity={a.severity} />
+          <span className="nai-row-primary">{a.title}</span>
+          {a.sub && <span className="nai-row-sub">{a.sub}</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ActionsResult({ data }) {
+  if (!Array.isArray(data) || !data.length) return <p className="nai-empty">No open action items.</p>;
+  return (
+    <div className="nai-rows">
+      {data.map((a, i) => (
+        <div key={i} className="nai-row-item">
+          <CatChip cat={a.cat} />
+          <span className="nai-row-primary">{a.text}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function GpaResult({ data }) {
+  if (!Array.isArray(data) || !data.length) return <p className="nai-empty">No academic records found.</p>;
+  return (
+    <div className="nai-rows">
+      {data.map((r, i) => (
+        <div key={i} className="nai-row-item">
+          <span className="nai-badge nai-cat">{r.sem}</span>
+          <span className="nai-row-primary">GPA {r.gpa}</span>
+          <span className={`nai-badge nai-state-${r.status === 'good standing' ? 'complete' : 'pending'}`}>{r.status}</span>
+          {r.note && <span className="nai-row-sub">{r.note}</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ExpenseTotalResult({ data, answer }) {
+  if (!data || data.total === undefined) return <p className="nai-answer-text">{answer}</p>;
+  return (
+    <div className="nai-stat-block">
+      <div className="nai-stat-main">{phpStr(data.total)}</div>
+      <div className="nai-stat-label">{data.count} expense{data.count !== 1 ? 's' : ''} recorded</div>
+      {data.bySem && Object.keys(data.bySem).length > 0 && (
+        <div className="nai-rows nai-rows-compact">
+          {Object.entries(data.bySem).map(([sem, amt]) => (
+            <div key={sem} className="nai-row-item">
+              <span className="nai-badge nai-cat">{sem}</span>
+              <span className="nai-row-amount">{phpStr(amt)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BudgetResult({ data, answer }) {
+  if (!data?.budgets) return <p className="nai-answer-text">{answer}</p>;
+  return (
+    <div className="nai-rows">
+      {data.budgets.map((b, i) => {
+        const spent = data.expBySem?.[b.sem] ?? 0;
+        const budget = b.amount_php ?? 0;
+        const pct = budget > 0 ? Math.round((spent / budget) * 100) : 0;
+        const over = spent > budget;
+        const near = !over && spent > budget * 0.9;
+        return (
+          <div key={i} className="nai-row-item nai-budget-row">
+            <span className="nai-badge nai-cat">{b.sem}</span>
+            <span className="nai-row-primary">{phpStr(spent)} <span className="nai-row-sub">of {phpStr(budget)}</span></span>
+            <span className={`nai-badge ${over ? 'nai-sev-critical' : near ? 'nai-sev-warning' : 'nai-state-complete'}`}>
+              {over ? 'over budget' : `${pct}%`}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ProgressResult({ data, answer }) {
+  if (!data?.profile) return <p className="nai-answer-text">{answer}</p>;
+  const { profile, latestAcademic, milestoneCount, completedMilestones } = data;
+  return (
+    <div className="nai-progress-block">
+      <div className="nai-progress-name">{profile.name}</div>
+      <div className="nai-progress-meta">
+        <CatChip cat={profile.track} />
+        <StateChip state={profile.status === 'active' ? 'complete' : 'pending'} />
+        <span className="nai-badge nai-cat">{profile.current_sem}</span>
+      </div>
+      {latestAcademic && (
+        <div className="nai-row-item" style={{ marginTop: 8 }}>
+          <span className="nai-row-sub">Latest GPA</span>
+          <span className="nai-row-primary">{latestAcademic.gpa}</span>
+          <span className="nai-badge nai-cat">{latestAcademic.sem}</span>
+        </div>
+      )}
+      <div className="nai-row-item">
+        <span className="nai-row-sub">Milestones</span>
+        <span className="nai-row-primary">{completedMilestones} of {milestoneCount} complete</span>
+      </div>
+    </div>
+  );
+}
+
+function RecentExpensesResult({ data }) {
+  if (!Array.isArray(data) || !data.length) return <p className="nai-empty">No expenses recorded.</p>;
+  return (
+    <div className="nai-rows">
+      {data.map((e, i) => {
+        const total = (e.amount ?? 0) * (e.qty ?? 1);
+        return (
+          <div key={i} className="nai-row-item">
+            <span className="nai-row-date">{e.date}</span>
+            <span className="nai-row-primary">{e.item}{e.vendor ? <span className="nai-row-sub"> @ {e.vendor}</span> : null}</span>
+            <span className="nai-row-amount">{phpStr(total)}</span>
+            <CatChip cat={e.cat} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function EnglishResult({ data, answer }) {
+  if (!data || data.totalHours === undefined) return <p className="nai-answer-text">{answer}</p>;
+  return (
+    <div className="nai-stat-block">
+      <div className="nai-stat-main">{data.totalHours} hrs</div>
+      <div className="nai-stat-label">{data.sessions} session{data.sessions !== 1 ? 's' : ''} logged</div>
+      {data.bySem && Object.keys(data.bySem).length > 0 && (
+        <div className="nai-rows nai-rows-compact">
+          {Object.entries(data.bySem).map(([sem, min]) => (
+            <div key={sem} className="nai-row-item">
+              <span className="nai-badge nai-cat">{sem}</span>
+              <span className="nai-row-amount">{(min / 60).toFixed(1)} hrs</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function IntentResult({ intent, data, answer }) {
+  switch (intent) {
+    case 'deadlines':           return <DeadlinesResult data={data} />;
+    case 'milestone_status':    return <MilestonesResult data={data} />;
+    case 'alerts':              return <AlertsResult data={data} />;
+    case 'open_actions':        return <ActionsResult data={data} />;
+    case 'gpa_trend':           return <GpaResult data={data} />;
+    case 'expense_total':
+    case 'expense_by_category': return <ExpenseTotalResult data={data} answer={answer} />;
+    case 'budget_status':       return <BudgetResult data={data} answer={answer} />;
+    case 'progress_summary':    return <ProgressResult data={data} answer={answer} />;
+    case 'recent_expenses':     return <RecentExpensesResult data={data} />;
+    case 'english_hours':       return <EnglishResult data={data} answer={answer} />;
+    default:                    return <p className="nai-answer-text">{answer}</p>;
+  }
+}
+
 function ResultDisplay({ result }) {
   if (!result) return null;
 
@@ -24,7 +251,7 @@ function ResultDisplay({ result }) {
           <span className="nai-tier-badge">Tier 1 · DB</span>
           {result.intent && <span className="nai-intent">{result.intent.replace(/_/g, ' ')}</span>}
         </div>
-        <pre className="nai-answer">{result.answer}</pre>
+        <IntentResult intent={result.intent} data={result.data} answer={result.answer} />
       </div>
     );
   }

@@ -1468,6 +1468,68 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   margin: 0; padding: 0;
 }
 
+/* ── Structured result rows ── */
+.nai-answer-text {
+  font-family: var(--ngs-sans); font-size: 13.5px; line-height: 1.6;
+  color: var(--ngs-ink); margin: 0;
+}
+
+.nai-empty {
+  font-family: var(--ngs-sans); font-size: 13px; color: var(--ngs-muted);
+  margin: 0; font-style: italic;
+}
+
+.nai-rows { display: flex; flex-direction: column; gap: 6px; }
+.nai-rows-compact { margin-top: 10px; gap: 4px; }
+
+.nai-row-item {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 7px;
+  padding: 7px 10px; border-radius: 6px;
+  background: var(--ngs-paper); border: 1px solid var(--ngs-rule);
+  font-family: var(--ngs-sans); font-size: 13px;
+}
+
+.nai-row-primary { flex: 1; min-width: 0; color: var(--ngs-ink); font-weight: 500; }
+.nai-row-date    { font-size: 11.5px; color: var(--ngs-muted); font-family: var(--ngs-mono); flex-shrink: 0; }
+.nai-row-amount  { font-size: 12.5px; color: var(--ngs-ink); font-family: var(--ngs-mono); font-weight: 600; flex-shrink: 0; }
+.nai-row-sub     { font-size: 12px; color: var(--ngs-muted); }
+
+/* ── Chips / badges ── */
+.nai-badge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 4px;
+  font-family: var(--ngs-sans); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.03em; white-space: nowrap; flex-shrink: 0;
+}
+
+/* urgency */
+.nai-urgency-now      { background: rgba(177,27,42,0.12); color: var(--ngs-red); }
+.nai-urgency-soon     { background: rgba(201,168,76,0.18); color: #8a6200; }
+.nai-urgency-upcoming { background: rgba(27,42,74,0.10); color: var(--ngs-navy); }
+.nai-urgency-future   { background: rgba(107,110,122,0.10); color: var(--ngs-muted); }
+
+/* state */
+.nai-state-complete { background: rgba(30,120,60,0.12); color: #1a6635; }
+.nai-state-pending  { background: rgba(27,42,74,0.10); color: var(--ngs-navy); }
+
+/* severity */
+.nai-sev-critical { background: rgba(177,27,42,0.12); color: var(--ngs-red); }
+.nai-sev-warning  { background: rgba(201,168,76,0.18); color: #8a6200; }
+.nai-sev-info     { background: rgba(27,42,74,0.10); color: var(--ngs-navy); }
+
+/* category (neutral navy) */
+.nai-cat { background: rgba(27,42,74,0.08); color: var(--ngs-navy); }
+
+/* ── Stat block (expenses / english hours) ── */
+.nai-stat-block { display: flex; flex-direction: column; gap: 4px; }
+.nai-stat-main  { font-family: var(--ngs-display); font-size: 28px; color: var(--ngs-navy); line-height: 1.2; }
+.nai-stat-label { font-family: var(--ngs-sans); font-size: 12px; color: var(--ngs-muted); margin-bottom: 4px; }
+
+/* ── Progress block ── */
+.nai-progress-block  { display: flex; flex-direction: column; gap: 8px; }
+.nai-progress-name   { font-family: var(--ngs-display); font-size: 18px; color: var(--ngs-navy); }
+.nai-progress-meta   { display: flex; flex-wrap: wrap; gap: 6px; }
+
 .nai-escalate-msg {
   font-size: 13px; color: var(--ngs-ink-soft); line-height: 1.5;
 }
