@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { NGS_DATA } from '../../scholars-data.js';
 import { JOURNEY_STAGES } from '../constants.js';
 import { JourneyDropdown } from '../components/JourneyDropdown.jsx';
@@ -49,12 +50,13 @@ const IconArrow = ({ size = 14, color = 'currentColor' }) => (
 // ── login modal ───────────────────────────────────────────────────────────────
 
 const ROLES = [
-  { key: 'claire', label: 'Claire', configKey: 'claire_password', dest: 'claire-home.html' },
-  { key: 'april',  label: 'April',  configKey: 'april_password',  dest: 'april-home.html'  },
-  { key: 'mentor', label: 'Mentor', configKey: 'password',        dest: 'navigator.html'   },
+  { key: 'claire', label: 'Claire', configKey: 'claire_password', dest: '/home/claire' },
+  { key: 'april',  label: 'April',  configKey: 'april_password',  dest: '/home/april'  },
+  { key: 'mentor', label: 'Mentor', configKey: 'password',        dest: '/navigator'   },
 ];
 
 function LoginModal({ onClose }) {
+  const navigate = useNavigate();
   const [role, setRole] = useState('claire');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
@@ -89,7 +91,7 @@ function LoginModal({ onClose }) {
     const { configKey, dest } = ROLES.find(r => r.key === role);
     const expected = config[configKey];
     if (expected && password === expected) {
-      window.location.href = dest;
+      navigate(dest);
     } else {
       setError(true);
     }

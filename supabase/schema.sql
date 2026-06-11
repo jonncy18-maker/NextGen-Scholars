@@ -214,3 +214,34 @@ create policy "anon_read_budgets"    on budgets    for select to anon using (tru
 -- entry form also reads existing expenses and inserts new ones.
 create policy "anon_read_expenses"   on expenses   for select to anon using (true);
 create policy "anon_insert_expenses" on expenses   for insert to anon with check (true);
+
+-- ── EXPENSE SUBMISSIONS ───────────────────────────────────────────────────────
+-- Scholar-submitted expense proposals that require mentor approval before
+-- they are committed to the expenses table.
+create table if not exists expense_submissions (
+  id                 uuid        default gen_random_uuid() primary key,
+  scholar_key        text        references scholars(scholar_key) on delete cascade,
+  expense_data       jsonb       not null,
+  status             text        not null default 'pending'
+                                   check (status in ('pending','approved','rejected','resubmitted')),
+  rejection_comment  text,
+  read_by_scholar    boolean     default false,
+  reviewed_at        timestamptz,
+  created_at         timestamptz default now()
+);
+
+alter table expense_submissions enable row level security;
+
+-- Mentor: full access
+create policy "auth_all_submissions" on expense_submissions
+  for all to authenticated using (true) with check (true);
+
+-- Scholars (anon): insert new submissions; read and update their own
+create policy "anon_insert_submissions" on expense_submissions
+  for insert to anon with check (true);
+
+create policy "anon_read_submissions" on expense_submissions
+  for select to anon using (true);
+
+create policy "anon_update_submissions" on expense_submissions
+  for update to anon using (true) with check (true);

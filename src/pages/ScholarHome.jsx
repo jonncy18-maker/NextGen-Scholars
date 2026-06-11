@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import {
   IconExpenses, IconGrades, IconClock, IconIsland,
@@ -12,8 +13,8 @@ const CONFIGS = {
     trackCode: 'NGN',
     stage: 'Year 2 · Semester 2',
     tagline: <>Four semesters to clear — <em>steady as you go.</em></>,
-    expensesHref: 'entry.html?scholar=claire',
-    gradesHref: 'claire.html',
+    expensesHref: '/entry?scholar=claire',
+    gradesHref: '/claire',
     semKey: 'Y2S2',
     englishTarget: 200,
   },
@@ -23,8 +24,8 @@ const CONFIGS = {
     trackCode: 'NGN',
     stage: 'Grade 11 · Semester 1',
     tagline: <>Trial period in progress — <em>one step at a time.</em></>,
-    expensesHref: 'entry.html?scholar=april',
-    gradesHref: 'april.html',
+    expensesHref: '/entry?scholar=april',
+    gradesHref: '/april',
     semKey: 'TG11S1',
     englishTarget: null,
   },
@@ -124,17 +125,17 @@ export function ScholarHome({ scholarKey }) {
       icon: <IconGrades size={25} />,
       label: 'View Grades',
       blurb: gpaBlurb,
-      href: `grades.html?scholar=${scholarKey}`,
+      href: `/grades/${scholarKey}`,
     },
   ];
 
   const TRACKERS = [
-    { key: 'english',  icon: <IconClock size={19} />,     label: 'English Hours',    sub: englishSub, href: `english.html?scholar=${scholarKey}` },
-    { key: 'vacation', icon: <IconIsland size={19} />,    label: 'Vacation Tracker', sub: 'Trip log', href: `${scholarKey}.html#travel` },
-    { key: 'career',   icon: <IconBriefcase size={19} />, label: 'Career Tracker',   sub: 'Pathway steps', href: '#' },
-    { key: 'rewards',  icon: <IconTrophy size={19} />,    label: 'Rewards Tracker',  sub: `${rewardsCount} unlocked`, reward: true, href: `${scholarKey}.html#milestones` },
-    { key: 'messages', icon: <IconMessage size={19} />,   label: 'Messages',         sub: 'No new messages', href: '#' },
-    { key: 'docs',     icon: <IconDocument size={19} />,  label: 'Documents',        sub: 'Files & records', href: '#' },
+    { key: 'english',  icon: <IconClock size={19} />,     label: 'English Hours',    sub: englishSub, href: `/english/${scholarKey}` },
+    { key: 'vacation', icon: <IconIsland size={19} />,    label: 'Vacation Tracker', sub: 'Trip log', href: `/${scholarKey}#travel` },
+    { key: 'career',   icon: <IconBriefcase size={19} />, label: 'Career Tracker',   sub: 'Pathway steps', href: null },
+    { key: 'rewards',  icon: <IconTrophy size={19} />,    label: 'Rewards Tracker',  sub: `${rewardsCount} unlocked`, reward: true, href: `/${scholarKey}#milestones` },
+    { key: 'messages', icon: <IconMessage size={19} />,   label: 'Messages',         sub: 'No new messages', href: null },
+    { key: 'docs',     icon: <IconDocument size={19} />,  label: 'Documents',        sub: 'Files & records', href: null },
   ];
 
   return (
@@ -163,12 +164,12 @@ export function ScholarHome({ scholarKey }) {
           </div>
           <div className="sp-primary-grid">
             {PRIMARY.map(card => (
-              <a key={card.key} className="sp-card" href={card.href}>
+              <Link key={card.key} className="sp-card" to={card.href}>
                 <div className="sp-card-icon">{card.icon}</div>
                 <div className="sp-card-arrow"><IconArrow size={16} /></div>
                 <div className="sp-card-label">{card.label}</div>
                 <div className="sp-card-blurb">{card.blurb}</div>
-              </a>
+              </Link>
             ))}
           </div>
         </section>
@@ -180,17 +181,20 @@ export function ScholarHome({ scholarKey }) {
             <span className="sp-eyebrow-count">06</span>
           </div>
           <div className="sp-tracker-grid">
-            {TRACKERS.map(tile => (
-              <a key={tile.key} className={`sp-tile${tile.reward ? ' is-reward' : ''}`} href={tile.href}>
-                <div className="sp-tile-icon">
-                  {tile.icon}
-                </div>
-                <div className="sp-tile-body">
-                  <div className="sp-tile-label">{tile.label}</div>
-                  <div className="sp-tile-sub">{tile.sub}</div>
-                </div>
-              </a>
-            ))}
+            {TRACKERS.map(tile => {
+              const inner = (
+                <>
+                  <div className="sp-tile-icon">{tile.icon}</div>
+                  <div className="sp-tile-body">
+                    <div className="sp-tile-label">{tile.label}</div>
+                    <div className="sp-tile-sub">{tile.sub}</div>
+                  </div>
+                </>
+              );
+              return tile.href
+                ? <Link key={tile.key} className={`sp-tile${tile.reward ? ' is-reward' : ''}`} to={tile.href}>{inner}</Link>
+                : <div key={tile.key} className={`sp-tile sp-tile--inactive${tile.reward ? ' is-reward' : ''}`}>{inner}</div>;
+            })}
           </div>
         </section>
 

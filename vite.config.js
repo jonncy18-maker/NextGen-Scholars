@@ -1,26 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
-import { fileURLToPath } from 'url'
-
-const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
   plugins: [react()],
   base: '/NextGen-Scholars/',
-  build: {
-    rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html'),
-        claire: resolve(__dirname, 'claire.html'),
-        april: resolve(__dirname, 'april.html'),
-        navigator: resolve(__dirname, 'navigator.html'),
-        entry: resolve(__dirname, 'entry.html'),
-        'claire-home': resolve(__dirname, 'claire-home.html'),
-        'april-home': resolve(__dirname, 'april-home.html'),
-        english: resolve(__dirname, 'english.html'),
-        grades: resolve(__dirname, 'grades.html'),
-      },
-    },
-  },
 })

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { NGSIcons } from './icons.jsx';
 import { DEFAULT_RATE } from '../../fx.js';
 import { useFxState } from '../../context/FxContext.jsx';
@@ -91,12 +92,12 @@ function TopNav({ data, fx, isMobile }) {
   return (
     <header className="ngs-pnav">
       <div className="ngs-pnav-inner">
-        <a href="index.html" className="ngs-pnav-brand">
+        <Link to="/" className="ngs-pnav-brand">
           <div className="ngs-mark ngs-mark-sm">
             <span>N</span><span>G</span><span>S</span>
           </div>
           <span className="ngs-pnav-name">NextGen Scholars</span>
-        </a>
+        </Link>
         {fxWidget}
         {isMobile ? (
           <button
@@ -110,19 +111,19 @@ function TopNav({ data, fx, isMobile }) {
           </button>
         ) : (
           <nav className="ngs-pnav-desktop">
-            <a href="index.html#about">About</a>
-            <a href="index.html#tracks">Tracks</a>
-            <JourneyDropdown baseHref="index.html" />
-            <a href="index.html#scholars">Scholars</a>
-            <a href="navigator.html" className="ngs-pnav-mentor-link">Navigator</a>
-            <a href="index.html#apply" className="ngs-pnav-cta-link">Apply</a>
+            <a href="/#about">About</a>
+            <a href="/#tracks">Tracks</a>
+            <JourneyDropdown baseHref="/" />
+            <a href="/#scholars">Scholars</a>
+            <Link to="/navigator" className="ngs-pnav-mentor-link">Navigator</Link>
+            <a href="/#apply" className="ngs-pnav-cta-link">Apply</a>
           </nav>
         )}
       </div>
       {isMobile && open && (
         <nav className="ngs-pnav-menu" id="ngs-pnav-mobile-menu" onClick={() => setOpen(false)}>
-          <a href="index.html#about">About</a>
-          <a href="index.html#tracks">Tracks</a>
+          <a href="/#about">About</a>
+          <a href="/#tracks">Tracks</a>
           <button
             className={`ngs-pnav-journey-toggle${journeyOpen ? ' is-open' : ''}`}
             onClick={e => { e.stopPropagation(); setJourneyOpen(v => !v); }}
@@ -139,16 +140,16 @@ function TopNav({ data, fx, isMobile }) {
           {journeyOpen && (
             <div className="ngs-pnav-journey-sub">
               {JOURNEY_STAGES.map((s, i) => (
-                <a key={i} href={`index.html${s.href}`} className="ngs-pnav-journey-sub-item">
+                <a key={i} href={`/${s.href}`} className="ngs-pnav-journey-sub-item">
                   <span className="ngs-jdrop-num">0{i + 1}</span>
                   {s.label}
                 </a>
               ))}
             </div>
           )}
-          <a href="index.html#scholars">Scholars</a>
-          <a href="navigator.html">Navigator</a>
-          <a href="index.html#apply" className="ngs-pnav-menu-cta">Apply</a>
+          <a href="/#scholars">Scholars</a>
+          <Link to="/navigator">Navigator</Link>
+          <a href="/#apply" className="ngs-pnav-menu-cta">Apply</a>
         </nav>
       )}
     </header>
@@ -558,9 +559,9 @@ function ProfileFooter({ data, relatedProfiles }) {
       {relatedProfiles?.length > 0 && (
         <div className="ngs-pfooter-links">
           {relatedProfiles.map(p => (
-            <a key={p.href} href={p.href} className="ngs-pfooter-link">
+            <Link key={p.href} to={p.href} className="ngs-pfooter-link">
               View {p.name}'s profile →
-            </a>
+            </Link>
           ))}
         </div>
       )}

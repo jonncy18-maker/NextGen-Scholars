@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom/client';
-import '../styles/navigator.css';
 import { NGS_DATA } from '../../scholars-data.js';
 import { loadFromSupabase, loadPendingSubmissions } from '../supabase-loader.js';
 import { storedMode, storedRate, persistFx, fetchMarketRate } from '../fx.js';
@@ -24,7 +22,7 @@ if (!NGS_DATA || !NGS_DATA.config) {
 const STATIC_SCHOLAR_KEYS = ['claire', 'april', 'aljane'];
 const ALL_SECTION_IDS = ['alerts', 'status', 'expenses', 'deadlines', 'english'];
 
-function Navigator() {
+export function Navigator() {
   const [D, setD] = useState(NGS_DATA);
   const scholarKeys = STATIC_SCHOLAR_KEYS.filter(k => D.scholars[k]);
 
@@ -326,4 +324,3 @@ function Navigator() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<Navigator />);

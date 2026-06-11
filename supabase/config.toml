@@ -1,0 +1,7 @@
+project_id = "rhoxpfuephkuaartuqou"
+
+[functions.scholar-summary]
+verify_jwt = true
+
+[functions.ask]
+verify_jwt = true

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 const SECTION_NAV = [
   { id: 'sec-alerts',    label: '01  Alerts' },
@@ -31,10 +32,10 @@ export function NavBar({
     <header className="nav">
       {/* Row 1 — brand + controls */}
       <div className="nav-inner">
-        <a className="nav-brand" href="index.html">
+        <Link className="nav-brand" to="/">
           <span className="ngs-mark ngs-mark-sm"><span>N</span><span>G</span><span>S</span></span>
           <span className="nav-name">Pathway Navigator</span>
-        </a>
+        </Link>
         <div className="nav-right">
           <div className="nav-toggle">
             {['PHP', 'USD'].map(cur => (
@@ -54,7 +55,7 @@ export function NavBar({
           >
             <span className="refresh-icon">↻</span> Refresh
           </button>
-          <a className="nav-back" href="index.html">← All scholars</a>
+          <Link className="nav-back" to="/">← All scholars</Link>
         </div>
       </div>
 
