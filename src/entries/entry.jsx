@@ -638,64 +638,66 @@ function ExpenseForm({ scholar, onLogout }) {
 
         {/* ── Multiple entry form ── */}
         {entryMode === 'multiple' && (
-          <div className="ef-entry-card ef-multi-card">
-            <div className="ef-entry-card-hd">
-              <span className="ef-entry-card-title">Add multiple expenses</span>
-              <button className="ef-entry-card-close" onClick={() => setEntryMode(null)}>✕</button>
-            </div>
-            {multiSubmitState === 'done' && <div className="ef-toast">✓ {filledRows.length} expense{filledRows.length !== 1 ? 's' : ''} submitted for review</div>}
-            <form onSubmit={handleMultiSubmit}>
-              <div className="ef-multi-scroll">
-                <table className="ef-multi-table">
-                  <thead>
-                    <tr>
-                      <th>Item</th>
-                      <th>Category</th>
-                      <th>Amount (₱)</th>
-                      <th>Qty</th>
-                      <th>Date</th>
-                      <th>Status</th>
-                      <th>Vendor</th>
-                      <th />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {multiRows.map((row, idx) => (
-                      <tr key={row._id} className="ef-multi-row">
-                        <td><input className="ef-multi-input ef-multi-wide" type="text" placeholder="Item name"
-                          value={row.item} onChange={e => updateMultiRow(idx, 'item', e.target.value)} /></td>
-                        <td><select className="ef-multi-input" value={row.cat} onChange={e => updateMultiRow(idx, 'cat', e.target.value)}>
-                          {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}</select></td>
-                        <td><input className="ef-multi-input ef-multi-num" type="number" step="0.01" min="0" placeholder="0.00"
-                          value={row.amount} onChange={e => updateMultiRow(idx, 'amount', e.target.value)} /></td>
-                        <td><input className="ef-multi-input ef-multi-sm" type="number" min="1"
-                          value={row.qty} onChange={e => updateMultiRow(idx, 'qty', e.target.value)} /></td>
-                        <td><input className="ef-multi-input" type="date"
-                          value={row.date} onChange={e => updateMultiRow(idx, 'date', e.target.value)} /></td>
-                        <td><select className="ef-multi-input" value={row.avb} onChange={e => updateMultiRow(idx, 'avb', e.target.value)}>
-                          <option value="Actual">Actual</option>
-                          <option value="Budget">Budget</option>
-                        </select></td>
-                        <td><input className="ef-multi-input ef-multi-wide" type="text" placeholder="Optional"
-                          value={row.vendor} onChange={e => updateMultiRow(idx, 'vendor', e.target.value)} /></td>
-                        <td><button type="button" className="ef-multi-remove" onClick={() => removeMultiRow(idx)}
-                          disabled={multiRows.length <= 1}>×</button></td>
+          <div className="ef-modal-overlay" onClick={e => { if (e.target === e.currentTarget) setEntryMode(null); }}>
+            <div className="ef-modal-panel">
+              <div className="ef-modal-hd">
+                <span className="ef-entry-card-title">Add multiple expenses</span>
+                <button className="ef-entry-card-close" onClick={() => setEntryMode(null)}>✕</button>
+              </div>
+              {multiSubmitState === 'done' && <div className="ef-toast ef-modal-toast">✓ {filledRows.length} expense{filledRows.length !== 1 ? 's' : ''} submitted for review</div>}
+              <form onSubmit={handleMultiSubmit} className="ef-modal-form">
+                <div className="ef-multi-scroll ef-modal-scroll">
+                  <table className="ef-multi-table">
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th>Category</th>
+                        <th>Amount (₱)</th>
+                        <th>Qty</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Vendor</th>
+                        <th />
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="ef-multi-footer">
-                <button type="button" className="ef-multi-add-row" onClick={() => setMultiRows(prev => [...prev, makeEmptyRow(scholar.defaultSem)])}>
-                  + Add another expense
-                </button>
-                <button type="submit"
-                  disabled={filledRows.length === 0 || multiSubmitState === 'submitting'}
-                  className={`ef-save${multiSubmitState === 'done' ? ' is-saved' : ''}`}>
-                  {multiSubmitState === 'done' ? '✓ Submitted' : multiSubmitState === 'submitting' ? 'Submitting…' : `Submit ${filledRows.length > 0 ? filledRows.length + ' ' : ''}expense${filledRows.length !== 1 ? 's' : ''}`}
-                </button>
-              </div>
-            </form>
+                    </thead>
+                    <tbody>
+                      {multiRows.map((row, idx) => (
+                        <tr key={row._id} className="ef-multi-row">
+                          <td><input className="ef-multi-input ef-multi-wide" type="text" placeholder="Item name"
+                            value={row.item} onChange={e => updateMultiRow(idx, 'item', e.target.value)} /></td>
+                          <td><select className="ef-multi-input ef-multi-cat" value={row.cat} onChange={e => updateMultiRow(idx, 'cat', e.target.value)}>
+                            {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}</select></td>
+                          <td><input className="ef-multi-input ef-multi-num" type="number" step="0.01" min="0" placeholder="0.00"
+                            value={row.amount} onChange={e => updateMultiRow(idx, 'amount', e.target.value)} /></td>
+                          <td><input className="ef-multi-input ef-multi-sm" type="number" min="1"
+                            value={row.qty} onChange={e => updateMultiRow(idx, 'qty', e.target.value)} /></td>
+                          <td><input className="ef-multi-input ef-multi-date" type="date"
+                            value={row.date} onChange={e => updateMultiRow(idx, 'date', e.target.value)} /></td>
+                          <td><select className="ef-multi-input ef-multi-avb" value={row.avb} onChange={e => updateMultiRow(idx, 'avb', e.target.value)}>
+                            <option value="Actual">Actual</option>
+                            <option value="Budget">Budget</option>
+                          </select></td>
+                          <td><input className="ef-multi-input ef-multi-wide" type="text" placeholder="Optional"
+                            value={row.vendor} onChange={e => updateMultiRow(idx, 'vendor', e.target.value)} /></td>
+                          <td><button type="button" className="ef-multi-remove" onClick={() => removeMultiRow(idx)}
+                            disabled={multiRows.length <= 1}>×</button></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="ef-multi-footer ef-modal-footer">
+                  <button type="button" className="ef-multi-add-row" onClick={() => setMultiRows(prev => [...prev, makeEmptyRow(scholar.defaultSem)])}>
+                    + Add another expense
+                  </button>
+                  <button type="submit"
+                    disabled={filledRows.length === 0 || multiSubmitState === 'submitting'}
+                    className={`ef-save${multiSubmitState === 'done' ? ' is-saved' : ''}`}>
+                    {multiSubmitState === 'done' ? '✓ Submitted' : multiSubmitState === 'submitting' ? 'Submitting…' : `Submit ${filledRows.length > 0 ? filledRows.length + ' ' : ''}expense${filledRows.length !== 1 ? 's' : ''}`}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
 

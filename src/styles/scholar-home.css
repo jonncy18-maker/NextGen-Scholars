@@ -300,6 +300,13 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
   font-family: var(--ngs-display); font-style: italic;
   font-size: 15px; color: var(--ngs-gold-soft); line-height: 1.2;
 }
+.sp-home-link {
+  margin-left: auto; flex-shrink: 0;
+  font-family: var(--ngs-mono); font-size: 11px; letter-spacing: 0.06em;
+  color: rgba(228,201,122,0.4);
+  transition: color 0.15s;
+}
+.sp-home-link:hover { color: var(--ngs-gold); }
 
 /* ── loading shimmer ── */
 .sp-loading {

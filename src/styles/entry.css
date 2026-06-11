@@ -356,8 +356,11 @@ input, select { font-family: inherit; }
   border-color: var(--ngs-navy); box-shadow: 0 0 0 2px rgba(27,42,74,0.06);
 }
 .ef-multi-wide { min-width: 130px; }
-.ef-multi-num  { max-width: 90px; }
-.ef-multi-sm   { max-width: 76px; }
+.ef-multi-num  { min-width: 90px; }
+.ef-multi-sm   { min-width: 68px; }
+.ef-multi-cat  { min-width: 140px; }
+.ef-multi-date { min-width: 130px; }
+.ef-multi-avb  { min-width: 90px; }
 .ef-multi-remove {
   width: 24px; height: 24px; border-radius: 50%; font-size: 16px; line-height: 1;
   display: inline-flex; align-items: center; justify-content: center;
@@ -623,4 +626,54 @@ input, select { font-family: inherit; }
   align-items: end;
   padding: 14px; border-radius: 6px;
   background: rgba(27,42,74,0.03); border: 1px solid var(--ngs-rule);
+}
+
+/* ════════════════ BATCH ENTRY MODAL ════════════════ */
+.ef-modal-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(14, 26, 51, 0.6);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+  animation: efFadeIn 0.15s ease both;
+}
+@keyframes efFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.ef-modal-panel {
+  background: #fff;
+  border: 1px solid rgba(201,168,76,0.4);
+  border-radius: 10px;
+  width: min(96vw, 1100px);
+  max-height: 88vh;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  box-shadow: 0 8px 40px rgba(14,26,51,0.28);
+  animation: efIn 0.18s ease both;
+}
+[data-scholar="april"] .ef-modal-panel { border-color: rgba(74,125,200,0.35); }
+.ef-modal-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--ngs-rule);
+  flex-shrink: 0;
+}
+.ef-modal-form {
+  display: flex; flex-direction: column;
+  flex: 1; min-height: 0;
+}
+.ef-modal-toast {
+  margin: 10px 22px 0;
+  flex-shrink: 0;
+}
+.ef-modal-scroll {
+  flex: 1; overflow: auto;
+  margin: 0 !important;
+  padding: 0 22px !important;
+}
+.ef-modal-footer {
+  border-top: 1px solid var(--ngs-rule);
+  padding: 14px 22px !important;
+  flex-shrink: 0;
+  margin-top: 0 !important;
 }
