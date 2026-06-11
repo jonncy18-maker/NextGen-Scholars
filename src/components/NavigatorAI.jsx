@@ -277,14 +277,33 @@ function ResultDisplay({ result }) {
   }
 
   if (result.tier === 2) {
+    if (result.answer) {
+      return (
+        <div className="nai-result nai-result-escalate">
+          <div className="nai-result-meta">
+            <span className="nai-tier-badge nai-tier-2">Tier 2 · Gemini</span>
+            {result.model && <span className="nai-intent">{result.model}</span>}
+          </div>
+          <p className="nai-answer-text nai-gemini-answer">{result.answer}</p>
+        </div>
+      );
+    }
+    if (result.status === 'not_configured') {
+      return (
+        <div className="nai-result nai-result-escalate">
+          <div className="nai-result-meta">
+            <span className="nai-tier-badge nai-tier-2">Tier 2 · Gemini</span>
+          </div>
+          <p className="nai-escalate-msg">Gemini key not configured — add <code>GOOGLE_AI_KEY</code> to Supabase secrets.</p>
+        </div>
+      );
+    }
     return (
       <div className="nai-result nai-result-escalate">
         <div className="nai-result-meta">
           <span className="nai-tier-badge nai-tier-2">Tier 2 · Gemini</span>
         </div>
-        <p className="nai-escalate-msg">
-          This question needs outside knowledge or reasoning — Gemini advisory is coming in the next step.
-        </p>
+        <p className="nai-escalate-msg nai-error">{result.error ?? 'Gemini returned an unexpected response.'}</p>
       </div>
     );
   }
