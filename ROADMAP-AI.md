@@ -159,15 +159,15 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 
 ## Are we ready to start?
 
-**P0 complete. Ready to build P1.**
+**P1 complete. Ready to wire LLM keys (Steps 6 & 7).**
 
 | Layer | Priority | Status | Gap |
 |---|---|---|---|
 | Schema & data | P0 | ✅ Done | — |
 | Edge Functions | P0 | ✅ Done | — |
 | Auth / RLS | P0 (service key) · P2 (hardening) | ✅ / Pending | Service-role key auto-injected in Edge Functions; RLS hardening deferred to P2 |
-| Context builder | P1 | Not started | Needed before any LLM prompt |
-| Tier 1 resolver | P1 | Not started | Must be solid before LLM keys are wired |
+| Context builder | P1 | ✅ Done | — |
+| Tier 1 resolver | P1 | ✅ Done | — |
 | Review UI | P2 | Not started | Needed before AI writes go to production |
 
 **Recommended build order:**
@@ -177,7 +177,7 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 | 1 | P0 | Add `expense_submissions` to schema; verify Supabase migration is complete |
 | 2 | P0 | Build `/api/scholar/:key/summary` Edge Function — single call returning full context bundle |
 | ✅ 3 | P1 | Build Tier 1 query resolver — pattern-match question types to SQL, return answers without LLM |
-| 4 | P1 | Test Tier 1 end-to-end on the mentor dashboard; tune until it handles 80%+ of common queries |
+| ✅ 4 | P1 | Test Tier 1 end-to-end on the mentor dashboard; tune until it handles 80%+ of common queries |
 | ✅ 5 | P1 | Build scholar context builder (compact JSON for LLM injection) — `context.ts`; includes `SCHEMA_REGISTRY` for future-proofing |
 | 6 | P1 | Wire Gemini for Tier 2 (advisory) — add `GOOGLE_AI_KEY` to Supabase secrets |
 | 7 | P1 | Wire Claude for Tier 3 (ingestion) — add `ANTHROPIC_KEY` to Supabase secrets; start with receipt parsing |

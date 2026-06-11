@@ -42,6 +42,7 @@ type Intent =
   | 'budget_status'
   | 'gpa_trend'
   | 'milestone_status'
+  | 'travel_status'
   | 'deadlines'
   | 'alerts'
   | 'english_hours'
@@ -54,6 +55,7 @@ interface Classified {
   type:      Intent
   category?: string
   state?:    'pending' | 'complete' | 'all'
+  travelState?: 'pending' | 'complete' | 'all'
 }
 
 function classify(text: string, liveCategories: string[]): Classified {
@@ -63,26 +65,37 @@ function classify(text: string, liveCategories: string[]): Classified {
   const matchedCat = liveCategories.find(c => q.includes(c.toLowerCase()))
   if (matchedCat) return { type: 'expense_by_category', category: matchedCat }
 
-  if (/how much.*spent|total.*spend|spend.*total|spending|expense/.test(q)) {
+  if (/recent.*expense|latest.*expense|spent.*recently|last.*purchase|what.*buy|what.*bought|what.*purchase|show.*expense|list.*expense/.test(q)) {
+    return { type: 'recent_expenses' }
+  }
+
+  if (/how much.*spent|total.*spend|spend.*total|spending|all.*expense|expense.*total|\bexpenses\b/.test(q)) {
     return { type: 'expense_total' }
   }
 
-  if (/budget|over.budget|remaining|budget.left|how much.left/.test(q)) {
+  if (/budget|over.budget|remaining|budget.left|how much.left|money.*left|left.*budget/.test(q)) {
     return { type: 'budget_status' }
   }
 
-  if (/\bgpa\b|grade|academic|mark|score/.test(q)) {
+  if (/\bgpa\b|grade.*point|academic.*record|mark|how.*grade|grade.*average/.test(q)) {
     return { type: 'gpa_trend' }
   }
 
   if (/milestone|checkpoint/.test(q)) {
     const state: Classified['state'] =
-      /pending|incomplete|not.done/.test(q) ? 'pending' :
-      /complete|done|finished/.test(q)      ? 'complete' : 'all'
+      /pending|incomplete|not.done|still|outstanding/.test(q) ? 'pending' :
+      /complete|done|finished|achieved/.test(q)               ? 'complete' : 'all'
     return { type: 'milestone_status', state }
   }
 
-  if (/\bdue\b|deadline|upcoming|schedule|calendar/.test(q)) {
+  if (/\btravel|trip|flight|accommodation|abroad|visa|destination/.test(q)) {
+    const travelState: Classified['travelState'] =
+      /pending|planned|upcoming|not.yet/.test(q) ? 'pending' :
+      /complete|done|finished|already/.test(q)   ? 'complete' : 'all'
+    return { type: 'travel_status', travelState }
+  }
+
+  if (/\bdue\b|deadline|upcoming|what.*schedule|what.*calendar|what.*next/.test(q)) {
     return { type: 'deadlines' }
   }
 
@@ -90,19 +103,20 @@ function classify(text: string, liveCategories: string[]): Classified {
     return { type: 'alerts' }
   }
 
-  if (/\boet\b|english hour|ielts|study hour|session/.test(q)) {
+  if (/\boet\b|english.*hour|ielts|study.*hour|session|how.*study|study.*time/.test(q)) {
     return { type: 'english_hours' }
   }
 
-  if (/action item|to.?do|open item|pending task|what.*need.*done/.test(q)) {
+  if (/action item|to.?do|open item|pending task|what.*need.*done|what.*should.*do|tasks?/.test(q)) {
     return { type: 'open_actions' }
   }
 
-  if (/recent.*expense|latest.*expense|spent.*recently|last.*purchase/.test(q)) {
-    return { type: 'recent_expenses' }
+  if (/progress|where.*program|current.*stage|program.*track|how.*doing|overview|summary/.test(q)) {
+    return { type: 'progress_summary' }
   }
 
-  if (/progress|status|where.*program|current.*stage|program.*track/.test(q)) {
+  // status alone is ambiguous — only trigger progress_summary if no other intent matched
+  if (/\bstatus\b/.test(q)) {
     return { type: 'progress_summary' }
   }
 
@@ -327,6 +341,29 @@ async function progressSummary(scholar: string, sb: SupabaseClient): Promise<Tie
   }
 }
 
+async function travelStatus(scholar: string, sb: SupabaseClient, state?: Classified['travelState']): Promise<Tier1Result> {
+  let q = sb.from('travels').select('dest,sem,state,amount_php').eq('scholar', scholar)
+  if (state === 'pending')  q = q.eq('state', 'pending')
+  if (state === 'complete') q = q.eq('state', 'complete')
+  const { data, error } = await q
+  if (error) throw error
+
+  const rows = data ?? []
+  const stateStr = state && state !== 'all' ? ` ${state}` : ''
+  if (rows.length === 0) return { answered: true, intent: 'travel_status', answer: `No${stateStr} travel records found.`, data: [] }
+
+  const lines = rows.map(r =>
+    `  [${r.state}] ${r.dest} (${r.sem})${r.amount_php ? ' — ' + phpStr(r.amount_php) : ''}`
+  )
+
+  return {
+    answered: true,
+    intent: 'travel_status',
+    answer: `${rows.length}${stateStr} travel record${rows.length !== 1 ? 's' : ''}:\n${lines.join('\n')}`,
+    data: rows,
+  }
+}
+
 async function recentExpenses(scholar: string, sb: SupabaseClient): Promise<Tier1Result> {
   const { data, error } = await sb.from('expenses').select('item,amount,qty,cat,date,vendor').eq('scholar', scholar).order('date', { ascending: false }).limit(10)
   if (error) throw error
@@ -357,7 +394,7 @@ export async function tier1Resolve(
 ): Promise<Tier1Result> {
   // Fetch live categories so classification adapts to new ones without code changes
   const liveCategories = await fetchCategories(scholar, sb)
-  const { type, category, state } = classify(text, liveCategories)
+  const { type, category, state, travelState } = classify(text, liveCategories)
 
   switch (type) {
     case 'expense_by_category': return expenseTotal(scholar, sb, category)
@@ -365,6 +402,7 @@ export async function tier1Resolve(
     case 'budget_status':       return budgetStatus(scholar, sb)
     case 'gpa_trend':           return gpaHistory(scholar, sb)
     case 'milestone_status':    return milestoneStatus(scholar, sb, state)
+    case 'travel_status':       return travelStatus(scholar, sb, travelState)
     case 'deadlines':           return upcomingDeadlines(scholar, sb)
     case 'alerts':              return activeAlerts(scholar, sb)
     case 'english_hours':       return englishHours(scholar, sb)
