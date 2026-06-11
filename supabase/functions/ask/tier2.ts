@@ -78,14 +78,16 @@ export async function tier2Ask(
   const userMessage =
     `Scholar data:\n\`\`\`json\n${compactContext(ctx)}\n\`\`\`\n\nQuestion: ${question}`
 
+  // system_instruction is v1beta-only; fold it into the user turn for v1 compatibility
+  const fullMessage = `${NGS_SYSTEM_PROMPT}\n\n---\n\n${userMessage}`
+
   let res: Response
   try {
     res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: NGS_SYSTEM_PROMPT }] },
-        contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+        contents: [{ role: 'user', parts: [{ text: fullMessage }] }],
         generationConfig: { maxOutputTokens: 1024, temperature: 0.3 },
       }),
     })
