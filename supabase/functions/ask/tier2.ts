@@ -6,7 +6,7 @@
 
 import { ScholarContext } from './context.ts'
 
-const GEMINI_MODEL = 'gemini-2.0-flash'
+const GEMINI_MODEL = 'gemini-1.5-flash'
 const GEMINI_URL   = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
 const NGS_SYSTEM_PROMPT = `\
@@ -95,7 +95,13 @@ export async function tier2Ask(
 
   if (!res.ok) {
     const body = await res.text().catch(() => '')
-    return { answered: false, error: `Gemini API error ${res.status}: ${body}` }
+    let message = `Gemini API error ${res.status}`
+    try {
+      const parsed = JSON.parse(body)
+      const inner = parsed?.error?.message as string | undefined
+      if (inner) message = res.status === 429 ? `Gemini quota exceeded — ${inner.split('.')[0]}.` : inner
+    } catch { /* leave default message */ }
+    return { answered: false, error: message }
   }
 
   const json = await res.json()
