@@ -1,5 +1,9 @@
 // Tier 1 query resolver — pattern-match question types to SQL, return answers
 // without an LLM call. Returns { answered: false } to escalate to Tier 2.
+//
+// Future-proofing note: expense categories are fetched live from the DB rather
+// than hardcoded, so new categories added to the expenses table are auto-detected
+// without any code changes here.
 
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -10,17 +14,24 @@ export interface Tier1Result {
   data?:    unknown
 }
 
-// Must match DB `cat` values
-const EXPENSE_CATS = [
-  'Tuition', 'Enrollment', 'Uniforms', 'Books', 'Living Expenses',
-  'Printing & Research', 'School Supplies', 'Activities',
-  'Medical Equipment', 'Motor', 'Milestones', 'Other',
-]
-
 function phpStr(amount: number): string {
   const abs = Math.abs(amount)
   const formatted = abs.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
   return (amount < 0 ? '-₱' : '₱') + formatted
+}
+
+// Pull distinct expense categories from the DB for this scholar.
+// Falls back to an empty list on error — classify() degrades gracefully.
+async function fetchCategories(scholar: string, sb: SupabaseClient): Promise<string[]> {
+  const { data } = await sb
+    .from('expenses')
+    .select('cat')
+    .eq('scholar', scholar)
+    .not('cat', 'is', null)
+  if (!data) return []
+  const seen = new Set<string>()
+  for (const r of data) if (r.cat) seen.add(r.cat as string)
+  return [...seen]
 }
 
 // ── Intent classification ──────────────────────────────────────────────────────
@@ -45,10 +56,11 @@ interface Classified {
   state?:    'pending' | 'complete' | 'all'
 }
 
-function classify(text: string): Classified {
+function classify(text: string, liveCategories: string[]): Classified {
   const q = text.toLowerCase()
 
-  const matchedCat = EXPENSE_CATS.find(c => q.includes(c.toLowerCase()))
+  // Category match uses live DB categories — auto-adapts as new categories are added
+  const matchedCat = liveCategories.find(c => q.includes(c.toLowerCase()))
   if (matchedCat) return { type: 'expense_by_category', category: matchedCat }
 
   if (/how much.*spent|total.*spend|spend.*total|spending|expense/.test(q)) {
@@ -151,7 +163,7 @@ async function budgetStatus(scholar: string, sb: SupabaseClient): Promise<Tier1R
     const budget    = b.amount_php ?? 0
     const remaining = budget - spent
     const pct       = budget > 0 ? Math.round((spent / budget) * 100) : 0
-    const status    = remaining < 0         ? 'OVER BUDGET'
+    const status    = remaining < 0            ? 'OVER BUDGET'
                     : remaining < budget * 0.1 ? 'Near limit'
                     : 'OK'
     return `  ${b.sem}: ${phpStr(spent)} spent of ${phpStr(budget)} (${pct}%) — ${status}`
@@ -292,10 +304,10 @@ async function progressSummary(scholar: string, sb: SupabaseClient): Promise<Tie
   if (e3) throw e3
   if (!profile) return { answered: true, intent: 'progress_summary', answer: `Scholar "${scholar}" not found.`, data: null }
 
-  const rows    = academics ?? []
-  const latest  = rows.length > 0 ? rows[rows.length - 1] : null
-  const mRows   = milestones ?? []
-  const done    = mRows.filter(m => m.state === 'complete').length
+  const rows   = academics ?? []
+  const latest = rows.length > 0 ? rows[rows.length - 1] : null
+  const mRows  = milestones ?? []
+  const done   = mRows.filter(m => m.state === 'complete').length
 
   const lines = [
     `${profile.name} — ${profile.track}`,
@@ -343,7 +355,9 @@ export async function tier1Resolve(
   scholar: string,
   sb: SupabaseClient,
 ): Promise<Tier1Result> {
-  const { type, category, state } = classify(text)
+  // Fetch live categories so classification adapts to new ones without code changes
+  const liveCategories = await fetchCategories(scholar, sb)
+  const { type, category, state } = classify(text, liveCategories)
 
   switch (type) {
     case 'expense_by_category': return expenseTotal(scholar, sb, category)
