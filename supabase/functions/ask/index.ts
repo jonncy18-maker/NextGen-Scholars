@@ -9,6 +9,7 @@
 // and validates the request shape so frontend integration can begin.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { tier1Resolve } from './tier1.ts'
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -68,6 +69,15 @@ Deno.serve(async (req) => {
   // type === 'query'
   if (!text?.trim()) return json({ error: 'Query request requires text' }, 400)
 
-  // Tier 1 (DB resolver) with Tier 2 (Gemini) escalation — wired in P1
-  return json({ tier: 1, status: 'not_implemented' }, 501)
+  // Tier 1 — DB resolver
+  try {
+    const result = await tier1Resolve(text, scholar, sb)
+    if (result.answered) {
+      return json({ tier: 1, ...result })
+    }
+    // Escalate to Tier 2 (Gemini) — wired in P1 step 6
+    return json({ tier: 2, status: 'not_implemented', hint: 'Question not matched by Tier 1 — Gemini escalation pending.' }, 501)
+  } catch (err) {
+    return json({ error: (err as Error).message ?? 'Tier 1 query failed' }, 500)
+  }
 })
