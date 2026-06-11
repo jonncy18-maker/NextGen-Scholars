@@ -285,6 +285,7 @@ function ResultDisplay({ result }) {
             {result.model && <span className="nai-intent">{result.model}</span>}
           </div>
           <p className="nai-answer-text nai-gemini-answer">{result.answer}</p>
+          <p className="nai-ai-disclosure">AI-generated · May contain errors · Verify important details with official sources</p>
         </div>
       );
     }
