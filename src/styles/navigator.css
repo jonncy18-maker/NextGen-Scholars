@@ -252,6 +252,16 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .nav-sect-btn:last-child { border-right: 0; }
 .nav-sect-btn:hover { color: var(--ngs-navy); background: rgba(27,42,74,0.05); }
 
+/* ── mobile NavBar ── */
+@media (max-width: 768px) {
+  .nav-inner { padding: 10px 16px; gap: 10px; flex-wrap: wrap; }
+  .nav-section-actions { display: none; }
+  .nav-back { display: none; }
+  .nav-name { font-size: 14px; }
+  .nav-refresh .refresh-label { display: none; }
+  .nav-toggle button { padding: 6px 9px; }
+}
+
 /* ════════════════ LAYOUT ════════════════ */
 .wrap { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
 .section { padding: 52px 0 8px; scroll-margin-top: 150px; }
