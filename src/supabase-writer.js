@@ -5,17 +5,18 @@ import { supabase } from './lib/supabase.js';
 
 export async function writeExpense(scholar, exp) {
   const { error } = await supabase.from('expenses').insert({
-    id:      exp.id || `${scholar}_${exp.sem}_${Date.now()}`,
+    id:       exp.id || `${scholar}_${exp.sem}_${Date.now()}`,
     scholar,
-    sem:    exp.sem,
-    item:   exp.item,
-    cat:    exp.cat,
-    amount: exp.amount,
-    qty:    exp.qty,
-    date:   exp.date,
-    avb:    exp.avb,
-    sent:   exp.sent,
-    vendor: exp.vendor || '',
+    sem:      exp.sem,
+    item:     exp.item,
+    cat:      exp.cat,
+    amount:   exp.amount,
+    qty:      exp.qty,
+    date:     exp.date,
+    avb:      exp.avb,
+    sent:     exp.sent,
+    vendor:   exp.vendor || '',
+    group_id: exp.group_id || null,
   });
   if (error) throw error;
 }

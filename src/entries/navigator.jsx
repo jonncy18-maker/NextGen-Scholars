@@ -86,7 +86,7 @@ export function Navigator() {
     const expChannel = supabase.channel('ngs_expenses')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'expenses' }, ({ new: e }) => {
         if (!e?.scholar || !e?.sem) return;
-        const row = { id: e.id, item: e.item, amount: parseFloat(e.amount) || 0, qty: parseFloat(e.qty) || 1, cat: e.cat, date: e.date, sent: e.sent, avb: e.avb, vendor: e.vendor || '', sem: e.sem };
+        const row = { id: e.id, item: e.item, amount: parseFloat(e.amount) || 0, qty: parseFloat(e.qty) || 1, cat: e.cat, date: e.date, sent: e.sent, avb: e.avb, vendor: e.vendor || '', sem: e.sem, group_id: e.group_id || null };
         setD(prev => {
           const sd = prev.scholars[e.scholar];
           if (!sd) return prev;
@@ -103,7 +103,7 @@ export function Navigator() {
           const newExp = {};
           Object.entries(sd.expenses || {}).forEach(([sem, list]) => {
             newExp[sem] = list.map(ex => String(ex.id) === String(e.id)
-              ? { ...ex, item: e.item, amount: parseFloat(e.amount) || 0, qty: parseFloat(e.qty) || 1, cat: e.cat, date: e.date, sent: e.sent, avb: e.avb, vendor: e.vendor || '', sem: e.sem }
+              ? { ...ex, item: e.item, amount: parseFloat(e.amount) || 0, qty: parseFloat(e.qty) || 1, cat: e.cat, date: e.date, sent: e.sent, avb: e.avb, vendor: e.vendor || '', sem: e.sem, group_id: e.group_id || null }
               : ex);
           });
           return { ...prev, scholars: { ...prev.scholars, [e.scholar]: { ...sd, expenses: newExp } } };

@@ -34,6 +34,7 @@ function SortTh({ label, field, sortField, sortDir, onSort, className }) {
 export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditExpense, onDeleteExpense, id, collapsed, onToggle }) {
   const $fmt = useFmt();
   const { D, scholarKeys } = useData();
+  const todayISO = new Date().toISOString().split('T')[0];
 
   const [expScholar, setExpScholar] = useState(scholarKeys[0]);
   const [expView, setExpView]       = useState('sem');
@@ -57,16 +58,22 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
   const [showAddForm, setShowAddForm] = useState(false);
 
   // Inline edit state
-  const [editingId, setEditingId] = useState(null);
-  const [editDraft, setEditDraft] = useState({});
+  const [editingId, setEditingId]   = useState(null);
+  const [editDraft, setEditDraft]   = useState({});
+  const [addDepositOpen, setAddDepositOpen] = useState(false);
+  const [newDeposit, setNewDeposit] = useState({ amount: '', date: todayISO, sent: 'No' });
 
   // Grouping state
-  const [groupMode, setGroupMode]           = useState('none'); // 'none' | 'single' | 'multi'
+  const [groupMode, setGroupMode]           = useState('none');
   const [singleDim, setSingleDim]           = useState('month');
   const [multiDims, setMultiDims]           = useState([]);
   const [showMultiModal, setShowMultiModal] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState(new Set());
-  const [dueView, setDueView] = useState(null); // null | 'now' | 'week'
+
+  // Split group collapse state (set = collapsed)
+  const [expandedSplits, setExpandedSplits] = useState(new Set());
+
+  const [dueView, setDueView] = useState(null);
 
   function handleMarkSent(r) {
     setSentAll(prev => {
@@ -78,7 +85,6 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
   }
 
   function handleDeleteExpense(r) {
-    // Immediate local mask for instant visual feedback
     setDeletedAll(prev => {
       const updated = { ...prev, [expScholar]: [...new Set([...(prev[expScholar] || []), String(r.id)])] };
       try { localStorage.setItem('ngs_deleted', JSON.stringify(updated)); } catch {}
@@ -96,25 +102,33 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
     .map(e => ({ ...e, status: e.avb }));
   const allRows   = [...baseRows, ...localRows].filter(r => !deletedIds.has(String(r.id)));
 
-  const uniqueCats    = EXPENSE_CATS;
+  const uniqueCats     = EXPENSE_CATS;
   const uniqueStatuses = [...new Set(allRows.map(r => r.status))].sort();
-  const uniqueSents   = [...new Set(allRows.map(r => r.sent).filter(Boolean).map(v => v.charAt(0).toUpperCase() + v.slice(1).toLowerCase()))].sort();
+  const uniqueSents    = [...new Set(allRows.map(r => r.sent).filter(Boolean).map(v => v.charAt(0).toUpperCase() + v.slice(1).toLowerCase()))].sort();
 
   function startEdit(r) {
     setEditingId(r.id);
     setEditDraft({
-      item:   r.item   || '',
-      cat:    r.cat    || '',
-      date:   r.date   || '',
-      amount: String(r.amount || ''),
-      qty:    String(r.qty    || 1),
-      avb:    r.avb    || r.status || 'Actual',
-      vendor: r.vendor || '',
-      sem:    r.sem    || '',
+      item:     r.item   || '',
+      cat:      r.cat    || '',
+      date:     r.date   || '',
+      amount:   String(r.amount || ''),
+      qty:      String(r.qty    || 1),
+      avb:      r.avb    || r.status || 'Actual',
+      vendor:   r.vendor || '',
+      sem:      r.sem    || '',
+      group_id: r.group_id || null,
     });
+    setAddDepositOpen(false);
+    setNewDeposit({ amount: '', date: todayISO, sent: 'No' });
   }
 
-  function cancelEdit() { setEditingId(null); setEditDraft({}); }
+  function cancelEdit() {
+    setEditingId(null);
+    setEditDraft({});
+    setAddDepositOpen(false);
+    setNewDeposit({ amount: '', date: todayISO, sent: 'No' });
+  }
 
   function saveEdit(r) {
     const fields = {
@@ -127,9 +141,45 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
       vendor: editDraft.vendor.trim(),
       sem:    editDraft.sem.trim(),
     };
+    if (editDraft.group_id) fields.group_id = editDraft.group_id;
     if (onEditExpense) onEditExpense(expScholar, r.id, fields);
     setEditingId(null);
     setEditDraft({});
+    setAddDepositOpen(false);
+    setNewDeposit({ amount: '', date: todayISO, sent: 'No' });
+  }
+
+  function startSplit(r) {
+    const newGroupId = `grp_${Date.now()}`;
+    setEditDraft(d => ({ ...d, group_id: newGroupId }));
+    setAddDepositOpen(true);
+  }
+
+  function handleSaveNewDeposit(r) {
+    if (!newDeposit.amount || parseFloat(newDeposit.amount) <= 0) return;
+    const groupId = editDraft.group_id;
+
+    // Persist group_id on the original row if this is the first split
+    if (!r.group_id && groupId) {
+      if (onEditExpense) onEditExpense(expScholar, r.id, { group_id: groupId });
+    }
+
+    if (onAddExpense) onAddExpense(expScholar, {
+      id:       `local_${Date.now()}`,
+      item:     editDraft.item.trim() || r.item,
+      cat:      editDraft.cat || r.cat,
+      amount:   parseFloat(newDeposit.amount),
+      qty:      1,
+      date:     newDeposit.date,
+      avb:      editDraft.avb || r.avb || r.status || 'Actual',
+      sent:     newDeposit.sent,
+      vendor:   editDraft.vendor.trim() || r.vendor || '',
+      sem:      editDraft.sem.trim() || r.sem,
+      group_id: groupId,
+    });
+
+    setAddDepositOpen(false);
+    setNewDeposit({ amount: '', date: todayISO, sent: 'No' });
   }
 
   function switchScholar(k) {
@@ -143,8 +193,10 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
     setGroupMode('none');
     setMultiDims([]);
     setExpandedGroups(new Set());
+    setExpandedSplits(new Set());
     setEditingId(null);
     setEditDraft({});
+    setAddDepositOpen(false);
   }
 
   function handleGroupModeClick(mode) {
@@ -180,6 +232,14 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
     });
   }
 
+  function toggleSplit(groupId) {
+    setExpandedSplits(prev => {
+      const next = new Set(prev);
+      next.has(groupId) ? next.delete(groupId) : next.add(groupId);
+      return next;
+    });
+  }
+
   function handleSort(field) {
     if (sortField === field) {
       if (sortDir === 'asc') setSortDir('desc');
@@ -204,7 +264,6 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
 
   const activeFilters = countActiveFilters(filters) + (expSearch ? 1 : 0) + (expSem !== 'all' ? 1 : 0);
 
-  // Compute active groups
   let activeGroups = null;
   if (groupMode === 'single') {
     activeGroups = groupExpenses(rows, singleDim);
@@ -217,6 +276,21 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
     return (group.subgroups || []).reduce((s, g) => s + countGroupRows(g), 0);
   }
 
+  // Build flat display list, grouping split-deposit rows together
+  function buildDisplayItems(rows) {
+    const seenGroups = new Set();
+    const result = [];
+    for (const r of rows) {
+      if (!r.group_id) {
+        result.push({ type: 'row', row: r });
+      } else if (!seenGroups.has(r.group_id)) {
+        seenGroups.add(r.group_id);
+        result.push({ type: 'split', rows: rows.filter(x => x.group_id === r.group_id) });
+      }
+    }
+    return result;
+  }
+
   function renderExpRow(r, i) {
     const isSent    = r.sent === 'Yes' || sentOverrides.has(String(r.id));
     const qty       = r.qty || 1;
@@ -224,6 +298,10 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
     const isEditing = editingId === r.id;
 
     if (isEditing) {
+      // Compute sibling deposits for the split section
+      const groupId  = editDraft.group_id;
+      const siblings = groupId ? allRows.filter(x => x.group_id === groupId) : [];
+
       return (
         <React.Fragment key={r.id || i}>
           <tr>
@@ -286,6 +364,87 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
                   <button className="exp-edit-cancel" onClick={cancelEdit}>Cancel</button>
                 </div>
               </div>
+
+              {/* ── Split deposits section ── */}
+              <div className="exp-edit-split-section">
+                <div className="exp-edit-split-header">
+                  {groupId ? `Deposits (${siblings.length})` : 'Split into deposits'}
+                </div>
+
+                {!groupId && !addDepositOpen && (
+                  <button type="button" className="exp-edit-split-btn" onClick={() => startSplit(r)}>
+                    ⊹ Split this expense into deposits
+                  </button>
+                )}
+
+                {groupId && siblings.length > 0 && (
+                  <div className="exp-edit-split-siblings">
+                    {siblings.map(s => {
+                      const sIsSent = s.sent === 'Yes' || sentOverrides.has(String(s.id));
+                      return (
+                        <div key={s.id} className={`exp-edit-split-sibling${s.id === r.id ? ' is-current' : ''}`}>
+                          <span className="exp-edit-split-s-date">{s.date}</span>
+                          <span className="exp-edit-split-s-amt">{$fmt(s.amount, currency)}</span>
+                          <span className={`exp-sent ${sIsSent ? 'is-yes' : 'is-no'}`}>{sIsSent ? '✓ Sent' : 'Not sent'}</span>
+                          {s.id === r.id && <span className="exp-edit-split-current-label">← this</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {groupId && !addDepositOpen && (
+                  <button type="button" className="exp-edit-split-add-btn" onClick={() => setAddDepositOpen(true)}>
+                    + Add another deposit
+                  </button>
+                )}
+
+                {addDepositOpen && (
+                  <div className="exp-edit-add-deposit-form">
+                    <label className="exp-edit-field">
+                      <span>Amount (₱)</span>
+                      <input
+                        type="number" step="0.01" min="0" placeholder="0.00"
+                        value={newDeposit.amount}
+                        onChange={e => setNewDeposit(d => ({ ...d, amount: e.target.value }))}
+                        autoFocus
+                      />
+                    </label>
+                    <label className="exp-edit-field">
+                      <span>Date</span>
+                      <input
+                        type="date"
+                        value={newDeposit.date}
+                        onChange={e => setNewDeposit(d => ({ ...d, date: e.target.value }))}
+                      />
+                    </label>
+                    <label className="exp-edit-field">
+                      <span>Sent</span>
+                      <select value={newDeposit.sent} onChange={e => setNewDeposit(d => ({ ...d, sent: e.target.value }))}>
+                        <option value="No">No</option>
+                        <option value="Yes">Yes</option>
+                      </select>
+                    </label>
+                    <div className="exp-edit-field">
+                      <span>&nbsp;</span>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          type="button"
+                          className="exp-edit-save"
+                          style={{ padding: '7px 14px', fontSize: 12 }}
+                          onClick={() => handleSaveNewDeposit(r)}
+                          disabled={!newDeposit.amount || parseFloat(newDeposit.amount) <= 0}
+                        >Add</button>
+                        <button
+                          type="button"
+                          className="exp-edit-cancel"
+                          onClick={() => { setAddDepositOpen(false); setNewDeposit({ amount: '', date: todayISO, sent: 'No' }); }}
+                        >Cancel</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </td>
           </tr>
         </React.Fragment>
@@ -312,6 +471,65 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
           <button className="exp-del-btn" title="Delete expense" onClick={() => handleDeleteExpense(r)}>Delete</button>
         </td>
       </tr>
+    );
+  }
+
+  // Render a split deposit group (collapsed or expanded with individual deposit rows)
+  function renderSplitGroup(groupRows) {
+    const g       = groupRows[0];
+    const groupId = g.group_id;
+    const isCollapsed = expandedSplits.has(groupId);
+    const total     = groupRows.reduce((s, r) => s + (r.amount || 0) * (r.qty || 1), 0);
+    const sentCount = groupRows.filter(r => r.sent === 'Yes' || sentOverrides.has(String(r.id))).length;
+
+    return (
+      <React.Fragment key={groupId}>
+        <tr className="exp-split-hd" onClick={() => toggleSplit(groupId)}>
+          <td colSpan={2}>
+            <div className="exp-split-hd-inner">
+              <span className="exp-split-arrow">{isCollapsed ? '▶' : '▼'}</span>
+              <span className="exp-item">{g.item}</span>
+              <span className="exp-cat">{g.cat}</span>
+              <span className="exp-split-badge">{groupRows.length} deposits</span>
+            </div>
+          </td>
+          <td className="exp-date"></td>
+          <td className="right"></td>
+          <td className="right exp-col-hide-mobile"></td>
+          <td className="right exp-split-total">{$fmt(total, currency)}</td>
+          <td><span className="exp-split-sent-summary">{sentCount}/{groupRows.length} sent</span></td>
+          <td></td>
+          <td></td>
+        </tr>
+        {!isCollapsed && groupRows.map((r, i) => {
+          // Show full edit form if this deposit is being edited
+          if (editingId === r.id) return renderExpRow(r, i);
+          const isSent   = r.sent === 'Yes' || sentOverrides.has(String(r.id));
+          const qty      = r.qty || 1;
+          const rowTotal = (r.amount || 0) * qty;
+          return (
+            <tr key={r.id} className="exp-split-deposit-row">
+              <td><span className="exp-split-deposit-num">↳ {i + 1}</span></td>
+              <td></td>
+              <td className="exp-date">{r.date}</td>
+              <td className="right exp-amount">{$fmt(r.amount, currency)}</td>
+              <td className="right exp-qty exp-col-hide-mobile">{qty}</td>
+              <td className="right exp-total">{$fmt(rowTotal, currency)}</td>
+              <td><span className={`exp-status ${r.status || r.avb}`}>{r.status || r.avb}</span></td>
+              <td>
+                {isSent
+                  ? <span className="exp-sent is-yes">✓ Sent</span>
+                  : <button className="exp-sent is-no mark-sent-btn" onClick={() => handleMarkSent(r)}>Mark Sent →</button>
+                }
+              </td>
+              <td className="exp-del-cell">
+                <button className="exp-edit-btn" onClick={() => startEdit(r)}>Edit</button>
+                <button className="exp-del-btn" onClick={() => handleDeleteExpense(r)}>Delete</button>
+              </td>
+            </tr>
+          );
+        })}
+      </React.Fragment>
     );
   }
 
@@ -532,16 +750,10 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
             <div className="exp-groupmode">
               <span className="exp-groupmode-label">Group by</span>
               <div className="exp-groupmode-radios">
-                <button
-                  className={groupMode === 'none' ? 'active' : ''}
-                  onClick={() => handleGroupModeClick('none')}
-                >
+                <button className={groupMode === 'none' ? 'active' : ''} onClick={() => handleGroupModeClick('none')}>
                   No grouping
                 </button>
-                <button
-                  className={groupMode === 'single' ? 'active' : ''}
-                  onClick={() => handleGroupModeClick('single')}
-                >
+                <button className={groupMode === 'single' ? 'active' : ''} onClick={() => handleGroupModeClick('single')}>
                   Single
                 </button>
                 <button
@@ -557,7 +769,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
                 <select
                   className="exp-groupmode-single-select"
                   value={singleDim}
-                  onChange={e => { setSingleDim(e.target.value); setCollapsedGroups(new Set()); }}
+                  onChange={e => { setSingleDim(e.target.value); setExpandedGroups(new Set()); }}
                 >
                   {SINGLE_DIM_OPTIONS.map(([v, lbl]) => (
                     <option key={v} value={v}>{lbl}</option>
@@ -600,14 +812,21 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
                 </thead>
                 {activeGroups
                   ? renderGroupRows(activeGroups, 0)
-                  : (
-                    <tbody>
-                      {rows.length === 0
-                        ? <tr className="exp-none"><td colSpan={9}>No matching expenses.</td></tr>
-                        : rows.map(renderExpRow)
-                      }
-                    </tbody>
-                  )
+                  : (() => {
+                      const displayItems = buildDisplayItems(rows);
+                      return (
+                        <tbody>
+                          {displayItems.length === 0
+                            ? <tr className="exp-none"><td colSpan={9}>No matching expenses.</td></tr>
+                            : displayItems.map((item, i) =>
+                                item.type === 'split'
+                                  ? renderSplitGroup(item.rows)
+                                  : renderExpRow(item.row, i)
+                              )
+                          }
+                        </tbody>
+                      );
+                    })()
                 }
               </table>
             </div>
