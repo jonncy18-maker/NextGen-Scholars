@@ -7,7 +7,7 @@
 import { ScholarContext } from './context.ts'
 
 const GEMINI_MODEL = 'gemini-1.5-flash'
-const GEMINI_URL   = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+const GEMINI_URL   = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent`
 
 const NGS_SYSTEM_PROMPT = `\
 You are an AI advisor embedded in the NextGen Scholars (NGS) mentor dashboard.
