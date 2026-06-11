@@ -61,6 +61,13 @@ interface Classified {
 function classify(text: string, liveCategories: string[]): Classified {
   const q = text.toLowerCase()
 
+  // Advisory / comparative questions — escalate to Tier 2 before any data pattern fires.
+  // These contain data-adjacent words ("spending", "score", "grade") but the question is
+  // asking for judgment, comparison, or external knowledge rather than a DB lookup.
+  if (/\bnormal\b|\btypical\b|\baverage\b|\bbenchmark\b|\bcompare\b|\brecommend\b|\badvice\b|\badvise\b|\bshould\b|\bwhen.*should\b|\bwhat.*require[sd]?\b|\bwhat.*need[sd]?\b|\bstrateg/.test(q)) {
+    return { type: 'unknown' }
+  }
+
   // Category match uses live DB categories — auto-adapts as new categories are added
   const matchedCat = liveCategories.find(c => q.includes(c.toLowerCase()))
   if (matchedCat) return { type: 'expense_by_category', category: matchedCat }
