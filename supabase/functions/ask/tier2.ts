@@ -6,8 +6,8 @@
 
 import { ScholarContext } from './context.ts'
 
-const GEMINI_MODEL = 'gemini-1.5-flash'
-const GEMINI_URL   = `https://generativelanguage.googleapis.com/v1/models/${GEMINI_MODEL}:generateContent`
+const GEMINI_MODEL = 'gemini-2.5-flash'
+const GEMINI_URL   = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
 const NGS_SYSTEM_PROMPT = `\
 You are an AI advisor embedded in the NextGen Scholars (NGS) mentor dashboard.
@@ -78,17 +78,22 @@ export async function tier2Ask(
   const userMessage =
     `Scholar data:\n\`\`\`json\n${compactContext(ctx)}\n\`\`\`\n\nQuestion: ${question}`
 
-  // system_instruction is v1beta-only; fold it into the user turn for v1 compatibility
-  const fullMessage = `${NGS_SYSTEM_PROMPT}\n\n---\n\n${userMessage}`
-
   let res: Response
   try {
     res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: fullMessage }] }],
-        generationConfig: { maxOutputTokens: 1024, temperature: 0.3 },
+        system_instruction: { parts: [{ text: NGS_SYSTEM_PROMPT }] },
+        contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+        generationConfig: {
+          maxOutputTokens: 1024,
+          temperature: 0.3,
+          // 2.5-flash enables "thinking" by default, which spends output tokens
+          // before the answer. Disable it to keep this advisory tier fast/cheap
+          // and avoid empty responses under the maxOutputTokens cap.
+          thinkingConfig: { thinkingBudget: 0 },
+        },
       }),
     })
   } catch (err) {
