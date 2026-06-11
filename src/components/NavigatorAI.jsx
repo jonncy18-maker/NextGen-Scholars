@@ -5,13 +5,16 @@ import { useData } from '../context/DataContext.jsx';
 const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
 
 const QUICK_PROMPTS = [
-  { label: 'Total spend',     tpl: s => `How much has ${s} spent overall?` },
-  { label: 'Budget status',   tpl: s => `Is ${s} over budget?` },
-  { label: 'GPA history',     tpl: s => `How has ${s}'s GPA changed?` },
+  { label: 'Total spend',        tpl: s => `How much has ${s} spent overall?` },
+  { label: 'Budget status',      tpl: s => `Is ${s} over budget?` },
+  { label: 'GPA history',        tpl: s => `How has ${s}'s GPA changed?` },
   { label: 'Pending milestones', tpl: () => 'Which milestones are still pending?' },
   { label: 'Upcoming deadlines', tpl: () => 'What are the upcoming deadlines?' },
-  { label: 'OET hours',       tpl: s => `How many OET hours has ${s} logged?` },
-  { label: 'Open actions',    tpl: () => 'What action items are still open?' },
+  { label: 'OET hours',          tpl: s => `How many OET hours has ${s} logged?` },
+  { label: 'Open actions',       tpl: () => 'What action items are still open?' },
+  { label: 'Travel plans',       tpl: s => `What travel is planned for ${s}?` },
+  { label: 'Recent expenses',    tpl: s => `Show me ${s}'s recent expenses.` },
+  { label: 'Program summary',    tpl: s => `Give me a progress summary for ${s}.` },
 ];
 
 // ── Intent-specific result renderers ─────────────────────────────────────────
@@ -204,6 +207,22 @@ function RecentExpensesResult({ data }) {
   );
 }
 
+function TravelsResult({ data }) {
+  if (!Array.isArray(data) || !data.length) return <p className="nai-empty">No travel records found.</p>;
+  return (
+    <div className="nai-rows">
+      {data.map((t, i) => (
+        <div key={i} className="nai-row-item">
+          <StateChip state={t.state} />
+          <span className="nai-row-primary">{t.dest}</span>
+          <span className="nai-row-date">{t.sem}</span>
+          {t.amount_php ? <span className="nai-row-amount">{phpStr(t.amount_php)}</span> : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function EnglishResult({ data, answer }) {
   if (!data || data.totalHours === undefined) return <p className="nai-answer-text">{answer}</p>;
   return (
@@ -237,6 +256,7 @@ function IntentResult({ intent, data, answer }) {
     case 'progress_summary':    return <ProgressResult data={data} answer={answer} />;
     case 'recent_expenses':     return <RecentExpensesResult data={data} />;
     case 'english_hours':       return <EnglishResult data={data} answer={answer} />;
+    case 'travel_status':       return <TravelsResult data={data} />;
     default:                    return <p className="nai-answer-text">{answer}</p>;
   }
 }
