@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { NGS_DATA } from '../../scholars-data.js';
 import { ScholarProfile } from '../components/Profile/ScholarProfile.jsx';
-import { loadFromSupabase } from '../supabase-loader.js';
+import { useScholarProfile } from '../hooks/useScholarProfile.js';
 import { scholarTotals, buildAcademicsHistory } from '../utils.js';
 
 const STATIC = NGS_DATA.scholars.claire.publicProfile;
@@ -58,27 +58,6 @@ function mergeSheetData(base, s) {
 }
 
 export function ClairePage() {
-  const [isDesktop, setIsDesktop] = useState(
-    () => window.matchMedia('(min-width: 960px)').matches
-  );
-  const [profileData, setProfileData] = useState(() => mergeSheetData(STATIC, STATIC_SCHOLAR));
-
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 960px)');
-    const handler = (e) => setIsDesktop(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-
-  useEffect(() => {
-    loadFromSupabase()
-      .then(data => {
-        if (data.scholars?.claire) {
-          setProfileData(mergeSheetData(STATIC, data.scholars.claire));
-        }
-      })
-      .catch(() => { setProfileData(mergeSheetData(STATIC, STATIC_SCHOLAR)); });
-  }, []);
-
-  return <ScholarProfile data={profileData} isMobile={!isDesktop} relatedProfiles={[{ name: 'April', href: '/april' }]}/>;
+  const { profileData, isMobile } = useScholarProfile('claire', STATIC, STATIC_SCHOLAR, mergeSheetData);
+  return <ScholarProfile data={profileData} isMobile={isMobile} relatedProfiles={[{ name: 'April', href: '/april' }]} />;
 }

@@ -21,6 +21,9 @@
   --ngs-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   --ngs-warn: #B57E1E;
+  --ngs-green: #2F7D55;
+  --ngs-amber: #B5862A;
+  --ngs-blue-nav: #2C5AA0;
   --dur-default: 180ms;
   --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
 }

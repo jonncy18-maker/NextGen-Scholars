@@ -1,35 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
+import { NGS_DATA } from '../../scholars-data.js';
 import {
   IconExpenses, IconGrades, IconClock, IconIsland,
   IconBriefcase, IconTrophy, IconMessage, IconDocument, IconArrow,
 } from '../components/ScholarIcons.jsx';
 
+// Stage, tagline, and englishTarget are portal-specific copy that doesn't live in Supabase.
+// name, trackCode, and semKey are derived from NGS_DATA to avoid duplication.
 const CONFIGS = {
   claire: {
-    name: 'Claire',
-    track: 'NextGen Nurses',
-    trackCode: 'NGN',
     stage: 'Year 2 · Semester 2',
     tagline: <>Four semesters to clear — <em>steady as you go.</em></>,
-    expensesHref: '/entry?scholar=claire',
-    gradesHref: '/claire',
-    semKey: 'Y2S2',
     englishTarget: 200,
   },
   april: {
-    name: 'April',
-    track: 'NextGen Nurses',
-    trackCode: 'NGN',
     stage: 'Grade 11 · Semester 1',
     tagline: <>Trial period in progress — <em>one step at a time.</em></>,
-    expensesHref: '/entry?scholar=april',
-    gradesHref: '/april',
-    semKey: 'TG11S1',
     englishTarget: null,
   },
 };
+
+function buildConfig(key) {
+  const s = NGS_DATA.scholars[key] || {};
+  return {
+    name: s.firstName || key,
+    track: s.publicProfile?.trackName || s.track || '',
+    trackCode: s.track || '',
+    semKey: s.currentSem || '',
+    expensesHref: `/entry?scholar=${key}`,
+    gradesHref: `/${key}`,
+    ...(CONFIGS[key] || {}),
+  };
+}
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -45,7 +49,7 @@ function formatDate(iso) {
 }
 
 export function ScholarHome({ scholarKey }) {
-  const config = CONFIGS[scholarKey];
+  const config = buildConfig(scholarKey);
   const [liveData, setLiveData] = useState(null);
 
   useEffect(() => {
