@@ -31,7 +31,7 @@ function SortTh({ label, field, sortField, sortDir, onSort, className }) {
   );
 }
 
-export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditExpense, id, collapsed, onToggle }) {
+export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditExpense, onDeleteExpense, id, collapsed, onToggle }) {
   const $fmt = useFmt();
   const { D, scholarKeys } = useData();
 
@@ -78,17 +78,22 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
   }
 
   function handleDeleteExpense(r) {
+    // Immediate local mask for instant visual feedback
     setDeletedAll(prev => {
       const updated = { ...prev, [expScholar]: [...new Set([...(prev[expScholar] || []), String(r.id)])] };
       try { localStorage.setItem('ngs_deleted', JSON.stringify(updated)); } catch {}
       return updated;
     });
+    if (onDeleteExpense) onDeleteExpense(expScholar, r.id);
   }
 
   const s       = { ...D.scholars[expScholar], _key: expScholar };
   const sems    = Object.keys(s.expenses || {});
   const baseRows  = allExpenses(s);
-  const localRows = (addedExpenses[expScholar] || []).map(e => ({ ...e, status: e.avb }));
+  const baseIds   = new Set(baseRows.map(r => String(r.id)));
+  const localRows = (addedExpenses[expScholar] || [])
+    .filter(e => !baseIds.has(String(e.id)))
+    .map(e => ({ ...e, status: e.avb }));
   const allRows   = [...baseRows, ...localRows].filter(r => !deletedIds.has(String(r.id)));
 
   const uniqueCats    = EXPENSE_CATS;

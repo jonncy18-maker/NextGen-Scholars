@@ -80,7 +80,35 @@ export function Navigator() {
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(actChannel); supabase.removeChannel(subChannel); };
+    const expChannel = supabase.channel('ngs_expenses')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'expenses' }, ({ new: e }) => {
+        if (!e?.scholar || !e?.sem) return;
+        const row = { id: e.id, item: e.item, amount: parseFloat(e.amount) || 0, qty: parseFloat(e.qty) || 1, cat: e.cat, date: e.date, sent: e.sent, avb: e.avb, vendor: e.vendor || '', sem: e.sem };
+        setD(prev => {
+          const sd = prev.scholars[e.scholar];
+          if (!sd) return prev;
+          const semList = sd.expenses?.[e.sem] || [];
+          if (semList.some(ex => String(ex.id) === String(e.id))) return prev;
+          return { ...prev, scholars: { ...prev.scholars, [e.scholar]: { ...sd, expenses: { ...(sd.expenses || {}), [e.sem]: [...semList, row] } } } };
+        });
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'expenses' }, ({ new: e }) => {
+        if (!e?.scholar) return;
+        setD(prev => {
+          const sd = prev.scholars[e.scholar];
+          if (!sd) return prev;
+          const newExp = {};
+          Object.entries(sd.expenses || {}).forEach(([sem, list]) => {
+            newExp[sem] = list.map(ex => String(ex.id) === String(e.id)
+              ? { ...ex, item: e.item, amount: parseFloat(e.amount) || 0, qty: parseFloat(e.qty) || 1, cat: e.cat, date: e.date, sent: e.sent, avb: e.avb, vendor: e.vendor || '', sem: e.sem }
+              : ex);
+          });
+          return { ...prev, scholars: { ...prev.scholars, [e.scholar]: { ...sd, expenses: newExp } } };
+        });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(actChannel); supabase.removeChannel(subChannel); supabase.removeChannel(expChannel); };
   }, [unlocked]);
 
   function removeExpenseFromD(scholarKey, expenseId) {
@@ -91,6 +119,18 @@ export function Navigator() {
       Object.entries(sd.expenses || {}).forEach(([sem, list]) => {
         newExp[sem] = list.filter(e => String(e.id) !== String(expenseId));
       });
+      return { ...prev, scholars: { ...prev.scholars, [scholarKey]: { ...sd, expenses: newExp } } };
+    });
+  }
+
+  function addExpenseToD(scholarKey, expense) {
+    const sem = expense.sem;
+    setD(prev => {
+      const sd = prev.scholars[scholarKey];
+      if (!sd || !sem) return prev;
+      const semList = sd.expenses?.[sem] || [];
+      if (semList.some(e => String(e.id) === String(expense.id))) return prev;
+      const newExp = { ...(sd.expenses || {}), [sem]: [...semList, expense] };
       return { ...prev, scholars: { ...prev.scholars, [scholarKey]: { ...sd, expenses: newExp } } };
     });
   }
@@ -111,6 +151,9 @@ export function Navigator() {
     try {
       await approveSubmission(sub.id, sub.expense_data, sub.scholar_key);
       setPendingSubmissions(prev => prev.filter(s => s.id !== sub.id));
+      if (sub.expense_data) {
+        addExpenseToD(sub.scholar_key, { ...sub.expense_data, status: sub.expense_data.avb });
+      }
     } catch (err) { console.error('approveSubmission failed:', err); setWriteError(true); }
   }
 
@@ -147,6 +190,17 @@ export function Navigator() {
   function handleEditExpense(scholarKey, expenseId, fields) {
     updateExpenseInD(scholarKey, expenseId, fields);
     updateExpense(expenseId, fields).catch(() => setWriteError(true));
+  }
+
+  function handleDeleteExpenseFromTable(scholarKey, expenseId) {
+    removeExpenseFromD(scholarKey, expenseId);
+    setAddedExpenses(prev => {
+      const list = (prev[scholarKey] || []).filter(e => String(e.id) !== String(expenseId));
+      const updated = { ...prev, [scholarKey]: list };
+      try { localStorage.setItem('ngs_added', JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+    deleteExpense(expenseId).catch(err => { console.error('deleteExpense failed:', err); setWriteError(true); });
   }
 
   // Persisted to localStorage so locally-added rows survive page refreshes.
@@ -252,6 +306,7 @@ export function Navigator() {
   }, [refreshKey]);
 
   function handleAddExpense(scholar, exp) {
+    addExpenseToD(scholar, { ...exp, status: exp.avb });
     setAddedExpenses(prev => {
       const updated = { ...prev, [scholar]: [...(prev[scholar] || []), exp] };
       try { localStorage.setItem('ngs_added', JSON.stringify(updated)); } catch {}
@@ -313,6 +368,7 @@ export function Navigator() {
             addedExpenses={addedExpenses}
             onAddExpense={handleAddExpense}
             onEditExpense={handleEditExpense}
+            onDeleteExpense={handleDeleteExpenseFromTable}
             {...sec('expenses')}
           />
           <DeadlinesSection {...sec('deadlines')} />
