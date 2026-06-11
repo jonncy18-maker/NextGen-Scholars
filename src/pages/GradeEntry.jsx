@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 
 const CONFIGS = {
-  claire: { name: 'Claire', semKey: 'Y2S2', semLabel: 'Year 2 · Semester 2', homeHref: 'claire-home.html',
+  claire: { name: 'Claire', semKey: 'Y2S2', semLabel: 'Year 2 · Semester 2', homeHref: '/home/claire',
     semOrder: ['Y2S1', 'Y2S2', 'Y3S1', 'Y3S2'], defaultSchool: 'uv' },
-  april:  { name: 'April',  semKey: 'TG11S1', semLabel: 'Grade 11 · Semester 1', homeHref: 'april-home.html',
+  april:  { name: 'April',  semKey: 'TG11S1', semLabel: 'Grade 11 · Semester 1', homeHref: '/home/april',
     semOrder: ['TG11S1', 'TG11S2', 'TG12S1', 'TG12S2'], defaultSchool: 'k12' },
 };
 
@@ -153,9 +154,9 @@ export function GradeEntry({ scholarKey }) {
           <div className="sp-head-rule" />
           <div className="sp-head-meta">
             <span className="sp-stage">{config.semLabel}</span>
-            <a href={config.homeHref} className="sp-tagline" style={{ textDecoration: 'none' }}>
+            <Link to={config.homeHref} className="sp-tagline" style={{ textDecoration: 'none' }}>
               ← Back to home
-            </a>
+            </Link>
           </div>
         </header>
 

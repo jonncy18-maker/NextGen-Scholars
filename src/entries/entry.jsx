@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import ReactDOM from 'react-dom/client';
+import { Link } from 'react-router-dom';
 import { EXPENSE_CATS } from '../constants.js';
 import { updateExpense, writeActivityLog, writeSubmission, resubmitExpense, markSubmissionReadByScholar } from '../supabase-writer.js';
 import { loadFromSupabase, loadScholarSubmissions } from '../supabase-loader.js';
@@ -49,7 +49,7 @@ function makeEmptyRow(defaultSem) {
   };
 }
 
-function EntryApp() {
+export function EntryApp() {
   const [scholarKey, setScholarKey] = useState('claire');
   const [password, setPassword] = useState('');
   const [authed, setAuthed] = useState(false);
@@ -143,7 +143,7 @@ function LockGate({ scholarKey, setScholarKey, password, setPassword, onSubmit, 
             {ready ? `Continue as ${scholar.display} →` : 'Loading…'}
           </button>
         </form>
-        <a href="index.html" className="el-back">← Back to NextGen Scholars</a>
+        <Link to="/" className="el-back">← Back to NextGen Scholars</Link>
       </div>
     </div>
   );
@@ -449,7 +449,7 @@ function ExpenseForm({ scholar, onLogout }) {
           <span className="ef-header-title">Add Expense — <strong>{scholar.display}</strong></span>
         </div>
         <div className="ef-header-right">
-          <a href={`${scholar.key}-home.html`} className="ef-home-link">← Portal home</a>
+          <Link to={`/home/${scholar.key}`} className="ef-home-link">← Portal home</Link>
           <button className="ef-logout" onClick={onLogout}>Switch scholar</button>
         </div>
       </header>
@@ -778,4 +778,3 @@ function ExpenseForm({ scholar, onLogout }) {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<EntryApp />);

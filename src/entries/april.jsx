@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom/client';
-import '../styles/profile.css';
 import { NGS_DATA } from '../../scholars-data.js';
 import { ScholarProfile } from '../components/Profile/ScholarProfile.jsx';
 import { loadFromSupabase } from '../supabase-loader.js';
@@ -32,7 +30,7 @@ function mergeSheetData(base, s) {
   };
 }
 
-function App() {
+export function AprilPage() {
   const [isDesktop, setIsDesktop] = useState(
     () => window.matchMedia('(min-width: 960px)').matches
   );
@@ -55,7 +53,5 @@ function App() {
       .catch(() => { setProfileData(mergeSheetData(STATIC, STATIC_SCHOLAR)); });
   }, []);
 
-  return <ScholarProfile data={profileData} isMobile={!isDesktop} relatedProfiles={[{ name: 'Claire', href: 'claire.html' }]}/>;
+  return <ScholarProfile data={profileData} isMobile={!isDesktop} relatedProfiles={[{ name: 'Claire', href: '/claire' }]}/>;
 }
-
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);

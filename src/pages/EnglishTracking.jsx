@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 
 const CONFIGS = {
-  claire: { name: 'Claire', semKey: 'Y2S2', semLabel: 'Year 2 · Semester 2', target: 200, homeHref: 'claire-home.html' },
-  april:  { name: 'April',  semKey: 'TG11S1', semLabel: 'Grade 11 · Semester 1', target: null, homeHref: 'april-home.html' },
+  claire: { name: 'Claire', semKey: 'Y2S2', semLabel: 'Year 2 · Semester 2', target: 200, homeHref: '/home/claire' },
+  april:  { name: 'April',  semKey: 'TG11S1', semLabel: 'Grade 11 · Semester 1', target: null, homeHref: '/home/april' },
 };
 
 const ACTIVITY_TYPES = ['OET Practice', 'Speaking', 'Listening', 'Reading', 'Writing', 'Other'];
@@ -133,9 +134,9 @@ export function EnglishTracking({ scholarKey }) {
           <div className="sp-head-rule" />
           <div className="sp-head-meta">
             <span className="sp-stage">{config.semLabel}</span>
-            <a href={config.homeHref} className="sp-tagline" style={{ textDecoration: 'none' }}>
+            <Link to={config.homeHref} className="sp-tagline" style={{ textDecoration: 'none' }}>
               ← Back to home
-            </a>
+            </Link>
           </div>
         </header>
 
