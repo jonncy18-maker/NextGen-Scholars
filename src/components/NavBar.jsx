@@ -53,7 +53,7 @@ export function NavBar({
             onClick={onRefresh}
             title="Reload data from Supabase"
           >
-            <span className="refresh-icon">↻</span> Refresh
+            <span className="refresh-icon">↻</span><span className="refresh-label"> Refresh</span>
           </button>
           <Link className="nav-back" to="/">← All scholars</Link>
         </div>

@@ -201,6 +201,7 @@ export function ScholarHome({ scholarKey }) {
         <footer className="sp-footer">
           <div className="sp-mark">NGS</div>
           <div className="sp-footer-tag">One generation lifts another.</div>
+          <Link to="/" className="sp-home-link">← Home</Link>
         </footer>
       </div>
     </div>
