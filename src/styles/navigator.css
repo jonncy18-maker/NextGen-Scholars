@@ -1303,11 +1303,15 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   .nav-back { display: none; }
   .filter-grid { grid-template-columns: 1fr; }
 
-  /* Wider bars + touch-activated tooltips */
-  .bar { width: 40px; }
-  .bar-pair { gap: 5px; }
-  .bars { gap: 14px; }
+  /* Narrower bars on mobile to prevent overflow + touch-activated tooltips */
+  .chart-card { padding: 16px 12px 14px; }
+  .bar { width: 18px; }
+  .bar-pair { gap: 4px; }
+  .bars { gap: 10px; }
+  .bar-xlabels { gap: 10px; }
   .bar-tip.is-visible { opacity: 1 !important; }
+  .cat-row { grid-template-columns: 90px 1fr auto; gap: 10px; }
+  .cat-val { min-width: 68px; font-size: 11.5px; }
 
   /* Hide Qty column in expense table to save space */
   .exp-col-hide-mobile { display: none; }
