@@ -1533,6 +1533,10 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 .nai-escalate-msg {
   font-size: 13px; color: var(--ngs-ink-soft); line-height: 1.5;
 }
+.nai-gemini-answer {
+  white-space: pre-wrap; font-family: var(--ngs-font-sans); font-size: 14px;
+  color: var(--ngs-ink); line-height: 1.65;
+}
 
 /* ── History ── */
 .nai-history { margin-top: 8px; border-top: 1px solid var(--ngs-rule); padding-top: 12px; }

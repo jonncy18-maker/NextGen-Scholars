@@ -4,13 +4,11 @@
 //   type=ingest + file present  → Tier 3 (Claude — multimodal extraction)
 //   type=ingest + text          → Tier 3 (Claude — structured text parsing)
 //   type=query                  → Tier 1 (DB resolver), escalates to Tier 2 (Gemini) if needed
-//
-// Tiers 1, 2, and 3 are wired in P1. This shell establishes the interface
-// and validates the request shape so frontend integration can begin.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { tier1Resolve } from './tier1.ts'
 import { buildContext } from './context.ts'
+import { tier2Ask } from './tier2.ts'
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -63,24 +61,30 @@ Deno.serve(async (req) => {
 
   if (type === 'ingest') {
     if (!file && !text) return json({ error: 'Ingest request requires file or text' }, 400)
-    // Tier 3 (Claude) — wired in P1
+    // Tier 3 (Claude) — wired in Step 7
     return json({ tier: 3, status: 'not_implemented' }, 501)
   }
 
   // type === 'query'
   if (!text?.trim()) return json({ error: 'Query request requires text' }, 400)
 
-  // Tier 1 — DB resolver
+  // Tier 1 — DB resolver (free, deterministic, no LLM)
   try {
-    const result = await tier1Resolve(text, scholar, sb)
-    if (result.answered) {
-      return json({ tier: 1, ...result })
+    const t1 = await tier1Resolve(text, scholar, sb)
+    if (t1.answered) return json({ tier: 1, ...t1 })
+
+    // Tier 1 couldn't answer — build context and escalate to Tier 2 (Gemini advisory)
+    const geminiKey = Deno.env.get('GOOGLE_AI_KEY')
+    if (!geminiKey) {
+      return json({ tier: 2, status: 'not_configured', hint: 'Add GOOGLE_AI_KEY to Supabase secrets.' }, 503)
     }
-    // Tier 1 couldn't answer — build context bundle and escalate to Tier 2 (Gemini)
-    // The context is returned now so the frontend can inspect it; Gemini is wired in Step 6.
+
     const ctx = await buildContext(scholar, sb)
-    return json({ tier: 2, status: 'not_implemented', context: ctx, hint: 'Gemini escalation pending (Step 6).' }, 501)
+    const t2  = await tier2Ask(text, ctx, geminiKey)
+
+    if (t2.answered) return json({ tier: 2, answer: t2.answer, model: t2.model })
+    return json({ tier: 2, status: 'error', error: t2.error }, 502)
   } catch (err) {
-    return json({ error: (err as Error).message ?? 'Tier 1 query failed' }, 500)
+    return json({ error: (err as Error).message ?? 'Query failed' }, 500)
   }
 })

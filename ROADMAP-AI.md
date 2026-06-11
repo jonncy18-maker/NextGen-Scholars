@@ -159,7 +159,7 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 
 ## Are we ready to start?
 
-**P1 complete. Ready to wire LLM keys (Steps 6 & 7).**
+**Steps 1–6 complete. Next: Step 7 — wire Claude for Tier 3 (receipt ingestion).**
 
 | Layer | Priority | Status | Gap |
 |---|---|---|---|
@@ -179,7 +179,7 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 | ✅ 3 | P1 | Build Tier 1 query resolver — pattern-match question types to SQL, return answers without LLM |
 | ✅ 4 | P1 | Test Tier 1 end-to-end on the mentor dashboard; tune until it handles 80%+ of common queries |
 | ✅ 5 | P1 | Build scholar context builder (compact JSON for LLM injection) — `context.ts`; includes `SCHEMA_REGISTRY` for future-proofing |
-| 6 | P1 | Wire Gemini for Tier 2 (advisory) — add `GOOGLE_AI_KEY` to Supabase secrets |
+| ✅ 6 | P1 | Wire Gemini for Tier 2 (advisory) — add `GOOGLE_AI_KEY` to Supabase secrets |
 | 7 | P1 | Wire Claude for Tier 3 (ingestion) — add `ANTHROPIC_KEY` to Supabase secrets; start with receipt parsing |
 | 8 | P2 | Build confirmation UI for AI-proposed writes |
 | 9 | P2 | Tighten RLS; audit anon access; rotate any exposed keys |
