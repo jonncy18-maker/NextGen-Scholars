@@ -15,6 +15,8 @@ export const EXPENSE_CATS = [
 // Scholar name → CSS modifier class. Keys are lowercase to match data keys.
 export const NAMECLASS = { claire: '', april: 't-april', aljane: 't-aljane' };
 
+export const AVB_OPTIONS = ['Actual', 'Budget'];
+
 export const SEMESTER_OPTIONS = [
   'T11S1', 'T11S2',
   'T12S1', 'T12S2',

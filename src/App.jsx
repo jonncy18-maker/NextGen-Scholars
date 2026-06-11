@@ -1,6 +1,8 @@
-import React, { useState, useEffect, Component } from 'react';
+import React, { Component } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
+import { useMediaQuery } from './hooks/useMediaQuery.js';
 
+import './styles/base.css';
 import './styles/site.css';
 import './styles/profile.css';
 import './styles/navigator.css';
@@ -19,15 +21,7 @@ import { EnglishTracking } from './pages/EnglishTracking.jsx';
 import { GradeEntry } from './pages/GradeEntry.jsx';
 
 function HomeRoute() {
-  const [isDesktop, setIsDesktop] = useState(
-    () => window.matchMedia('(min-width: 960px)').matches
-  );
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 960px)');
-    const handler = (e) => setIsDesktop(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
+  const isDesktop = useMediaQuery('(min-width: 960px)');
   return <NGSSite isDesktop={isDesktop} />;
 }
 

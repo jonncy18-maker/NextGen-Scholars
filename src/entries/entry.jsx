@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { EXPENSE_CATS } from '../constants.js';
+import { EXPENSE_CATS, AVB_OPTIONS } from '../constants.js';
+import { NGS_DATA } from '../../scholars-data.js';
 import { updateExpense, writeActivityLog, writeSubmission, resubmitExpense, markSubmissionReadByScholar } from '../supabase-writer.js';
 import { loadFromSupabase, loadScholarSubmissions } from '../supabase-loader.js';
 import { supabase } from '../lib/supabase.js';
@@ -18,20 +19,18 @@ async function loadConfig() {
   }
 }
 
-const SCHOLARS = [
-  {
-    key: 'claire',
-    display: 'Claire',
-    sems: ['Y2S1', 'Y2S2', 'Y3S1', 'Y3S2'],
-    defaultSem: 'Y2S2',
-  },
-  {
-    key: 'april',
-    display: 'April',
-    sems: ['TG11S1', 'TG11S2', 'TG12S1', 'TG12S2'],
-    defaultSem: 'TG11S1',
-  },
-];
+const SCHOLARS = Object.entries(NGS_DATA.scholars)
+  .filter(([, s]) => s.status === 'active' || s.status === 'trial')
+  .map(([key, s]) => ({
+    key,
+    display: s.firstName,
+    sems: key === 'claire'
+      ? ['Y2S1', 'Y2S2', 'Y3S1', 'Y3S2']
+      : key === 'april'
+        ? ['TG11S1', 'TG11S2', 'TG12S1', 'TG12S2']
+        : [],
+    defaultSem: s.currentSem,
+  }));
 
 const TODAY_ISO = new Date().toISOString().split('T')[0];
 
@@ -44,7 +43,7 @@ function makeEmptyRow(defaultSem) {
     qty: '1',
     date: TODAY_ISO,
     sem: defaultSem,
-    avb: 'Actual',
+    avb: AVB_OPTIONS[0],
     vendor: '',
   };
 }
@@ -149,23 +148,248 @@ function LockGate({ scholarKey, setScholarKey, password, setPassword, onSubmit, 
   );
 }
 
+// ── Pending submissions awaiting mentor approval ──────────────────────────────
+function PendingReview({ submissions, openComments, resubmitingId, resubmitDraft, setResubmitDraft, onToggleComment, onStartResubmit, onCancelResubmit, onHandleResubmit }) {
+  if (!submissions.length) return null;
+
+  return (
+    <div className="ef-pending-section">
+      <div className="ef-pending-header">
+        <span className="ef-pending-title">Pending Review</span>
+        <span className="ef-pending-count">{submissions.length} awaiting mentor approval</span>
+      </div>
+      <div className="ef-pending-list">
+        {submissions.map(sub => {
+          const exp = sub.expense_data || {};
+          const total = (exp.amount || 0) * (exp.qty || 1);
+          const isRejected = sub.status === 'rejected';
+          const commentOpen = openComments.has(sub.id);
+          const isResubmiting = resubmitingId === sub.id;
+
+          return (
+            <div key={sub.id} className={`ef-pending-item${isRejected ? ' is-rejected' : ''}`}>
+              <div className="ef-pending-item-main">
+                <span className="ef-pending-item-name">{exp.item}</span>
+                <span className="ef-pending-item-amt">₱{Math.round(total).toLocaleString('en-US')}</span>
+                <span className="ef-pending-item-meta">{exp.cat}</span>
+                <span className="ef-pending-item-meta">{exp.sem}</span>
+                <span className="ef-pending-item-meta">{exp.date}</span>
+                {isRejected ? (
+                  <span className="ef-pending-badge rejected">Rejected</span>
+                ) : (
+                  <span className="ef-pending-badge pending">Pending review</span>
+                )}
+                {isRejected && sub.rejection_comment && (
+                  <button
+                    className="ef-pending-comment-btn"
+                    title="View rejection reason"
+                    onClick={() => onToggleComment(sub.id)}
+                  >
+                    💬
+                  </button>
+                )}
+              </div>
+              {isRejected && commentOpen && sub.rejection_comment && (
+                <div className="ef-pending-comment">{sub.rejection_comment}</div>
+              )}
+              {isRejected && !isResubmiting && (
+                <div className="ef-pending-actions">
+                  <button className="ef-resubmit-btn" onClick={() => onStartResubmit(sub)}>
+                    Edit &amp; Resubmit
+                  </button>
+                </div>
+              )}
+              {isRejected && isResubmiting && (
+                <div className="ef-resubmit-form">
+                  <label className="ef-edit-field"><span>Item</span>
+                    <input value={resubmitDraft.item} onChange={e => setResubmitDraft(d => ({ ...d, item: e.target.value }))} /></label>
+                  <label className="ef-edit-field"><span>Category</span>
+                    <select value={resubmitDraft.cat} onChange={e => setResubmitDraft(d => ({ ...d, cat: e.target.value }))}>
+                      {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}</select></label>
+                  <label className="ef-edit-field"><span>Amount (₱)</span>
+                    <input type="number" step="0.01" min="0" value={resubmitDraft.amount}
+                      onChange={e => setResubmitDraft(d => ({ ...d, amount: e.target.value }))} /></label>
+                  <label className="ef-edit-field"><span>Qty</span>
+                    <input type="number" min="1" value={resubmitDraft.qty}
+                      onChange={e => setResubmitDraft(d => ({ ...d, qty: e.target.value }))} /></label>
+                  <label className="ef-edit-field"><span>Date</span>
+                    <input type="date" value={resubmitDraft.date}
+                      onChange={e => setResubmitDraft(d => ({ ...d, date: e.target.value }))} /></label>
+                  <label className="ef-edit-field"><span>Status</span>
+                    <select value={resubmitDraft.avb} onChange={e => setResubmitDraft(d => ({ ...d, avb: e.target.value }))}>
+                      {AVB_OPTIONS.map(o => <option key={o}>{o}</option>)}</select></label>
+                  <label className="ef-edit-field"><span>Vendor</span>
+                    <input value={resubmitDraft.vendor} onChange={e => setResubmitDraft(d => ({ ...d, vendor: e.target.value }))} /></label>
+                  <div className="ef-edit-actions">
+                    <button className="ef-edit-save" onClick={() => onHandleResubmit(sub)}>Resubmit</button>
+                    <button className="ef-edit-cancel" onClick={onCancelResubmit}>Cancel</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Approved expenses table with optional grouping ────────────────────────────
+function ApprovedExpensesTable({ currentSem, semExpenses, groupBy, setGroupBy, expandedGroups, setExpandedGroups, editingId, editDraft, setEditDraft, pendingDeletes, onStartEdit, onCancelEdit, onSaveEdit, onRequestDelete }) {
+  if (!semExpenses.length) return null;
+
+  const groups = groupExpenses(semExpenses, groupBy);
+  const allExpanded = groups && groups.length > 0 && groups.every(g => expandedGroups.has(g.key));
+
+  function toggleGroup(key) {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }
+
+  function renderEntryRow(e, i) {
+    const total = (e.amount || 0) * (e.qty || 1);
+    const isPending = pendingDeletes.has(String(e.id));
+    const isEditing = editingId === e.id;
+
+    if (isEditing) {
+      return (
+        <React.Fragment key={e.id || i}>
+          <tr className="ef-entries-editing-hd">
+            <td className="ef-entries-item">{e.item}</td>
+            <td><span className="ef-entries-cat" data-cat={e.cat}>{e.cat}</span></td>
+            <td className="ef-entries-date">{e.date}</td>
+            <td className="ef-entries-right ef-entries-amount">₱{Math.round(total).toLocaleString('en-US')}</td>
+            <td><span className={`ef-entries-status is-${(e.avb || '').toLowerCase()}`}>{e.avb}</span></td>
+            <td className="ef-entries-actions"><button className="ef-row-cancel" onClick={onCancelEdit}>Cancel</button></td>
+          </tr>
+          <tr className="ef-edit-row">
+            <td colSpan={6}>
+              <div className="ef-edit-form">
+                <label className="ef-edit-field"><span>Item</span>
+                  <input value={editDraft.item} onChange={ev => setEditDraft(d => ({ ...d, item: ev.target.value }))} /></label>
+                <label className="ef-edit-field"><span>Category</span>
+                  <select value={editDraft.cat} onChange={ev => setEditDraft(d => ({ ...d, cat: ev.target.value }))}>
+                    {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}</select></label>
+                <label className="ef-edit-field"><span>Amount (₱)</span>
+                  <input type="number" step="0.01" min="0" value={editDraft.amount} onChange={ev => setEditDraft(d => ({ ...d, amount: ev.target.value }))} /></label>
+                <label className="ef-edit-field"><span>Qty</span>
+                  <input type="number" min="1" value={editDraft.qty} onChange={ev => setEditDraft(d => ({ ...d, qty: ev.target.value }))} /></label>
+                <label className="ef-edit-field"><span>Date</span>
+                  <input type="date" value={editDraft.date} onChange={ev => setEditDraft(d => ({ ...d, date: ev.target.value }))} /></label>
+                <label className="ef-edit-field"><span>Status</span>
+                  <select value={editDraft.avb} onChange={ev => setEditDraft(d => ({ ...d, avb: ev.target.value }))}>
+                    {AVB_OPTIONS.map(o => <option key={o}>{o}</option>)}</select></label>
+                <label className="ef-edit-field"><span>Vendor</span>
+                  <input value={editDraft.vendor} onChange={ev => setEditDraft(d => ({ ...d, vendor: ev.target.value }))} /></label>
+                <div className="ef-edit-actions">
+                  <button className="ef-edit-save" onClick={() => onSaveEdit(e)}>Save changes</button>
+                  <button className="ef-edit-cancel" onClick={onCancelEdit}>Cancel</button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </React.Fragment>
+      );
+    }
+
+    return (
+      <tr key={i} className={[e.avb !== AVB_OPTIONS[0] ? 'ef-entries-budget' : '', isPending ? 'ef-entries-pending-del' : ''].filter(Boolean).join(' ')}>
+        <td className="ef-entries-item">{e.item}</td>
+        <td><span className="ef-entries-cat" data-cat={e.cat}>{e.cat}</span></td>
+        <td className="ef-entries-date">{e.date}</td>
+        <td className="ef-entries-right ef-entries-amount">₱{Math.round(total).toLocaleString('en-US')}</td>
+        <td>{isPending ? <span className="ef-del-pending">Delete requested</span>
+          : <span className={`ef-entries-status is-${(e.avb || '').toLowerCase()}`}>{e.avb}</span>}</td>
+        <td className="ef-entries-actions">
+          {!isPending && (<>
+            <button className="ef-row-edit" onClick={() => onStartEdit(e)}>Edit</button>
+            <button className="ef-row-del" onClick={() => onRequestDelete(e)}>Delete</button>
+          </>)}
+        </td>
+      </tr>
+    );
+  }
+
+  return (
+    <div className="ef-entries">
+      <div className="ef-entries-header">
+        <span className="ef-entries-title">{currentSem} · {semExpenses.length} item{semExpenses.length !== 1 ? 's' : ''}</span>
+        <div className="ef-groupby">
+          <span className="ef-groupby-label">Group</span>
+          <div className="ef-groupby-chips">
+            {[['none','None'],['month','Month'],['category','Category']].map(([val, lbl]) => (
+              <button key={val} className={groupBy === val ? 'active' : ''}
+                onClick={() => { setGroupBy(val); setExpandedGroups(new Set()); }}>{lbl}</button>
+            ))}
+          </div>
+          {groups && groups.length > 0 && (
+            <button className="ef-groupby-all-btn" onClick={() =>
+              setExpandedGroups(allExpanded ? new Set() : new Set(groups.map(g => g.key)))}>
+              {allExpanded ? 'Collapse All' : 'Expand All'}
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="ef-entries-scroll">
+        <table className="ef-entries-table">
+          <thead>
+            <tr>
+              <th>Item</th><th>Category</th><th>Date</th>
+              <th className="ef-entries-right">Total</th><th>Status</th><th />
+            </tr>
+          </thead>
+          {groups
+            ? groups.map(group => {
+                const collapsed = !expandedGroups.has(group.key);
+                return (
+                  <React.Fragment key={group.key}>
+                    <tbody>
+                      <tr className="ef-group-hd" onClick={() => toggleGroup(group.key)}>
+                        <td colSpan={6}>
+                          <span>{collapsed ? '▶' : '▼'}</span>
+                          <span className="ef-group-label">{group.label}</span>
+                          <span className="ef-group-meta">{group.rows.length} item{group.rows.length !== 1 ? 's' : ''}</span>
+                          <span className="ef-group-total">₱{Math.round(group.total).toLocaleString('en-US')}</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                    {!collapsed && (
+                      <tbody>
+                        {group.rows.map(renderEntryRow)}
+                        <tr className="ef-subtotal">
+                          <td colSpan={3} className="ef-subtotal-label">Subtotal — {group.label}</td>
+                          <td className="ef-subtotal-amt ef-entries-right">₱{Math.round(group.total).toLocaleString('en-US')}</td>
+                          <td /><td />
+                        </tr>
+                      </tbody>
+                    )}
+                  </React.Fragment>
+                );
+              })
+            : <tbody>{semExpenses.map(renderEntryRow)}</tbody>
+          }
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function ExpenseForm({ scholar, onLogout }) {
-  // ─── Current semester (set by mentor in navigator) ───────────────────────
   const [currentSem, setCurrentSem] = useState(scholar.defaultSem);
 
-  // ─── Single-entry form state ──────────────────────────────────────────────
   const [form, setForm] = useState({
     item: '', cat: EXPENSE_CATS[0],
-    amount: '', qty: '1', date: TODAY_ISO, avb: 'Actual', vendor: '',
+    amount: '', qty: '1', date: TODAY_ISO, avb: AVB_OPTIONS[0], vendor: '',
   });
   const [entryMode, setEntryMode] = useState(null); // null | 'single' | 'multiple'
-  const [submitState, setSubmitState] = useState('idle'); // 'idle' | 'submitting' | 'done'
+  const [submitState, setSubmitState] = useState('idle');
 
-  // ─── Multi-entry form state ──────────────────────────────────────────────
   const [multiRows, setMultiRows] = useState(() => [makeEmptyRow(scholar.defaultSem), makeEmptyRow(scholar.defaultSem)]);
   const [multiSubmitState, setMultiSubmitState] = useState('idle');
 
-  // ─── Approved expenses (from expenses table) ─────────────────────────────
   const [expensesBySem, setExpensesBySem] = useState(null);
   const [groupBy, setGroupBy] = useState('none');
   const [expandedGroups, setExpandedGroups] = useState(new Set());
@@ -173,13 +397,11 @@ function ExpenseForm({ scholar, onLogout }) {
   const [editDraft, setEditDraft] = useState({});
   const [pendingDeletes, setPendingDeletes] = useState(new Set());
 
-  // ─── Pending submissions (awaiting mentor approval) ───────────────────────
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
-  const [openComments, setOpenComments] = useState(new Set()); // IDs whose comments are expanded
+  const [openComments, setOpenComments] = useState(new Set());
   const [resubmitingId, setResubmitingId] = useState(null);
   const [resubmitDraft, setResubmitDraft] = useState({});
 
-  // ─── Load data & subscribe ────────────────────────────────────────────────
   useEffect(() => {
     loadFromSupabase()
       .then(data => {
@@ -207,7 +429,6 @@ function ExpenseForm({ scholar, onLogout }) {
           if (exists) return prev.map(s => s.id === updated.id ? updated : s);
           return prev;
         });
-        // Refresh approved expenses if something got approved
         if (updated.status === 'approved') {
           loadFromSupabase()
             .then(data => setExpensesBySem(data.scholars?.[scholar.key]?.expenses || {}))
@@ -219,7 +440,6 @@ function ExpenseForm({ scholar, onLogout }) {
     return () => supabase.removeChannel(channel);
   }, [scholar.key]);
 
-  // ─── Single submit ────────────────────────────────────────────────────────
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const singleValid = form.item.trim() && form.amount &&
     !isNaN(parseFloat(form.amount)) && parseFloat(form.amount) > 0;
@@ -255,7 +475,6 @@ function ExpenseForm({ scholar, onLogout }) {
     }
   }
 
-  // ─── Multi submit ─────────────────────────────────────────────────────────
   const filledRows = multiRows.filter(r => r.item.trim() && r.amount && !isNaN(parseFloat(r.amount)) && parseFloat(r.amount) > 0);
 
   function updateMultiRow(idx, field, val) {
@@ -300,12 +519,11 @@ function ExpenseForm({ scholar, onLogout }) {
     }
   }
 
-  // ─── Existing expense editing ─────────────────────────────────────────────
   function startEdit(exp) {
     setEditingId(exp.id);
     setEditDraft({ item: exp.item || '', cat: exp.cat || '', date: exp.date || '',
       amount: String(exp.amount || ''), qty: String(exp.qty || 1),
-      avb: exp.avb || 'Actual', vendor: exp.vendor || '' });
+      avb: exp.avb || AVB_OPTIONS[0], vendor: exp.vendor || '' });
   }
   function cancelEdit() { setEditingId(null); setEditDraft({}); }
   function saveEdit(originalExp) {
@@ -333,14 +551,13 @@ function ExpenseForm({ scholar, onLogout }) {
       .catch(err => console.error('writeActivityLog failed:', err));
   }
 
-  // ─── Resubmit rejected expense ────────────────────────────────────────────
   function startResubmit(sub) {
     const exp = sub.expense_data || {};
     setResubmitingId(sub.id);
     setResubmitDraft({ item: exp.item || '', cat: exp.cat || EXPENSE_CATS[0],
       amount: String(exp.amount || ''), qty: String(exp.qty || 1),
       date: exp.date || TODAY_ISO,
-      avb: exp.avb || 'Actual', vendor: exp.vendor || '' });
+      avb: exp.avb || AVB_OPTIONS[0], vendor: exp.vendor || '' });
     if (!sub.read_by_scholar) markSubmissionReadByScholar(sub.id).catch(() => {});
   }
   function cancelResubmit() { setResubmitingId(null); setResubmitDraft({}); }
@@ -365,81 +582,19 @@ function ExpenseForm({ scholar, onLogout }) {
     } catch (err) { console.error('resubmit failed:', err); }
   }
 
-  // ─── Toggle comment visibility ────────────────────────────────────────────
   function toggleComment(id) {
     setOpenComments(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+    const sub = pendingSubmissions.find(s => s.id === id);
+    if (sub && !sub.read_by_scholar) markSubmissionReadByScholar(id).catch(() => {});
   }
 
-  // ─── Render helpers ───────────────────────────────────────────────────────
   const semExpenses = expensesBySem?.[currentSem] || [];
-  const actualTotal = semExpenses.filter(e => e.avb === 'Actual').reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
-  const budgetTotal = semExpenses.filter(e => e.avb !== 'Actual').reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
-
-  function renderEntryRow(e, i) {
-    const total = (e.amount || 0) * (e.qty || 1);
-    const isPending = pendingDeletes.has(String(e.id));
-    const isEditing = editingId === e.id;
-    if (isEditing) {
-      return (
-        <React.Fragment key={e.id || i}>
-          <tr className="ef-entries-editing-hd">
-            <td className="ef-entries-item">{e.item}</td>
-            <td><span className="ef-entries-cat" data-cat={e.cat}>{e.cat}</span></td>
-            <td className="ef-entries-date">{e.date}</td>
-            <td className="ef-entries-right ef-entries-amount">₱{Math.round(total).toLocaleString('en-US')}</td>
-            <td><span className={`ef-entries-status is-${(e.avb || '').toLowerCase()}`}>{e.avb}</span></td>
-            <td className="ef-entries-actions"><button className="ef-row-cancel" onClick={cancelEdit}>Cancel</button></td>
-          </tr>
-          <tr className="ef-edit-row">
-            <td colSpan={6}>
-              <div className="ef-edit-form">
-                <label className="ef-edit-field"><span>Item</span>
-                  <input value={editDraft.item} onChange={ev => setEditDraft(d => ({ ...d, item: ev.target.value }))} /></label>
-                <label className="ef-edit-field"><span>Category</span>
-                  <select value={editDraft.cat} onChange={ev => setEditDraft(d => ({ ...d, cat: ev.target.value }))}>
-                    {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}</select></label>
-                <label className="ef-edit-field"><span>Amount (₱)</span>
-                  <input type="number" step="0.01" min="0" value={editDraft.amount} onChange={ev => setEditDraft(d => ({ ...d, amount: ev.target.value }))} /></label>
-                <label className="ef-edit-field"><span>Qty</span>
-                  <input type="number" min="1" value={editDraft.qty} onChange={ev => setEditDraft(d => ({ ...d, qty: ev.target.value }))} /></label>
-                <label className="ef-edit-field"><span>Date</span>
-                  <input type="date" value={editDraft.date} onChange={ev => setEditDraft(d => ({ ...d, date: ev.target.value }))} /></label>
-                <label className="ef-edit-field"><span>Status</span>
-                  <select value={editDraft.avb} onChange={ev => setEditDraft(d => ({ ...d, avb: ev.target.value }))}>
-                    <option value="Actual">Actual</option><option value="Budget">Budget</option></select></label>
-                <label className="ef-edit-field"><span>Vendor</span>
-                  <input value={editDraft.vendor} onChange={ev => setEditDraft(d => ({ ...d, vendor: ev.target.value }))} /></label>
-                <div className="ef-edit-actions">
-                  <button className="ef-edit-save" onClick={() => saveEdit(e)}>Save changes</button>
-                  <button className="ef-edit-cancel" onClick={cancelEdit}>Cancel</button>
-                </div>
-              </div>
-            </td>
-          </tr>
-        </React.Fragment>
-      );
-    }
-    return (
-      <tr key={i} className={[e.avb !== 'Actual' ? 'ef-entries-budget' : '', isPending ? 'ef-entries-pending-del' : ''].filter(Boolean).join(' ')}>
-        <td className="ef-entries-item">{e.item}</td>
-        <td><span className="ef-entries-cat" data-cat={e.cat}>{e.cat}</span></td>
-        <td className="ef-entries-date">{e.date}</td>
-        <td className="ef-entries-right ef-entries-amount">₱{Math.round(total).toLocaleString('en-US')}</td>
-        <td>{isPending ? <span className="ef-del-pending">Delete requested</span>
-          : <span className={`ef-entries-status is-${(e.avb || '').toLowerCase()}`}>{e.avb}</span>}</td>
-        <td className="ef-entries-actions">
-          {!isPending && (<>
-            <button className="ef-row-edit" onClick={() => startEdit(e)}>Edit</button>
-            <button className="ef-row-del" onClick={() => requestDelete(e)}>Delete</button>
-          </>)}
-        </td>
-      </tr>
-    );
-  }
+  const actualTotal = semExpenses.filter(e => e.avb === AVB_OPTIONS[0]).reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
+  const budgetTotal = semExpenses.filter(e => e.avb !== AVB_OPTIONS[0]).reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
 
   return (
     <div className="ef-page" data-scholar={scholar.key}>
@@ -475,92 +630,18 @@ function ExpenseForm({ scholar, onLogout }) {
           </div>
         )}
 
-        {/* ── Pending Review ── */}
-        {pendingSubmissions.length > 0 && (
-          <div className="ef-pending-section">
-            <div className="ef-pending-header">
-              <span className="ef-pending-title">Pending Review</span>
-              <span className="ef-pending-count">{pendingSubmissions.length} awaiting mentor approval</span>
-            </div>
-            <div className="ef-pending-list">
-              {pendingSubmissions.map(sub => {
-                const exp = sub.expense_data || {};
-                const total = (exp.amount || 0) * (exp.qty || 1);
-                const isRejected = sub.status === 'rejected';
-                const commentOpen = openComments.has(sub.id);
-                const isResubmiting = resubmitingId === sub.id;
+        <PendingReview
+          submissions={pendingSubmissions}
+          openComments={openComments}
+          resubmitingId={resubmitingId}
+          resubmitDraft={resubmitDraft}
+          setResubmitDraft={setResubmitDraft}
+          onToggleComment={toggleComment}
+          onStartResubmit={startResubmit}
+          onCancelResubmit={cancelResubmit}
+          onHandleResubmit={handleResubmit}
+        />
 
-                return (
-                  <div key={sub.id} className={`ef-pending-item${isRejected ? ' is-rejected' : ''}`}>
-                    <div className="ef-pending-item-main">
-                      <span className="ef-pending-item-name">{exp.item}</span>
-                      <span className="ef-pending-item-amt">₱{Math.round(total).toLocaleString('en-US')}</span>
-                      <span className="ef-pending-item-meta">{exp.cat}</span>
-                      <span className="ef-pending-item-meta">{exp.sem}</span>
-                      <span className="ef-pending-item-meta">{exp.date}</span>
-                      {isRejected ? (
-                        <span className="ef-pending-badge rejected">Rejected</span>
-                      ) : (
-                        <span className="ef-pending-badge pending">Pending review</span>
-                      )}
-                      {isRejected && sub.rejection_comment && (
-                        <button
-                          className="ef-pending-comment-btn"
-                          title="View rejection reason"
-                          onClick={() => {
-                            toggleComment(sub.id);
-                            if (!sub.read_by_scholar) markSubmissionReadByScholar(sub.id).catch(() => {});
-                          }}
-                        >
-                          💬
-                        </button>
-                      )}
-                    </div>
-                    {isRejected && commentOpen && sub.rejection_comment && (
-                      <div className="ef-pending-comment">{sub.rejection_comment}</div>
-                    )}
-                    {isRejected && !isResubmiting && (
-                      <div className="ef-pending-actions">
-                        <button className="ef-resubmit-btn" onClick={() => startResubmit(sub)}>
-                          Edit &amp; Resubmit
-                        </button>
-                      </div>
-                    )}
-                    {isRejected && isResubmiting && (
-                      <div className="ef-resubmit-form">
-                        <label className="ef-edit-field"><span>Item</span>
-                          <input value={resubmitDraft.item} onChange={e => setResubmitDraft(d => ({ ...d, item: e.target.value }))} /></label>
-                        <label className="ef-edit-field"><span>Category</span>
-                          <select value={resubmitDraft.cat} onChange={e => setResubmitDraft(d => ({ ...d, cat: e.target.value }))}>
-                            {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}</select></label>
-                        <label className="ef-edit-field"><span>Amount (₱)</span>
-                          <input type="number" step="0.01" min="0" value={resubmitDraft.amount}
-                            onChange={e => setResubmitDraft(d => ({ ...d, amount: e.target.value }))} /></label>
-                        <label className="ef-edit-field"><span>Qty</span>
-                          <input type="number" min="1" value={resubmitDraft.qty}
-                            onChange={e => setResubmitDraft(d => ({ ...d, qty: e.target.value }))} /></label>
-                        <label className="ef-edit-field"><span>Date</span>
-                          <input type="date" value={resubmitDraft.date}
-                            onChange={e => setResubmitDraft(d => ({ ...d, date: e.target.value }))} /></label>
-                        <label className="ef-edit-field"><span>Status</span>
-                          <select value={resubmitDraft.avb} onChange={e => setResubmitDraft(d => ({ ...d, avb: e.target.value }))}>
-                            <option value="Actual">Actual</option><option value="Budget">Budget</option></select></label>
-                        <label className="ef-edit-field"><span>Vendor</span>
-                          <input value={resubmitDraft.vendor} onChange={e => setResubmitDraft(d => ({ ...d, vendor: e.target.value }))} /></label>
-                        <div className="ef-edit-actions">
-                          <button className="ef-edit-save" onClick={() => handleResubmit(sub)}>Resubmit</button>
-                          <button className="ef-edit-cancel" onClick={cancelResubmit}>Cancel</button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ── Add Expense: mode chooser ── */}
         {entryMode === null && (
           <div className="ef-mode-chooser">
             <button className="ef-mode-card" onClick={() => setEntryMode('single')}>
@@ -581,7 +662,6 @@ function ExpenseForm({ scholar, onLogout }) {
           </div>
         )}
 
-        {/* ── Single entry form ── */}
         {entryMode === 'single' && (
           <div className="ef-entry-card">
             <div className="ef-entry-card-hd">
@@ -617,8 +697,7 @@ function ExpenseForm({ scholar, onLogout }) {
               <div className="ef-field">
                 <label>Status</label>
                 <select value={form.avb} onChange={e => set('avb', e.target.value)}>
-                  <option value="Actual">Actual</option>
-                  <option value="Budget">Budget</option>
+                  {AVB_OPTIONS.map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
               <div className="ef-field ef-field-wide">
@@ -636,7 +715,6 @@ function ExpenseForm({ scholar, onLogout }) {
           </div>
         )}
 
-        {/* ── Multiple entry form ── */}
         {entryMode === 'multiple' && (
           <div className="ef-modal-overlay" onClick={e => { if (e.target === e.currentTarget) setEntryMode(null); }}>
             <div className="ef-modal-panel">
@@ -674,8 +752,7 @@ function ExpenseForm({ scholar, onLogout }) {
                           <td><input className="ef-multi-input ef-multi-date" type="date"
                             value={row.date} onChange={e => updateMultiRow(idx, 'date', e.target.value)} /></td>
                           <td><select className="ef-multi-input ef-multi-avb" value={row.avb} onChange={e => updateMultiRow(idx, 'avb', e.target.value)}>
-                            <option value="Actual">Actual</option>
-                            <option value="Budget">Budget</option>
+                            {AVB_OPTIONS.map(o => <option key={o}>{o}</option>)}
                           </select></td>
                           <td><input className="ef-multi-input ef-multi-wide" type="text" placeholder="Optional"
                             value={row.vendor} onChange={e => updateMultiRow(idx, 'vendor', e.target.value)} /></td>
@@ -701,82 +778,23 @@ function ExpenseForm({ scholar, onLogout }) {
           </div>
         )}
 
-        {/* ── Approved expenses table ── */}
-        {semExpenses.length > 0 && (() => {
-          const groups = groupExpenses(semExpenses, groupBy);
-          function toggleGroup(key) {
-            setExpandedGroups(prev => {
-              const next = new Set(prev);
-              next.has(key) ? next.delete(key) : next.add(key);
-              return next;
-            });
-          }
-          const allExpanded = groups && groups.length > 0 && groups.every(g => expandedGroups.has(g.key));
-          return (
-            <div className="ef-entries">
-              <div className="ef-entries-header">
-                <span className="ef-entries-title">{currentSem} · {semExpenses.length} item{semExpenses.length !== 1 ? 's' : ''}</span>
-                <div className="ef-groupby">
-                  <span className="ef-groupby-label">Group</span>
-                  <div className="ef-groupby-chips">
-                    {[['none','None'],['month','Month'],['category','Category']].map(([val, lbl]) => (
-                      <button key={val} className={groupBy === val ? 'active' : ''}
-                        onClick={() => { setGroupBy(val); setExpandedGroups(new Set()); }}>{lbl}</button>
-                    ))}
-                  </div>
-                  {groups && groups.length > 0 && (
-                    <button className="ef-groupby-all-btn" onClick={() =>
-                      setExpandedGroups(allExpanded ? new Set() : new Set(groups.map(g => g.key)))}>
-                      {allExpanded ? 'Collapse All' : 'Expand All'}
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className="ef-entries-scroll">
-                <table className="ef-entries-table">
-                  <thead>
-                    <tr>
-                      <th>Item</th><th>Category</th><th>Date</th>
-                      <th className="ef-entries-right">Total</th><th>Status</th><th />
-                    </tr>
-                  </thead>
-                  {groups
-                    ? groups.map(group => {
-                        const collapsed = !expandedGroups.has(group.key);
-                        return (
-                          <React.Fragment key={group.key}>
-                            <tbody>
-                              <tr className="ef-group-hd" onClick={() => toggleGroup(group.key)}>
-                                <td colSpan={6}>
-                                  <span>{collapsed ? '▶' : '▼'}</span>
-                                  <span className="ef-group-label">{group.label}</span>
-                                  <span className="ef-group-meta">{group.rows.length} item{group.rows.length !== 1 ? 's' : ''}</span>
-                                  <span className="ef-group-total">₱{Math.round(group.total).toLocaleString('en-US')}</span>
-                                </td>
-                              </tr>
-                            </tbody>
-                            {!collapsed && (
-                              <tbody>
-                                {group.rows.map(renderEntryRow)}
-                                <tr className="ef-subtotal">
-                                  <td colSpan={3} className="ef-subtotal-label">Subtotal — {group.label}</td>
-                                  <td className="ef-subtotal-amt ef-entries-right">₱{Math.round(group.total).toLocaleString('en-US')}</td>
-                                  <td /><td />
-                                </tr>
-                              </tbody>
-                            )}
-                          </React.Fragment>
-                        );
-                      })
-                    : <tbody>{semExpenses.map(renderEntryRow)}</tbody>
-                  }
-                </table>
-              </div>
-            </div>
-          );
-        })()}
+        <ApprovedExpensesTable
+          currentSem={currentSem}
+          semExpenses={semExpenses}
+          groupBy={groupBy}
+          setGroupBy={setGroupBy}
+          expandedGroups={expandedGroups}
+          setExpandedGroups={setExpandedGroups}
+          editingId={editingId}
+          editDraft={editDraft}
+          setEditDraft={setEditDraft}
+          pendingDeletes={pendingDeletes}
+          onStartEdit={startEdit}
+          onCancelEdit={cancelEdit}
+          onSaveEdit={saveEdit}
+          onRequestDelete={requestDelete}
+        />
       </main>
     </div>
   );
 }
-

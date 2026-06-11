@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NGS_DATA } from '../../scholars-data.js';
+import { useLocalStorage } from '../hooks/useLocalStorage.js';
 import { loadFromSupabase, loadPendingSubmissions } from '../supabase-loader.js';
 import { storedMode, storedRate, persistFx, fetchMarketRate } from '../fx.js';
 import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead, approveSubmission, rejectSubmission } from '../supabase-writer.js';
@@ -7,6 +8,7 @@ import { supabase } from '../lib/supabase.js';
 import { FxCtx } from '../context/FxContext.jsx';
 import { DataCtx } from '../context/DataContext.jsx';
 import { LockScreen } from '../components/LockScreen.jsx';
+import { SectionErrorBoundary } from '../components/SectionErrorBoundary.jsx';
 import { NavBar } from '../components/NavBar.jsx';
 import { AlertsSection } from '../components/AlertsSection.jsx';
 import { StatusSection } from '../components/StatusSection.jsx';
@@ -195,31 +197,19 @@ export function Navigator() {
 
   function handleDeleteExpenseFromTable(scholarKey, expenseId) {
     removeExpenseFromD(scholarKey, expenseId);
-    setAddedExpenses(prev => {
-      const list = (prev[scholarKey] || []).filter(e => String(e.id) !== String(expenseId));
-      const updated = { ...prev, [scholarKey]: list };
-      try { localStorage.setItem('ngs_added', JSON.stringify(updated)); } catch {}
-      return updated;
-    });
+    setAddedExpenses(prev => ({
+      ...prev,
+      [scholarKey]: (prev[scholarKey] || []).filter(e => String(e.id) !== String(expenseId)),
+    }));
     deleteExpense(expenseId).catch(err => { console.error('deleteExpense failed:', err); setWriteError(true); });
   }
 
-  // Persisted to localStorage so locally-added rows survive page refreshes.
-  const [addedExpenses, setAddedExpenses] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('ngs_added') || '{}'); } catch { return {}; }
-  });
+  const [addedExpenses, setAddedExpenses] = useLocalStorage('ngs_added', {});
 
-  // Section collapse state (persisted)
-  const [collapsedSections, setCollapsedSections] = useState(() => {
-    try { return new Set(JSON.parse(localStorage.getItem('ngs_collapsed_sections') || '[]')); }
-    catch { return new Set(); }
-  });
+  const [collapsedSectionsArr, setCollapsedSectionsArr] = useLocalStorage('ngs_collapsed_sections', []);
+  const collapsedSections = new Set(collapsedSectionsArr);
 
-  // FX panel open state (persisted, default collapsed)
-  const [fxPanelOpen, setFxPanelOpen] = useState(() => {
-    try { return localStorage.getItem('ngs_fx_panel') === 'true'; }
-    catch { return false; }
-  });
+  const [fxPanelOpen, setFxPanelOpen] = useLocalStorage('ngs_fx_panel', false);
 
   useEffect(() => {
     if (fxMode !== 'market') return;
@@ -247,31 +237,23 @@ export function Navigator() {
   }
 
   function handleFxPanelToggle() {
-    setFxPanelOpen(v => {
-      const next = !v;
-      try { localStorage.setItem('ngs_fx_panel', String(next)); } catch {}
-      return next;
-    });
+    setFxPanelOpen(v => !v);
   }
 
   function toggleSection(sectionId) {
-    setCollapsedSections(prev => {
-      const next = new Set(prev);
-      next.has(sectionId) ? next.delete(sectionId) : next.add(sectionId);
-      try { localStorage.setItem('ngs_collapsed_sections', JSON.stringify([...next])); } catch {}
-      return next;
+    setCollapsedSectionsArr(prev => {
+      const set = new Set(prev);
+      set.has(sectionId) ? set.delete(sectionId) : set.add(sectionId);
+      return [...set];
     });
   }
 
   function expandAll() {
-    setCollapsedSections(new Set());
-    try { localStorage.setItem('ngs_collapsed_sections', '[]'); } catch {}
+    setCollapsedSectionsArr([]);
   }
 
   function collapseAll() {
-    const all = new Set(ALL_SECTION_IDS);
-    setCollapsedSections(all);
-    try { localStorage.setItem('ngs_collapsed_sections', JSON.stringify(ALL_SECTION_IDS)); } catch {}
+    setCollapsedSectionsArr(ALL_SECTION_IDS);
   }
 
   useEffect(() => {
@@ -308,11 +290,7 @@ export function Navigator() {
 
   function handleAddExpense(scholar, exp) {
     addExpenseToD(scholar, { ...exp, status: exp.avb });
-    setAddedExpenses(prev => {
-      const updated = { ...prev, [scholar]: [...(prev[scholar] || []), exp] };
-      try { localStorage.setItem('ngs_added', JSON.stringify(updated)); } catch {}
-      return updated;
-    });
+    setAddedExpenses(prev => ({ ...prev, [scholar]: [...(prev[scholar] || []), exp] }));
     writeExpense(scholar, exp).catch(() => setWriteError(true));
   }
 
@@ -353,28 +331,40 @@ export function Navigator() {
           onCollapseAll={collapseAll}
         />
         <main className="wrap">
-          <AlertsSection
-            submissions={pendingSubmissions}
-            feed={activityFeed}
-            onApprove={handleApproveSubmission}
-            onReject={handleRejectSubmission}
-            onApproveDelete={handleApproveDelete}
-            onDenyDelete={handleDenyDelete}
-            onMarkRead={handleMarkFeedRead}
-            {...sec('alerts')}
-          />
-          <StatusSection currency={currency} liveGpa={liveGpa} onSemesterChange={handleSemesterChange} {...sec('status')} />
-          <ExpenseSection
-            currency={currency}
-            addedExpenses={addedExpenses}
-            onAddExpense={handleAddExpense}
-            onEditExpense={handleEditExpense}
-            onDeleteExpense={handleDeleteExpenseFromTable}
-            {...sec('expenses')}
-          />
-          <DeadlinesSection {...sec('deadlines')} />
-          <EnglishSection {...sec('english')} />
-          <NavigatorAI {...sec('navigator-ai')} />
+          <SectionErrorBoundary name="Alerts">
+            <AlertsSection
+              submissions={pendingSubmissions}
+              feed={activityFeed}
+              onApprove={handleApproveSubmission}
+              onReject={handleRejectSubmission}
+              onApproveDelete={handleApproveDelete}
+              onDenyDelete={handleDenyDelete}
+              onMarkRead={handleMarkFeedRead}
+              {...sec('alerts')}
+            />
+          </SectionErrorBoundary>
+          <SectionErrorBoundary name="Status">
+            <StatusSection currency={currency} liveGpa={liveGpa} onSemesterChange={handleSemesterChange} {...sec('status')} />
+          </SectionErrorBoundary>
+          <SectionErrorBoundary name="Expenses">
+            <ExpenseSection
+              currency={currency}
+              addedExpenses={addedExpenses}
+              onAddExpense={handleAddExpense}
+              onEditExpense={handleEditExpense}
+              onDeleteExpense={handleDeleteExpenseFromTable}
+              {...sec('expenses')}
+            />
+          </SectionErrorBoundary>
+          <SectionErrorBoundary name="Deadlines">
+            <DeadlinesSection {...sec('deadlines')} />
+          </SectionErrorBoundary>
+          <SectionErrorBoundary name="English">
+            <EnglishSection {...sec('english')} />
+          </SectionErrorBoundary>
+          <SectionErrorBoundary name="Navigator AI">
+            <NavigatorAI {...sec('navigator-ai')} />
+          </SectionErrorBoundary>
         </main>
         <NavFooter sheetsStatus={sheetsStatus} writeError={writeError} />
       </FxCtx.Provider>

@@ -1,33 +1,7 @@
-@import './tokens.css';
+@import './base.css';
 
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
-body {
-  font-family: var(--ngs-sans);
-  font-feature-settings: 'ss01','cv11';
-  color: var(--ngs-ink);
-  background: var(--ngs-paper);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-  line-height: 1.5;
-  font-size: 15px;
-}
-h1,h2,h3,h4 { margin: 0; font-weight: 500; letter-spacing: -0.01em; }
-p { margin: 0; }
-a { color: inherit; text-decoration: none; }
-button { font-family: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
-input, select { font-family: inherit; }
-ul, ol { margin: 0; padding: 0; list-style: none; }
-.italic { font-family: var(--ngs-display); font-style: italic; font-weight: 400; }
-.mono { font-family: var(--ngs-mono); }
-
-/* ── additional tokens used only in navigator ── */
-:root {
-  --ngs-green: #2F7D55;
-  --ngs-amber: #B5862A;
-  --ngs-blue-nav: #2C5AA0;
-  --ngs-ink-soft: #4A4E5E;
-}
+/* navigator-specific ink-soft override */
+:root { --ngs-ink-soft: #4A4E5E; }
 
 /* ─── monogram ─── */
 .ngs-mark {
