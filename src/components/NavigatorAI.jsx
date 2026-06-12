@@ -3,6 +3,12 @@ import { supabase } from '../lib/supabase.js';
 import { useData } from '../context/DataContext.jsx';
 import { writeExpense } from '../supabase-writer.js';
 import { EXPENSE_CATS, SEMESTER_OPTIONS } from '../constants.js';
+import { uvToPct } from '../pages/GradeEntry.jsx';
+
+function gradeAvg(prelim, midterm, finalGrade) {
+  const vals = [prelim, midterm, finalGrade].map(v => parseFloat(v)).filter(v => !isNaN(v));
+  return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
+}
 
 const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
 
@@ -471,86 +477,150 @@ function ReviewCard({ items: initialItems, model, scholar, sem, onDiscard, onCon
   );
 }
 
-// ── Ingest panel ──────────────────────────────────────────────────────────────
+// ── Grade review card ─────────────────────────────────────────────────────────
 
-function IngestPanel({ scholar, scholarKeys }) {
-  const [ingestScholar, setIngestScholar] = useState(scholar);
+function GradeReviewCard({ grades: initialGrades, model, scholar, sem, onDiscard, onConfirmed }) {
+  const [grades, setGrades] = useState(initialGrades.map(g => ({ ...g })));
+  const [saving, setSaving]     = useState(false);
+  const [saveError, setSaveError] = useState(null);
+
+  function updateGrade(idx, field, value) {
+    setGrades(prev => prev.map((g, i) => i === idx ? { ...g, [field]: value } : g));
+  }
+  function removeGrade(idx) {
+    setGrades(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  async function handleConfirm() {
+    if (saving || !grades.length) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const entries = grades.map(g => {
+        const p = g.prelim      != null ? parseFloat(g.prelim)      : null;
+        const m = g.midterm     != null ? parseFloat(g.midterm)     : null;
+        const f = g.final_grade != null ? parseFloat(g.final_grade) : null;
+        const avg = gradeAvg(p, m, f);
+        return {
+          scholar, sem,
+          school:      g.school || 'uv',
+          subject:     g.subject,
+          units:       parseFloat(g.units) || 3,
+          prelim:      isNaN(p) ? null : p,
+          midterm:     isNaN(m) ? null : m,
+          final_grade: isNaN(f) ? null : f,
+          period_avg:  avg,
+          pct_equiv:   avg != null ? (g.school === 'k12' ? avg : uvToPct(avg)) : null,
+        };
+      });
+      const { error } = await supabase.from('grade_entries').insert(entries);
+      if (error) throw new Error(error.message);
+      onConfirmed(grades.length);
+    } catch (err) {
+      setSaveError(err.message ?? 'Write failed.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="nai-review">
+      <div className="nai-review-header">
+        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Claude</span>
+        <span className="nai-review-title">
+          {grades.length} subject{grades.length !== 1 ? 's' : ''} extracted — review before saving
+        </span>
+        {model && <span className="nai-review-model">{model}</span>}
+      </div>
+      <table className="nai-review-table">
+        <thead>
+          <tr><th>Subject</th><th>Units</th><th>Scale</th><th>Prelim</th><th>Mid</th><th>Final</th><th>Avg</th><th>%</th><th></th></tr>
+        </thead>
+        <tbody>
+          {grades.map((g, idx) => {
+            const avg = gradeAvg(g.prelim, g.midterm, g.final_grade);
+            const pct = avg != null ? (g.school === 'k12' ? avg : uvToPct(avg)) : null;
+            return (
+              <tr key={idx}>
+                <td><input className="nai-review-input" value={g.subject} onChange={e => updateGrade(idx, 'subject', e.target.value)} /></td>
+                <td><input className="nai-review-input" type="number" min="0.5" max="9" step="0.5" value={g.units ?? 3} onChange={e => updateGrade(idx, 'units', e.target.value)} style={{ width: 50 }} /></td>
+                <td>
+                  <select className="nai-review-select" value={g.school || 'uv'} onChange={e => updateGrade(idx, 'school', e.target.value)}>
+                    <option value="uv">UV</option>
+                    <option value="k12">K-12</option>
+                  </select>
+                </td>
+                <td><input className="nai-review-input" type="number" value={g.prelim ?? ''} onChange={e => updateGrade(idx, 'prelim', e.target.value === '' ? null : e.target.value)} style={{ width: 65 }} /></td>
+                <td><input className="nai-review-input" type="number" value={g.midterm ?? ''} onChange={e => updateGrade(idx, 'midterm', e.target.value === '' ? null : e.target.value)} style={{ width: 65 }} /></td>
+                <td><input className="nai-review-input" type="number" value={g.final_grade ?? ''} onChange={e => updateGrade(idx, 'final_grade', e.target.value === '' ? null : e.target.value)} style={{ width: 65 }} /></td>
+                <td className="nai-review-computed">{avg != null ? avg.toFixed(2) : '—'}</td>
+                <td className="nai-review-computed">{pct != null ? `${pct.toFixed(1)}%` : '—'}</td>
+                <td><button type="button" onClick={() => removeGrade(idx)} style={{ color: 'var(--ngs-muted)', fontSize: 14, padding: '2px 6px' }}>✕</button></td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {saveError && <div className="nai-error" style={{ marginBottom: 10 }}>{saveError}</div>}
+      <div className="nai-review-actions">
+        <button className="nai-confirm-btn" onClick={handleConfirm} disabled={saving || !grades.length}>
+          {saving ? 'Saving…' : `Confirm & save ${grades.length} subject${grades.length !== 1 ? 's' : ''}`}
+        </button>
+        <button className="nai-discard-btn" onClick={onDiscard} disabled={saving}>Discard</button>
+        <span className="nai-confirm-note">Edits above are applied before saving.</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Grade ingest panel ────────────────────────────────────────────────────────
+
+function GradeIngestPanel({ scholar, scholarKeys }) {
+  const [gradeScholar, setGradeScholar] = useState(scholar);
   const [sem, setSem]         = useState('Y1S1');
-  const [file, setFile]       = useState(null);   // { name, base64, mime }
-  const [pasteText, setPaste] = useState('');
+  const [file, setFile]       = useState(null);
   const [isDragOver, setOver] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(null);
-  const [review, setReview]   = useState(null);   // { items, model }
-  const [success, setSuccess] = useState(null);   // count of saved items
+  const [review, setReview]   = useState(null);
+  const [success, setSuccess] = useState(null);
   const fileInputRef = useRef(null);
 
   const readFileAsBase64 = (f) => new Promise((res, rej) => {
     const reader = new FileReader();
-    reader.onload = () => {
-      const data = reader.result.split(',')[1];
-      res({ name: f.name, base64: data, mime: f.type });
-    };
+    reader.onload = () => res({ name: f.name, base64: reader.result.split(',')[1], mime: f.type });
     reader.onerror = rej;
     reader.readAsDataURL(f);
   });
 
-  const handleFileDrop = useCallback(async (f) => {
+  async function handleFileDrop(f) {
     if (!f) return;
-    if (!ACCEPTED_MIME.includes(f.type)) {
-      setError(`Unsupported file type: ${f.type}. Use JPEG, PNG, WEBP, GIF, or PDF.`);
-      return;
-    }
-    setError(null);
-    setReview(null);
-    setSuccess(null);
-    const parsed = await readFileAsBase64(f);
-    setFile(parsed);
-  }, []);
-
-  function onFileInput(e) {
-    handleFileDrop(e.target.files?.[0]);
+    if (!ACCEPTED_MIME.includes(f.type)) { setError(`Unsupported file type: ${f.type}.`); return; }
+    setError(null); setReview(null); setSuccess(null);
+    setFile(await readFileAsBase64(f));
   }
 
-  function onDrop(e) {
-    e.preventDefault();
-    setOver(false);
-    handleFileDrop(e.dataTransfer.files?.[0]);
-  }
+  function onDrop(e) { e.preventDefault(); setOver(false); handleFileDrop(e.dataTransfer.files?.[0]); }
 
   async function handleExtract(e) {
     e?.preventDefault();
-    if (loading || (!file && !pasteText.trim())) return;
-    setLoading(true);
-    setError(null);
-    setReview(null);
-    setSuccess(null);
+    if (loading || !file) return;
+    setLoading(true); setError(null); setReview(null); setSuccess(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Session expired — please refresh and log in again.');
-
-      const body = { scholar: ingestScholar, type: 'ingest', sem };
-      if (file) body.file = { base64: file.base64, mime: file.mime };
-      if (pasteText.trim()) body.text = pasteText.trim();
-
       const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(body),
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scholar: gradeScholar, type: 'grade_ingest', sem, file: { base64: file.base64, mime: file.mime } }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
       if (json.status === 'not_configured') throw new Error('Claude key not configured — add ANTHROPIC_KEY to Supabase secrets.');
       if (json.status === 'error') throw new Error(json.error || 'Extraction failed.');
-      if (!Array.isArray(json.items)) throw new Error('Unexpected response from Claude.');
-      if (json.items.length === 0) {
-        setError('Claude found no expense line items in this document. Check the image quality or paste the text manually.');
-        return;
-      }
-      setReview({ items: json.items, model: json.model });
+      if (!Array.isArray(json.grades)) throw new Error('Unexpected response from Claude.');
+      if (json.grades.length === 0) { setError('Claude found no grade entries in this document.'); return; }
+      setReview({ grades: json.grades, model: json.model });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -558,131 +628,257 @@ function IngestPanel({ scholar, scholarKeys }) {
     }
   }
 
-  function handleDiscard() {
-    setReview(null);
-    setFile(null);
-    setPaste('');
-    setSuccess(null);
-    setError(null);
-  }
-
-  function handleConfirmed(count) {
-    setReview(null);
-    setFile(null);
-    setPaste('');
-    setSuccess(count);
-  }
-
-  const canExtract = !loading && (!!file || pasteText.trim().length > 0);
-
   return (
     <form className="nai-ingest" onSubmit={handleExtract}>
-      {/* Scholar + Semester selectors */}
       <div className="nai-ingest-row">
-        <select
-          className="nai-scholar-select"
-          value={ingestScholar}
-          onChange={e => setIngestScholar(e.target.value)}
-          disabled={loading}
-        >
-          {scholarKeys.map(k => (
-            <option key={k} value={k}>{k.charAt(0).toUpperCase() + k.slice(1)}</option>
-          ))}
+        <select className="nai-scholar-select" value={gradeScholar} onChange={e => setGradeScholar(e.target.value)} disabled={loading}>
+          {scholarKeys.map(k => <option key={k} value={k}>{k.charAt(0).toUpperCase() + k.slice(1)}</option>)}
         </select>
-        <select
-          className="nai-scholar-select"
-          value={sem}
-          onChange={e => setSem(e.target.value)}
-          disabled={loading}
-        >
+        <select className="nai-scholar-select" value={sem} onChange={e => setSem(e.target.value)} disabled={loading}>
           {SEMESTER_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
       </div>
 
-      {/* Drop zone */}
       <div
         className={`nai-drop-zone${isDragOver ? ' is-over' : ''}${file ? ' has-file' : ''}`}
         onClick={() => fileInputRef.current?.click()}
         onDragOver={e => { e.preventDefault(); setOver(true); }}
         onDragLeave={() => setOver(false)}
         onDrop={onDrop}
-        role="button"
-        tabIndex={0}
+        role="button" tabIndex={0}
         onKeyDown={e => e.key === 'Enter' && fileInputRef.current?.click()}
-        aria-label="Upload receipt image"
+        aria-label="Upload grade report"
       >
-        <span className="nai-drop-icon">📄</span>
+        <span className="nai-drop-icon">🎓</span>
         {file ? (
           <>
             <span className="nai-drop-label">File ready</span>
             <span className="nai-drop-file-name">{file.name}</span>
-            <span className="nai-drop-sub" onClick={e => { e.stopPropagation(); setFile(null); }} style={{ cursor: 'pointer', color: 'var(--ngs-red)' }}>
-              Remove
-            </span>
+            <span className="nai-drop-sub" onClick={e => { e.stopPropagation(); setFile(null); }} style={{ cursor: 'pointer', color: 'var(--ngs-red)' }}>Remove</span>
           </>
         ) : (
           <>
-            <span className="nai-drop-label">Drop a receipt image here, or click to upload</span>
+            <span className="nai-drop-label">Drop a grade report or transcript screenshot</span>
             <span className="nai-drop-sub">JPEG · PNG · WEBP · PDF</span>
           </>
         )}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
-          style={{ display: 'none' }}
-          onChange={onFileInput}
-          disabled={loading}
-        />
+        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+          style={{ display: 'none' }} onChange={e => handleFileDrop(e.target.files?.[0])} disabled={loading} />
       </div>
 
-      <div className="nai-or-divider">or paste text</div>
-
-      <textarea
-        className="nai-paste-area"
-        placeholder="Paste a fee schedule, receipt text, or tutor invoice here…"
-        value={pasteText}
-        onChange={e => setPaste(e.target.value)}
-        disabled={loading}
-        rows={4}
-      />
-
       <div className="nai-ingest-row">
-        <button
-          className="nai-submit"
-          type="submit"
-          disabled={!canExtract}
-          style={{ flex: 'none' }}
-        >
-          {loading ? '…' : 'Extract expenses'}
+        <button className="nai-submit" type="submit" disabled={loading || !file} style={{ flex: 'none' }}>
+          {loading ? '…' : 'Extract grades'}
         </button>
         {loading && (
           <div className="nai-loading" style={{ marginBottom: 0 }}>
-            <span className="nai-loading-dot" />
-            <span className="nai-loading-dot" />
-            <span className="nai-loading-dot" />
-            <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>Claude is reading the document…</span>
+            <span className="nai-loading-dot" /><span className="nai-loading-dot" /><span className="nai-loading-dot" />
+            <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>Claude is reading the grade report…</span>
           </div>
         )}
       </div>
 
       {error && <div className="nai-error">{error}</div>}
-
       {success !== null && (
-        <div className="nai-success">
-          ✓ {success} expense{success !== 1 ? 's' : ''} saved to the {sem} record for {ingestScholar}.
+        <div className="nai-success">✓ {success} subject{success !== 1 ? 's' : ''} saved to the {sem} record for {gradeScholar}.</div>
+      )}
+      {review && (
+        <GradeReviewCard
+          grades={review.grades} model={review.model}
+          scholar={gradeScholar} sem={sem}
+          onDiscard={() => { setReview(null); setFile(null); setSuccess(null); setError(null); }}
+          onConfirmed={count => { setReview(null); setFile(null); setSuccess(count); }}
+        />
+      )}
+    </form>
+  );
+}
+
+// ── Ingest panel ──────────────────────────────────────────────────────────────
+
+function IngestPanel({ scholar, scholarKeys }) {
+  const [ingestScholar, setIngestScholar] = useState(scholar);
+  const [sem, setSem]           = useState('Y1S1');
+  const [files, setFiles]       = useState([]);   // [{ name, base64, mime }]
+  const [pasteText, setPaste]   = useState('');
+  const [isDragOver, setOver]   = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [progress, setProgress] = useState('');
+  const [error, setError]       = useState(null);
+  const [review, setReview]     = useState(null);
+  const [success, setSuccess]   = useState(null);
+  const fileInputRef = useRef(null);
+
+  const readFileAsBase64 = (f) => new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => res({ name: f.name, base64: reader.result.split(',')[1], mime: f.type });
+    reader.onerror = rej;
+    reader.readAsDataURL(f);
+  });
+
+  const addFiles = useCallback(async (fileList) => {
+    const arr = Array.from(fileList);
+    const valid   = arr.filter(f => ACCEPTED_MIME.includes(f.type));
+    const invalid = arr.filter(f => !ACCEPTED_MIME.includes(f.type));
+    if (invalid.length) setError(`${invalid.length} file(s) skipped — unsupported type.`);
+    else setError(null);
+    const parsed = await Promise.all(valid.map(readFileAsBase64));
+    setFiles(prev => {
+      const existing = new Set(prev.map(f => f.name));
+      return [...prev, ...parsed.filter(f => !existing.has(f.name))];
+    });
+    setReview(null); setSuccess(null);
+  }, []);
+
+  function onFileInput(e) { if (e.target.files?.length) addFiles(e.target.files); }
+
+  function onDrop(e) {
+    e.preventDefault(); setOver(false);
+    if (e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
+  }
+
+  async function handleExtract(e) {
+    e?.preventDefault();
+    if (loading || (files.length === 0 && !pasteText.trim())) return;
+    setLoading(true); setError(null); setReview(null); setSuccess(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Session expired — please refresh and log in again.');
+
+      const allItems = [];
+
+      if (pasteText.trim()) {
+        setProgress('Processing pasted text…');
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scholar: ingestScholar, type: 'ingest', sem, text: pasteText.trim() }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+        if (json.status === 'not_configured') throw new Error('Claude key not configured — add ANTHROPIC_KEY to Supabase secrets.');
+        if (json.status === 'error') throw new Error(json.error || 'Extraction failed.');
+        if (Array.isArray(json.items)) allItems.push(...json.items);
+      }
+
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        setProgress(files.length > 1 ? `Processing file ${i + 1} of ${files.length}…` : 'Claude is reading the document…');
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scholar: ingestScholar, type: 'ingest', sem, file: { base64: f.base64, mime: f.mime } }),
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+        if (json.status === 'not_configured') throw new Error('Claude key not configured — add ANTHROPIC_KEY to Supabase secrets.');
+        if (json.status === 'error') throw new Error(json.error || `Extraction failed for ${f.name}.`);
+        if (Array.isArray(json.items)) allItems.push(...json.items);
+      }
+
+      if (allItems.length === 0) {
+        setError('No expense line items found in any of the provided documents.');
+        return;
+      }
+      setReview({ items: allItems, model: 'claude-sonnet-4-6' });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false); setProgress('');
+    }
+  }
+
+  function handleDiscard() {
+    setReview(null); setFiles([]); setPaste(''); setSuccess(null); setError(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  function handleConfirmed(count) {
+    setReview(null); setFiles([]); setPaste(''); setSuccess(count);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  const canExtract = !loading && (files.length > 0 || pasteText.trim().length > 0);
+
+  return (
+    <form className="nai-ingest" onSubmit={handleExtract}>
+      <div className="nai-ingest-row">
+        <select className="nai-scholar-select" value={ingestScholar} onChange={e => setIngestScholar(e.target.value)} disabled={loading}>
+          {scholarKeys.map(k => <option key={k} value={k}>{k.charAt(0).toUpperCase() + k.slice(1)}</option>)}
+        </select>
+        <select className="nai-scholar-select" value={sem} onChange={e => setSem(e.target.value)} disabled={loading}>
+          {SEMESTER_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
+
+      {/* Drop zone */}
+      <div
+        className={`nai-drop-zone${isDragOver ? ' is-over' : ''}${files.length > 0 ? ' has-file' : ''}`}
+        onClick={() => fileInputRef.current?.click()}
+        onDragOver={e => { e.preventDefault(); setOver(true); }}
+        onDragLeave={() => setOver(false)}
+        onDrop={onDrop}
+        role="button" tabIndex={0}
+        onKeyDown={e => e.key === 'Enter' && fileInputRef.current?.click()}
+        aria-label="Upload receipt images"
+      >
+        <span className="nai-drop-icon">📄</span>
+        {files.length > 0 ? (
+          <>
+            <span className="nai-drop-label">{files.length} file{files.length !== 1 ? 's' : ''} ready</span>
+            <span className="nai-drop-sub">Click to add more</span>
+          </>
+        ) : (
+          <>
+            <span className="nai-drop-label">Drop receipt images here, or click to upload</span>
+            <span className="nai-drop-sub">JPEG · PNG · WEBP · PDF · Multiple files supported</span>
+          </>
+        )}
+        <input ref={fileInputRef} type="file" multiple
+          accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+          style={{ display: 'none' }} onChange={onFileInput} disabled={loading} />
+      </div>
+
+      {/* File list */}
+      {files.length > 0 && (
+        <div className="nai-file-list">
+          {files.map(f => (
+            <div key={f.name} className="nai-file-item">
+              <span className="nai-file-name">{f.name}</span>
+              <button type="button" className="nai-file-remove"
+                onClick={() => setFiles(prev => prev.filter(x => x.name !== f.name))}
+                disabled={loading}>✕</button>
+            </div>
+          ))}
         </div>
       )}
 
+      <div className="nai-or-divider">or paste text</div>
+
+      <textarea className="nai-paste-area"
+        placeholder="Paste a fee schedule, receipt text, or tutor invoice here…"
+        value={pasteText} onChange={e => setPaste(e.target.value)}
+        disabled={loading} rows={4} />
+
+      <div className="nai-ingest-row">
+        <button className="nai-submit" type="submit" disabled={!canExtract} style={{ flex: 'none' }}>
+          {loading ? '…' : files.length > 1 ? `Extract ${files.length} receipts` : 'Extract expenses'}
+        </button>
+        {loading && (
+          <div className="nai-loading" style={{ marginBottom: 0 }}>
+            <span className="nai-loading-dot" /><span className="nai-loading-dot" /><span className="nai-loading-dot" />
+            <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>{progress || 'Claude is reading the document…'}</span>
+          </div>
+        )}
+      </div>
+
+      {error && <div className="nai-error">{error}</div>}
+      {success !== null && (
+        <div className="nai-success">✓ {success} expense{success !== 1 ? 's' : ''} saved to the {sem} record for {ingestScholar}.</div>
+      )}
       {review && (
-        <ReviewCard
-          items={review.items}
-          model={review.model}
-          scholar={ingestScholar}
-          sem={sem}
-          onDiscard={handleDiscard}
-          onConfirmed={handleConfirmed}
-        />
+        <ReviewCard items={review.items} model={review.model} scholar={ingestScholar} sem={sem}
+          onDiscard={handleDiscard} onConfirmed={handleConfirmed} />
       )}
     </form>
   );
@@ -692,7 +888,7 @@ function IngestPanel({ scholar, scholarKeys }) {
 
 export function NavigatorAI({ id, collapsed, onToggle }) {
   const { scholarKeys } = useData();
-  const [tab, setTab]     = useState('query'); // 'query' | 'ingest'
+  const [tab, setTab]     = useState('query'); // 'query' | 'ingest' | 'grades'
   const [scholar, setScholar] = useState(scholarKeys[0] || 'claire');
   const [query, setQuery]   = useState('');
   const [loading, setLoading] = useState(false);
@@ -761,7 +957,14 @@ export function NavigatorAI({ id, collapsed, onToggle }) {
               className={`nai-tab${tab === 'ingest' ? ' is-active' : ''}`}
               onClick={() => setTab('ingest')}
             >
-              Ingest receipt
+              Ingest receipts
+            </button>
+            <button
+              type="button"
+              className={`nai-tab${tab === 'grades' ? ' is-active' : ''}`}
+              onClick={() => setTab('grades')}
+            >
+              Ingest grades
             </button>
           </div>
 
@@ -857,10 +1060,20 @@ export function NavigatorAI({ id, collapsed, onToggle }) {
           {tab === 'ingest' && (
             <>
               <div className="section-head">
-                <h2 className="section-title">Ingest receipt</h2>
-                <span className="section-note">Claude reads the document and proposes expense line items for your review</span>
+                <h2 className="section-title">Ingest receipts</h2>
+                <span className="section-note">Claude reads one or more documents and proposes expense line items for your review</span>
               </div>
               <IngestPanel scholar={scholar} scholarKeys={scholarKeys} />
+            </>
+          )}
+
+          {tab === 'grades' && (
+            <>
+              <div className="section-head">
+                <h2 className="section-title">Ingest grade report</h2>
+                <span className="section-note">Upload a grade report screenshot — Claude extracts all subjects and grades for review</span>
+              </div>
+              <GradeIngestPanel scholar={scholar} scholarKeys={scholarKeys} />
             </>
           )}
         </div>
