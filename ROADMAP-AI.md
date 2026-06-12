@@ -97,7 +97,7 @@ Both keys stored in Supabase secrets — never exposed to the client.
 
 ## Build Status
 
-All P1 steps complete. Now in P2.
+All P1 steps complete. Step 13 done. Now on Step 14.
 
 | Step | Priority | Status | Description |
 |---|---|---|---|
@@ -113,8 +113,8 @@ All P1 steps complete. Now in P2.
 | 10 | P1 | ✅ | Academic risk alerts — DB trigger on `academics` → `alerts` table; shown in AlertsSection |
 | 11 | P1 | ✅ | OET readiness — `oet_readiness` Tier 1 intent + Tier 2 narrative; live progress bar in EnglishSection |
 | 12 | P1 | ✅ | Budget trajectory — client-side burn-rate projection on ScholarCard (green/amber/red) |
-| **→ 13** | **P2** | **Next** | **Documents tracker page + Supabase Storage integration** |
-| 14 | P2 | — | Career tracker — PNLE → OET → NCLEX → AHPRA checklist |
+| 13 | P2 | ✅ | Documents tracker (section 07) + Supabase Storage integration |
+| **→ 14** | **P2** | **Next** | **Career tracker — PNLE → OET → NCLEX → AHPRA checklist** |
 | 15 | P2 | — | Risk/cohort dashboard — Navigator Section 07 |
 | 16 | P2 | — | Mentor weekly report draft (Tier 2) |
 | 17 | P2 | — | Scholar pathway chatbot — scoped public widget on profile pages |

@@ -16,6 +16,7 @@ import { ExpenseSection } from '../components/expenses/ExpenseSection.jsx';
 import { DeadlinesSection } from '../components/DeadlinesSection.jsx';
 import { EnglishSection } from '../components/EnglishSection.jsx';
 import { NavigatorAI } from '../components/NavigatorAI.jsx';
+import { DocumentsSection } from '../components/DocumentsSection.jsx';
 import { NavFooter } from '../components/NavFooter.jsx';
 
 if (!NGS_DATA || !NGS_DATA.config) {
@@ -23,7 +24,7 @@ if (!NGS_DATA || !NGS_DATA.config) {
 }
 
 const STATIC_SCHOLAR_KEYS = ['claire', 'april', 'aljane'];
-const ALL_SECTION_IDS = ['alerts', 'status', 'expenses', 'deadlines', 'english', 'navigator-ai'];
+const ALL_SECTION_IDS = ['alerts', 'status', 'expenses', 'deadlines', 'english', 'navigator-ai', 'documents'];
 
 export function Navigator() {
   const [D, setD] = useState(NGS_DATA);
@@ -393,6 +394,9 @@ export function Navigator() {
           </SectionErrorBoundary>
           <SectionErrorBoundary name="Navigator AI">
             <NavigatorAI {...sec('navigator-ai')} />
+          </SectionErrorBoundary>
+          <SectionErrorBoundary name="Documents">
+            <DocumentsSection {...sec('documents')} />
           </SectionErrorBoundary>
         </main>
         <NavFooter sheetsStatus={sheetsStatus} writeError={writeError} />
