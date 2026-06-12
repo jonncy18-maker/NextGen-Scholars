@@ -161,7 +161,7 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 
 ## Are we ready to start?
 
-**Steps 1–9 complete. Steps 10–18 defined. Next: Step 10 — academic risk alerts (DB trigger on grade_entries).**
+**Steps 1–10 complete. Steps 11–18 defined. Next: Step 11 — OET readiness assessment (Tier 1 + Tier 2).**
 
 | Layer | Priority | Status | Gap |
 |---|---|---|---|
@@ -174,7 +174,7 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 | Tier 3 (Claude `claude-sonnet-4-6`) | P1 | ✅ Done | Model pinned; UI + review card already built |
 | Review UI | P1 | ✅ Done | ReviewCard in NavigatorAI — editable table, confirm/discard, write path |
 | Coaching note generator | P1 | ✅ Done | Step 9 |
-| Academic risk alerts | P1 | Not started | Step 10 |
+| Academic risk alerts | P1 | ✅ Done | Step 10 |
 | OET readiness assessment | P1 | Not started | Step 11 |
 | Budget trajectory | P1 | Not started | Step 12 |
 | Documents tracker | P2 | Not started | Step 13 |
@@ -196,7 +196,8 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 | ✅ 7 | P1 | Wire Claude for Tier 3 (ingestion) — model pinned to `claude-sonnet-4-6` |
 | ✅ 8 | P1 | Confirmation UI for AI-proposed writes — ReviewCard in NavigatorAI (already built) |
 | ✅ 9 | P1 | Coaching note generator — "Draft coaching note" button on each ScholarCard in StatusSection |
-| **→ 10** | **P1** | **Academic risk alerts — DB trigger on `grade_entries`; surfaces in AlertsSection** |
+| ✅ 10 | P1 | Academic risk alerts — DB trigger on `academics`; surfaces in AlertsSection |
+| **→ 11** | **P1** | **OET readiness assessment — new `oet_readiness` Tier 1 intent + Tier 2 narrative** |
 | 10 | P1 | Academic risk alerts — DB trigger on `grade_entries`; surfaces in AlertsSection (Step 9 in Phase 2) |
 | 11 | P1 | OET readiness assessment — new `oet_readiness` Tier 1 intent + Tier 2 narrative (Step 10 in Phase 2) |
 | 12 | P1 | Budget trajectory projection — client-side burn-rate computation in StatusSection (Step 11 in Phase 2) |

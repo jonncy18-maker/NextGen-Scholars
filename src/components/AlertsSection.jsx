@@ -18,6 +18,21 @@ function timeAgo(isoStr) {
   return `${days}d ago`;
 }
 
+function SystemAlertItem({ alert, onDismiss }) {
+  return (
+    <div className={`sys-alert sys-alert-${alert.severity}`}>
+      <div className="sys-alert-body">
+        <span className={`sys-alert-pill sys-alert-pill-${alert.severity}`}>
+          {alert.severity === 'critical' ? '⚠ Critical' : '⚠ Warning'}
+        </span>
+        <span className="sys-alert-title">{alert.title}</span>
+        {alert.sub && <span className="sys-alert-sub">{alert.sub}</span>}
+      </div>
+      <button className="alert-x" aria-label="Dismiss" onClick={() => onDismiss(alert.id)}>×</button>
+    </div>
+  );
+}
+
 function SubmissionItem({ sub, onApprove, onReject }) {
   const [rejecting, setRejecting] = useState(false);
   const [comment, setComment] = useState('');
@@ -115,15 +130,17 @@ function FeedItem({ item, onMarkRead, onApprove, onDeny }) {
   );
 }
 
-export function AlertsSection({ submissions, feed, onApprove, onReject, onApproveDelete, onDenyDelete, onMarkRead, id, collapsed, onToggle }) {
-  const total = (submissions?.length || 0) + (feed?.length || 0);
+export function AlertsSection({ submissions, feed, dbAlerts, onApprove, onReject, onApproveDelete, onDenyDelete, onMarkRead, onDismissAlert, id, collapsed, onToggle }) {
+  const sysCount    = dbAlerts?.length || 0;
+  const actCount    = (submissions?.length || 0) + (feed?.length || 0);
+  const total       = sysCount + actCount;
 
   return (
     <section className="section" id={id}>
       <div className="eyebrow">
         <span className="num">01</span> Scholar Updates
         <span className="eyebrow-rule" />
-        {total > 0 && (
+        {actCount > 0 && (
           <button className="activity-clear-all" onClick={() => onMarkRead((feed || []).map(f => f.id))}>
             Clear edits/deletes
           </button>
@@ -140,8 +157,17 @@ export function AlertsSection({ submissions, feed, onApprove, onReject, onApprov
               {total > 0 ? `${total} pending` : 'Up to date'}
             </span>
           </div>
+
+          {sysCount > 0 && (
+            <div className="sys-alerts-block">
+              {(dbAlerts || []).map(a => (
+                <SystemAlertItem key={a.id} alert={a} onDismiss={onDismissAlert} />
+              ))}
+            </div>
+          )}
+
           <div className="activity-list">
-            {total === 0 && (
+            {actCount === 0 && (
               <div className="alert-empty"><span className="check">✓</span>No pending updates from scholars.</div>
             )}
             {(submissions || []).map(sub => (
