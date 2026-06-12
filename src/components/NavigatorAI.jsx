@@ -13,6 +13,7 @@ const QUICK_PROMPTS = [
   { label: 'Pending milestones', tpl: () => 'Which milestones are still pending?' },
   { label: 'Upcoming deadlines', tpl: () => 'What are the upcoming deadlines?' },
   { label: 'OET hours',          tpl: s => `How many OET hours has ${s} logged?` },
+  { label: 'OET readiness',     tpl: s => `OET readiness assessment for ${s}` },
   { label: 'Open actions',       tpl: () => 'What action items are still open?' },
   { label: 'Travel plans',       tpl: s => `What travel is planned for ${s}?` },
   { label: 'Recent expenses',    tpl: s => `Show me ${s}'s recent expenses.` },

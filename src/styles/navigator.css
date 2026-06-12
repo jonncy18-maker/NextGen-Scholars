@@ -1300,6 +1300,13 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
 .eng-card { background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px; padding: 24px; }
 .eng-scholar { font-family: var(--ngs-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ngs-gold); margin-bottom: 10px; }
 .eng-stage { font-family: var(--ngs-display); font-size: 24px; font-weight: 400; color: var(--ngs-navy); margin-bottom: 8px; }
+.oet-progress { margin-bottom: 16px; }
+.oet-progress-bar-wrap { height: 4px; background: var(--ngs-rule); border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
+.oet-progress-bar { height: 100%; background: var(--ngs-gold); border-radius: 2px; transition: width 0.7s ease; }
+.oet-progress-stat { font-family: var(--ngs-mono); font-size: 10.5px; color: var(--ngs-muted); }
+.oet-hrs { color: var(--ngs-navy); font-weight: 600; }
+.oet-track-on  { color: var(--ngs-green, #2ecc71); }
+.oet-track-off { color: var(--ngs-amber, #e6aa00); }
 .eng-desc { font-size: 13.5px; color: var(--ngs-ink-soft); line-height: 1.55; margin-bottom: 20px; max-width: 46ch; }
 .eng-obs { display: flex; flex-direction: column; gap: 12px; }
 .eng-ob { display: flex; align-items: flex-start; gap: 12px; font-size: 13.5px; color: var(--ngs-ink); }
