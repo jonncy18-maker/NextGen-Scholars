@@ -87,6 +87,15 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
     writeSent(r.id, expScholar);
   }
 
+  function handleUnsent(r) {
+    setSentAll(prev => {
+      const updated = { ...prev, [expScholar]: (prev[expScholar] || []).filter(id => id !== String(r.id)) };
+      try { localStorage.setItem('ngs_sent', JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+    if (onEditExpense) onEditExpense(expScholar, r.id, { sent: 'No' });
+  }
+
   function handleDeleteExpense(r) {
     setDeletedAll(prev => {
       const updated = { ...prev, [expScholar]: [...new Set([...(prev[expScholar] || []), String(r.id)])] };
@@ -416,6 +425,9 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
                 <div className="exp-edit-actions">
                   <button className="exp-edit-save" onClick={() => saveEdit(r)}>Save</button>
                   <button className="exp-edit-cancel" onClick={cancelEdit}>Cancel</button>
+                  {(r.sent === 'Yes' || sentOverrides.has(String(r.id))) && (
+                    <button className="exp-edit-unsend" onClick={() => handleUnsent(r)}>Unsend</button>
+                  )}
                 </div>
               </div>
 

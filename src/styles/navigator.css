@@ -818,6 +818,12 @@ table.exp tbody tr:hover { background: var(--ngs-paper-2); }
   padding: 8px 13px; border-radius: 5px; font-size: 13px;
   background: none; border: 1px solid var(--ngs-rule); color: var(--ngs-muted); cursor: pointer;
 }
+.exp-edit-unsend {
+  padding: 8px 13px; border-radius: 5px; font-size: 13px;
+  background: none; border: 1px solid rgba(181,134,42,0.4); color: var(--ngs-amber);
+  cursor: pointer; margin-left: auto; transition: background 0.14s, border-color 0.14s;
+}
+.exp-edit-unsend:hover { background: rgba(181,134,42,0.10); border-color: var(--ngs-amber); }
 
 /* ── split expense groups (table) ─────────────── */
 .exp-split-hd { cursor: pointer; user-select: none; }
