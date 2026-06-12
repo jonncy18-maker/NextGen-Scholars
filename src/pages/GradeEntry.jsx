@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
+
+const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
+const ACCEPTED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
 
 const CONFIGS = {
   claire: { name: 'Claire', semKey: 'Y2S2', semLabel: 'Year 2 · Semester 2', homeHref: '/home/claire',
@@ -60,6 +63,125 @@ function weightedGpa(rows) {
 
 const emptyForm = (school = 'uv') => ({ subject: '', units: '3', prelim: '', midterm: '', final_grade: '', school });
 
+// ── AI grade import (session-gated — only visible when mentor is logged in) ──
+
+function AiGradeImport({ scholarKey, semKey, onSaved }) {
+  const [open, setOpen]       = useState(false);
+  const [file, setFile]       = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState(null);
+  const [review, setReview]   = useState(null);
+  const [success, setSuccess] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const readFile = (f) => new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = () => res({ name: f.name, base64: reader.result.split(',')[1], mime: f.type });
+    reader.onerror = rej;
+    reader.readAsDataURL(f);
+  });
+
+  async function handleExtract(e) {
+    e.preventDefault();
+    if (!file || loading) return;
+    setLoading(true); setError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No active session.');
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scholar: scholarKey, type: 'grade_ingest', sem: semKey, file: { base64: file.base64, mime: file.mime } }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      if (!Array.isArray(json.grades) || json.grades.length === 0) throw new Error('No grade entries found in this document.');
+      setReview(json.grades);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleConfirm() {
+    if (!review) return;
+    setLoading(true); setError(null);
+    try {
+      const entries = review.map(g => {
+        const p = g.prelim != null ? parseFloat(g.prelim) : null;
+        const m = g.midterm != null ? parseFloat(g.midterm) : null;
+        const f = g.final_grade != null ? parseFloat(g.final_grade) : null;
+        const vals = [p, m, f].filter(v => v != null && !isNaN(v));
+        const avg = vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
+        return {
+          scholar: scholarKey, sem: semKey, school: g.school || 'uv',
+          subject: g.subject, units: parseFloat(g.units) || 3,
+          prelim: isNaN(p) ? null : p, midterm: isNaN(m) ? null : m, final_grade: isNaN(f) ? null : f,
+          period_avg: avg, pct_equiv: avg != null ? (g.school === 'k12' ? avg : uvToPct(avg)) : null,
+        };
+      });
+      const { error: err } = await supabase.from('grade_entries').insert(entries);
+      if (err) throw new Error(err.message);
+      setSuccess(entries.length);
+      setReview(null); setFile(null); setOpen(false);
+      onSaved();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button className="et-log-btn" style={{ background: 'rgba(201,168,76,0.10)', color: 'var(--ngs-gold)', border: '1px solid rgba(201,168,76,0.3)', marginBottom: 8 }}
+        onClick={() => setOpen(true)}>
+        AI import grade report
+      </button>
+    );
+  }
+
+  return (
+    <div className="ge-ai-import">
+      <div className="ge-ai-import-header">
+        <span>AI grade import</span>
+        <button type="button" className="et-form-close" onClick={() => { setOpen(false); setFile(null); setReview(null); setError(null); }}>×</button>
+      </div>
+
+      {!review ? (
+        <form onSubmit={handleExtract}>
+          <p className="ge-ai-import-hint">Upload a screenshot of your grade report. Claude will extract all subjects automatically.</p>
+          <input type="file" ref={fileInputRef} accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+            style={{ display: 'none' }} onChange={async e => { const f = e.target.files?.[0]; if (f && ACCEPTED_MIME.includes(f.type)) setFile(await readFile(f)); }} />
+          <button type="button" className="et-log-btn" style={{ marginBottom: 8 }} onClick={() => fileInputRef.current?.click()}>
+            {file ? file.name : 'Choose file…'}
+          </button>
+          {file && (
+            <button type="submit" className="et-submit" disabled={loading}>
+              {loading ? 'Extracting…' : 'Extract grades'}
+            </button>
+          )}
+          {error && <div className="et-error">{error}</div>}
+        </form>
+      ) : (
+        <div>
+          <p className="ge-ai-import-hint">{review.length} subject{review.length !== 1 ? 's' : ''} found — confirm to save.</p>
+          <ul className="ge-ai-preview-list">
+            {review.map((g, i) => <li key={i}><strong>{g.subject}</strong> · {g.units} units · Final: {g.final_grade ?? '—'}</li>)}
+          </ul>
+          {error && <div className="et-error">{error}</div>}
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <button className="et-submit" onClick={handleConfirm} disabled={loading}>{loading ? 'Saving…' : 'Confirm & save'}</button>
+            <button className="et-log-btn" onClick={() => setReview(null)}>Back</button>
+          </div>
+        </div>
+      )}
+      {success && <div className="ge-ai-success">✓ {success} subjects saved.</div>}
+    </div>
+  );
+}
+
 export function GradeEntry({ scholarKey }) {
   const config = CONFIGS[scholarKey] || CONFIGS.claire;
   const [rows, setRows] = useState(null);
@@ -67,6 +189,11 @@ export function GradeEntry({ scholarKey }) {
   const [form, setForm] = useState(() => emptyForm(config.defaultSchool));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session: s } }) => setSession(s));
+  }, []);
 
   useEffect(() => {
     supabase
@@ -193,6 +320,18 @@ export function GradeEntry({ scholarKey }) {
           </div>
 
           {error && <div className="et-error">{error}</div>}
+
+          {session && (
+            <AiGradeImport
+              scholarKey={scholarKey}
+              semKey={config.semKey}
+              onSaved={() => {
+                supabase.from('grade_entries').select('*').eq('scholar', scholarKey)
+                  .order('sem').order('created_at')
+                  .then(({ data }) => setRows(data ?? []));
+              }}
+            />
+          )}
 
           {!showForm ? (
             <button className="et-log-btn" onClick={() => setShowForm(true)}>
