@@ -3,6 +3,9 @@ import { useData } from '../context/DataContext.jsx';
 import { useFmt } from '../context/FxContext.jsx';
 import { scholarTotals, nextMilestone, accentFor } from '../utils.js';
 import { SEMESTER_OPTIONS } from '../constants.js';
+import { supabase } from '../lib/supabase.js';
+
+const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
 
 function gpaClass(gpa, floor) {
   if (gpa == null) return '';
@@ -26,6 +29,41 @@ function ProgBar({ pct }) {
   return <div className="scard-prog-fill" style={{ width: w + '%' }} />;
 }
 
+function CoachModal({ scholarName, text, onClose }) {
+  const [copied, setCopied] = useState(false);
+
+  function handleCopy() {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <div
+      className="mgroup-backdrop"
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="mgroup-modal coach-modal">
+        <div className="mgroup-header">
+          <div className="mgroup-title">Coaching note · {scholarName}</div>
+          <button className="mgroup-close" onClick={onClose}>✕</button>
+        </div>
+        <div className="coach-modal-body">
+          <span className="nai-tier-badge nai-tier-2">Tier 2 · Gemini</span>
+          <p className="coach-modal-text">{text}</p>
+        </div>
+        <div className="coach-modal-footer">
+          <button className="nai-confirm-btn" onClick={handleCopy}>
+            {copied ? '✓ Copied' : 'Copy to clipboard'}
+          </button>
+          <button className="nai-discard-btn" onClick={onClose}>Close</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ScholarCard({ sk, currency, liveGpa, onSemesterChange }) {
   const $fmt = useFmt();
   const { D } = useData();
@@ -36,6 +74,36 @@ function ScholarCard({ sk, currency, liveGpa, onSemesterChange }) {
   const next = nextMilestone(s);
   const pillCls = { active: 'active', trial: 'trial' }[s.status] || 'paused';
   const pillTxt = { active: 'Active', trial: 'Trial' }[s.status] || 'Paused';
+
+  const [noteLoading, setNoteLoading] = useState(false);
+  const [noteText, setNoteText]       = useState(null);
+  const [noteError, setNoteError]     = useState(null);
+
+  async function handleDraftNote() {
+    setNoteLoading(true);
+    setNoteError(null);
+    setNoteText(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Session expired — please refresh and log in again.');
+      const res  = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
+        method:  'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ scholar: sk, type: 'coach' }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.status === 'error') throw new Error(data.error || 'Failed to generate note.');
+      if (data.status === 'not_configured') throw new Error('AI key not configured — add GOOGLE_AI_KEY to Supabase secrets.');
+      setNoteText(data.note);
+    } catch (err) {
+      setNoteError(err.message);
+    } finally {
+      setNoteLoading(false);
+    }
+  }
 
   return (
     <article className={`scard accent-${accentFor(s)}`}>
@@ -88,7 +156,24 @@ function ScholarCard({ sk, currency, liveGpa, onSemesterChange }) {
             ))}
           </select>
         </div>
+        <div className="scard-draft-row">
+          <button
+            className="scard-draft-btn"
+            onClick={handleDraftNote}
+            disabled={noteLoading}
+          >
+            {noteLoading ? 'Drafting…' : 'Draft coaching note'}
+          </button>
+          {noteError && <div className="scard-draft-err">{noteError}</div>}
+        </div>
       </div>
+      {noteText && (
+        <CoachModal
+          scholarName={s.firstName}
+          text={noteText}
+          onClose={() => setNoteText(null)}
+        />
+      )}
     </article>
   );
 }
