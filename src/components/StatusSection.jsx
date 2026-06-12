@@ -7,6 +7,26 @@ import { supabase } from '../lib/supabase.js';
 
 const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
 
+const SEM_WEEKS = 16;
+
+function computeTrajectory(s) {
+  const sem = s.currentSem;
+  if (!sem) return null;
+  const semExps = (s.expenses?.[sem] || []).filter(e => e.avb === 'Actual');
+  if (semExps.length === 0) return null;
+  const budget = s.budgets?.[sem] || 0;
+  if (budget <= 0) return null;
+  const currentSpend = semExps.reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
+  const sortedDates = semExps.map(e => e.date).filter(Boolean).sort();
+  if (!sortedDates[0]) return null;
+  const msPerWeek    = 7 * 24 * 60 * 60 * 1000;
+  const weeksElapsed = Math.max(0.5, (Date.now() - new Date(sortedDates[0]).getTime()) / msPerWeek);
+  const weeksLeft    = Math.max(0, SEM_WEEKS - weeksElapsed);
+  const weeklyBurn   = currentSpend / weeksElapsed;
+  const projected    = currentSpend + weeklyBurn * weeksLeft;
+  return { projected, budget, overspend: projected - budget, currentSpend };
+}
+
 function gpaClass(gpa, floor) {
   if (gpa == null) return '';
   if (gpa >= floor + 2) return 'g-green';
@@ -75,6 +95,12 @@ function ScholarCard({ sk, currency, liveGpa, onSemesterChange }) {
   const pillCls = { active: 'active', trial: 'trial' }[s.status] || 'paused';
   const pillTxt = { active: 'Active', trial: 'Trial' }[s.status] || 'Paused';
 
+  const trajectory = computeTrajectory(s);
+  const trajColor  = !trajectory ? null
+    : trajectory.overspend > 0               ? 'red'
+    : trajectory.projected > trajectory.budget * 0.9 ? 'amber'
+    : 'green';
+
   const [noteLoading, setNoteLoading] = useState(false);
   const [noteText, setNoteText]       = useState(null);
   const [noteError, setNoteError]     = useState(null);
@@ -135,6 +161,13 @@ function ScholarCard({ sk, currency, liveGpa, onSemesterChange }) {
         <div className="scard-prog-lbl">
           {s.gpaFloor != null ? `Floor ${s.gpaFloor}% · ` : ''}{budgetPct}% of allocation deployed
         </div>
+        {trajectory && (
+          <div className={`scard-trajectory scard-traj-${trajColor}`}>
+            {trajectory.overspend > 0
+              ? `⚠ Projected overspend of ${$fmt(trajectory.overspend, currency)} — review expenses`
+              : `On pace to spend ${$fmt(trajectory.projected, currency)} by end of semester`}
+          </div>
+        )}
         <div className="scard-next">
           <div className="scard-next-lbl">Next milestone</div>
           <div className="scard-next-name">{next.name}</div>

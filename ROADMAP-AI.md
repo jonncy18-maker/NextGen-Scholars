@@ -161,7 +161,7 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 
 ## Are we ready to start?
 
-**Steps 1–11 complete. Steps 12–18 defined. Next: Step 12 — budget trajectory projection (client-side burn rate in StatusSection).**
+**Steps 1–12 complete. Steps 13–18 defined. Next: Step 13 — Documents tracker page + Supabase Storage integration.**
 
 | Layer | Priority | Status | Gap |
 |---|---|---|---|
@@ -176,7 +176,7 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 | Coaching note generator | P1 | ✅ Done | Step 9 |
 | Academic risk alerts | P1 | ✅ Done | Step 10 |
 | OET readiness assessment | P1 | ✅ Done | Step 11 |
-| Budget trajectory | P1 | Not started | Step 12 |
+| Budget trajectory | P1 | ✅ Done | Step 12 |
 | Documents tracker | P2 | Not started | Step 13 |
 | Career tracker | P2 | Not started | Step 14 |
 | Risk/cohort dashboard | P2 | Not started | Step 15 |
@@ -198,7 +198,8 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 | ✅ 9 | P1 | Coaching note generator — "Draft coaching note" button on each ScholarCard in StatusSection |
 | ✅ 10 | P1 | Academic risk alerts — DB trigger on `academics`; surfaces in AlertsSection |
 | ✅ 11 | P1 | OET readiness assessment — `oet_readiness` Tier 1 intent + Tier 2 narrative; live progress bar in EnglishSection |
-| **→ 12** | **P1** | **Budget trajectory projection — client-side burn-rate computation in StatusSection** |
+| ✅ 12 | P1 | Budget trajectory projection — client-side burn-rate in StatusSection (green/amber/red) |
+| **→ 13** | **P2** | **Documents tracker page + Supabase Storage integration** |
 | 10 | P1 | Academic risk alerts — DB trigger on `grade_entries`; surfaces in AlertsSection (Step 9 in Phase 2) |
 | 11 | P1 | OET readiness assessment — new `oet_readiness` Tier 1 intent + Tier 2 narrative (Step 10 in Phase 2) |
 | 12 | P1 | Budget trajectory projection — client-side burn-rate computation in StatusSection (Step 11 in Phase 2) |

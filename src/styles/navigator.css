@@ -428,6 +428,10 @@
 .scard-sem-lbl { font-family: var(--ngs-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ngs-gold); white-space: nowrap; }
 .scard-sem-select { font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-navy); background: var(--ngs-paper); border: 1px solid var(--ngs-rule); border-radius: 4px; padding: 5px 8px; cursor: pointer; outline: none; transition: border-color 0.15s; }
 .scard-sem-select:hover, .scard-sem-select:focus { border-color: var(--ngs-gold); }
+.scard-trajectory { font-family: var(--ngs-mono); font-size: 10px; letter-spacing: 0.05em; padding: 5px 8px; border-radius: 4px; margin-top: 8px; line-height: 1.4; }
+.scard-traj-green { background: rgba(46,204,113,0.10); color: #1a7a42; }
+.scard-traj-amber { background: rgba(230,170,0,0.12);  color: #8a5e00; }
+.scard-traj-red   { background: rgba(192,57,43,0.10);  color: var(--ngs-red, #c0392b); }
 .scard-draft-row { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--ngs-rule); display: flex; flex-direction: column; gap: 6px; }
 .scard-draft-btn { font-family: var(--ngs-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ngs-navy); background: none; border: 1px solid var(--ngs-rule); border-radius: 4px; padding: 6px 12px; cursor: pointer; transition: border-color 0.15s, color 0.15s; width: 100%; }
 .scard-draft-btn:hover:not(:disabled) { border-color: var(--ngs-gold); color: var(--ngs-gold); }
