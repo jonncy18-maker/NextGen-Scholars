@@ -1,7 +1,13 @@
-// Tier 3 — Claude claude-sonnet-4-6 (multimodal ingestion)
+// Tier 3 — Gemini 2.5 Flash (multimodal ingestion)
 // Extracts structured data from uploaded images or pasted text.
 // Returns JSON for human review — does NOT write to the database.
 // Handles two extraction types: expense line items (tier3Ingest) and grade entries (tier3GradeIngest).
+//
+// Uses Gemini 2.5 Flash (free tier) instead of Claude for cost efficiency.
+// thinkingBudget: 0 disables chain-of-thought to keep latency low for extraction tasks.
+
+const GEMINI_MODEL = 'gemini-2.5-flash'
+const GEMINI_URL   = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
 export interface ExtractedExpense {
   item:   string
@@ -29,7 +35,7 @@ const EXPENSE_CATS = [
 export async function tier3Ingest(
   options: { text?: string; file?: { base64: string; mime: string } },
   _scholar: string,
-  anthropicKey: string,
+  geminiKey: string,
 ): Promise<Tier3Result> {
   const today = new Date().toISOString().slice(0, 10)
 
@@ -56,71 +62,62 @@ Rules:
 - If the document contains no expense data, return []
 - Your entire response must be a valid JSON array starting with [ and ending with ]`
 
-  // Build message content
-  const content: unknown[] = []
+  const parts: unknown[] = []
 
   if (options.file) {
-    content.push({
-      type: 'image',
-      source: {
-        type:       'base64',
-        media_type: options.file.mime,
-        data:       options.file.base64,
-      },
-    })
+    parts.push({ inlineData: { mimeType: options.file.mime, data: options.file.base64 } })
   }
 
-  const userText = options.text
-    ? `Receipt / document text:\n\n${options.text}`
-    : 'Extract all expense line items from the image above.'
-
-  content.push({ type: 'text', text: userText })
+  parts.push({
+    text: options.text
+      ? `Receipt / document text:\n\n${options.text}`
+      : 'Extract all expense line items from the image above.',
+  })
 
   let res: Response
   try {
-    res = await fetch('https://api.anthropic.com/v1/messages', {
+    res = await fetch(`${GEMINI_URL}?key=${geminiKey}`, {
       method:  'POST',
-      headers: {
-        'anthropic-version': '2023-06-01',
-        'x-api-key':         anthropicKey,
-        'Content-Type':      'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model:      'claude-sonnet-4-6',
-        max_tokens: 4096,
-        system:     systemPrompt,
-        messages:   [{ role: 'user', content }],
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: 'user', parts }],
+        generationConfig: {
+          maxOutputTokens: 4096,
+          temperature:     0.1,
+          thinkingConfig:  { thinkingBudget: 0 },
+        },
       }),
     })
-  } catch (fetchErr) {
-    return { answered: false, error: `Network error calling Claude: ${(fetchErr as Error).message}` }
+  } catch (err) {
+    return { answered: false, error: `Network error calling Gemini: ${(err as Error).message}` }
   }
 
   if (!res.ok) {
-    const errText = await res.text().catch(() => '')
-    return { answered: false, error: `Claude API error ${res.status}: ${errText}` }
+    const body = await res.text().catch(() => '')
+    let message = `Gemini API error ${res.status}`
+    try {
+      const parsed = JSON.parse(body)
+      const inner = parsed?.error?.message as string | undefined
+      if (inner) message = res.status === 429 ? `Gemini quota exceeded — ${inner.split('.')[0]}.` : inner
+    } catch { /* leave default message */ }
+    return { answered: false, error: message }
   }
 
   const data = await res.json()
+  const rawText = (data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '') as string
 
-  // Find the text content block — thinking blocks have type 'thinking'
-  const textBlock = (data.content ?? []).find((b: { type: string }) => b.type === 'text')
-  if (!textBlock) {
-    return { answered: false, error: 'Claude returned no text content.' }
-  }
-
-  const rawText: string = (textBlock.text ?? '').trim()
+  if (!rawText.trim()) return { answered: false, error: 'Gemini returned an empty response.' }
 
   try {
-    // Strip any accidental markdown fences
     const cleaned = rawText.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim()
     const items: ExtractedExpense[] = JSON.parse(cleaned)
     if (!Array.isArray(items)) throw new Error('Response is not an array')
-    return { answered: true, items, rawText, model: data.model }
+    return { answered: true, items, rawText, model: GEMINI_MODEL }
   } catch {
     return {
       answered: false,
-      error:    `Could not parse Claude response as JSON: ${rawText.slice(0, 300)}`,
+      error:    `Could not parse Gemini response as JSON: ${rawText.slice(0, 300)}`,
     }
   }
 }
@@ -147,7 +144,7 @@ export interface Tier3GradeResult {
 export async function tier3GradeIngest(
   options: { text?: string; file?: { base64: string; mime: string } },
   _scholar: string,
-  anthropicKey: string,
+  geminiKey: string,
 ): Promise<Tier3GradeResult> {
   const systemPrompt = `You are a grade extraction assistant for NextGen Scholars, a mentorship program for Filipino nursing students.
 
@@ -173,58 +170,59 @@ Rules:
 - If the document contains no grade data, return []
 - Your entire response must be a valid JSON array starting with [ and ending with ]`
 
-  const content: unknown[] = []
+  const parts: unknown[] = []
 
   if (options.file) {
-    content.push({
-      type: 'image',
-      source: { type: 'base64', media_type: options.file.mime, data: options.file.base64 },
-    })
+    parts.push({ inlineData: { mimeType: options.file.mime, data: options.file.base64 } })
   }
 
-  const userText = options.text
-    ? `Grade report / transcript text:\n\n${options.text}`
-    : 'Extract all subject grade entries from the image above.'
-
-  content.push({ type: 'text', text: userText })
+  parts.push({
+    text: options.text
+      ? `Grade report / transcript text:\n\n${options.text}`
+      : 'Extract all subject grade entries from the image above.',
+  })
 
   let res: Response
   try {
-    res = await fetch('https://api.anthropic.com/v1/messages', {
+    res = await fetch(`${GEMINI_URL}?key=${geminiKey}`, {
       method:  'POST',
-      headers: {
-        'anthropic-version': '2023-06-01',
-        'x-api-key':         anthropicKey,
-        'Content-Type':      'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model:      'claude-sonnet-4-6',
-        max_tokens: 4096,
-        system:     systemPrompt,
-        messages:   [{ role: 'user', content }],
+        system_instruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: 'user', parts }],
+        generationConfig: {
+          maxOutputTokens: 4096,
+          temperature:     0.1,
+          thinkingConfig:  { thinkingBudget: 0 },
+        },
       }),
     })
-  } catch (fetchErr) {
-    return { answered: false, error: `Network error calling Claude: ${(fetchErr as Error).message}` }
+  } catch (err) {
+    return { answered: false, error: `Network error calling Gemini: ${(err as Error).message}` }
   }
 
   if (!res.ok) {
-    const errText = await res.text().catch(() => '')
-    return { answered: false, error: `Claude API error ${res.status}: ${errText}` }
+    const body = await res.text().catch(() => '')
+    let message = `Gemini API error ${res.status}`
+    try {
+      const parsed = JSON.parse(body)
+      const inner = parsed?.error?.message as string | undefined
+      if (inner) message = res.status === 429 ? `Gemini quota exceeded — ${inner.split('.')[0]}.` : inner
+    } catch { /* leave default message */ }
+    return { answered: false, error: message }
   }
 
   const data = await res.json()
-  const textBlock = (data.content ?? []).find((b: { type: string }) => b.type === 'text')
-  if (!textBlock) return { answered: false, error: 'Claude returned no text content.' }
+  const rawText = (data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '') as string
 
-  const rawText: string = (textBlock.text ?? '').trim()
+  if (!rawText.trim()) return { answered: false, error: 'Gemini returned an empty response.' }
 
   try {
     const cleaned = rawText.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim()
     const grades: ExtractedGrade[] = JSON.parse(cleaned)
     if (!Array.isArray(grades)) throw new Error('Response is not an array')
-    return { answered: true, grades, rawText, model: data.model }
+    return { answered: true, grades, rawText, model: GEMINI_MODEL }
   } catch {
-    return { answered: false, error: `Could not parse Claude response as JSON: ${rawText.slice(0, 300)}` }
+    return { answered: false, error: `Could not parse Gemini response as JSON: ${rawText.slice(0, 300)}` }
   }
 }

@@ -55,15 +55,16 @@ Called when Tier 1 can't answer. Receives full scholar context bundle. Read-only
 
 **Model:** `gemini-2.5-flash`
 
-### Tier 3 — Claude (data ingestion + multimodal)
+### Tier 3 — Gemini 2.5 Flash (data ingestion + multimodal)
 
 Called for unstructured input → structured DB write.
 
 - Receipt image → expense line items
 - Pasted fee schedule → expense rows
+- Grade report screenshot → grade entries
 - Returns JSON for human review — never writes directly
 
-**Model:** `claude-sonnet-4-6` (pinned — do not use a floating alias)
+**Model:** `gemini-2.5-flash` (free tier — multimodal, structured extraction)
 
 ### Orchestrator (`/ask` Edge Function)
 
@@ -78,9 +79,10 @@ POST /ask
 ```
 
 Routing (evaluated in order):
-1. `type === "ingest"` + file or text → Tier 3 (Claude)
-2. `type === "coach"` → Tier 2 (Gemini coaching prompt)
-3. `type === "query"` → Tier 1; escalates to Tier 2 if unresolved
+1. `type === "ingest"` + file or text → Tier 3 (Gemini)
+2. `type === "grade_ingest"` + file or text → Tier 3 (Gemini)
+3. `type === "coach"` → Tier 2 (Gemini coaching prompt)
+4. `type === "query"` → Tier 1; escalates to Tier 2 if unresolved
 
 The intent classifier is a small rule-based function (keywords + structure heuristics) — not an LLM call itself. LLM calls are reserved for the actual work.
 
@@ -143,7 +145,7 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 | Context builder | P1 | ✅ Done | — |
 | Tier 1 resolver | P1 | ✅ Done | — |
 | Tier 2 (Gemini) | P1 | ✅ Done | — |
-| Tier 3 (Claude `claude-sonnet-4-6`) | P1 | ✅ Done | Model pinned; UI + review card already built |
+| Tier 3 (Gemini 2.5 Flash) | P1 | ✅ Done | Migrated from Claude; free tier; UI + review card already built |
 | Review UI | P1 | ✅ Done | ReviewCard in NavigatorAI — editable table, confirm/discard, write path |
 | Coaching note generator | P1 | ✅ Done | Step 9 |
 | Academic risk alerts | P1 | ✅ Done | Step 10 |
@@ -190,14 +192,13 @@ Both keys stored in Supabase secrets — never exposed to the client.
 
 | Secret | Used by |
 |---|---|
-| `GOOGLE_AI_KEY` | `/ask` — Tier 2 (Gemini) |
-| `ANTHROPIC_KEY` | `/ask` — Tier 3 (Claude) |
+| `GOOGLE_AI_KEY` | `/ask` — Tier 2 (Gemini advisory) + Tier 3 (Gemini ingestion) |
 
 ---
 
 ## Build Status
 
-Steps 1–13, 19–20 complete. Now on Step 14.
+Steps 1–13, 19–20 complete. Now on Step 14. Tier 3 migrated from Claude to Gemini 2.5 Flash.
 
 | Step | Priority | Status | Description |
 |---|---|---|---|
@@ -207,7 +208,7 @@ Steps 1–13, 19–20 complete. Now on Step 14.
 | 4 | P1 | ✅ | Tier 1 end-to-end testing + tuning |
 | 5 | P1 | ✅ | Scholar context builder (`context.ts`) with `SCHEMA_REGISTRY` |
 | 6 | P1 | ✅ | Tier 2 — Gemini advisory wired (`GOOGLE_AI_KEY`) |
-| 7 | P1 | ✅ | Tier 3 — Claude ingestion wired (`ANTHROPIC_KEY`); model pinned to `claude-sonnet-4-6` |
+| 7 | P1 | ✅ | Tier 3 — Gemini 2.5 Flash ingestion (migrated from Claude; uses `GOOGLE_AI_KEY`) |
 | 8 | P1 | ✅ | Human-in-the-loop review UI (ReviewCard in NavigatorAI) |
 | 9 | P1 | ✅ | Coaching note generator — "Draft coaching note" on each ScholarCard |
 | 10 | P1 | ✅ | Academic risk alerts — DB trigger on `academics` → `alerts` table; shown in AlertsSection |
@@ -266,7 +267,7 @@ Navigator AI "Ingest receipts" tab now accepts multiple files at once. Files are
 
 ### Step 20 · Grade screenshot ingestion ✅
 
-New "Ingest grades" tab in Navigator AI. Upload a grade report screenshot → Tier 3 Claude extracts all subjects (UV or K-12 scale) → GradeReviewCard with editable fields → saves to `grade_entries`. Also available as an auth-gated "AI import grade report" widget on the student grade pages (visible only when the mentor is logged in).
+New "Ingest grades" tab in Navigator AI. Upload a grade report screenshot → Tier 3 Gemini extracts all subjects (UV or K-12 scale) → GradeReviewCard with editable fields → saves to `grade_entries`. Also available as an auth-gated "AI import grade report" widget on the student grade pages (visible only when the mentor is logged in).
 
 ### Step 21 · Navigator AI in student expense-entry module
 
