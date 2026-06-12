@@ -62,6 +62,9 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
   const [editDraft, setEditDraft]   = useState({});
   const [addDepositOpen, setAddDepositOpen] = useState(false);
   const [newDeposit, setNewDeposit] = useState({ amount: '', date: todayISO, sent: 'No' });
+  // First-time split from edit: deposit table (replaces original amount)
+  const [editSplitActive, setEditSplitActive]     = useState(false);
+  const [editSplitDeposits, setEditSplitDeposits] = useState([]);
 
   // Grouping state
   const [groupMode, setGroupMode]           = useState('none');
@@ -121,6 +124,8 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
     });
     setAddDepositOpen(false);
     setNewDeposit({ amount: '', date: todayISO, sent: 'No' });
+    setEditSplitActive(false);
+    setEditSplitDeposits([]);
   }
 
   function cancelEdit() {
@@ -128,6 +133,8 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
     setEditDraft({});
     setAddDepositOpen(false);
     setNewDeposit({ amount: '', date: todayISO, sent: 'No' });
+    setEditSplitActive(false);
+    setEditSplitDeposits([]);
   }
 
   function saveEdit(r) {
@@ -150,9 +157,54 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
   }
 
   function startSplit(r) {
-    const newGroupId = `grp_${Date.now()}`;
-    setEditDraft(d => ({ ...d, group_id: newGroupId }));
-    setAddDepositOpen(true);
+    // Open the deposit table — original row becomes Deposit 1
+    setEditSplitActive(true);
+    setEditSplitDeposits([
+      { _id: Math.random().toString(36).slice(2), amount: '', date: r.date || todayISO, sent: r.sent || 'No' },
+      { _id: Math.random().toString(36).slice(2), amount: '', date: todayISO, sent: 'No' },
+    ]);
+  }
+
+  function handleSaveSplit(r) {
+    const valid = editSplitDeposits.filter(d => d.amount && parseFloat(d.amount) > 0);
+    if (valid.length < 2) return;
+    const groupId = `grp_${Date.now()}`;
+    const shared = {
+      item:   editDraft.item.trim() || r.item,
+      cat:    editDraft.cat  || r.cat,
+      avb:    editDraft.avb  || r.avb || r.status || 'Actual',
+      vendor: editDraft.vendor.trim() || r.vendor || '',
+      sem:    editDraft.sem.trim()    || r.sem,
+    };
+
+    // Deposit 1 → update the original row in place
+    if (onEditExpense) onEditExpense(expScholar, r.id, {
+      ...shared,
+      amount:   parseFloat(valid[0].amount),
+      qty:      1,
+      date:     valid[0].date,
+      sent:     valid[0].sent,
+      group_id: groupId,
+    });
+
+    // Deposits 2+ → create new rows
+    valid.slice(1).forEach((d, i) => {
+      if (onAddExpense) onAddExpense(expScholar, {
+        id: `local_${Date.now()}_${i}`,
+        ...shared,
+        amount:   parseFloat(d.amount),
+        qty:      1,
+        date:     d.date,
+        sent:     d.sent,
+        group_id: groupId,
+      });
+    });
+
+    setEditingId(null);
+    setEditDraft({});
+    setEditSplitActive(false);
+    setEditSplitDeposits([]);
+    setAddDepositOpen(false);
   }
 
   function handleSaveNewDeposit(r) {
@@ -197,6 +249,8 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
     setEditingId(null);
     setEditDraft({});
     setAddDepositOpen(false);
+    setEditSplitActive(false);
+    setEditSplitDeposits([]);
   }
 
   function handleGroupModeClick(mode) {
@@ -371,12 +425,85 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
                   {groupId ? `Deposits (${siblings.length})` : 'Split into deposits'}
                 </div>
 
-                {!groupId && !addDepositOpen && (
+                {/* ── First-time split: full deposit table ── */}
+                {!groupId && editSplitActive && (() => {
+                  const refAmt   = parseFloat(editDraft.amount) || r.amount || 0;
+                  const allocated = editSplitDeposits
+                    .filter(d => d.amount && parseFloat(d.amount) > 0)
+                    .reduce((s, d) => s + parseFloat(d.amount), 0);
+                  const diff     = refAmt - allocated;
+                  const balanced = Math.abs(diff) < 0.01;
+                  const over     = diff < -0.01;
+                  const validDeps = editSplitDeposits.filter(d => d.amount && parseFloat(d.amount) > 0);
+                  return (
+                    <>
+                      <div className="exp-edit-split-ref">
+                        Reference total: <strong>{$fmt(refAmt, currency)}</strong>
+                        <span className={`exp-edit-split-diff${balanced ? ' is-balanced' : over ? ' is-over' : ''}`}>
+                          {balanced
+                            ? ' · ✓ balanced'
+                            : over
+                              ? ` · ${$fmt(Math.abs(diff), currency)} over`
+                              : ` · ${$fmt(diff, currency)} remaining`}
+                        </span>
+                      </div>
+                      <div className="split-deposits-header">
+                        <span>Amount (₱)</span><span>Date</span><span>Sent</span><span></span>
+                      </div>
+                      {editSplitDeposits.map(d => (
+                        <div key={d._id} className="split-deposit-row">
+                          <input
+                            type="number" step="0.01" min="0" placeholder="0.00"
+                            value={d.amount}
+                            onChange={e => setEditSplitDeposits(ds => ds.map(x => x._id === d._id ? { ...x, amount: e.target.value } : x))}
+                          />
+                          <input
+                            type="date" value={d.date}
+                            onChange={e => setEditSplitDeposits(ds => ds.map(x => x._id === d._id ? { ...x, date: e.target.value } : x))}
+                          />
+                          <select value={d.sent}
+                            onChange={e => setEditSplitDeposits(ds => ds.map(x => x._id === d._id ? { ...x, sent: e.target.value } : x))}
+                          >
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                          </select>
+                          <button
+                            type="button" className="split-deposit-remove"
+                            onClick={() => setEditSplitDeposits(ds => ds.length > 2 ? ds.filter(x => x._id !== d._id) : ds)}
+                            disabled={editSplitDeposits.length <= 2}
+                          >×</button>
+                        </div>
+                      ))}
+                      <div style={{ display: 'flex', gap: 8, marginTop: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <button
+                          type="button" className="split-deposit-add-btn"
+                          onClick={() => setEditSplitDeposits(ds => [...ds, { _id: Math.random().toString(36).slice(2), amount: '', date: todayISO, sent: 'No' }])}
+                        >+ Add deposit</button>
+                        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                          <button
+                            type="button" className="exp-edit-save"
+                            style={{ fontSize: 12, padding: '7px 14px' }}
+                            onClick={() => handleSaveSplit(r)}
+                            disabled={validDeps.length < 2}
+                          >Save split</button>
+                          <button
+                            type="button" className="exp-edit-cancel"
+                            onClick={() => { setEditSplitActive(false); setEditSplitDeposits([]); }}
+                          >Cancel</button>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+
+                {/* ── Button to trigger first-time split ── */}
+                {!groupId && !editSplitActive && (
                   <button type="button" className="exp-edit-split-btn" onClick={() => startSplit(r)}>
                     ⊹ Split this expense into deposits
                   </button>
                 )}
 
+                {/* ── Already split: siblings list + add another ── */}
                 {groupId && siblings.length > 0 && (
                   <div className="exp-edit-split-siblings">
                     {siblings.map(s => {
@@ -413,8 +540,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
                     <label className="exp-edit-field">
                       <span>Date</span>
                       <input
-                        type="date"
-                        value={newDeposit.date}
+                        type="date" value={newDeposit.date}
                         onChange={e => setNewDeposit(d => ({ ...d, date: e.target.value }))}
                       />
                     </label>
@@ -429,15 +555,13 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
                       <span>&nbsp;</span>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button
-                          type="button"
-                          className="exp-edit-save"
+                          type="button" className="exp-edit-save"
                           style={{ padding: '7px 14px', fontSize: 12 }}
                           onClick={() => handleSaveNewDeposit(r)}
                           disabled={!newDeposit.amount || parseFloat(newDeposit.amount) <= 0}
                         >Add</button>
                         <button
-                          type="button"
-                          className="exp-edit-cancel"
+                          type="button" className="exp-edit-cancel"
                           onClick={() => { setAddDepositOpen(false); setNewDeposit({ amount: '', date: todayISO, sent: 'No' }); }}
                         >Cancel</button>
                       </div>
