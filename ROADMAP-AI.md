@@ -22,93 +22,65 @@ User query
 
 ---
 
-## Tier 1 — Smart Query Layer (no LLM)
+## Architecture
 
-The backbone of the system. Handles the majority of queries entirely within the database — fast, free, and deterministic.
+### Tier 1 — Smart Query Layer (no LLM)
 
-**What it answers without an LLM:**
+Pattern-matches free-text questions to SQL queries. Returns answers without an LLM call. Handles ~80% of common queries.
 
-| Query type | Example | Method |
-|---|---|---|
-| Expense totals | "How much has Claire spent on tuition?" | SQL aggregate |
-| Budget status | "Is April over budget this semester?" | DB compare |
-| GPA trend | "How has Claire's GPA changed?" | Ordered history query |
-| Milestone state | "Which milestones are pending?" | Status filter |
-| Progress summary | "Where is Claire in the program?" | Multi-table join |
-| Alerts / deadlines | "What's due this week?" | Date-range filter |
-| English hours | "How many OET hours has Claire logged?" | SUM query |
+| Intent | Example |
+|---|---|
+| `expense_total` / `expense_by_category` | "How much has Claire spent on tuition?" |
+| `budget_status` | "Is April over budget?" |
+| `gpa_trend` | "How has Claire's GPA changed?" |
+| `milestone_status` | "Which milestones are still pending?" |
+| `travel_status` | "What travel is planned?" |
+| `deadlines` | "What's due this week?" |
+| `alerts` | "Any critical issues?" |
+| `english_hours` | "How many OET hours has Claire logged?" |
+| `oet_readiness` | "OET readiness assessment for Claire" → escalates to Tier 2 |
+| `open_actions` | "What action items are open?" |
+| `progress_summary` | "Where is Claire in the program?" |
+| `recent_expenses` | "Show me Claire's recent expenses" |
 
-**How it works:**
-- A Supabase Edge Function (`/query`) receives a structured intent (or free-text that is first classified client-side)
-- The function resolves it to a SQL query, runs it, and returns a formatted response
-- If the question can be answered from the DB with confidence, it returns immediately — no LLM call
-- If not, it bundles the relevant DB context and routes to Tier 2 or Tier 3
+### Tier 2 — Gemini (advisory + outside knowledge)
 
----
+Called when Tier 1 can't answer. Receives full scholar context bundle. Read-only — never writes to DB.
 
-## Tier 2 — Gemini (advisory + outside knowledge)
+- Advisory / strategy questions
+- Regulatory / licensing knowledge
+- OET readiness narrative + pace projection
+- Coaching note generation (`type: "coach"`)
+- Mentor weekly report draft
 
-Called when the user needs information that goes beyond the database.
+**Model:** `gemini-2.5-flash`
 
-**When it's invoked:**
-- Program strategy questions: "When should Claire sit the OET given her current GPA?"
-- Regulatory / licensing questions: "What IELTS score does AHPRA require?"
-- Comparison or benchmarking: "Is this spend level normal for a nursing program?"
-- Mentor coaching prompts: "Draft a progress note for Claire based on this semester's data"
+### Tier 3 — Claude (data ingestion + multimodal)
 
-**What it receives:**
-- Structured scholar context (current semester, GPA, expenses, milestone states) assembled by Tier 1
-- The user's question
-- A system prompt that defines the NGS program, scholar profiles, and response constraints
+Called for unstructured input → structured DB write.
 
-**What it does NOT do:**
-- Ingest images or files (that's Claude's job)
-- Mutate data (Gemini is read-only in this system)
+- Receipt image → expense line items
+- Pasted fee schedule → expense rows
+- Returns JSON for human review — never writes directly
 
----
+**Model:** `claude-sonnet-4-6` (pinned — do not use a floating alias)
 
-## Tier 3 — Claude (data ingestion + multimodal)
-
-Called when the input is unstructured and the output is a structured database write.
-
-**When it's invoked:**
-- Receipt upload → expense line item(s)
-- Screenshot of a tutor invoice → multiple expenses
-- Photo of a report card → academic record update
-- Pasted fee schedule → budget rows
-
-**What it does:**
-1. Receives the file or pasted text plus scholar context (current semester, expense categories)
-2. Extracts structured fields matching the DB schema (item, amount, qty, category, date, vendor)
-3. Returns a JSON payload for human review before writing
-4. On confirmation, the Edge Function writes to Supabase
-
-**Why Claude for this:** Vision + structured extraction in a single call with Anthropic's tool use / JSON mode. Fits the data-ingestion use case cleanly.
-
-**Model:** `claude-sonnet-4-6` — use this model ID explicitly in the Edge Function. Do not use a floating alias (e.g. `claude-sonnet-latest`) — pin the version so extraction behavior is reproducible and cost-predictable.
-
----
-
-## Orchestrator Logic
-
-A single Supabase Edge Function (`/ask`) acts as the router. It never exposes raw LLM calls to the frontend.
+### Orchestrator (`/ask` Edge Function)
 
 ```
 POST /ask
 {
   "scholar": "claire",
-  "type": "query" | "ingest",
+  "type": "query" | "ingest" | "coach",
   "text": "...",
   "file": { "base64": "...", "mime": "image/jpeg" }  // optional
 }
 ```
 
-Routing rules (evaluated in order):
-
-1. **`type === "ingest"` and file is present** → Tier 3 (Claude)
-2. **`type === "ingest"` and text is pasted data** → Tier 3 (Claude)
-3. **Intent resolves to a pure DB query** → Tier 1 (no LLM)
-4. **Needs outside knowledge** → Tier 2 (Gemini)
+Routing (evaluated in order):
+1. `type === "ingest"` + file or text → Tier 3 (Claude)
+2. `type === "coach"` → Tier 2 (Gemini coaching prompt)
+3. `type === "query"` → Tier 1; escalates to Tier 2 if unresolved
 
 The intent classifier is a small rule-based function (keywords + structure heuristics) — not an LLM call itself. LLM calls are reserved for the actual work.
 
@@ -214,116 +186,85 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 
 ## API Keys
 
-When ready, both keys are stored in Supabase secrets (not in source code):
-- `GOOGLE_AI_KEY` → used only inside the `/api/ask` Edge Function
-- `ANTHROPIC_KEY` → used only inside the `/api/ingest` Edge Function
+Both keys stored in Supabase secrets — never exposed to the client.
 
-Neither key ever reaches the client browser.
-
----
-
-## Phase 2 — Immediate Wins (after Step 7)
-
-These are low-effort, high-value additions that build directly on the infrastructure already in place.
-
-### Step 8 · Coaching note generator (Tier 2 · mentor dashboard)
-
-A "Generate coaching note" button on each scholar card in **StatusSection**. Calls Tier 2 (Gemini) with the scholar's live GPA, expenses, English hours, and open actions as context. Returns a drafted weekly check-in talking point the mentor can copy, edit, and send.
-
-- **Input:** scholar context bundle from `scholar-summary` Edge Function
-- **Output:** 3–5 bullet prose summary suitable for a mentor update message
-- **UI change:** small "Draft note" button on StatusSection card → opens a modal with the generated text + copy button
-- **No new Edge Function needed** — routes through the existing `/ask` orchestrator with `type: "coach"`
-
-### Step 9 · Academic risk alerts (Tier 1 · automated)
-
-Auto-generate alerts when a scholar's GPA falls within a configurable threshold of their floor. No LLM call — pure DB comparison.
-
-- **Trigger:** on every `grade_entries` INSERT or UPDATE, compare the computed semester GPA against `scholars.gpa_floor`
-- **Thresholds:**
-  - Within 5 points of floor → `severity: "warning"` alert: "GPA within 5 points of floor — monitor closely"
-  - At or below floor → `severity: "critical"` alert: "GPA at or below minimum — intervention required"
-- **Implementation:** Supabase database function + trigger, or scheduled Edge Function check
-- **Surfaces in:** AlertsSection (Navigator dashboard)
-
-### Step 10 · OET readiness assessment (Tier 1 + Tier 2)
-
-Query the `/ask` endpoint with "OET readiness" intent. Tier 1 computes: total English hours logged vs. 200-hour target, hours per category (Speaking, Listening, Reading, Writing), pace (hrs/week over last 4 weeks). Tier 2 interprets: "At current pace, Claire reaches her 200-hour target by [date]. Weakest category is Writing — recommend 2 additional sessions/week."
-
-- **New Tier 1 intent:** `oet_readiness` — returns hours by category, total, pace, target gap
-- **Tier 2 escalation:** if pace data is available, ask Gemini to produce a plain-language readiness assessment + recommendation
-- **Add to quick-prompt buttons** in NavigatorAI Query tab: "OET readiness"
-- **Also surface in** EnglishSection as a computed stat: `X hrs / 200 hrs target · on track / behind`
-
-### Step 11 · Budget trajectory (Tier 1 · ExpenseSection)
-
-Show projected semester-end spend based on current burn rate. Pure computation, no LLM.
-
-- **Logic:** total expenses for current semester ÷ weeks elapsed × weeks remaining in semester
-- **Display:** a single line below the existing budget bar in StatusSection: "On pace to spend ₱X by end of semester" with a color indicator (green / amber / red vs. budget)
-- **Overspend flag:** if projection exceeds budget, show "⚠ Projected overspend of ₱X — review expenses"
-- **No new Edge Function** — compute client-side from data already in `DataCtx`
+| Secret | Used by |
+|---|---|
+| `GOOGLE_AI_KEY` | `/ask` — Tier 2 (Gemini) |
+| `ANTHROPIC_KEY` | `/ask` — Tier 3 (Claude) |
 
 ---
 
-## Phase 3 — Medium-Effort Additions
+## Build Status
 
-### Step 12 · Mentor weekly report draft (Tier 2)
+All P1 steps complete. Step 13 done. Now on Step 14.
 
-A "Generate weekly report" action in NavigatorAI. Summarizes all scholars' week: GPA updates, expenses added, English hours logged, milestones reached, deadlines passed, open actions status. Output is a shareable narrative the mentor can paste into an email or message thread.
+| Step | Priority | Status | Description |
+|---|---|---|---|
+| 1 | P0 | ✅ | `expense_submissions` schema + Supabase migration |
+| 2 | P0 | ✅ | `scholar-summary` Edge Function |
+| 3 | P1 | ✅ | Tier 1 query resolver (12 intents) |
+| 4 | P1 | ✅ | Tier 1 end-to-end testing + tuning |
+| 5 | P1 | ✅ | Scholar context builder (`context.ts`) with `SCHEMA_REGISTRY` |
+| 6 | P1 | ✅ | Tier 2 — Gemini advisory wired (`GOOGLE_AI_KEY`) |
+| 7 | P1 | ✅ | Tier 3 — Claude ingestion wired (`ANTHROPIC_KEY`); model pinned to `claude-sonnet-4-6` |
+| 8 | P1 | ✅ | Human-in-the-loop review UI (ReviewCard in NavigatorAI) |
+| 9 | P1 | ✅ | Coaching note generator — "Draft coaching note" on each ScholarCard |
+| 10 | P1 | ✅ | Academic risk alerts — DB trigger on `academics` → `alerts` table; shown in AlertsSection |
+| 11 | P1 | ✅ | OET readiness — `oet_readiness` Tier 1 intent + Tier 2 narrative; live progress bar in EnglishSection |
+| 12 | P1 | ✅ | Budget trajectory — client-side burn-rate projection on ScholarCard (green/amber/red) |
+| 13 | P2 | ✅ | Documents tracker (section 07) + Supabase Storage integration |
+| **→ 14** | **P2** | **Next** | **Career tracker — PNLE → OET → NCLEX → AHPRA checklist** |
+| 15 | P2 | — | Risk/cohort dashboard — Navigator Section 07 |
+| 16 | P2 | — | Mentor weekly report draft (Tier 2) |
+| 17 | P2 | — | Scholar pathway chatbot — scoped public widget on profile pages |
+| 18 | P2 | — | Tighten RLS; audit anon access |
 
-- **Scope:** all scholars combined, not per-scholar
-- **Input:** delta of activity_log entries since last Monday + current snapshot for each scholar
-- **Output:** structured narrative with per-scholar sections + a program-level summary paragraph
-- **UI:** new quick-prompt button "Weekly report" → generates and displays in a copy-able text block
+---
 
-### Step 13 · Scholar pathway chatbot — public profiles (Tier 1 + Tier 2 · scoped)
+## Pending manual step
 
-A lightweight "Ask about [Scholar]'s pathway" widget on `claire.html` and `april.html`. Scoped strictly to that scholar's public data (no financials, no budget figures, no alerts).
+> **Step 10 trigger not yet deployed.** Run `supabase/gpa_risk_trigger.sql` in the
+> [Supabase SQL editor](https://supabase.com/dashboard/project/rhoxpfuephkuaartuqou/sql/new)
+> to activate auto-generated GPA risk alerts.
 
-- **Allowed query types:** pathway timeline, milestone status, English stage, program stage, next steps
-- **Blocked:** any expense/budget/financial query returns "That information is private"
-- **Implementation:** a new restricted `/ask-public` Edge Function that enforces the public-data scope at the server level before hitting Tier 1/2
-- **UI:** small collapsible chat widget at the bottom of the scholar profile page
+---
 
-### Step 14 · Risk / cohort dashboard (Navigator Section 07)
+## Upcoming: P2 Steps
 
-A new collapsible section in the Navigator showing all scholars side-by-side at a glance. One-screen risk view replacing the need to read through each section individually.
+### Step 13 · Documents tracker
 
-**Columns per scholar:**
-- GPA vs. floor (color-coded)
-- English hours vs. target (%)
-- Budget used (%)
-- Next milestone + days until due
-- Last activity date (from activity_log)
-- Risk flag: On Track / Watch / At Risk
+New page (`/documents/:scholar`). Scholars upload receipts, transcripts, visa docs. Mentor reviews uploads. Tier 3 receipt extraction fires on upload → ReviewCard confirm-and-save workflow.
 
-**Threshold logic:** all Tier 1 — no LLM call. Risk flag is a simple rule: any of (GPA within 5pts of floor, budget >90% used, English pace behind by >20%, next milestone overdue) → "At Risk".
+### Step 14 · Career tracker
+
+New page (`/career/:scholar`). Step-by-step PNLE → OET → NCLEX → OSCE → AHPRA checklist with exam dates, scores, pass/fail status. OET readiness (Step 11) reads from this table.
+
+### Step 15 · Risk/cohort dashboard
+
+New collapsible Navigator section (07). Side-by-side scholar risk view — GPA vs floor, English hours vs target, budget used %, next milestone + days until due, risk flag (On Track / Watch / At Risk). Pure Tier 1 — no LLM.
+
+### Step 16 · Mentor weekly report draft
+
+"Generate weekly report" in NavigatorAI. Tier 2 summarises all scholars' week — GPA updates, expenses, English hours, milestones, deadlines, open actions — into a shareable narrative.
+
+### Step 17 · Scholar pathway chatbot
+
+Lightweight public chat widget on `claire.html` / `april.html`. Scoped to public pathway data only — financials blocked at the server level via a restricted `/ask-public` Edge Function.
+
+### Step 18 · RLS hardening
+
+Restrict anon to `config` read-only. All scholar data reads require authenticated session. Rotate any exposed keys.
 
 ---
 
 ## Phase 4 — Longer-Term
 
-### Predictive milestone tracking (Tier 2)
-"What is the likelihood Claire clears PNLE given her current GPA trajectory?" Requires historical cohort data as calibration context. Tier 2 (Gemini) with a carefully engineered prompt that sets expectations about uncertainty.
+**Predictive milestone tracking (Tier 2)**
+"What is the likelihood Claire clears PNLE given her current GPA trajectory?" Requires historical cohort data as calibration context.
 
-### Document ingestion pipeline (Tier 3 extension)
-Extend Tier 3 beyond receipts to parse: academic transcripts → `grade_entries`, visa application documents → `deadlines + actions`, OET score reports → new `certifications` table. Each document type needs its own extraction prompt and review UI.
+**Document ingestion pipeline (Tier 3 extension)**
+Extend Tier 3 beyond receipts: academic transcripts → `grade_entries`, OET score reports → `certifications`, visa docs → `deadlines + actions`.
 
-### Peer benchmarking (Tier 2)
-Once there are 3+ scholars in the program, allow queries like "How does Claire's spend compare to other scholars at the same stage?" Tier 1 handles the aggregation; Tier 2 contextualizes the comparison with program norms.
-
----
-
-## Internal Pages Roadmap
-
-In priority order based on program value and dependency on the AI layer:
-
-| Priority | Page / Feature | What it does | AI tie-in |
-|---|---|---|---|
-| 1 | **Documents tracker** (`/documents/:scholar`) | Scholars upload receipts, transcripts, visa docs. Mentor reviews uploads. | Tier 3 receipt extraction fires on upload → Confirm & Save workflow |
-| 2 | **Career tracker** (`/career/:scholar`) | Step-by-step PNLE → OET → NCLEX → OSCE → AHPRA checklist with exam dates, scores, pass/fail status | OET readiness (Step 10) reads from this table |
-| 3 | **Risk/cohort dashboard** (Navigator Section 07) | Side-by-side scholar risk view | Step 14 above |
-| 4 | **Mentor notes journal** (Navigator, per-scholar) | Rich-text log of mentor observations per scholar per week | Coaching note generator (Step 8) writes drafts here |
-| 5 | **Messages tracker** (`/messages/:scholar`) | Async mentor ↔ scholar messaging via Supabase real-time | Weekly report (Step 12) can auto-post summaries |
-| 6 | **Journey stage pages** (`journey-university.html`, etc.) | Deep-dive into each of the 5 pathway stages with timelines, costs, requirements | Scholar pathway chatbot (Step 13) scoped per stage |
+**Peer benchmarking (Tier 2)**
+Once 3+ scholars are in the program: "How does Claire's spend compare to others at the same stage?"
