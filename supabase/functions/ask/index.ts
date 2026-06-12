@@ -25,7 +25,7 @@ function json(data: unknown, status = 200) {
 
 interface AskBody {
   scholar: string
-  type:    'query' | 'ingest'
+  type:    'query' | 'ingest' | 'coach'
   text?:   string
   sem?:    string
   file?:   { base64: string; mime: string }
@@ -57,8 +57,8 @@ Deno.serve(async (req) => {
 
   const { scholar, type, text, sem, file } = body
   if (!scholar) return json({ error: 'Missing required field: scholar' }, 400)
-  if (type !== 'query' && type !== 'ingest') {
-    return json({ error: 'Field "type" must be "query" or "ingest"' }, 400)
+  if (type !== 'query' && type !== 'ingest' && type !== 'coach') {
+    return json({ error: 'Field "type" must be "query", "ingest", or "coach"' }, 400)
   }
 
   if (type === 'ingest') {
@@ -75,6 +75,25 @@ Deno.serve(async (req) => {
       return json({ tier: 3, status: 'error', error: t3.error }, 502)
     } catch (err) {
       return json({ error: (err as Error).message ?? 'Ingest failed' }, 500)
+    }
+  }
+
+  // type === 'coach' — build context, call Tier 2 with a canned coaching prompt
+  if (type === 'coach') {
+    const geminiKey = Deno.env.get('GOOGLE_AI_KEY')
+    if (!geminiKey) {
+      return json({ tier: 2, status: 'not_configured', hint: 'Add GOOGLE_AI_KEY to Supabase secrets.' }, 503)
+    }
+    try {
+      const ctx  = await buildContext(scholar, sb)
+      const p    = ctx.profile as Record<string, unknown> | null
+      const name = (p?.name as string | undefined) ?? scholar
+      const prompt = `Draft a mentor coaching update for ${name}. Write 3–5 concise bullet points covering: (1) current academic standing — GPA vs the minimum floor, (2) total invested vs budget allocation and burn rate, (3) English study progress vs the 200-hour OET target, (4) any open actions or upcoming deadlines that need attention, (5) any active alerts that need attention. Each bullet should be one sentence. Write in plain English, practical and direct, suitable for a mentor check-in message. Use ₱ for peso amounts.`
+      const t2   = await tier2Ask(prompt, ctx, geminiKey)
+      if (t2.answered) return json({ tier: 2, type: 'coach', note: t2.answer, model: t2.model })
+      return json({ tier: 2, status: 'error', error: t2.error }, 502)
+    } catch (err) {
+      return json({ error: (err as Error).message ?? 'Coach note generation failed' }, 500)
     }
   }
 

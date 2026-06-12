@@ -45,6 +45,7 @@ type Intent =
   | 'travel_status'
   | 'deadlines'
   | 'alerts'
+  | 'oet_readiness'
   | 'english_hours'
   | 'open_actions'
   | 'progress_summary'
@@ -108,6 +109,10 @@ function classify(text: string, liveCategories: string[]): Classified {
 
   if (/\balert|issue|problem|warning|urgent|critical/.test(q)) {
     return { type: 'alerts' }
+  }
+
+  if (/oet.*readiness|readiness.*oet|oet.*ready|ready.*oet|oet.*assess|oet.*on.?track|oet.*progress\b/.test(q)) {
+    return { type: 'oet_readiness' }
   }
 
   if (/\boet\b|english.*hour|ielts|study.*hour|session|how.*study|study.*time/.test(q)) {
@@ -412,6 +417,7 @@ export async function tier1Resolve(
     case 'travel_status':       return travelStatus(scholar, sb, travelState)
     case 'deadlines':           return upcomingDeadlines(scholar, sb)
     case 'alerts':              return activeAlerts(scholar, sb)
+    case 'oet_readiness':       return { answered: false }   // always escalates to Tier 2 for narrative
     case 'english_hours':       return englishHours(scholar, sb)
     case 'open_actions':        return openActions(scholar, sb)
     case 'progress_summary':    return progressSummary(scholar, sb)

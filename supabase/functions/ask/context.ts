@@ -102,10 +102,12 @@ export interface ScholarContext {
   deadlines:   { event: string; when: string; cat: string | null; urgency: string | null }[]
   openActions: { text: string; cat: string | null }[]
   english: {
-    totalMinutes: number
-    totalHours:   string
-    sessions:     number
-    bySem:        Record<string, number>
+    totalMinutes:       number
+    totalHours:         string
+    sessions:           number
+    bySem:              Record<string, number>
+    byCategory:         Record<string, number>
+    paceMinsLast4Weeks: number
   }
   pendingSubmissions: number
   schema: typeof SCHEMA_REGISTRY
@@ -134,7 +136,7 @@ export async function buildContext(scholar: string, sb: SupabaseClient): Promise
     sb.from('alerts').select('severity,title,sub').eq('scholar', scholar),
     sb.from('deadlines').select('event,when_date,cat,urgency').eq('scholar', scholar).order('sort_date').limit(15),
     sb.from('actions').select('text,cat').eq('scholar', scholar).eq('done', false),
-    sb.from('english_sessions').select('sem,duration_minutes').eq('scholar', scholar),
+    sb.from('english_sessions').select('sem,duration_minutes,activity_type,date').eq('scholar', scholar),
     sb.from('expense_submissions').select('id').eq('scholar_key', scholar).eq('status', 'pending'),
   ])
 
@@ -155,10 +157,18 @@ export async function buildContext(scholar: string, sb: SupabaseClient): Promise
   for (const b of budgets ?? []) budgetBySem[b.sem] = b.amount_php ?? 0
 
   // English sessions
-  const engRows = englishRaw ?? []
+  const engRows     = englishRaw ?? []
   const totalMinutes = engRows.reduce((s, r) => s + (r.duration_minutes ?? 0), 0)
-  const engBySem: Record<string, number> = {}
-  for (const r of engRows) engBySem[r.sem] = (engBySem[r.sem] ?? 0) + (r.duration_minutes ?? 0)
+  const engBySem: Record<string, number>     = {}
+  const engByCat: Record<string, number>     = {}
+  const cutoff = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000)
+  let paceMinsLast4Weeks = 0
+  for (const r of engRows) {
+    const mins = r.duration_minutes ?? 0
+    engBySem[r.sem] = (engBySem[r.sem] ?? 0) + mins
+    if (r.activity_type) engByCat[r.activity_type] = (engByCat[r.activity_type] ?? 0) + mins
+    if (r.date && new Date(r.date) >= cutoff) paceMinsLast4Weeks += mins
+  }
 
   return {
     scholar,
@@ -189,9 +199,11 @@ export async function buildContext(scholar: string, sb: SupabaseClient): Promise
     openActions: (actions ?? []).map(a => ({ text: a.text, cat: a.cat ?? null })),
     english: {
       totalMinutes,
-      totalHours:  (totalMinutes / 60).toFixed(1),
-      sessions:    engRows.length,
-      bySem:       engBySem,
+      totalHours:         (totalMinutes / 60).toFixed(1),
+      sessions:           engRows.length,
+      bySem:              engBySem,
+      byCategory:         engByCat,
+      paceMinsLast4Weeks,
     },
     pendingSubmissions: (submissions ?? []).length,
     schema: SCHEMA_REGISTRY,
