@@ -5,7 +5,7 @@ import { supabase } from './lib/supabase.js';
 
 export async function writeExpense(scholar, exp) {
   const { error } = await supabase.from('expenses').insert({
-    id:       exp.id || `${scholar}_${exp.sem}_${Date.now()}`,
+    id:       exp.id || `${scholar}_${exp.sem}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     scholar,
     sem:      exp.sem,
     item:     exp.item,
