@@ -1,8 +1,8 @@
 // Orchestrator entry point for the NGS AI Intelligence Layer.
 //
 // Routing rules (evaluated in order):
-//   type=ingest + file present  → Tier 3 (Claude — multimodal extraction)
-//   type=ingest + text          → Tier 3 (Claude — structured text parsing)
+//   type=ingest + file present  → Tier 3 (Gemini 2.5 Flash — multimodal extraction)
+//   type=ingest + text          → Tier 3 (Gemini 2.5 Flash — structured text parsing)
 //   type=query                  → Tier 1 (DB resolver), escalates to Tier 2 (Gemini) if needed
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -64,13 +64,13 @@ Deno.serve(async (req) => {
   if (type === 'ingest') {
     if (!file && !text) return json({ error: 'Ingest request requires file or text' }, 400)
 
-    const anthropicKey = Deno.env.get('ANTHROPIC_KEY')
-    if (!anthropicKey) {
-      return json({ tier: 3, status: 'not_configured', hint: 'Add ANTHROPIC_KEY to Supabase secrets.' }, 503)
+    const geminiKey = Deno.env.get('GOOGLE_AI_KEY')
+    if (!geminiKey) {
+      return json({ tier: 3, status: 'not_configured', hint: 'Add GOOGLE_AI_KEY to Supabase secrets.' }, 503)
     }
 
     try {
-      const t3 = await tier3Ingest({ text, file }, scholar, anthropicKey)
+      const t3 = await tier3Ingest({ text, file }, scholar, geminiKey)
       if (t3.answered) return json({ tier: 3, items: t3.items, model: t3.model })
       return json({ tier: 3, status: 'error', error: t3.error }, 502)
     } catch (err) {
