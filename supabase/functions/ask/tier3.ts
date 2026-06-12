@@ -1,4 +1,4 @@
-// Tier 3 — Claude claude-opus-4-8 (multimodal receipt / text ingestion)
+// Tier 3 — Claude claude-sonnet-4-6 (multimodal receipt / text ingestion)
 // Extracts structured expense line items from an uploaded image or pasted text.
 // Returns a JSON array for human review — does NOT write to the database.
 
@@ -85,9 +85,8 @@ Rules:
         'Content-Type':      'application/json',
       },
       body: JSON.stringify({
-        model:      'claude-opus-4-8',
+        model:      'claude-sonnet-4-6',
         max_tokens: 4096,
-        thinking:   { type: 'adaptive' },
         system:     systemPrompt,
         messages:   [{ role: 'user', content }],
       }),
