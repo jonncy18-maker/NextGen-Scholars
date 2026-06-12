@@ -174,15 +174,11 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 | ✅ 11 | P1 | OET readiness assessment — `oet_readiness` Tier 1 intent + Tier 2 narrative; live progress bar in EnglishSection |
 | ✅ 12 | P1 | Budget trajectory projection — client-side burn-rate in StatusSection (green/amber/red) |
 | **→ 13** | **P2** | **Documents tracker page + Supabase Storage integration** |
-| 10 | P1 | Academic risk alerts — DB trigger on `grade_entries`; surfaces in AlertsSection (Step 9 in Phase 2) |
-| 11 | P1 | OET readiness assessment — new `oet_readiness` Tier 1 intent + Tier 2 narrative (Step 10 in Phase 2) |
-| 12 | P1 | Budget trajectory projection — client-side burn-rate computation in StatusSection (Step 11 in Phase 2) |
-| 13 | P2 | Documents tracker page + Supabase Storage integration (Internal Pages priority 1) |
-| 14 | P2 | Career tracker page — PNLE → OET → NCLEX → AHPRA checklist (Internal Pages priority 2) |
-| 15 | P2 | Risk/cohort dashboard — Navigator Section 07 (Step 14 in Phase 3) |
-| 16 | P2 | Mentor weekly report draft — Tier 2 summary of all scholar activity (Step 12 in Phase 3) |
-| 17 | P2 | Scholar pathway chatbot — scoped public widget on claire.html / april.html (Step 13 in Phase 3) |
-| 18 | P2 | Tighten RLS; audit anon access; rotate any exposed keys |
+| 14 | P2 | Career tracker — PNLE → OET → NCLEX → AHPRA checklist |
+| 15 | P2 | Risk/cohort dashboard — Navigator Section 07 |
+| 16 | P2 | Mentor weekly report draft (Tier 2) |
+| 17 | P2 | Scholar pathway chatbot — scoped public widget on profile pages |
+| 18 | P2 | Tighten RLS; audit anon access |
 
 ---
 
