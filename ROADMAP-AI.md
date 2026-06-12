@@ -55,15 +55,16 @@ Called when Tier 1 can't answer. Receives full scholar context bundle. Read-only
 
 **Model:** `gemini-2.5-flash`
 
-### Tier 3 — Claude (data ingestion + multimodal)
+### Tier 3 — Gemini 2.5 Flash (data ingestion + multimodal)
 
 Called for unstructured input → structured DB write.
 
 - Receipt image → expense line items
 - Pasted fee schedule → expense rows
+- Grade report screenshot → grade entries
 - Returns JSON for human review — never writes directly
 
-**Model:** `claude-sonnet-4-6` (pinned — do not use a floating alias)
+**Model:** `gemini-2.5-flash` (free tier — multimodal, structured extraction)
 
 ### Orchestrator (`/ask` Edge Function)
 
@@ -78,9 +79,10 @@ POST /ask
 ```
 
 Routing (evaluated in order):
-1. `type === "ingest"` + file or text → Tier 3 (Claude)
-2. `type === "coach"` → Tier 2 (Gemini coaching prompt)
-3. `type === "query"` → Tier 1; escalates to Tier 2 if unresolved
+1. `type === "ingest"` + file or text → Tier 3 (Gemini)
+2. `type === "grade_ingest"` + file or text → Tier 3 (Gemini)
+3. `type === "coach"` → Tier 2 (Gemini coaching prompt)
+4. `type === "query"` → Tier 1; escalates to Tier 2 if unresolved
 
 The intent classifier is a small rule-based function (keywords + structure heuristics) — not an LLM call itself. LLM calls are reserved for the actual work.
 
@@ -143,7 +145,7 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 | Context builder | P1 | ✅ Done | — |
 | Tier 1 resolver | P1 | ✅ Done | — |
 | Tier 2 (Gemini) | P1 | ✅ Done | — |
-| Tier 3 (Claude `claude-sonnet-4-6`) | P1 | ✅ Done | Model pinned; UI + review card already built |
+| Tier 3 (Gemini 2.5 Flash) | P1 | ✅ Done | Migrated from Claude; free tier; UI + review card already built |
 | Review UI | P1 | ✅ Done | ReviewCard in NavigatorAI — editable table, confirm/discard, write path |
 | Coaching note generator | P1 | ✅ Done | Step 9 |
 | Academic risk alerts | P1 | ✅ Done | Step 10 |
@@ -190,14 +192,13 @@ Both keys stored in Supabase secrets — never exposed to the client.
 
 | Secret | Used by |
 |---|---|
-| `GOOGLE_AI_KEY` | `/ask` — Tier 2 (Gemini) |
-| `ANTHROPIC_KEY` | `/ask` — Tier 3 (Claude) |
+| `GOOGLE_AI_KEY` | `/ask` — Tier 2 (Gemini advisory) + Tier 3 (Gemini ingestion) |
 
 ---
 
 ## Build Status
 
-All P1 steps complete. Step 13 done. Now on Step 14.
+Steps 1–13, 19–20 complete. Now on Step 14. Tier 3 migrated from Claude to Gemini 2.5 Flash.
 
 | Step | Priority | Status | Description |
 |---|---|---|---|
@@ -207,7 +208,7 @@ All P1 steps complete. Step 13 done. Now on Step 14.
 | 4 | P1 | ✅ | Tier 1 end-to-end testing + tuning |
 | 5 | P1 | ✅ | Scholar context builder (`context.ts`) with `SCHEMA_REGISTRY` |
 | 6 | P1 | ✅ | Tier 2 — Gemini advisory wired (`GOOGLE_AI_KEY`) |
-| 7 | P1 | ✅ | Tier 3 — Claude ingestion wired (`ANTHROPIC_KEY`); model pinned to `claude-sonnet-4-6` |
+| 7 | P1 | ✅ | Tier 3 — Gemini 2.5 Flash ingestion (migrated from Claude; uses `GOOGLE_AI_KEY`) |
 | 8 | P1 | ✅ | Human-in-the-loop review UI (ReviewCard in NavigatorAI) |
 | 9 | P1 | ✅ | Coaching note generator — "Draft coaching note" on each ScholarCard |
 | 10 | P1 | ✅ | Academic risk alerts — DB trigger on `academics` → `alerts` table; shown in AlertsSection |
@@ -215,10 +216,14 @@ All P1 steps complete. Step 13 done. Now on Step 14.
 | 12 | P1 | ✅ | Budget trajectory — client-side burn-rate projection on ScholarCard (green/amber/red) |
 | 13 | P2 | ✅ | Documents tracker (section 07) + Supabase Storage integration |
 | **→ 14** | **P2** | **Next** | **Career tracker — PNLE → OET → NCLEX → AHPRA checklist** |
-| 15 | P2 | — | Risk/cohort dashboard — Navigator Section 07 |
+| 15 | P2 | — | Risk/cohort dashboard — Navigator Section 08 |
 | 16 | P2 | — | Mentor weekly report draft (Tier 2) |
 | 17 | P2 | — | Scholar pathway chatbot — scoped public widget on profile pages |
 | 18 | P2 | — | Tighten RLS; audit anon access |
+| 19 | P2 | ✅ | Multi-file ingest — receipt ingest panel accepts multiple files in one go; items merged into one ReviewCard |
+| 20 | P2 | ✅ | Grade screenshot ingestion — new "Ingest grades" tab in Navigator AI (Tier 3); AI import widget on student grade pages (session-gated) |
+| 21 | P2 | — | Navigator AI widget in student expense-entry module (requires scholar auth upgrade) |
+| 22 | P2 | — | Google Drive storage backend for Documents section (replaces Supabase Storage; 15 GB free vs 500 MB) |
 
 ---
 
@@ -232,9 +237,9 @@ All P1 steps complete. Step 13 done. Now on Step 14.
 
 ## Upcoming: P2 Steps
 
-### Step 13 · Documents tracker
+### Step 13 · Documents tracker ✅
 
-New page (`/documents/:scholar`). Scholars upload receipts, transcripts, visa docs. Mentor reviews uploads. Tier 3 receipt extraction fires on upload → ReviewCard confirm-and-save workflow.
+Section 07 in Navigator. Mentor uploads receipts, transcripts, visa docs to Supabase Storage. Per-document status tracking (pending / reviewed / linked). Tier 3 receipt extraction → inline ReviewCard → status becomes `linked` on save.
 
 ### Step 14 · Career tracker
 
@@ -255,6 +260,22 @@ Lightweight public chat widget on `claire.html` / `april.html`. Scoped to public
 ### Step 18 · RLS hardening
 
 Restrict anon to `config` read-only. All scholar data reads require authenticated session. Rotate any exposed keys.
+
+### Step 19 · Multi-file ingest ✅
+
+Navigator AI "Ingest receipts" tab now accepts multiple files at once. Files are processed sequentially; all extracted expense items are merged into a single ReviewCard for batch confirmation.
+
+### Step 20 · Grade screenshot ingestion ✅
+
+New "Ingest grades" tab in Navigator AI. Upload a grade report screenshot → Tier 3 Gemini extracts all subjects (UV or K-12 scale) → GradeReviewCard with editable fields → saves to `grade_entries`. Also available as an auth-gated "AI import grade report" widget on the student grade pages (visible only when the mentor is logged in).
+
+### Step 21 · Navigator AI in student expense-entry module
+
+Add an inline AI receipt ingest option to the scholar expense-entry flow (`entry.html`). Requires a scholar-auth upgrade (PIN-based `/ask-public` Edge Function) since the entry form uses anon access.
+
+### Step 22 · Google Drive storage backend
+
+Swap Supabase Storage (500 MB free) for Google Drive (15 GB). Service account stores credentials in Supabase secrets; a proxy Edge Function handles uploads from the browser. `documents.storage_path` stores a Drive file ID instead of a Storage path. Download links become signed Drive URLs.
 
 ---
 
