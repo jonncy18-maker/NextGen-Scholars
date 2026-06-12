@@ -393,14 +393,27 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
                     {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </label>
-                <label className="exp-edit-field">
-                  <span>Amount (₱)</span>
-                  <input type="number" step="0.01" min="0" value={editDraft.amount} onChange={ev => setEditDraft(d => ({ ...d, amount: ev.target.value }))} />
-                </label>
-                <label className="exp-edit-field">
-                  <span>Qty</span>
-                  <input type="number" min="1" value={editDraft.qty} onChange={ev => setEditDraft(d => ({ ...d, qty: ev.target.value }))} />
-                </label>
+                {!editSplitActive && (
+                  <label className="exp-edit-field">
+                    <span>Amount (₱)</span>
+                    <input type="number" step="0.01" min="0" value={editDraft.amount} onChange={ev => setEditDraft(d => ({ ...d, amount: ev.target.value }))} />
+                  </label>
+                )}
+                {!editSplitActive && (
+                  <label className="exp-edit-field">
+                    <span>Qty</span>
+                    <input type="number" min="1" value={editDraft.qty} onChange={ev => setEditDraft(d => ({ ...d, qty: ev.target.value }))} />
+                  </label>
+                )}
+                {editSplitActive && (
+                  <label className="exp-edit-field">
+                    <span>Amount (₱)</span>
+                    <div className="split-amount-display">
+                      <span className="split-amount-total">Splitting…</span>
+                      <span className="split-amount-note">set amounts below</span>
+                    </div>
+                  </label>
+                )}
                 <label className="exp-edit-field">
                   <span>Date</span>
                   <input type="date" value={editDraft.date} onChange={ev => setEditDraft(d => ({ ...d, date: ev.target.value }))} />
@@ -423,9 +436,12 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
                   </select>
                 </label>
                 <div className="exp-edit-actions">
-                  <button className="exp-edit-save" onClick={() => saveEdit(r)}>Save</button>
+                  {editSplitActive
+                    ? <span className="exp-edit-split-hint-inline">Use “Save split” below ↓</span>
+                    : <button className="exp-edit-save" onClick={() => saveEdit(r)}>Save</button>
+                  }
                   <button className="exp-edit-cancel" onClick={cancelEdit}>Cancel</button>
-                  {(r.sent === 'Yes' || sentOverrides.has(String(r.id))) && (
+                  {!editSplitActive && (r.sent === 'Yes' || sentOverrides.has(String(r.id))) && (
                     <button className="exp-edit-unsend" onClick={() => handleUnsent(r)}>Unsend</button>
                   )}
                 </div>
@@ -491,7 +507,10 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
                           type="button" className="split-deposit-add-btn"
                           onClick={() => setEditSplitDeposits(ds => [...ds, { _id: Math.random().toString(36).slice(2), amount: '', date: todayISO, sent: 'No' }])}
                         >+ Add deposit</button>
-                        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
+                          {validDeps.length < 2 && (
+                            <span className="exp-edit-split-need">Enter at least 2 deposit amounts</span>
+                          )}
                           <button
                             type="button" className="exp-edit-save"
                             style={{ fontSize: 12, padding: '7px 14px' }}
