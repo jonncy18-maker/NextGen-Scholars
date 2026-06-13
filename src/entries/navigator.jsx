@@ -16,6 +16,7 @@ import { ExpenseSection } from '../components/expenses/ExpenseSection.jsx';
 import { DeadlinesSection } from '../components/DeadlinesSection.jsx';
 import { EnglishSection } from '../components/EnglishSection.jsx';
 import { NavigatorAI } from '../components/NavigatorAI.jsx';
+import { NavigatorAIDrawer } from '../components/NavigatorAIDrawer.jsx';
 import { DocumentsSection } from '../components/DocumentsSection.jsx';
 import { NavFooter } from '../components/NavFooter.jsx';
 
@@ -238,6 +239,7 @@ export function Navigator() {
   const collapsedSections = new Set(collapsedSectionsArr);
 
   const [fxPanelOpen, setFxPanelOpen] = useLocalStorage('ngs_fx_panel', false);
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (fxMode !== 'market') return;
@@ -333,6 +335,14 @@ export function Navigator() {
     }));
   }
 
+  function handleGoToIngestion() {
+    setAiDrawerOpen(false);
+    if (collapsedSections.has('navigator-ai')) toggleSection('navigator-ai');
+    setTimeout(() => {
+      document.getElementById('sec-navigator-ai')?.scrollIntoView({ behavior: 'smooth' });
+    }, 150);
+  }
+
   const sec = (id) => ({
     id: `sec-${id}`,
     collapsed: collapsedSections.has(id),
@@ -357,6 +367,13 @@ export function Navigator() {
           onFxPanelToggle={handleFxPanelToggle}
           onExpandAll={expandAll}
           onCollapseAll={collapseAll}
+          aiDrawerOpen={aiDrawerOpen}
+          onAiDrawerToggle={() => setAiDrawerOpen(v => !v)}
+        />
+        <NavigatorAIDrawer
+          open={aiDrawerOpen}
+          onClose={() => setAiDrawerOpen(false)}
+          onGoToIngestion={handleGoToIngestion}
         />
         <main className="wrap">
           <SectionErrorBoundary name="Alerts">
