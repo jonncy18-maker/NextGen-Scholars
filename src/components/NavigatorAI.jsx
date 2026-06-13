@@ -716,7 +716,7 @@ function GradeIngestPanel({ scholar, scholarKeys }) {
         {loading && (
           <div className="nai-loading" style={{ marginBottom: 0 }}>
             <span className="nai-loading-dot" /><span className="nai-loading-dot" /><span className="nai-loading-dot" />
-            <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>Gemini is reading the grade report…</span>
+            <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>{modelPref === 'claude' ? 'Claude' : 'Gemini'} is reading the grade report…</span>
           </div>
         )}
       </div>
@@ -799,6 +799,11 @@ function IngestPanel({ scholar, scholarKeys }) {
       if (!session) throw new Error('Session expired — please refresh and log in again.');
 
       const allItems = [];
+      let usedModel = modelPref === 'claude' ? 'claude-sonnet-4-6' : 'gemini-2.5-flash';
+      const modelLabel = modelPref === 'claude' ? 'Claude' : 'Gemini';
+      const notConfiguredHint = modelPref === 'claude'
+        ? 'ANTHROPIC_KEY not configured — add it to Supabase secrets.'
+        : 'GOOGLE_AI_KEY not configured — add it to Supabase secrets.';
 
       if (pasteText.trim()) {
         setProgress('Processing pasted text…');
@@ -809,14 +814,15 @@ function IngestPanel({ scholar, scholarKeys }) {
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
-        if (json.status === 'not_configured') throw new Error('Gemini key not configured — add GOOGLE_AI_KEY to Supabase secrets.');
+        if (json.status === 'not_configured') throw new Error(notConfiguredHint);
         if (json.status === 'error') throw new Error(json.error || 'Extraction failed.');
+        if (json.model) usedModel = json.model;
         if (Array.isArray(json.items)) allItems.push(...json.items);
       }
 
       for (let i = 0; i < files.length; i++) {
         const f = files[i];
-        setProgress(files.length > 1 ? `Processing file ${i + 1} of ${files.length}…` : 'Gemini is reading the document…');
+        setProgress(files.length > 1 ? `Processing file ${i + 1} of ${files.length}…` : `${modelLabel} is reading the document…`);
         const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
@@ -824,8 +830,9 @@ function IngestPanel({ scholar, scholarKeys }) {
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
-        if (json.status === 'not_configured') throw new Error('Gemini key not configured — add GOOGLE_AI_KEY to Supabase secrets.');
+        if (json.status === 'not_configured') throw new Error(notConfiguredHint);
         if (json.status === 'error') throw new Error(json.error || `Extraction failed for ${f.name}.`);
+        if (json.model) usedModel = json.model;
         if (Array.isArray(json.items)) allItems.push(...json.items);
       }
 
@@ -833,7 +840,7 @@ function IngestPanel({ scholar, scholarKeys }) {
         setError('No expense line items found in any of the provided documents.');
         return;
       }
-      setReview({ items: allItems, model: 'gemini-2.5-flash' });
+      setReview({ items: allItems, model: usedModel });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -921,7 +928,7 @@ function IngestPanel({ scholar, scholarKeys }) {
         {loading && (
           <div className="nai-loading" style={{ marginBottom: 0 }}>
             <span className="nai-loading-dot" /><span className="nai-loading-dot" /><span className="nai-loading-dot" />
-            <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>{progress || 'Gemini is reading the document…'}</span>
+            <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>{progress || `${modelPref === 'claude' ? 'Claude' : 'Gemini'} is reading the document…`}</span>
           </div>
         )}
       </div>
