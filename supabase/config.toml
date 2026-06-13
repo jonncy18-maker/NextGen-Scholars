@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.ask]
 verify_jwt = true
+
+[functions.ask-public]
+verify_jwt = false
