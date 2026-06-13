@@ -227,6 +227,15 @@ export function ScholarIngestPanel({ id, type, scholarKey, sem }) {
 
   function onDrop(e) { e.preventDefault(); setOver(false); handleFileDrop(e.dataTransfer.files?.[0]); }
 
+  function handlePaste(e) {
+    const item = Array.from(e.clipboardData?.items || []).find(i => i.kind === 'file' && i.type.startsWith('image/'));
+    if (!item) return;
+    e.preventDefault();
+    const raw = item.getAsFile();
+    const ext = raw.type.split('/')[1] || 'png';
+    handleFileDrop(new File([raw], `screenshot-${Date.now()}.${ext}`, { type: raw.type }));
+  }
+
   async function handleExtract(e) {
     e?.preventDefault();
     if (loading || !file) return;
@@ -284,7 +293,7 @@ export function ScholarIngestPanel({ id, type, scholarKey, sem }) {
       )}
 
       {!success && !review && (
-        <form onSubmit={handleExtract}>
+        <form onSubmit={handleExtract} onPaste={handlePaste}>
           <div
             className={`nai-drop-zone${isDragOver ? ' is-over' : ''}${file ? ' has-file' : ''}`}
             {...dragHandlers}
@@ -319,7 +328,7 @@ export function ScholarIngestPanel({ id, type, scholarKey, sem }) {
               <div className="nai-drop-prompt">
                 <span className="nai-drop-icon">⬆</span>
                 <span>Drop your {dropLabel} here</span>
-                <span className="nai-drop-sub">JPEG · PNG · PDF · click to browse</span>
+                <span className="nai-drop-sub">JPEG · PNG · PDF · click to browse · or paste</span>
               </div>
             )}
           </div>
