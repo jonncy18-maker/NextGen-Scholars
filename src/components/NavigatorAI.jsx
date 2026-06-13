@@ -657,10 +657,10 @@ function GradeIngestPanel({ scholar, scholarKeys }) {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
-      if (json.status === 'not_configured') throw new Error('Gemini key not configured — add GOOGLE_AI_KEY to Supabase secrets.');
+      if (json.status === 'not_configured') throw new Error(modelPref === 'claude' ? 'ANTHROPIC_KEY not configured — add it to Supabase secrets.' : 'GOOGLE_AI_KEY not configured — add it to Supabase secrets.');
       if (json.status === 'error') throw new Error(json.error || 'Extraction failed.');
-      if (!Array.isArray(json.grades)) throw new Error('Unexpected response from Gemini.');
-      if (json.grades.length === 0) { setError('Gemini found no grade entries in this document.'); return; }
+      if (!Array.isArray(json.grades)) throw new Error(`Unexpected response from ${modelPref === 'claude' ? 'Claude' : 'Gemini'}.`);
+      if (json.grades.length === 0) { setError(`${modelPref === 'claude' ? 'Claude' : 'Gemini'} found no grade entries in this document.`); return; }
       setReview({ grades: json.grades, model: json.model });
     } catch (err) {
       setError(err.message);
