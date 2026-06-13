@@ -151,7 +151,7 @@ function AiGradeImport({ scholarKey, semKey, onSaved }) {
 
       {!review ? (
         <form onSubmit={handleExtract}>
-          <p className="ge-ai-import-hint">Upload a screenshot of your grade report. Claude will extract all subjects automatically.</p>
+          <p className="ge-ai-import-hint">Upload a screenshot of your grade report. Gemini will extract all subjects automatically.</p>
           <input type="file" ref={fileInputRef} accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
             style={{ display: 'none' }} onChange={async e => { const f = e.target.files?.[0]; if (f && ACCEPTED_MIME.includes(f.type)) setFile(await readFile(f)); }} />
           <button type="button" className="et-log-btn" style={{ marginBottom: 8 }} onClick={() => fileInputRef.current?.click()}>

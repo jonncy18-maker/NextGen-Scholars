@@ -64,7 +64,7 @@ function DocReviewCard({ items: initialItems, model, scholar, sem, docId, onDisc
   return (
     <div className="doc-review-card">
       <div className="doc-review-header">
-        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Claude</span>
+        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Gemini</span>
         <span className="doc-review-title">
           {items.length} expense{items.length !== 1 ? 's' : ''} extracted — review before saving
         </span>

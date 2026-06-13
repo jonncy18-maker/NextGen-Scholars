@@ -367,7 +367,7 @@ function ReviewCard({ items: initialItems, model, scholar, sem, onDiscard, onCon
   return (
     <div className="nai-review">
       <div className="nai-review-header">
-        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Claude</span>
+        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Gemini</span>
         <span className="nai-review-title">
           {items.length} expense{items.length !== 1 ? 's' : ''} extracted — review before saving
         </span>
@@ -526,7 +526,7 @@ function GradeReviewCard({ grades: initialGrades, model, scholar, sem, onDiscard
   return (
     <div className="nai-review">
       <div className="nai-review-header">
-        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Claude</span>
+        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Gemini</span>
         <span className="nai-review-title">
           {grades.length} subject{grades.length !== 1 ? 's' : ''} extracted — review before saving
         </span>
@@ -616,10 +616,10 @@ function GradeIngestPanel({ scholar, scholarKeys }) {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
-      if (json.status === 'not_configured') throw new Error('Claude key not configured — add ANTHROPIC_KEY to Supabase secrets.');
+      if (json.status === 'not_configured') throw new Error('Gemini key not configured — add GOOGLE_AI_KEY to Supabase secrets.');
       if (json.status === 'error') throw new Error(json.error || 'Extraction failed.');
-      if (!Array.isArray(json.grades)) throw new Error('Unexpected response from Claude.');
-      if (json.grades.length === 0) { setError('Claude found no grade entries in this document.'); return; }
+      if (!Array.isArray(json.grades)) throw new Error('Unexpected response from Gemini.');
+      if (json.grades.length === 0) { setError('Gemini found no grade entries in this document.'); return; }
       setReview({ grades: json.grades, model: json.model });
     } catch (err) {
       setError(err.message);
@@ -673,7 +673,7 @@ function GradeIngestPanel({ scholar, scholarKeys }) {
         {loading && (
           <div className="nai-loading" style={{ marginBottom: 0 }}>
             <span className="nai-loading-dot" /><span className="nai-loading-dot" /><span className="nai-loading-dot" />
-            <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>Claude is reading the grade report…</span>
+            <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>Gemini is reading the grade report…</span>
           </div>
         )}
       </div>
@@ -756,14 +756,14 @@ function IngestPanel({ scholar, scholarKeys }) {
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
-        if (json.status === 'not_configured') throw new Error('Claude key not configured — add ANTHROPIC_KEY to Supabase secrets.');
+        if (json.status === 'not_configured') throw new Error('Gemini key not configured — add GOOGLE_AI_KEY to Supabase secrets.');
         if (json.status === 'error') throw new Error(json.error || 'Extraction failed.');
         if (Array.isArray(json.items)) allItems.push(...json.items);
       }
 
       for (let i = 0; i < files.length; i++) {
         const f = files[i];
-        setProgress(files.length > 1 ? `Processing file ${i + 1} of ${files.length}…` : 'Claude is reading the document…');
+        setProgress(files.length > 1 ? `Processing file ${i + 1} of ${files.length}…` : 'Gemini is reading the document…');
         const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
@@ -771,7 +771,7 @@ function IngestPanel({ scholar, scholarKeys }) {
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
-        if (json.status === 'not_configured') throw new Error('Claude key not configured — add ANTHROPIC_KEY to Supabase secrets.');
+        if (json.status === 'not_configured') throw new Error('Gemini key not configured — add GOOGLE_AI_KEY to Supabase secrets.');
         if (json.status === 'error') throw new Error(json.error || `Extraction failed for ${f.name}.`);
         if (Array.isArray(json.items)) allItems.push(...json.items);
       }
@@ -780,7 +780,7 @@ function IngestPanel({ scholar, scholarKeys }) {
         setError('No expense line items found in any of the provided documents.');
         return;
       }
-      setReview({ items: allItems, model: 'claude-sonnet-4-6' });
+      setReview({ items: allItems, model: 'gemini-2.5-flash' });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -867,7 +867,7 @@ function IngestPanel({ scholar, scholarKeys }) {
         {loading && (
           <div className="nai-loading" style={{ marginBottom: 0 }}>
             <span className="nai-loading-dot" /><span className="nai-loading-dot" /><span className="nai-loading-dot" />
-            <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>{progress || 'Claude is reading the document…'}</span>
+            <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>{progress || 'Gemini is reading the document…'}</span>
           </div>
         )}
       </div>
@@ -957,14 +957,14 @@ export function NavigatorAI({ id, collapsed, onToggle }) {
               className={`nai-tab${tab === 'ingest' ? ' is-active' : ''}`}
               onClick={() => setTab('ingest')}
             >
-              Ingest receipts
+              Upload receipts
             </button>
             <button
               type="button"
               className={`nai-tab${tab === 'grades' ? ' is-active' : ''}`}
               onClick={() => setTab('grades')}
             >
-              Ingest grades
+              Upload grades
             </button>
           </div>
 
@@ -1060,8 +1060,8 @@ export function NavigatorAI({ id, collapsed, onToggle }) {
           {tab === 'ingest' && (
             <>
               <div className="section-head">
-                <h2 className="section-title">Ingest receipts</h2>
-                <span className="section-note">Claude reads one or more documents and proposes expense line items for your review</span>
+                <h2 className="section-title">Upload receipts</h2>
+                <span className="section-note">Gemini reads one or more documents and proposes expense line items for your review</span>
               </div>
               <IngestPanel scholar={scholar} scholarKeys={scholarKeys} />
             </>
@@ -1070,8 +1070,8 @@ export function NavigatorAI({ id, collapsed, onToggle }) {
           {tab === 'grades' && (
             <>
               <div className="section-head">
-                <h2 className="section-title">Ingest grade report</h2>
-                <span className="section-note">Upload a grade report screenshot — Claude extracts all subjects and grades for review</span>
+                <h2 className="section-title">Upload grade report</h2>
+                <span className="section-note">Upload a grade report screenshot — Gemini extracts all subjects and grades for review</span>
               </div>
               <GradeIngestPanel scholar={scholar} scholarKeys={scholarKeys} />
             </>
