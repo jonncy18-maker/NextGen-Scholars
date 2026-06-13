@@ -82,6 +82,18 @@ Deno.serve(async (req: Request) => {
   // Query — Tier 1 (deterministic DB) then Tier 2 (Gemini advisory)
   if (!text?.trim()) return json({ error: 'Query requires text' }, 400)
 
+  // Privacy guard: decline any query that mentions another scholar by name
+  const otherScholars = VALID_SCHOLARS.filter(s => s !== scholar)
+  const lowerText = text.toLowerCase()
+  if (otherScholars.some(name => lowerText.includes(name))) {
+    return json({
+      tier: 1,
+      answered: true,
+      intent: 'privacy_guard',
+      answer: `For privacy reasons, I can only share information about your own progress — not other scholars'. If you have questions about the program overall, try the Ask AI on the homepage.`,
+    })
+  }
+
   try {
     const t1 = await tier1Resolve(text, scholar, sb)
     if (t1.answered) return json({ tier: 1, ...t1 })
