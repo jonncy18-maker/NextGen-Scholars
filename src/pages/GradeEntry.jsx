@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
+import { ScholarAIPanel } from '../components/ScholarAIPanel.jsx';
+import { ScholarIngestPanel } from '../components/ScholarIngestPanel.jsx';
 
 const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
 const ACCEPTED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
@@ -287,6 +289,12 @@ export function GradeEntry({ scholarKey }) {
           </div>
         </header>
 
+        <ScholarAIPanel
+          scholarKey={scholarKey}
+          ingestionLabel="Upload grade report"
+          onGoToIngestion={() => document.getElementById('scholar-grade-ingest')?.scrollIntoView({ behavior: 'smooth' })}
+        />
+
         {/* ── GPA card ── */}
         <section className="sp-section">
           <div className="ge-gpa-card">
@@ -460,6 +468,13 @@ export function GradeEntry({ scholarKey }) {
             ))}
           </section>
         )}
+
+        <ScholarIngestPanel
+          id="scholar-grade-ingest"
+          type="grades"
+          scholarKey={scholarKey}
+          sem={config.semKey}
+        />
 
         <footer className="sp-footer">
           <div className="sp-mark">NGS</div>

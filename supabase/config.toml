@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.ask-public]
 verify_jwt = false
+
+[functions.ask-scholar]
+verify_jwt = false

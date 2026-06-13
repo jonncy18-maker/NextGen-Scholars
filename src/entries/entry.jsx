@@ -6,6 +6,8 @@ import { updateExpense, writeActivityLog, writeSubmission, resubmitExpense, mark
 import { loadFromSupabase, loadScholarSubmissions } from '../supabase-loader.js';
 import { supabase } from '../lib/supabase.js';
 import { groupExpenses } from '../components/expenses/filterHelpers.js';
+import { ScholarAIPanel } from '../components/ScholarAIPanel.jsx';
+import { ScholarIngestPanel } from '../components/ScholarIngestPanel.jsx';
 import '../styles/entry.css';
 
 async function loadConfig() {
@@ -610,6 +612,12 @@ function ExpenseForm({ scholar, onLogout }) {
       </header>
 
       <main className="ef-main">
+        <ScholarAIPanel
+          scholarKey={scholar.key}
+          ingestionLabel="Upload receipt"
+          onGoToIngestion={() => document.getElementById('scholar-expense-ingest')?.scrollIntoView({ behavior: 'smooth' })}
+        />
+
         {expensesBySem !== null && (
           <div className="ef-summary">
             <div className="ef-summary-stat">
@@ -793,6 +801,13 @@ function ExpenseForm({ scholar, onLogout }) {
           onCancelEdit={cancelEdit}
           onSaveEdit={saveEdit}
           onRequestDelete={requestDelete}
+        />
+
+        <ScholarIngestPanel
+          id="scholar-expense-ingest"
+          type="expenses"
+          scholarKey={scholar.key}
+          sem={currentSem}
         />
       </main>
     </div>

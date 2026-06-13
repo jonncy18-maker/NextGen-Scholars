@@ -6,6 +6,7 @@ import {
   IconExpenses, IconGrades, IconClock, IconIsland,
   IconBriefcase, IconTrophy, IconMessage, IconDocument, IconArrow,
 } from '../components/ScholarIcons.jsx';
+import { ScholarAIPanel } from '../components/ScholarAIPanel.jsx';
 
 // Stage, tagline, and englishTarget are portal-specific copy that doesn't live in Supabase.
 // name, trackCode, and semKey are derived from NGS_DATA to avoid duplication.
@@ -160,6 +161,8 @@ export function ScholarHome({ scholarKey }) {
             <p className="sp-tagline">{config.tagline}</p>
           </div>
         </header>
+
+        <ScholarAIPanel scholarKey={scholarKey} />
 
         <section className="sp-section">
           <div className="sp-eyebrow">
