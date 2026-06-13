@@ -323,6 +323,37 @@ export function ResultDisplay({ result }) {
   return null;
 }
 
+// ── Model toggle (Gemini / Claude) ────────────────────────────────────────────
+
+function ModelToggle({ value, onChange, disabled }) {
+  const btn = (id, label) => (
+    <button
+      type="button"
+      onClick={() => onChange(id)}
+      disabled={disabled}
+      style={{
+        padding: '4px 10px',
+        fontSize: 11,
+        fontFamily: 'var(--ngs-mono)',
+        fontWeight: value === id ? 700 : 400,
+        background: value === id ? 'var(--ngs-navy)' : 'transparent',
+        color: value === id ? '#fff' : 'var(--ngs-muted)',
+        border: '1px solid var(--ngs-navy)',
+        borderRadius: id === 'gemini' ? '4px 0 0 4px' : '0 4px 4px 0',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        transition: 'background 0.15s, color 0.15s',
+        lineHeight: 1.4,
+      }}
+    >{label}</button>
+  );
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginLeft: 'auto' }}>
+      {btn('gemini', 'Gemini')}
+      {btn('claude', 'Claude')}
+    </div>
+  );
+}
+
 // ── Ingest review card ────────────────────────────────────────────────────────
 
 function ReviewCard({ items: initialItems, model, scholar, sem, onDiscard, onConfirmed }) {
@@ -577,13 +608,14 @@ function GradeReviewCard({ grades: initialGrades, model, scholar, sem, onDiscard
 
 function GradeIngestPanel({ scholar, scholarKeys }) {
   const [gradeScholar, setGradeScholar] = useState(scholar);
-  const [sem, setSem]         = useState('Y1S1');
-  const [file, setFile]       = useState(null);
-  const [isDragOver, setOver] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState(null);
-  const [review, setReview]   = useState(null);
-  const [success, setSuccess] = useState(null);
+  const [sem, setSem]           = useState('Y1S1');
+  const [modelPref, setModel]   = useState('gemini');
+  const [file, setFile]         = useState(null);
+  const [isDragOver, setOver]   = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState(null);
+  const [review, setReview]     = useState(null);
+  const [success, setSuccess]   = useState(null);
   const fileInputRef = useRef(null);
 
   const readFileAsBase64 = (f) => new Promise((res, rej) => {
@@ -621,7 +653,7 @@ function GradeIngestPanel({ scholar, scholarKeys }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scholar: gradeScholar, type: 'grade_ingest', sem, file: { base64: file.base64, mime: file.mime } }),
+        body: JSON.stringify({ scholar: gradeScholar, type: 'grade_ingest', sem, model: modelPref, file: { base64: file.base64, mime: file.mime } }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
@@ -646,6 +678,7 @@ function GradeIngestPanel({ scholar, scholarKeys }) {
         <select className="nai-scholar-select" value={sem} onChange={e => setSem(e.target.value)} disabled={loading}>
           {SEMESTER_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
+        <ModelToggle value={modelPref} onChange={setModel} disabled={loading} />
       </div>
 
       <div
@@ -709,6 +742,7 @@ function GradeIngestPanel({ scholar, scholarKeys }) {
 function IngestPanel({ scholar, scholarKeys }) {
   const [ingestScholar, setIngestScholar] = useState(scholar);
   const [sem, setSem]           = useState('Y1S1');
+  const [modelPref, setModel]   = useState('gemini');
   const [files, setFiles]       = useState([]);   // [{ name, base64, mime }]
   const [pasteText, setPaste]   = useState('');
   const [isDragOver, setOver]   = useState(false);
@@ -771,7 +805,7 @@ function IngestPanel({ scholar, scholarKeys }) {
         const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scholar: ingestScholar, type: 'ingest', sem, text: pasteText.trim() }),
+          body: JSON.stringify({ scholar: ingestScholar, type: 'ingest', sem, model: modelPref, text: pasteText.trim() }),
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
@@ -786,7 +820,7 @@ function IngestPanel({ scholar, scholarKeys }) {
         const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scholar: ingestScholar, type: 'ingest', sem, file: { base64: f.base64, mime: f.mime } }),
+          body: JSON.stringify({ scholar: ingestScholar, type: 'ingest', sem, model: modelPref, file: { base64: f.base64, mime: f.mime } }),
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
@@ -828,6 +862,7 @@ function IngestPanel({ scholar, scholarKeys }) {
         <select className="nai-scholar-select" value={sem} onChange={e => setSem(e.target.value)} disabled={loading}>
           {SEMESTER_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
+        <ModelToggle value={modelPref} onChange={setModel} disabled={loading} />
       </div>
 
       {/* Drop zone */}
