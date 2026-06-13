@@ -602,6 +602,15 @@ function GradeIngestPanel({ scholar, scholarKeys }) {
 
   function onDrop(e) { e.preventDefault(); setOver(false); handleFileDrop(e.dataTransfer.files?.[0]); }
 
+  function handlePaste(e) {
+    const item = Array.from(e.clipboardData?.items || []).find(i => i.kind === 'file' && i.type.startsWith('image/'));
+    if (!item) return;
+    e.preventDefault();
+    const raw = item.getAsFile();
+    const ext = raw.type.split('/')[1] || 'png';
+    handleFileDrop(new File([raw], `screenshot-${Date.now()}.${ext}`, { type: raw.type }));
+  }
+
   async function handleExtract(e) {
     e?.preventDefault();
     if (loading || !file) return;
@@ -648,6 +657,7 @@ function GradeIngestPanel({ scholar, scholarKeys }) {
         role="button" tabIndex={0}
         onKeyDown={e => e.key === 'Enter' && fileInputRef.current?.click()}
         aria-label="Upload grade report"
+      onPaste={handlePaste}
       >
         <span className="nai-drop-icon">🎓</span>
         {file ? (
@@ -659,7 +669,7 @@ function GradeIngestPanel({ scholar, scholarKeys }) {
         ) : (
           <>
             <span className="nai-drop-label">Drop a grade report or transcript screenshot</span>
-            <span className="nai-drop-sub">JPEG · PNG · WEBP · PDF</span>
+            <span className="nai-drop-sub">JPEG · PNG · WEBP · PDF · or paste</span>
           </>
         )}
         <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
@@ -737,6 +747,15 @@ function IngestPanel({ scholar, scholarKeys }) {
     if (e.dataTransfer.files?.length) addFiles(e.dataTransfer.files);
   }
 
+  function handlePaste(e) {
+    const item = Array.from(e.clipboardData?.items || []).find(i => i.kind === 'file' && i.type.startsWith('image/'));
+    if (!item) return;
+    e.preventDefault();
+    const raw = item.getAsFile();
+    const ext = raw.type.split('/')[1] || 'png';
+    addFiles([new File([raw], `screenshot-${Date.now()}.${ext}`, { type: raw.type })]);
+  }
+
   async function handleExtract(e) {
     e?.preventDefault();
     if (loading || (files.length === 0 && !pasteText.trim())) return;
@@ -801,7 +820,7 @@ function IngestPanel({ scholar, scholarKeys }) {
   const canExtract = !loading && (files.length > 0 || pasteText.trim().length > 0);
 
   return (
-    <form className="nai-ingest" onSubmit={handleExtract}>
+    <form className="nai-ingest" onSubmit={handleExtract} onPaste={handlePaste}>
       <div className="nai-ingest-row">
         <select className="nai-scholar-select" value={ingestScholar} onChange={e => setIngestScholar(e.target.value)} disabled={loading}>
           {scholarKeys.map(k => <option key={k} value={k}>{k.charAt(0).toUpperCase() + k.slice(1)}</option>)}
@@ -831,7 +850,7 @@ function IngestPanel({ scholar, scholarKeys }) {
         ) : (
           <>
             <span className="nai-drop-label">Drop receipt images here, or click to upload</span>
-            <span className="nai-drop-sub">JPEG · PNG · WEBP · PDF · Multiple files supported</span>
+            <span className="nai-drop-sub">JPEG · PNG · WEBP · PDF · Multiple files · or paste</span>
           </>
         )}
         <input ref={fileInputRef} type="file" multiple
