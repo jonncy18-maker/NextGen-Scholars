@@ -12,7 +12,7 @@ function gradeAvg(prelim, midterm, finalGrade) {
 
 const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
 
-const QUICK_PROMPTS = [
+export const QUICK_PROMPTS = [
   { label: 'Total spend',        tpl: s => `How much has ${s} spent overall?` },
   { label: 'Budget status',      tpl: s => `Is ${s} over budget?` },
   { label: 'GPA history',        tpl: s => `How has ${s}'s GPA changed?` },
@@ -272,7 +272,7 @@ function IntentResult({ intent, data, answer }) {
   }
 }
 
-function ResultDisplay({ result }) {
+export function ResultDisplay({ result }) {
   if (!result) return null;
 
   if (result.tier === 1 && result.answered) {

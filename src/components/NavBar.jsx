@@ -15,6 +15,7 @@ export function NavBar({
   sheetsStatus, onRefresh,
   fxPanelOpen, onFxPanelToggle,
   onExpandAll, onCollapseAll,
+  aiDrawerOpen, onAiDrawerToggle,
 }) {
   const [inputVal, setInputVal] = useState(String(fxRate));
 
@@ -44,6 +45,13 @@ export function NavBar({
               </button>
             ))}
           </div>
+          <button
+            className={`nav-ai-btn${aiDrawerOpen ? ' is-active' : ''}`}
+            onClick={onAiDrawerToggle}
+            title="Open Navigator AI"
+          >
+            Ask AI
+          </button>
           <div className="nav-section-actions">
             <button className="nav-sect-btn" onClick={onExpandAll} title="Expand all sections">Expand all</button>
             <button className="nav-sect-btn" onClick={onCollapseAll} title="Collapse all sections">Collapse all</button>
