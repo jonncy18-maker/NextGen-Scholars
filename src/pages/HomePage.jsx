@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { NGS_DATA } from '../../scholars-data.js';
 import { JOURNEY_STAGES } from '../constants.js';
 import { JourneyDropdown } from '../components/JourneyDropdown.jsx';
+import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
 import { supabase } from '../lib/supabase.js';
 
 const PALETTE = {
@@ -730,6 +731,7 @@ export function NGSSite({ isDesktop }) {
       <Apply defaultTrack={defaultTrack}/>
       <Footer/>
       {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
+      <PublicAskWidget />
     </div>
   );
 }
