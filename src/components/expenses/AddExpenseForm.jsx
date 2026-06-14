@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext.jsx';
-import { EXPENSE_CATS, SEMESTER_OPTIONS } from '../../constants.js';
+import { EXPENSE_CATS, EXPENSE_BUCKETS, CAT_TO_BUCKET, SEMESTER_OPTIONS } from '../../constants.js';
 
 function makeEmptyRow(defaultSem) {
   return {
@@ -8,6 +8,7 @@ function makeEmptyRow(defaultSem) {
     sem:    defaultSem || '',
     item:   '',
     cat:    EXPENSE_CATS[0],
+    bucket: CAT_TO_BUCKET[EXPENSE_CATS[0]] || 'college',
     amount: '',
     qty:    '1',
     date:   new Date().toISOString().split('T')[0],
@@ -39,6 +40,7 @@ export function AddExpenseForm({ scholar, onAdd, onCancel }) {
     sem:    defaultSem,
     item:   '',
     cat:    EXPENSE_CATS[0],
+    bucket: CAT_TO_BUCKET[EXPENSE_CATS[0]] || 'college',
     amount: '',
     qty:    '1',
     date:   todayISO,
@@ -66,7 +68,11 @@ export function AddExpenseForm({ scholar, onAdd, onCancel }) {
   const splitTotal     = validSplitDeps.reduce((s, d) => s + parseFloat(d.amount), 0);
   const splitValid     = form.item.trim() && form.sem.trim() && validSplitDeps.length >= 2;
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+  const set = (k, v) => setForm(f => {
+    const update = { ...f, [k]: v };
+    if (k === 'cat') update.bucket = CAT_TO_BUCKET[v] || f.bucket || 'college';
+    return update;
+  });
   const singleValid = form.item.trim() && form.amount && !isNaN(parseFloat(form.amount)) && parseFloat(form.amount) > 0 && form.sem.trim();
 
   function resetSingleForm() {
@@ -86,6 +92,7 @@ export function AddExpenseForm({ scholar, onAdd, onCancel }) {
           id:       `local_${Date.now()}_${i}`,
           item:     form.item.trim(),
           cat:      form.cat,
+          bucket:   form.bucket || CAT_TO_BUCKET[form.cat] || 'college',
           amount:   parseFloat(d.amount),
           qty:      1,
           date:     d.date,
@@ -108,6 +115,7 @@ export function AddExpenseForm({ scholar, onAdd, onCancel }) {
       id:     `local_${Date.now()}`,
       item:   form.item.trim(),
       cat:    form.cat,
+      bucket: form.bucket || CAT_TO_BUCKET[form.cat] || 'college',
       amount: parseFloat(form.amount),
       qty:    parseInt(form.qty) || 1,
       date:   form.date,
@@ -148,6 +156,7 @@ export function AddExpenseForm({ scholar, onAdd, onCancel }) {
         id:     `local_${Date.now()}_${r._id}`,
         item:   r.item.trim(),
         cat:    r.cat,
+        bucket: r.bucket || CAT_TO_BUCKET[r.cat] || 'college',
         amount: parseFloat(r.amount),
         qty:    parseInt(r.qty) || 1,
         date:   r.date,
@@ -219,6 +228,12 @@ export function AddExpenseForm({ scholar, onAdd, onCancel }) {
             <label>Category</label>
             <select value={form.cat} onChange={e => set('cat', e.target.value)}>
               {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label>Bucket</label>
+            <select value={form.bucket} onChange={e => set('bucket', e.target.value)}>
+              {EXPENSE_BUCKETS.map(b => <option key={b.key} value={b.key}>{b.label}</option>)}
             </select>
           </div>
 
@@ -364,6 +379,7 @@ export function AddExpenseForm({ scholar, onAdd, onCancel }) {
             <tr>
               <th>Item</th>
               <th>Category</th>
+              <th>Bucket</th>
               <th>Amount (₱)</th>
               <th>Qty</th>
               <th>Date</th>
@@ -388,8 +404,16 @@ export function AddExpenseForm({ scholar, onAdd, onCancel }) {
                   />
                 </td>
                 <td>
-                  <select className="add-exp-multi-input" value={r.cat} onChange={e => setRow(r._id, 'cat', e.target.value)}>
+                  <select className="add-exp-multi-input" value={r.cat} onChange={e => {
+                    setRow(r._id, 'cat', e.target.value);
+                    setRow(r._id, 'bucket', CAT_TO_BUCKET[e.target.value] || r.bucket || 'college');
+                  }}>
                     {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </td>
+                <td>
+                  <select className="add-exp-multi-input add-exp-multi-sm" value={r.bucket || 'college'} onChange={e => setRow(r._id, 'bucket', e.target.value)}>
+                    {EXPENSE_BUCKETS.map(b => <option key={b.key} value={b.key}>{b.label}</option>)}
                   </select>
                 </td>
                 <td>

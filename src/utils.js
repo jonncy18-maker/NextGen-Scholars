@@ -38,11 +38,27 @@ export function allExpenses(s) {
 }
 
 export function scholarTotals(s) {
-  const university = allExpenses(s).reduce((t, e) => t + (e.avb === 'Actual' ? (e.amount || 0) * (e.qty || 1) : 0), 0);
-  const milestones = (s.milestones || []).reduce((t, m) => t + (m.state === 'done' ? (m.amountPhp || 0) : 0), 0);
-  const travel = (s.travels || []).reduce((t, v) => t + (v.state === 'done' ? (v.amountPhp || 0) : 0), 0);
+  const expenses = allExpenses(s);
+  const byBucket = {};
+  expenses.forEach(e => {
+    if (e.avb !== 'Actual') return;
+    const b = e.bucket || 'college';
+    byBucket[b] = (byBucket[b] || 0) + (e.amount || 0) * (e.qty || 1);
+  });
+  const total = Object.values(byBucket).reduce((t, v) => t + v, 0);
   const allocated = Object.values(s.budgets || {}).reduce((t, v) => t + (typeof v === 'number' ? v : 0), 0);
-  return { university, milestones, travel, total: university + milestones + travel, allocated };
+  return {
+    byBucket,
+    college:      byBucket.college      || 0,
+    milestone:    byBucket.milestone    || 0,
+    life:         byBucket.life         || 0,
+    travel:       byBucket.travel       || 0,
+    exam:         byBucket.exam         || 0,
+    professional: byBucket.professional || 0,
+    admin:        byBucket.admin        || 0,
+    total,
+    allocated,
+  };
 }
 
 export function nextMilestone(s) {

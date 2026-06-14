@@ -2,6 +2,7 @@
 // shape as scholars-data.js so navigator.jsx needs no structural changes.
 
 import { supabase } from './lib/supabase.js';
+import { CAT_TO_BUCKET } from './constants.js';
 
 function num(v) {
   const n = parseFloat(v);
@@ -61,6 +62,7 @@ export async function loadFromSupabase() {
           amount: num(e.amount),
           qty:    num(e.qty) || 1,
           cat:    e.cat,
+          bucket: e.bucket || CAT_TO_BUCKET[e.cat] || 'college',
           date:   e.date,
           sent:   e.sent,
           avb:    e.avb,

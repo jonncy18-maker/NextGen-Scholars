@@ -6,7 +6,7 @@ import { writeSent } from '../../supabase-writer.js';
 import { FilterPanel } from './FilterPanel.jsx';
 import { TotalsRow } from './ExpenseCharts.jsx';
 import { EMPTY_FILTERS, countActiveFilters, applyFilters, applySorting, groupExpenses, groupMultiLevel } from './filterHelpers.js';
-import { EXPENSE_CATS, SEMESTER_OPTIONS } from '../../constants.js';
+import { EXPENSE_CATS, EXPENSE_BUCKETS, CAT_TO_BUCKET, SEMESTER_OPTIONS } from '../../constants.js';
 import { MultiGroupModal } from './MultiGroupModal.jsx';
 
 const SINGLE_DIM_OPTIONS = [
@@ -14,6 +14,7 @@ const SINGLE_DIM_OPTIONS = [
   ['semester', 'Semester'],
   ['month',    'Month'],
   ['category', 'Category'],
+  ['bucket',   'Bucket'],
 ];
 
 function SortTh({ label, field, sortField, sortDir, onSort, className }) {
@@ -119,6 +120,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
     setEditDraft({
       item:     r.item   || '',
       cat:      r.cat    || '',
+      bucket:   r.bucket || CAT_TO_BUCKET[r.cat] || 'college',
       date:     r.date   || '',
       amount:   String(r.amount || ''),
       qty:      String(r.qty    || 1),
@@ -146,6 +148,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
     const fields = {
       item:   editDraft.item.trim(),
       cat:    editDraft.cat,
+      bucket: editDraft.bucket || CAT_TO_BUCKET[editDraft.cat] || 'college',
       date:   editDraft.date,
       amount: parseFloat(editDraft.amount) || 0,
       qty:    parseInt(editDraft.qty, 10)  || 1,
@@ -385,8 +388,18 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
                 </label>
                 <label className="exp-edit-field">
                   <span>Category</span>
-                  <select value={editDraft.cat} onChange={ev => setEditDraft(d => ({ ...d, cat: ev.target.value }))}>
+                  <select value={editDraft.cat} onChange={ev => setEditDraft(d => ({
+                    ...d,
+                    cat: ev.target.value,
+                    bucket: CAT_TO_BUCKET[ev.target.value] || d.bucket || 'college',
+                  }))}>
                     {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </label>
+                <label className="exp-edit-field">
+                  <span>Bucket</span>
+                  <select value={editDraft.bucket || 'college'} onChange={ev => setEditDraft(d => ({ ...d, bucket: ev.target.value }))}>
+                    {EXPENSE_BUCKETS.map(b => <option key={b.key} value={b.key}>{b.label}</option>)}
                   </select>
                 </label>
                 {!editSplitActive && (

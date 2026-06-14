@@ -80,11 +80,15 @@ create table if not exists expenses (
   amount  numeric default 0,
   qty     numeric default 1,
   cat     text,
+  bucket  text default 'college',
   date    text,
   sent    text,
   avb     text,
   vendor  text default ''
 );
+
+-- Migration: add bucket to existing databases
+-- alter table expenses add column if not exists bucket text default 'college';
 
 -- ── ALERTS ────────────────────────────────────────────────────────────────────
 create table if not exists alerts (

@@ -12,6 +12,33 @@ export const EXPENSE_CATS = [
   'Medical Equipment', 'Motor', 'Milestones', 'Other',
 ];
 
+export const EXPENSE_BUCKETS = [
+  { key: 'college',      label: 'College' },
+  { key: 'milestone',    label: 'Milestone' },
+  { key: 'travel',       label: 'Travel' },
+  { key: 'life',         label: 'Life' },
+  { key: 'exam',         label: 'Exam' },
+  { key: 'professional', label: 'Professional' },
+  { key: 'admin',        label: 'Admin' },
+];
+
+// Determines the default bucket for a given expense category.
+// Motor is a milestone reward (motorcycle); Milestones cat tracks reward disbursements.
+export const CAT_TO_BUCKET = {
+  'Tuition':             'college',
+  'Enrollment':          'college',
+  'Uniforms':            'college',
+  'Books':               'college',
+  'Printing & Research': 'college',
+  'School Supplies':     'college',
+  'Activities':          'college',
+  'Medical Equipment':   'college',
+  'Other':               'college',
+  'Milestones':          'milestone',
+  'Motor':               'milestone',
+  'Living Expenses':     'life',
+};
+
 // Scholar name → CSS modifier class. Keys are lowercase to match data keys.
 export const NAMECLASS = { claire: '', april: 't-april', aljane: 't-aljane' };
 

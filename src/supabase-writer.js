@@ -2,6 +2,7 @@
 // throw on error so callers can surface failures in the UI.
 
 import { supabase } from './lib/supabase.js';
+import { CAT_TO_BUCKET } from './constants.js';
 
 export async function writeExpense(scholar, exp) {
   const { error } = await supabase.from('expenses').insert({
@@ -10,6 +11,7 @@ export async function writeExpense(scholar, exp) {
     sem:      exp.sem,
     item:     exp.item,
     cat:      exp.cat,
+    bucket:   exp.bucket || CAT_TO_BUCKET[exp.cat] || 'college',
     amount:   exp.amount,
     qty:      exp.qty,
     date:     exp.date,

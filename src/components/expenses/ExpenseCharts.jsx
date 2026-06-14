@@ -2,27 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { useFmt } from '../../context/FxContext.jsx';
 import { scholarTotals, allExpenses } from '../../utils.js';
 
+const BUCKET_CARD_LABELS = {
+  college:      'College',
+  milestone:    'Milestones',
+  life:         'Life',
+  travel:       'Travel',
+  exam:         'Exam',
+  professional: 'Professional',
+  admin:        'Admin',
+};
+
 export function TotalsRow({ s, currency }) {
   const $fmt = useFmt();
   const b = scholarTotals(s);
+  const visibleBuckets = Object.entries(b.byBucket || {}).filter(([, v]) => v > 0);
   return (
     <div className="totals-row">
       <div className="total-card lead">
         <div className="total-val">{$fmt(b.total, currency)}</div>
         <div className="total-lbl">Total Invested</div>
       </div>
-      <div className="total-card">
-        <div className="total-val">{$fmt(b.university, currency)}</div>
-        <div className="total-lbl">University</div>
-      </div>
-      <div className="total-card">
-        <div className="total-val">{$fmt(b.milestones, currency)}</div>
-        <div className="total-lbl">Milestones</div>
-      </div>
-      <div className="total-card">
-        <div className="total-val">{$fmt(b.travel, currency)}</div>
-        <div className="total-lbl">Trips</div>
-      </div>
+      {visibleBuckets.map(([key, val]) => (
+        <div key={key} className="total-card">
+          <div className="total-val">{$fmt(val, currency)}</div>
+          <div className="total-lbl">{BUCKET_CARD_LABELS[key] || key}</div>
+        </div>
+      ))}
     </div>
   );
 }
