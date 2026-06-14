@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import { useMediaQuery } from './hooks/useMediaQuery.js';
 
 import './styles/base.css';
@@ -123,7 +123,7 @@ class ErrorBoundary extends Component {
 export default function App() {
   return (
     <ErrorBoundary>
-      <BrowserRouter basename="/NextGen-Scholars">
+      <HashRouter>
         <Routes>
           <Route path="/" element={<HomeRoute />} />
           <Route path="/claire" element={<ClairePage />} />
@@ -135,7 +135,7 @@ export default function App() {
           <Route path="/grades/:scholar" element={<GradeRoute />} />
           <Route path="*" element={<LegacyRedirect />} />
         </Routes>
-      </BrowserRouter>
+      </HashRouter>
     </ErrorBoundary>
   );
 }
