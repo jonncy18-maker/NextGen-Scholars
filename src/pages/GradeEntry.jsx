@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
-import { ScholarAIPanel } from '../components/ScholarAIPanel.jsx';
+import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { ScholarIngestPanel } from '../components/ScholarIngestPanel.jsx';
 
 const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
@@ -289,7 +289,7 @@ export function GradeEntry({ scholarKey }) {
           </div>
         </header>
 
-        <ScholarAIPanel
+        <ScholarChatPanel
           scholarKey={scholarKey}
           ingestionLabel="Upload grade report"
           onGoToIngestion={() => document.getElementById('scholar-grade-ingest')?.scrollIntoView({ behavior: 'smooth' })}

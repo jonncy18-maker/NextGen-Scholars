@@ -74,9 +74,20 @@ export async function tier2Ask(
   question: string,
   ctx: ScholarContext,
   apiKey: string,
+  history?: { role: 'user' | 'model'; text: string }[],
 ): Promise<Tier2Result> {
-  const userMessage =
-    `Scholar data:\n\`\`\`json\n${compactContext(ctx)}\n\`\`\`\n\nQuestion: ${question}`
+  const ctxBlock = `Scholar data:\n\`\`\`json\n${compactContext(ctx)}\n\`\`\`\n\n`
+
+  // Build multi-turn contents. The context block is prepended to the first user turn.
+  const contents: { role: string; parts: { text: string }[] }[] = []
+  if (history && history.length > 0) {
+    history.forEach((m, i) => {
+      contents.push({ role: m.role, parts: [{ text: i === 0 ? ctxBlock + m.text : m.text }] })
+    })
+    contents.push({ role: 'user', parts: [{ text: question }] })
+  } else {
+    contents.push({ role: 'user', parts: [{ text: `${ctxBlock}Question: ${question}` }] })
+  }
 
   let res: Response
   try {
@@ -85,7 +96,7 @@ export async function tier2Ask(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         system_instruction: { parts: [{ text: NGS_SYSTEM_PROMPT }] },
-        contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+        contents,
         generationConfig: {
           maxOutputTokens: 1024,
           temperature: 0.3,

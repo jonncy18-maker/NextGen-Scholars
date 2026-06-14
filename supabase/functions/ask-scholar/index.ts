@@ -28,11 +28,12 @@ Deno.serve(async (req: Request) => {
   if (req.method !== 'POST')    return json({ error: 'Method not allowed' }, 405)
 
   let body: {
-    scholar?: string
-    type?:    string
-    text?:    string
-    sem?:     string
-    file?:    { base64: string; mime: string }
+    scholar?:  string
+    type?:     string
+    text?:     string
+    sem?:      string
+    file?:     { base64: string; mime: string }
+    messages?: { role: string; text: string }[]
   }
   try {
     body = await req.json()
@@ -40,7 +41,7 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Invalid JSON body' }, 400)
   }
 
-  const { scholar, type = 'query', text, sem, file } = body
+  const { scholar, type = 'query', text, sem, file, messages } = body
 
   if (!scholar || !VALID_SCHOLARS.includes(scholar)) {
     return json({ error: 'Invalid or missing scholar key' }, 400)
@@ -102,7 +103,10 @@ Deno.serve(async (req: Request) => {
     if (!apiKey) return json({ tier: 2, status: 'not_configured' }, 503)
 
     const ctx = await buildContext(scholar, sb)
-    const t2  = await tier2Ask(text, ctx, apiKey)
+    const history = (messages || [])
+      .filter(m => m.role === 'user' || m.role === 'model')
+      .map(m => ({ role: m.role as 'user' | 'model', text: m.text }))
+    const t2 = await tier2Ask(text, ctx, apiKey, history.length ? history : undefined)
 
     if (t2.answered) return json({ tier: 2, answer: t2.answer, model: t2.model })
     return json({ tier: 2, status: 'error', error: t2.error }, 502)
