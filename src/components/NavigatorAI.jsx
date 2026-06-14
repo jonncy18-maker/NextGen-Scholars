@@ -399,7 +399,7 @@ function ReviewCard({ items: initialItems, model, scholar, sem, onDiscard, onCon
   return (
     <div className="nai-review">
       <div className="nai-review-header">
-        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Gemini</span>
+        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Claude</span>
         <span className="nai-review-title">
           {items.length} expense{items.length !== 1 ? 's' : ''} extracted — review before saving
         </span>
@@ -587,7 +587,7 @@ function GradeReviewCard({ grades: initialGrades, model, scholar, sem, onDiscard
   return (
     <div className="nai-review">
       <div className="nai-review-header">
-        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Gemini</span>
+        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Claude</span>
         <span className="nai-review-title">
           {grades.length} subject{grades.length !== 1 ? 's' : ''} extracted — review before saving
         </span>
@@ -663,7 +663,7 @@ function GradeReviewCard({ grades: initialGrades, model, scholar, sem, onDiscard
 export function GradeIngestPanel({ scholar, scholarKeys }) {
   const [gradeScholar, setGradeScholar] = useState(scholar);
   const [sem, setSem]           = useState('Y1S1');
-  const [modelPref, setModel]   = useState('gemini');
+  const [modelPref, setModel]   = useState('claude');
   const [file, setFile]         = useState(null);
   const [isDragOver, setOver]   = useState(false);
   const [loading, setLoading]   = useState(false);
@@ -796,7 +796,7 @@ export function GradeIngestPanel({ scholar, scholarKeys }) {
 export function IngestPanel({ scholar, scholarKeys }) {
   const [ingestScholar, setIngestScholar] = useState(scholar);
   const [sem, setSem]           = useState('Y1S1');
-  const [modelPref, setModel]   = useState('gemini');
+  const [modelPref, setModel]   = useState('claude');
   const [files, setFiles]       = useState([]);   // [{ name, base64, mime }]
   const [pasteText, setPaste]   = useState('');
   const [isDragOver, setOver]   = useState(false);

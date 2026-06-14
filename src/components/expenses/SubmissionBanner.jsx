@@ -122,8 +122,7 @@ export function SubmissionBanner({
 
   const subCount  = submissions?.length  || 0;
   const feedCount = feed?.length         || 0;
-  const sysCount  = dbAlerts?.length     || 0;
-  const total     = subCount + feedCount + sysCount;
+  const total     = subCount + feedCount;
   const hasPending = total > 0;
 
   return (
@@ -156,22 +155,6 @@ export function SubmissionBanner({
               <button className="sub-modal-close" onClick={() => setOpen(false)}>×</button>
             </div>
             <div className="sub-modal-body">
-              {sysCount > 0 && (
-                <div className="sys-alerts-block">
-                  {(dbAlerts || []).map(a => (
-                    <div key={a.id} className={`sys-alert sys-alert-${a.severity}`}>
-                      <div className="sys-alert-body">
-                        <span className={`sys-alert-pill sys-alert-pill-${a.severity}`}>
-                          {a.severity === 'critical' ? '⚠ Critical' : '⚠ Warning'}
-                        </span>
-                        <span className="sys-alert-title">{a.title}</span>
-                        {a.sub && <span className="sys-alert-sub">{a.sub}</span>}
-                      </div>
-                      <button className="alert-x" aria-label="Dismiss" onClick={() => onDismissAlert(a.id)}>×</button>
-                    </div>
-                  ))}
-                </div>
-              )}
               <div className="activity-list">
                 {total === 0 && (
                   <div className="alert-empty">

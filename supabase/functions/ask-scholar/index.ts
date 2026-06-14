@@ -6,7 +6,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { tier1Resolve }             from '../ask/tier1.ts'
 import { buildContext }             from '../ask/context.ts'
 import { tier2Ask }                 from '../ask/tier2.ts'
-import { tier3Ingest, tier3GradeIngest } from '../ask/tier3.ts'
+import { tier3Ingest, tier3GradeIngest, tier3IngestClaude, tier3GradeIngestClaude } from '../ask/tier3.ts'
 
 const VALID_SCHOLARS = ['claire', 'april', 'aljane']
 
@@ -32,6 +32,7 @@ Deno.serve(async (req: Request) => {
     type?:     string
     text?:     string
     sem?:      string
+    model?:    'gemini' | 'claude'
     file?:     { base64: string; mime: string }
     messages?: { role: string; text: string }[]
     grades?:   unknown[]
@@ -42,7 +43,7 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Invalid JSON body' }, 400)
   }
 
-  const { scholar, type = 'query', text, sem, file, messages, grades } = body
+  const { scholar, type = 'query', text, sem, model: modelPref, file, messages, grades } = body
 
   if (!scholar || !VALID_SCHOLARS.includes(scholar)) {
     return json({ error: 'Invalid or missing scholar key' }, 400)
@@ -53,9 +54,20 @@ Deno.serve(async (req: Request) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   )
 
-  // Expense receipt extraction — Tier 3 only (student reviews, then submits via frontend)
+  // Expense receipt extraction — Tier 3 (student reviews, then submits via frontend)
   if (type === 'ingest') {
     if (!file && !text) return json({ error: 'Ingest requires file or text' }, 400)
+    if (modelPref === 'claude') {
+      const anthropicKey = Deno.env.get('ANTHROPIC_KEY')
+      if (!anthropicKey) return json({ tier: 3, status: 'not_configured' }, 503)
+      try {
+        const t3 = await tier3IngestClaude({ text, file }, scholar, anthropicKey)
+        if (t3.answered) return json({ tier: 3, items: t3.items, model: t3.model })
+        return json({ tier: 3, status: 'error', error: t3.error }, 502)
+      } catch (err) {
+        return json({ error: (err as Error).message ?? 'Ingest failed' }, 500)
+      }
+    }
     const apiKey = Deno.env.get('GOOGLE_AI_KEY')
     if (!apiKey) return json({ tier: 3, status: 'not_configured' }, 503)
     try {
@@ -67,9 +79,20 @@ Deno.serve(async (req: Request) => {
     }
   }
 
-  // Grade report extraction — Tier 3 only (student reviews, then saves via frontend)
+  // Grade report extraction — Tier 3 (student reviews, then saves via frontend)
   if (type === 'grade_ingest') {
     if (!file && !text) return json({ error: 'Grade ingest requires file or text' }, 400)
+    if (modelPref === 'claude') {
+      const anthropicKey = Deno.env.get('ANTHROPIC_KEY')
+      if (!anthropicKey) return json({ tier: 3, status: 'not_configured' }, 503)
+      try {
+        const t3 = await tier3GradeIngestClaude({ text, file }, scholar, anthropicKey)
+        if (t3.answered) return json({ tier: 3, grades: t3.grades, model: t3.model })
+        return json({ tier: 3, status: 'error', error: t3.error }, 502)
+      } catch (err) {
+        return json({ error: (err as Error).message ?? 'Grade ingest failed' }, 500)
+      }
+    }
     const apiKey = Deno.env.get('GOOGLE_AI_KEY')
     if (!apiKey) return json({ tier: 3, status: 'not_configured' }, 503)
     try {
