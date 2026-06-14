@@ -1,5 +1,6 @@
 export const EMPTY_FILTERS = {
   item: '',
+  buckets: [],
   cats: [],
   dateFrom: '',
   dateTo: '',
@@ -11,6 +12,7 @@ export const EMPTY_FILTERS = {
 
 export function countActiveFilters(f) {
   return (f.item ? 1 : 0) +
+    (f.buckets.length ? 1 : 0) +
     (f.cats.length ? 1 : 0) +
     (f.dateFrom || f.dateTo ? 1 : 0) +
     (f.amtMin !== '' || f.amtMax !== '' ? 1 : 0) +
@@ -21,6 +23,7 @@ export function countActiveFilters(f) {
 export function applyFilters(rows, f) {
   return rows.filter(r => {
     if (f.item && !r.item.toLowerCase().includes(f.item.toLowerCase())) return false;
+    if (f.buckets.length > 0 && !f.buckets.includes(r.bucket || 'college')) return false;
     if (f.cats.length > 0 && !f.cats.includes(r.cat)) return false;
     if (f.dateFrom && r.date < f.dateFrom) return false;
     if (f.dateTo && r.date > f.dateTo) return false;
@@ -46,6 +49,7 @@ function getGroupKey(row, groupBy) {
     return row.date.split('-')[0] || 'Unknown';
   }
   if (groupBy === 'category') return row.cat || 'Uncategorized';
+  if (groupBy === 'bucket')   return row.bucket || 'college';
   if (groupBy === 'semester') return row.sem || 'Unknown';
   return 'All';
 }

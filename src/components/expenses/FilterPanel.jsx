@@ -1,4 +1,5 @@
 import React from 'react';
+import { EXPENSE_BUCKETS, CAT_TO_BUCKET } from '../../constants.js';
 
 export function FilterPanel({ filters, setFilters, uniqueCats, uniqueStatuses, uniqueSents, onClear }) {
   function toggleArr(key, val) {
@@ -7,6 +8,10 @@ export function FilterPanel({ filters, setFilters, uniqueCats, uniqueStatuses, u
       return { ...f, [key]: arr.includes(val) ? arr.filter(v => v !== val) : [...arr, val] };
     });
   }
+
+  const visibleCats = filters.buckets.length > 0
+    ? uniqueCats.filter(cat => filters.buckets.includes(CAT_TO_BUCKET[cat] || 'college'))
+    : uniqueCats;
 
   return (
     <div className="filter-panel">
@@ -23,9 +28,24 @@ export function FilterPanel({ filters, setFilters, uniqueCats, uniqueStatuses, u
         </div>
 
         <div className="filter-col">
+          <div className="filter-label">Bucket</div>
+          <div className="filter-chips">
+            {EXPENSE_BUCKETS.map(b => (
+              <button
+                key={b.key}
+                className={`filter-chip filter-chip-bucket${filters.buckets.includes(b.key) ? ' active' : ''}`}
+                onClick={() => toggleArr('buckets', b.key)}
+              >
+                {b.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="filter-col">
           <div className="filter-label">Category</div>
           <div className="filter-chips">
-            {uniqueCats.map(cat => (
+            {visibleCats.map(cat => (
               <button
                 key={cat}
                 className={`filter-chip${filters.cats.includes(cat) ? ' active' : ''}`}
