@@ -64,9 +64,9 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
   const [editSplitDeposits, setEditSplitDeposits] = useState([]);
 
   // Grouping state
-  const [groupMode, setGroupMode]           = useState('none');
+  const [groupMode, setGroupMode]           = useState('multi');
   const [singleDim, setSingleDim]           = useState('month');
-  const [multiDims, setMultiDims]           = useState([]);
+  const [multiDims, setMultiDims]           = useState(['year', 'month']);
   const [showMultiModal, setShowMultiModal] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState(new Set());
 
@@ -250,8 +250,8 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
     setSortField(null);
     setSortDir('asc');
     setShowAddForm(false);
-    setGroupMode('none');
-    setMultiDims([]);
+    setGroupMode('multi');
+    setMultiDims(['year', 'month']);
     setExpandedGroups(new Set());
     setExpandedSplits(new Set());
     setEditingId(null);

@@ -11,7 +11,7 @@ import { DataCtx } from '../context/DataContext.jsx';
 import { LockScreen } from '../components/LockScreen.jsx';
 import { SectionErrorBoundary } from '../components/SectionErrorBoundary.jsx';
 import { NavBar } from '../components/NavBar.jsx';
-import { AlertsSection } from '../components/AlertsSection.jsx';
+import { SubmissionBanner } from '../components/expenses/SubmissionBanner.jsx';
 import { StatusSection } from '../components/StatusSection.jsx';
 import { ExpenseSection } from '../components/expenses/ExpenseSection.jsx';
 import { DeadlinesSection } from '../components/DeadlinesSection.jsx';
@@ -356,20 +356,17 @@ export function Navigator() {
             } />
             <Route path="expenses" element={
               <>
-                <SectionErrorBoundary name="Alerts">
-                  <AlertsSection
-                    submissions={pendingSubmissions}
-                    feed={activityFeed}
-                    dbAlerts={dbAlerts}
-                    onApprove={handleApproveSubmission}
-                    onReject={handleRejectSubmission}
-                    onApproveDelete={handleApproveDelete}
-                    onDenyDelete={handleDenyDelete}
-                    onMarkRead={handleMarkFeedRead}
-                    onDismissAlert={handleDismissDbAlert}
-                    id="sec-alerts" collapsed={false} onToggle={() => {}}
-                  />
-                </SectionErrorBoundary>
+                <SubmissionBanner
+                  submissions={pendingSubmissions}
+                  feed={activityFeed}
+                  dbAlerts={dbAlerts}
+                  onApprove={handleApproveSubmission}
+                  onReject={handleRejectSubmission}
+                  onApproveDelete={handleApproveDelete}
+                  onDenyDelete={handleDenyDelete}
+                  onMarkRead={handleMarkFeedRead}
+                  onDismissAlert={handleDismissDbAlert}
+                />
                 <SectionErrorBoundary name="Expenses">
                   <ExpenseSection
                     currency="PHP"

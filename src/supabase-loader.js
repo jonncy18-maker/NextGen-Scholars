@@ -62,7 +62,7 @@ export async function loadFromSupabase() {
           amount: num(e.amount),
           qty:    num(e.qty) || 1,
           cat:    e.cat,
-          bucket: e.bucket || CAT_TO_BUCKET[e.cat] || 'college',
+          bucket: CAT_TO_BUCKET[e.cat] ?? e.bucket ?? 'college',
           date:   e.date,
           sent:   e.sent,
           avb:    e.avb,

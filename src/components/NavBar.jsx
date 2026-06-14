@@ -1,7 +1,10 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 export function NavBar({ sheetsStatus, onRefresh, aiDrawerOpen, onAiDrawerToggle }) {
+  const { pathname } = useLocation();
+  const isHome = pathname === '/navigator' || pathname === '/navigator/';
+
   return (
     <header className="nav nav--slim">
       <div className="nav-inner">
@@ -24,7 +27,10 @@ export function NavBar({ sheetsStatus, onRefresh, aiDrawerOpen, onAiDrawerToggle
           >
             <span className="refresh-icon">↻</span><span className="refresh-label"> Refresh</span>
           </button>
-          <Link className="nav-back" to="/navigator">← Dashboard</Link>
+          {isHome
+            ? <a className="nav-back" href="index.html">← Go home</a>
+            : <Link className="nav-back" to="/navigator">← Dashboard</Link>
+          }
         </div>
       </div>
     </header>
