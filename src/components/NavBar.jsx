@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 const SECTION_NAV = [
-  { id: 'sec-alerts',    label: '01  Alerts' },
-  { id: 'sec-status',    label: '02  Status' },
-  { id: 'sec-expenses',  label: '03  Expenses' },
-  { id: 'sec-deadlines', label: '04  Deadlines' },
-  { id: 'sec-english',   label: '05  English' },
+  { id: 'sec-alerts',       label: '01  Alerts' },
+  { id: 'sec-status',       label: '02  Status' },
+  { id: 'sec-expenses',     label: '03  Expenses' },
+  { id: 'sec-deadlines',    label: '04  Deadlines' },
+  { id: 'sec-english',      label: '05  English' },
+  { id: 'sec-navigator-ai', label: '06  AI' },
+  { id: 'sec-documents',    label: '07  Documents' },
+  { id: 'sec-career',       label: '08  Career' },
 ];
 
 export function NavBar({
