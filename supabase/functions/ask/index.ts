@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
       if (!anthropicKey) return json({ tier: 3, status: 'not_configured', hint: 'Add ANTHROPIC_KEY to Supabase secrets.' }, 503)
       try {
         const t3 = await tier3IngestClaude({ text, file }, scholar, anthropicKey)
-        if (t3.answered) return json({ tier: 3, items: t3.items, model: t3.model })
+        if (t3.answered) return json({ tier: 3, items: t3.items, model: t3.model, escalated: t3.escalated })
         return json({ tier: 3, status: 'error', error: t3.error }, 502)
       } catch (err) {
         return json({ error: (err as Error).message ?? 'Ingest failed' }, 500)
@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
       if (!anthropicKey) return json({ tier: 3, status: 'not_configured', hint: 'Add ANTHROPIC_KEY to Supabase secrets.' }, 503)
       try {
         const t3 = await tier3GradeIngestClaude({ text, file }, scholar, anthropicKey)
-        if (t3.answered) return json({ tier: 3, grades: t3.grades, model: t3.model })
+        if (t3.answered) return json({ tier: 3, grades: t3.grades, model: t3.model, escalated: t3.escalated })
         return json({ tier: 3, status: 'error', error: t3.error }, 502)
       } catch (err) {
         return json({ error: (err as Error).message ?? 'Grade ingest failed' }, 500)

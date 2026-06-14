@@ -1,13 +1,17 @@
-// Tier 3 — multimodal ingestion (Gemini 2.5 Flash or Claude Sonnet)
+// Tier 3 — multimodal ingestion (Gemini 2.5 Flash or Claude Haiku/Sonnet)
 // Extracts structured data from uploaded images or pasted text.
 // Returns JSON for human review — does NOT write to the database.
 // Handles two extraction types: expense line items and grade entries.
+//
+// Claude model routing: defaults to Haiku 4.5 (low cost). If the result
+// fails confidence scoring, it automatically escalates to Sonnet 4.6.
 
-const GEMINI_MODEL = 'gemini-2.5-flash'
-const GEMINI_URL   = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
+const GEMINI_MODEL        = 'gemini-2.5-flash'
+const GEMINI_URL          = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
-const CLAUDE_MODEL = 'claude-sonnet-4-6'
-const CLAUDE_URL   = 'https://api.anthropic.com/v1/messages'
+const CLAUDE_HAIKU_MODEL  = 'claude-haiku-4-5-20251001'
+const CLAUDE_SONNET_MODEL = 'claude-sonnet-4-6'
+const CLAUDE_URL          = 'https://api.anthropic.com/v1/messages'
 
 export interface ExtractedExpense {
   item:   string
@@ -19,11 +23,12 @@ export interface ExtractedExpense {
 }
 
 export interface Tier3Result {
-  answered: boolean
-  items?:   ExtractedExpense[]
-  rawText?: string
-  error?:   string
-  model?:   string
+  answered:   boolean
+  items?:     ExtractedExpense[]
+  rawText?:   string
+  error?:     string
+  model?:     string
+  escalated?: boolean
 }
 
 const EXPENSE_CATS = [
@@ -134,11 +139,12 @@ export interface ExtractedGrade {
 }
 
 export interface Tier3GradeResult {
-  answered: boolean
-  grades?:  ExtractedGrade[]
-  rawText?: string
-  error?:   string
-  model?:   string
+  answered:   boolean
+  grades?:    ExtractedGrade[]
+  rawText?:   string
+  error?:     string
+  model?:     string
+  escalated?: boolean
 }
 
 export async function tier3GradeIngest(
@@ -229,6 +235,29 @@ Rules:
 
 // ── Claude variants ───────────────────────────────────────────────────────────
 
+// Low-confidence signals for expenses — triggers escalation from Haiku → Sonnet.
+// An empty result, heavy "Other" categorisation, or zero-amount items indicate
+// the smaller model struggled to parse the document.
+function isExpenseConfident(items: ExtractedExpense[]): boolean {
+  if (items.length === 0) return false
+  const otherRatio = items.filter(i => i.cat === 'Other').length / items.length
+  if (otherRatio > 0.5) return false
+  if (items.some(i => i.amount === 0)) return false
+  return true
+}
+
+// Low-confidence signals for grades — triggers escalation from Haiku → Sonnet.
+// An empty result or a majority of rows with all periods null suggests the model
+// couldn't read the grade scale or table layout reliably.
+function isGradeConfident(grades: ExtractedGrade[]): boolean {
+  if (grades.length === 0) return false
+  const allNullRatio = grades.filter(
+    g => g.prelim === null && g.midterm === null && g.final_grade === null,
+  ).length / grades.length
+  if (allNullRatio > 0.5) return false
+  return true
+}
+
 function buildClaudeContent(
   options: { text?: string; file?: { base64: string; mime: string } },
   fallbackText: string,
@@ -245,7 +274,12 @@ function buildClaudeContent(
   return parts
 }
 
-async function callClaude(system: string, content: unknown[], anthropicKey: string): Promise<{ text: string; error?: string }> {
+async function callClaude(
+  system: string,
+  content: unknown[],
+  anthropicKey: string,
+  model = CLAUDE_HAIKU_MODEL,
+): Promise<{ text: string; error?: string }> {
   let res: Response
   try {
     res = await fetch(CLAUDE_URL, {
@@ -256,7 +290,7 @@ async function callClaude(system: string, content: unknown[], anthropicKey: stri
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        model: CLAUDE_MODEL,
+        model,
         max_tokens: 4096,
         system,
         messages: [{ role: 'user', content }],
@@ -309,16 +343,34 @@ Rules:
 - Your entire response must be a valid JSON array starting with [ and ending with ]`
 
   const content = buildClaudeContent(options, 'Extract all expense line items from the image above.')
-  const { text: rawText, error } = await callClaude(systemPrompt, content, anthropicKey)
-  if (error) return { answered: false, error }
-  if (!rawText.trim()) return { answered: false, error: 'Claude returned an empty response.' }
+
+  // ── Haiku first pass ──────────────────────────────────────────────────────
+  const { text: haikuText, error: haikuErr } = await callClaude(systemPrompt, content, anthropicKey, CLAUDE_HAIKU_MODEL)
+  if (haikuErr) return { answered: false, error: haikuErr }
+  if (!haikuText.trim()) return { answered: false, error: 'Claude returned an empty response.' }
+
+  let haikuItems: ExtractedExpense[] | null = null
   try {
-    const cleaned = rawText.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim()
+    const cleaned = haikuText.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim()
+    const parsed = JSON.parse(cleaned)
+    if (Array.isArray(parsed)) haikuItems = parsed
+  } catch { /* parse failure → escalate */ }
+
+  if (haikuItems !== null && isExpenseConfident(haikuItems)) {
+    return { answered: true, items: haikuItems, rawText: haikuText, model: CLAUDE_HAIKU_MODEL, escalated: false }
+  }
+
+  // ── Sonnet escalation ─────────────────────────────────────────────────────
+  const { text: sonnetText, error: sonnetErr } = await callClaude(systemPrompt, content, anthropicKey, CLAUDE_SONNET_MODEL)
+  if (sonnetErr) return { answered: false, error: sonnetErr }
+  if (!sonnetText.trim()) return { answered: false, error: 'Claude Sonnet returned an empty response.' }
+  try {
+    const cleaned = sonnetText.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim()
     const items: ExtractedExpense[] = JSON.parse(cleaned)
     if (!Array.isArray(items)) throw new Error('Response is not an array')
-    return { answered: true, items, rawText, model: CLAUDE_MODEL }
+    return { answered: true, items, rawText: sonnetText, model: CLAUDE_SONNET_MODEL, escalated: true }
   } catch {
-    return { answered: false, error: `Could not parse Claude response as JSON: ${rawText.slice(0, 300)}` }
+    return { answered: false, error: `Could not parse Claude response as JSON: ${sonnetText.slice(0, 300)}` }
   }
 }
 
@@ -352,15 +404,33 @@ Rules:
 - Your entire response must be a valid JSON array starting with [ and ending with ]`
 
   const content = buildClaudeContent(options, 'Extract all subject grade entries from the image above.')
-  const { text: rawText, error } = await callClaude(systemPrompt, content, anthropicKey)
-  if (error) return { answered: false, error }
-  if (!rawText.trim()) return { answered: false, error: 'Claude returned an empty response.' }
+
+  // ── Haiku first pass ──────────────────────────────────────────────────────
+  const { text: haikuText, error: haikuErr } = await callClaude(systemPrompt, content, anthropicKey, CLAUDE_HAIKU_MODEL)
+  if (haikuErr) return { answered: false, error: haikuErr }
+  if (!haikuText.trim()) return { answered: false, error: 'Claude returned an empty response.' }
+
+  let haikuGrades: ExtractedGrade[] | null = null
   try {
-    const cleaned = rawText.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim()
+    const cleaned = haikuText.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim()
+    const parsed = JSON.parse(cleaned)
+    if (Array.isArray(parsed)) haikuGrades = parsed
+  } catch { /* parse failure → escalate */ }
+
+  if (haikuGrades !== null && isGradeConfident(haikuGrades)) {
+    return { answered: true, grades: haikuGrades, rawText: haikuText, model: CLAUDE_HAIKU_MODEL, escalated: false }
+  }
+
+  // ── Sonnet escalation ─────────────────────────────────────────────────────
+  const { text: sonnetText, error: sonnetErr } = await callClaude(systemPrompt, content, anthropicKey, CLAUDE_SONNET_MODEL)
+  if (sonnetErr) return { answered: false, error: sonnetErr }
+  if (!sonnetText.trim()) return { answered: false, error: 'Claude Sonnet returned an empty response.' }
+  try {
+    const cleaned = sonnetText.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim()
     const grades: ExtractedGrade[] = JSON.parse(cleaned)
     if (!Array.isArray(grades)) throw new Error('Response is not an array')
-    return { answered: true, grades, rawText, model: CLAUDE_MODEL }
+    return { answered: true, grades, rawText: sonnetText, model: CLAUDE_SONNET_MODEL, escalated: true }
   } catch {
-    return { answered: false, error: `Could not parse Claude response as JSON: ${rawText.slice(0, 300)}` }
+    return { answered: false, error: `Could not parse Claude response as JSON: ${sonnetText.slice(0, 300)}` }
   }
 }
