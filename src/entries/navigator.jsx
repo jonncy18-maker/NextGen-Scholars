@@ -17,6 +17,7 @@ import { ExpenseSection } from '../components/expenses/ExpenseSection.jsx';
 import { DeadlinesSection } from '../components/DeadlinesSection.jsx';
 import { EnglishSection } from '../components/EnglishSection.jsx';
 import { NavigatorAI } from '../components/NavigatorAI.jsx';
+import { ExpenseWorkbench } from '../components/expenses/ExpenseWorkbench.jsx';
 import { NavigatorAIDrawer } from '../components/NavigatorAIDrawer.jsx';
 import { MentorHome } from '../components/MentorHome.jsx';
 import { DocumentsSection } from '../components/DocumentsSection.jsx';
@@ -369,12 +370,6 @@ export function Navigator() {
                     id="sec-alerts" collapsed={false} onToggle={() => {}}
                   />
                 </SectionErrorBoundary>
-                <SectionErrorBoundary name="Status">
-                  <StatusSection
-                    currency="PHP" liveGpa={liveGpa} onSemesterChange={handleSemesterChange}
-                    id="sec-status" collapsed={false} onToggle={() => {}}
-                  />
-                </SectionErrorBoundary>
                 <SectionErrorBoundary name="Expenses">
                   <ExpenseSection
                     currency="PHP"
@@ -383,6 +378,12 @@ export function Navigator() {
                     onEditExpense={handleEditExpense}
                     onDeleteExpense={handleDeleteExpenseFromTable}
                     id="sec-expenses" collapsed={false} onToggle={() => {}}
+                    workbenchSlot={scholar => (
+                      <ExpenseWorkbench
+                        scholar={scholar}
+                        onAddExpense={handleAddExpense}
+                      />
+                    )}
                   />
                 </SectionErrorBoundary>
               </>

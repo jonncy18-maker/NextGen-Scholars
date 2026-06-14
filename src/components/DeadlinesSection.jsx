@@ -109,7 +109,7 @@ export function DeadlinesSection({ id, collapsed, onToggle }) {
   return (
     <section className="section" id={id}>
       <div className="eyebrow">
-        <span className="num">04</span> Critical Deadlines
+        Deadlines
         <span className="eyebrow-rule" />
         <button className="section-collapse-btn" onClick={onToggle} title={collapsed ? 'Expand section' : 'Collapse section'}>
           {collapsed ? '▶' : '▼'}

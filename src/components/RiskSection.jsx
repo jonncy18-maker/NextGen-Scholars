@@ -183,7 +183,7 @@ export function RiskSection({ id, collapsed, onToggle }) {
   return (
     <section className="section" id={id}>
       <div className="eyebrow">
-        <span className="num">09</span> Risk Dashboard
+        Risk Dashboard
         <span className="eyebrow-rule" />
         <button className="section-collapse-btn" onClick={onToggle} title={collapsed ? 'Expand' : 'Collapse'}>
           {collapsed ? '▶' : '▼'}

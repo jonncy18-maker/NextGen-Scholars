@@ -138,7 +138,7 @@ export function AlertsSection({ submissions, feed, dbAlerts, onApprove, onReject
   return (
     <section className="section" id={id}>
       <div className="eyebrow">
-        <span className="num">01</span> Scholar Updates
+        Scholar Updates
         <span className="eyebrow-rule" />
         {actCount > 0 && (
           <button className="activity-clear-all" onClick={() => onMarkRead((feed || []).map(f => f.id))}>
