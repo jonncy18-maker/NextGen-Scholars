@@ -374,6 +374,88 @@ Rules:
   }
 }
 
+// ── English session ingestion (Claude only) ───────────────────────────────────
+
+export interface ExtractedEnglishSession {
+  date:             string
+  duration_minutes: number
+  category:         string
+  notes:            string
+}
+
+export interface Tier3EnglishResult {
+  answered:   boolean
+  sessions?:  ExtractedEnglishSession[]
+  rawText?:   string
+  error?:     string
+  model?:     string
+  escalated?: boolean
+}
+
+function isEnglishConfident(sessions: ExtractedEnglishSession[]): boolean {
+  if (sessions.length === 0) return false
+  if (sessions.some(s => !s.duration_minutes || s.duration_minutes <= 0)) return false
+  return true
+}
+
+export async function tier3EnglishIngestClaude(
+  text: string,
+  categories: string[],
+  anthropicKey: string,
+): Promise<Tier3EnglishResult> {
+  const today = new Date().toISOString().slice(0, 10)
+  const systemPrompt = `You are an English study session extraction assistant for NextGen Scholars, a mentorship program for Filipino nursing students.
+
+Extract all English practice sessions from the provided text. Return ONLY a JSON array — no prose, no markdown fences, no explanation.
+
+Each object in the array must follow this exact schema:
+{
+  "date":             string,  // ISO 8601 YYYY-MM-DD — use date mentioned; if today or unclear, use ${today}
+  "duration_minutes": number,  // total minutes for this session (positive integer)
+  "category":         string,  // MUST be exactly one of: ${categories.join(', ')}
+  "notes":            string   // brief description of what was practised (empty string "" if none)
+}
+
+Rules:
+- Create one entry per distinct activity or time block
+- duration_minutes must be a positive integer — convert "1 hour" → 60, "30 minutes" → 30, "1.5 hours" → 90
+- category must match exactly one of the provided options (choose the closest match)
+- If a session spans multiple categories, create a separate entry for each
+- Return [] if no session data can be found in the text
+- Your entire response must be a valid JSON array starting with [ and ending with ]`
+
+  const content = [{ type: 'text', text: `English study session summary:\n\n${text}` }]
+
+  // Haiku first pass
+  const { text: haikuText, error: haikuErr } = await callClaude(systemPrompt, content, anthropicKey, CLAUDE_HAIKU_MODEL)
+  if (haikuErr) return { answered: false, error: haikuErr }
+  if (!haikuText.trim()) return { answered: false, error: 'Claude returned an empty response.' }
+
+  let haikuSessions: ExtractedEnglishSession[] | null = null
+  try {
+    const cleaned = haikuText.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim()
+    const parsed = JSON.parse(cleaned)
+    if (Array.isArray(parsed)) haikuSessions = parsed
+  } catch { /* parse failure → escalate */ }
+
+  if (haikuSessions !== null && isEnglishConfident(haikuSessions)) {
+    return { answered: true, sessions: haikuSessions, rawText: haikuText, model: CLAUDE_HAIKU_MODEL, escalated: false }
+  }
+
+  // Sonnet escalation
+  const { text: sonnetText, error: sonnetErr } = await callClaude(systemPrompt, content, anthropicKey, CLAUDE_SONNET_MODEL)
+  if (sonnetErr) return { answered: false, error: sonnetErr }
+  if (!sonnetText.trim()) return { answered: false, error: 'Claude Sonnet returned an empty response.' }
+  try {
+    const cleaned = sonnetText.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim()
+    const sessions: ExtractedEnglishSession[] = JSON.parse(cleaned)
+    if (!Array.isArray(sessions)) throw new Error('Response is not an array')
+    return { answered: true, sessions, rawText: sonnetText, model: CLAUDE_SONNET_MODEL, escalated: true }
+  } catch {
+    return { answered: false, error: `Could not parse Claude response as JSON: ${sonnetText.slice(0, 300)}` }
+  }
+}
+
 export async function tier3GradeIngestClaude(
   options: { text?: string; file?: { base64: string; mime: string } },
   _scholar: string,

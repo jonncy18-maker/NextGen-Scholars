@@ -7,6 +7,7 @@ import {
   IconBriefcase, IconTrophy, IconMessage, IconDocument, IconArrow,
 } from '../components/ScholarIcons.jsx';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
+import { CAT_TO_BUCKET } from '../constants.js';
 
 const SEM_LABELS = {
   Y1S1:'Year 1 · Semester 1', Y1S2:'Year 1 · Semester 2',
@@ -99,7 +100,7 @@ export function ScholarHome({ scholarKey }) {
 
         const byBucket = {};
         (allExpRes.data || []).forEach(e => {
-          const b = e.bucket || 'college';
+          const b = CAT_TO_BUCKET[e.cat] ?? e.bucket ?? 'college';
           byBucket[b] = (byBucket[b] || 0) + (e.amount || 0) * (e.qty || 1);
         });
         const invTotal = Object.values(byBucket).reduce((t, v) => t + v, 0);

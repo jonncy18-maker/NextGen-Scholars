@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
+import { SESSION_CATEGORIES, SESSION_TYPES } from '../constants.js';
+import { EnglishIngestPanel } from '../components/EnglishIngestPanel.jsx';
+import '../styles/english-tracking.css';
 
-// Hardcoded fallback configs — used only when no period exists in english_periods table
 const FALLBACK = {
-  claire: { name: 'Claire', semKey: 'Y2S2', semLabel: 'Year 2 · Semester 2', target: 200, homeHref: '/home/claire' },
-  april:  { name: 'April',  semKey: 'TG11S1', semLabel: 'Grade 11 · Semester 1', target: null, homeHref: '/home/april' },
+  claire: { name: 'Claire', semKey: 'Y2S2', homeHref: '/home/claire' },
+  april:  { name: 'April',  semKey: 'TG11S1', homeHref: '/home/april' },
 };
-
-const ACTIVITY_TYPES = ['OET Practice', 'Speaking', 'Listening', 'Reading', 'Writing', 'Other'];
 
 function today() { return new Date().toISOString().slice(0, 10); }
 
@@ -22,11 +22,6 @@ function fmtDateShort(iso) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function fmtMonth(iso) {
-  const d = new Date(iso + 'T00:00:00');
-  return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-}
-
 function fmtDuration(minutes) {
   if (minutes < 60) return `${minutes} min`;
   const h = Math.floor(minutes / 60), m = minutes % 60;
@@ -38,7 +33,6 @@ function fmtHours(totalMinutes) {
   return h % 1 === 0 ? String(h) : h.toFixed(1);
 }
 
-// Find the active period — today in range, else most recent
 function findActivePeriod(periods) {
   if (!periods?.length) return null;
   const t = today();
@@ -46,36 +40,37 @@ function findActivePeriod(periods) {
     ?? periods.slice().sort((a, b) => b.end_date.localeCompare(a.end_date))[0];
 }
 
-// Weekly streak — consecutive weeks (Mon–Sun) with at least one session, going back from current week
-function computeStreak(sessions) {
-  if (!sessions.length) return 0;
-  const msDay  = 24 * 60 * 60 * 1000;
-  const msWeek = 7 * msDay;
-  const now    = new Date();
-  // Roll back to Monday of current week
-  const dow    = (now.getDay() + 6) % 7;
-  const weekStart = new Date(now.getTime() - dow * msDay);
-  weekStart.setHours(0, 0, 0, 0);
-
-  let streak = 0;
-  let ws = new Date(weekStart);
-  while (true) {
-    const we = new Date(ws.getTime() + msWeek);
-    const hasSession = sessions.some(s => {
-      const d = new Date(s.date + 'T00:00:00');
-      return d >= ws && d < we;
-    });
-    if (!hasSession) break;
-    streak++;
-    ws = new Date(ws.getTime() - msWeek);
-  }
-  return streak;
+function periodElapsedFraction(startDate, endDate) {
+  const start = new Date(startDate + 'T00:00:00');
+  const end   = new Date(endDate   + 'T00:00:00');
+  const now   = new Date();
+  const total = Math.max(1, (end - start) / 86400000);
+  const elapsed = Math.min(total, Math.max(0, (now - start) / 86400000));
+  return elapsed / total;
 }
 
-// Last N calendar weeks — each week Mon–Sun
+function getStatus(actual, expectedByToday) {
+  if (!expectedByToday || expectedByToday === 0) return 'good';
+  const ratio = actual / expectedByToday;
+  if (ratio >= 0.9) return 'good';
+  if (ratio >= 0.7) return 'warning';
+  return 'risk';
+}
+
+function StatusChip({ status }) {
+  const labels = { good: 'On Track', warning: 'Behind', risk: 'At Risk' };
+  return <span className={`et-status-chip et-status-${status}`}>{labels[status]}</span>;
+}
+
+function sessionCategories(period) {
+  if (!period) return SESSION_CATEGORIES.default;
+  return SESSION_CATEGORIES[period.session_type] ?? SESSION_CATEGORIES.default;
+}
+
+// ── Weekly chart (kept from original) ─────────────────────────────────────────
+
 function buildWeeklyData(sessions, numWeeks = 8) {
-  const msDay  = 24 * 60 * 60 * 1000;
-  const msWeek = 7 * msDay;
+  const msDay  = 86400000, msWeek = 7 * msDay;
   const now    = new Date();
   const dow    = (now.getDay() + 6) % 7;
   const currentMon = new Date(now.getTime() - dow * msDay);
@@ -111,20 +106,179 @@ function WeeklyChart({ sessions }) {
   );
 }
 
+// ── Category bar chart ─────────────────────────────────────────────────────────
+
+function CategoryBarChart({ period, sessions }) {
+  const cats    = sessionCategories(period);
+  const goals   = period?.category_goals ?? {};
+  const elapsed = period ? periodElapsedFraction(period.start_date, period.end_date) : 0;
+
+  const byCategory = {};
+  cats.forEach(c => { byCategory[c] = 0; });
+  sessions.forEach(s => {
+    if (cats.includes(s.activity_type)) {
+      byCategory[s.activity_type] = (byCategory[s.activity_type] || 0) + (s.duration_minutes || 0) / 60;
+    }
+  });
+
+  const maxExpected = Math.max(...cats.map(c => goals[c] ?? 0), 1);
+  const maxActual   = Math.max(...Object.values(byCategory), 0.1);
+  const scale       = Math.max(maxExpected, maxActual);
+
+  const hasAnyGoal = cats.some(c => goals[c]);
+
+  if (!hasAnyGoal) {
+    return (
+      <div className="et-cat-chart">
+        {cats.map(cat => {
+          const actual   = byCategory[cat] ?? 0;
+          const actWidth = scale > 0 ? (actual / scale) * 100 : 0;
+          return (
+            <div key={cat} className="et-cat-bar-row">
+              <span className="et-cat-bar-name">{cat}</span>
+              <div className="et-cat-bar-tracks">
+                <div className="et-cat-bar-track et-cat-bar-track--act">
+                  <div className="et-cat-bar-fill et-cat-bar-fill--act" style={{ width: `${actWidth}%` }} />
+                  <span className="et-cat-bar-val">{actual.toFixed(1)}h</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  return (
+    <div className="et-cat-chart">
+      {cats.map(cat => {
+        const expected       = goals[cat] ?? null;
+        const actual         = byCategory[cat] ?? 0;
+        const expectedToday  = expected != null ? expected * elapsed : null;
+        const status         = expectedToday != null ? getStatus(actual, expectedToday) : 'good';
+        const expWidth       = expected != null ? (expected / scale) * 100 : 0;
+        const actWidth       = (actual  / scale) * 100;
+
+        return (
+          <div key={cat} className="et-cat-bar-row">
+            <div className="et-cat-bar-label">
+              <span className="et-cat-bar-name">{cat}</span>
+              {expectedToday != null && <StatusChip status={status} />}
+            </div>
+            <div className="et-cat-bar-tracks">
+              {expected != null && (
+                <div className="et-cat-bar-track et-cat-bar-track--exp">
+                  <div className="et-cat-bar-fill et-cat-bar-fill--exp" style={{ width: `${expWidth}%` }} />
+                  <span className="et-cat-bar-val">{expected}h expected</span>
+                </div>
+              )}
+              <div className="et-cat-bar-track et-cat-bar-track--act">
+                <div className={`et-cat-bar-fill et-cat-bar-fill--act et-cat-bar-fill--${status}`}
+                  style={{ width: `${actWidth}%` }} />
+                <span className="et-cat-bar-val">{actual.toFixed(1)}h actual</span>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Session row with inline edit ───────────────────────────────────────────────
+
+function SessionRow({ sess, cats, onSaved, onDeleted }) {
+  const [editing, setEditing]   = useState(false);
+  const [form, setForm]         = useState(null);
+  const [saving, setSaving]     = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  function startEdit() {
+    setForm({
+      date:          sess.date,
+      duration:      String(sess.duration_minutes),
+      activity_type: sess.activity_type,
+      notes:         sess.notes ?? '',
+    });
+    setEditing(true);
+  }
+
+  async function handleSave() {
+    const mins = parseInt(form.duration, 10);
+    if (!mins || mins < 1) return;
+    setSaving(true);
+    const { error } = await supabase.from('english_sessions').update({
+      date:             form.date,
+      duration_minutes: mins,
+      activity_type:    form.activity_type,
+      notes:            form.notes || null,
+    }).eq('id', sess.id);
+    setSaving(false);
+    if (!error) { setEditing(false); onSaved(); }
+  }
+
+  async function handleDelete() {
+    if (!confirm('Delete this session?')) return;
+    setDeleting(true);
+    await supabase.from('english_sessions').delete().eq('id', sess.id);
+    onDeleted(sess.id);
+  }
+
+  if (editing && form) {
+    return (
+      <div className="et-row et-row--editing">
+        <div className="et-row-edit-fields">
+          <input type="date" value={form.date} max={today()}
+            onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+          <input type="number" min="1" max="600" value={form.duration}
+            onChange={e => setForm(f => ({ ...f, duration: e.target.value }))}
+            style={{ width: 70 }} />
+          <select value={form.activity_type}
+            onChange={e => setForm(f => ({ ...f, activity_type: e.target.value }))}>
+            {cats.map(c => <option key={c}>{c}</option>)}
+          </select>
+          <input type="text" value={form.notes}
+            onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+            placeholder="notes" style={{ flex: 1 }} />
+        </div>
+        <div className="et-row-edit-actions">
+          <button className="et-edit-save" onClick={handleSave} disabled={saving}>{saving ? '…' : 'Save'}</button>
+          <button className="et-edit-cancel" onClick={() => setEditing(false)}>Cancel</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="et-row">
+      <div className="et-row-left">
+        <span className="et-row-date">{fmtDate(sess.date)}</span>
+        <span className="et-row-type">{sess.activity_type}</span>
+        {sess.notes && <span className="et-row-notes">{sess.notes}</span>}
+      </div>
+      <div className="et-row-right">
+        <span className="et-row-dur">{fmtDuration(sess.duration_minutes)}</span>
+        <button className="et-row-edit" onClick={startEdit} title="Edit">✎</button>
+        <button className="et-row-del" onClick={handleDelete} disabled={deleting} title="Delete">×</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
+
 export function EnglishTracking({ scholarKey }) {
   const fallback = FALLBACK[scholarKey] || FALLBACK.claire;
 
-  const [period,   setPeriod]   = useState(null);   // active english_period row (or null = fallback)
-  const [sessions, setSessions] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
-    date: today(), duration: '', activity_type: ACTIVITY_TYPES[0], category: 'input', notes: '',
-  });
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError]           = useState(null);
-  const [deletingId, setDeletingId] = useState(null);
+  const [period,      setPeriod]      = useState(undefined);
+  const [sessions,    setSessions]    = useState(null);
+  const [showForm,    setShowForm]    = useState(false);
+  const [showIngest,  setShowIngest]  = useState(false);
+  const [form, setForm] = useState(null);
+  const [submitting, setSubmitting]   = useState(false);
+  const [error, setError]             = useState(null);
+  const [collapsedCats, setCollapsedCats] = useState(null); // initialized after period loads
 
-  // Load active period from english_periods
   useEffect(() => {
     supabase
       .from('english_periods')
@@ -134,9 +288,8 @@ export function EnglishTracking({ scholarKey }) {
       .then(({ data }) => setPeriod(findActivePeriod(data || [])));
   }, [scholarKey]);
 
-  // Load sessions — filter by period date range if available, else by sem
   useEffect(() => {
-    if (period === undefined) return; // still loading period
+    if (period === undefined) return;
     let q = supabase
       .from('english_sessions')
       .select('*')
@@ -148,24 +301,44 @@ export function EnglishTracking({ scholarKey }) {
     } else {
       q = q.eq('sem', fallback.semKey);
     }
+    q.then(({ data }) => {
+      const rows = data ?? [];
+      setSessions(rows);
+      if (collapsedCats === null) {
+        const cats = period ? (SESSION_CATEGORIES[period.session_type] ?? SESSION_CATEGORIES.default) : SESSION_CATEGORIES.default;
+        setCollapsedCats(new Set(cats));
+      }
+    });
+  }, [scholarKey, period, fallback.semKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  function reloadSessions() {
+    if (period === undefined) return;
+    let q = supabase
+      .from('english_sessions')
+      .select('*')
+      .eq('scholar', scholarKey)
+      .order('date', { ascending: false });
+    if (period) {
+      q = q.gte('date', period.start_date).lte('date', period.end_date);
+    } else {
+      q = q.eq('sem', fallback.semKey);
+    }
     q.then(({ data }) => setSessions(data ?? []));
-  }, [scholarKey, period, fallback.semKey]);
+  }
 
-  // Derived stats
+  const cats         = sessionCategories(period);
   const totalMinutes = sessions ? sessions.reduce((s, r) => s + (r.duration_minutes || 0), 0) : 0;
-  const convMinutes  = sessions ? sessions.filter(s => s.category === 'conversation').reduce((s, r) => s + (r.duration_minutes || 0), 0) : 0;
-  const inputMinutes = totalMinutes - convMinutes;
-  const target       = period ? Number(period.hour_goal) : fallback.target;
+  const target       = period ? Number(period.hour_goal) : null;
   const pct          = target ? Math.min(100, (totalMinutes / 60 / target) * 100) : null;
-  const streak       = sessions ? computeStreak(sessions) : 0;
+  const elapsed      = period ? periodElapsedFraction(period.start_date, period.end_date) : 0;
+  const expectedNow  = target ? target * elapsed : null;
+  const overallStatus = getStatus(totalMinutes / 60, expectedNow ?? 0);
 
-  // Pace using period end date
   const pace = (() => {
     if (!period || !sessions?.length) return null;
     const msWeek = 7 * 24 * 60 * 60 * 1000;
     const weeksLeft = Math.max(0, (new Date(period.end_date + 'T00:00:00') - new Date()) / msWeek);
-    const cutoff = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000);
+    const cutoff = new Date(Date.now() - 28 * 86400000);
     const recentMins = sessions.filter(s => new Date(s.date + 'T00:00:00') >= cutoff)
       .reduce((s, r) => s + (r.duration_minutes || 0), 0);
     const hrsPerWeek = recentMins / 60 / 4;
@@ -176,7 +349,16 @@ export function EnglishTracking({ scholarKey }) {
 
   const periodLabel = period
     ? `${period.label} · ${fmtDateShort(period.start_date)} – ${fmtDateShort(period.end_date)}`
-    : fallback.semLabel;
+    : fallback.semKey;
+
+  const sessionTypeName = period
+    ? (SESSION_TYPES.find(t => t.key === period.session_type)?.label ?? period.label)
+    : null;
+
+  function initForm() {
+    setForm({ date: today(), duration: '', activity_type: cats[0] ?? 'Other', notes: '' });
+    setShowForm(true);
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -186,49 +368,45 @@ export function EnglishTracking({ scholarKey }) {
     setSubmitting(true);
     setError(null);
 
-    const tempId = `temp-${Date.now()}`;
     const newSession = {
-      scholar: scholarKey,
-      sem: period?.label ?? fallback.semKey,
-      date: form.date,
+      scholar:          scholarKey,
+      sem:              period?.label ?? fallback.semKey,
+      date:             form.date,
       duration_minutes: minutes,
-      activity_type: form.activity_type,
-      category: form.category,
-      notes: form.notes.trim() || null,
+      activity_type:    form.activity_type,
+      category:         'conversation',
+      notes:            form.notes.trim() || null,
+      period_id:        period?.id ?? null,
     };
-
-    setSessions(prev => [...[{ ...newSession, id: tempId }], ...(prev ?? [])].sort((a, b) => b.date.localeCompare(a.date)));
-    setShowForm(false);
-    setForm({ date: today(), duration: '', activity_type: ACTIVITY_TYPES[0], category: 'input', notes: '' });
 
     const { data, error: err } = await supabase
       .from('english_sessions').insert(newSession).select().single();
 
     if (err) {
-      setSessions(prev => prev.filter(s => s.id !== tempId));
       setError('Could not save. Please try again.');
-      setShowForm(true);
     } else {
-      setSessions(prev => prev.map(s => s.id === tempId ? data : s));
+      setSessions(prev => [data, ...(prev ?? [])].sort((a, b) => b.date.localeCompare(a.date)));
+      setShowForm(false);
+      setForm(null);
     }
     setSubmitting(false);
   }
 
-  async function handleDelete(sess) {
-    if (!confirm('Delete this session?')) return;
-    setDeletingId(sess.id);
-    const { error: err } = await supabase.from('english_sessions').delete().eq('id', sess.id);
-    if (!err) setSessions(prev => prev.filter(s => s.id !== sess.id));
-    setDeletingId(null);
+  function toggleCat(cat) {
+    setCollapsedCats(prev => {
+      const next = new Set(prev ?? []);
+      next.has(cat) ? next.delete(cat) : next.add(cat);
+      return next;
+    });
   }
 
-  // Group sessions by month
-  const grouped = (sessions ?? []).reduce((acc, s) => {
-    const m = fmtMonth(s.date);
-    if (!acc[m]) acc[m] = [];
-    acc[m].push(s);
-    return acc;
-  }, {});
+  // Group sessions by category
+  const grouped = {};
+  cats.forEach(c => { grouped[c] = []; });
+  (sessions ?? []).forEach(s => {
+    const c = cats.includes(s.activity_type) ? s.activity_type : 'Other';
+    (grouped[c] ??= []).push(s);
+  });
 
   return (
     <div className="sp-page">
@@ -252,6 +430,7 @@ export function EnglishTracking({ scholarKey }) {
         </header>
 
         <section className="sp-section">
+          {/* Progress card */}
           <div className="et-progress-card">
             {sessions === null ? (
               <div style={{ color: 'rgba(250,247,240,0.5)', fontFamily: 'var(--ngs-mono)', fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
@@ -259,11 +438,20 @@ export function EnglishTracking({ scholarKey }) {
               </div>
             ) : (
               <>
-                <div className="et-hours-row">
-                  <span className="et-hours-big">{fmtHours(totalMinutes)}</span>
-                  <span className="et-hours-unit">hrs</span>
-                  {target && <span className="et-hours-target">/ {target}</span>}
+                <div className="et-progress-top-row">
+                  <div className="et-hours-row">
+                    <span className="et-hours-big">{fmtHours(totalMinutes)}</span>
+                    <span className="et-hours-unit">hrs</span>
+                    {target && <span className="et-hours-target">/ {target}</span>}
+                  </div>
+                  {expectedNow != null && (
+                    <StatusChip status={overallStatus} />
+                  )}
                 </div>
+
+                {sessionTypeName && (
+                  <div className="et-session-type-label">{sessionTypeName}</div>
+                )}
 
                 {pct !== null && (
                   <>
@@ -274,7 +462,6 @@ export function EnglishTracking({ scholarKey }) {
                   </>
                 )}
 
-                {/* Pace info when period is set */}
                 {pace && (
                   <div className="et-pace-row">
                     <span className="et-pace-stat">{pace.hrsPerWeek}h/wk pace</span>
@@ -282,26 +469,14 @@ export function EnglishTracking({ scholarKey }) {
                     <span className="et-pace-weeks">· {pace.weeksLeft}w left</span>
                   </div>
                 )}
-
-                <div className="et-cat-breakdown">
-                  <div className="et-cat-stat">
-                    <span className="et-cat-val">{fmtHours(convMinutes)}</span>
-                    <span className="et-cat-label">Conversation</span>
-                  </div>
-                  <div className="et-cat-divider" />
-                  <div className="et-cat-stat">
-                    <span className="et-cat-val">{fmtHours(inputMinutes)}</span>
-                    <span className="et-cat-label">Input</span>
-                  </div>
-                  <div className="et-cat-divider" />
-                  <div className="et-cat-stat">
-                    <span className="et-cat-val">{streak}</span>
-                    <span className="et-cat-label">Week streak</span>
-                  </div>
-                </div>
               </>
             )}
           </div>
+
+          {/* Category bar chart */}
+          {sessions !== null && period && (
+            <CategoryBarChart period={period} sessions={sessions} />
+          )}
 
           {/* 8-week chart */}
           {sessions !== null && sessions.length > 0 && (
@@ -310,13 +485,35 @@ export function EnglishTracking({ scholarKey }) {
 
           {error && <div className="et-error">{error}</div>}
 
-          {!showForm ? (
-            <button className="et-log-btn" onClick={() => setShowForm(true)}>+ Log session</button>
-          ) : (
+          {/* AI ingest + log session controls */}
+          <div className="et-action-row">
+            <button className="et-log-btn"
+              style={{ flex: 1 }}
+              onClick={() => { initForm(); setShowIngest(false); }}>
+              + Log session
+            </button>
+            <button className="et-ai-btn"
+              onClick={() => { setShowIngest(v => !v); setShowForm(false); }}>
+              {showIngest ? 'Cancel' : 'AI · Paste summary'}
+            </button>
+          </div>
+
+          {showIngest && (
+            <EnglishIngestPanel
+              scholarKey={scholarKey}
+              categories={cats}
+              periodId={period?.id ?? null}
+              sem={period?.label ?? fallback.semKey}
+              onSaved={() => { setShowIngest(false); reloadSessions(); }}
+            />
+          )}
+
+          {showForm && form && (
             <form className="et-form" onSubmit={handleSubmit}>
               <div className="et-form-head">
                 <span>New session</span>
-                <button type="button" className="et-form-close" onClick={() => { setShowForm(false); setError(null); }}>×</button>
+                <button type="button" className="et-form-close"
+                  onClick={() => { setShowForm(false); setForm(null); setError(null); }}>×</button>
               </div>
 
               <div className="et-field">
@@ -332,28 +529,16 @@ export function EnglishTracking({ scholarKey }) {
               </div>
 
               <div className="et-field">
-                <label>Type</label>
-                <div className="et-cat-pick">
-                  {[['conversation', 'Conversation'], ['input', 'Input']].map(([val, lbl]) => (
-                    <button key={val} type="button"
-                      className={`et-cat-btn${form.category === val ? ' is-active' : ''}`}
-                      onClick={() => setForm(f => ({ ...f, category: val }))}>
-                      {lbl}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="et-field">
-                <label>Activity</label>
-                <select value={form.activity_type} onChange={e => setForm(f => ({ ...f, activity_type: e.target.value }))}>
-                  {ACTIVITY_TYPES.map(t => <option key={t}>{t}</option>)}
+                <label>Category</label>
+                <select value={form.activity_type}
+                  onChange={e => setForm(f => ({ ...f, activity_type: e.target.value }))}>
+                  {cats.map(c => <option key={c}>{c}</option>)}
                 </select>
               </div>
 
               <div className="et-field">
                 <label>Notes <span className="et-optional">(optional)</span></label>
-                <textarea rows={3} placeholder="What did you practise?"
+                <textarea rows={2} placeholder="What did you practise?"
                   value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
               </div>
 
@@ -364,34 +549,41 @@ export function EnglishTracking({ scholarKey }) {
           )}
         </section>
 
+        {/* Session history grouped by category */}
         {sessions !== null && sessions.length > 0 && (
           <section className="sp-section et-history-section">
             <div className="sp-eyebrow">
               <span className="sp-eyebrow-rule" />
-              History
+              Sessions
               <span className="sp-eyebrow-count">{sessions.length.toString().padStart(2, '0')}</span>
             </div>
-            {Object.entries(grouped).map(([month, rows]) => (
-              <div key={month} className="et-month-group">
-                <div className="et-month-label">{month}</div>
-                {rows.map(s => (
-                  <div key={s.id} className="et-row">
-                    <div className="et-row-left">
-                      <span className="et-row-date">{fmtDate(s.date)}</span>
-                      <span className="et-row-type">{s.activity_type}</span>
-                      {s.notes && <span className="et-row-notes">{s.notes}</span>}
-                    </div>
-                    <div className="et-row-right">
-                      <span className="et-row-dur">{fmtDuration(s.duration_minutes)}</span>
-                      <button
-                        className="et-row-del"
-                        onClick={() => handleDelete(s)}
-                        disabled={deletingId === s.id}
-                        title="Delete session"
-                      >×</button>
-                    </div>
+            {Object.entries(grouped).map(([cat, rows]) => (
+              <div key={cat} className="et-cat-group">
+                <button className="et-cat-group-toggle" onClick={() => toggleCat(cat)}>
+                  <span className="et-cat-group-name">{cat}</span>
+                  <span className="et-cat-group-count">{rows.length} session{rows.length !== 1 ? 's' : ''}</span>
+                  <span className="et-cat-group-hrs">
+                    {rows.reduce((s, r) => s + (r.duration_minutes || 0) / 60, 0).toFixed(1)}h
+                  </span>
+                  <span className="et-cat-group-chevron">
+                    {(collapsedCats?.has(cat)) ? '▶' : '▼'}
+                  </span>
+                </button>
+                {!(collapsedCats?.has(cat)) && (
+                  <div className="et-cat-group-rows">
+                    {rows.length === 0 ? (
+                      <div className="et-cat-group-empty">No sessions in this category yet.</div>
+                    ) : (
+                      rows.map(s => (
+                        <SessionRow
+                          key={s.id} sess={s} cats={cats}
+                          onSaved={reloadSessions}
+                          onDeleted={() => setSessions(prev => (prev ?? []).filter(r => r.id !== s.id))}
+                        />
+                      ))
+                    )}
                   </div>
-                ))}
+                )}
               </div>
             ))}
           </section>
