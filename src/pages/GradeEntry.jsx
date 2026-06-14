@@ -428,25 +428,33 @@ export function GradeEntry({ scholarKey }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentRows.map(r => (
-                    <tr key={r.id}>
-                      <td className="ge-subject">{r.subject}</td>
-                      <td className="ge-n">{r.units}</td>
-                      <td className="ge-n ge-grade">{r.prelim ?? '—'}</td>
-                      <td className="ge-n ge-grade">{r.midterm ?? '—'}</td>
-                      <td className="ge-n ge-grade">{r.final_grade ?? '—'}</td>
-                      <td className="ge-n ge-avg">{r.period_avg?.toFixed(2) ?? '—'}</td>
-                      <td className="ge-n ge-pct">{r.pct_equiv != null ? `${r.pct_equiv.toFixed(1)}%` : '—'}</td>
-                    </tr>
-                  ))}
+                  {currentRows.map(r => {
+                    const isUv = r.school !== 'k12';
+                    const gradeCell = (val) => val == null ? '—' : isUv ? (
+                      <>{val}<span className="ge-grade-pct">{uvToPct(val) != null ? ` ${uvToPct(val).toFixed(0)}%` : ''}</span></>
+                    ) : val;
+                    return (
+                      <tr key={r.id}>
+                        <td className="ge-subject">{r.subject}</td>
+                        <td className="ge-n">{r.units}</td>
+                        <td className="ge-n ge-grade">{gradeCell(r.prelim)}</td>
+                        <td className="ge-n ge-grade">{gradeCell(r.midterm)}</td>
+                        <td className="ge-n ge-grade">{gradeCell(r.final_grade)}</td>
+                        <td className="ge-n ge-avg">{r.period_avg?.toFixed(2) ?? '—'}</td>
+                        <td className="ge-n ge-pct">{r.pct_equiv != null ? `${r.pct_equiv.toFixed(1)}%` : '—'}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
                 {currentRows.length > 1 && currentGpa != null && (
                   <tfoot>
                     <tr className="ge-total-row">
-                      <td>Weighted GPA</td>
+                      <td>Weighted {semIsK12 ? 'avg' : 'GPA'}</td>
                       <td className="ge-n">{totalUnits}</td>
                       <td colSpan={4} />
-                      <td className="ge-n ge-pct">{currentGpa.toFixed(2)}</td>
+                      <td className="ge-n ge-pct">
+                        {semIsK12 ? `${currentGpa.toFixed(1)}%` : (currentPct != null ? `${currentPct.toFixed(1)}%` : currentGpa.toFixed(2))}
+                      </td>
                     </tr>
                   </tfoot>
                 )}
@@ -510,14 +518,22 @@ function PriorSem({ sem, rows }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map(r => (
-                <tr key={r.id}>
-                  <td className="ge-subject">{r.subject}</td>
-                  <td className="ge-n">{r.units}</td>
-                  <td className="ge-n ge-avg">{r.period_avg?.toFixed(2) ?? '—'}</td>
-                  <td className="ge-n ge-pct">{r.pct_equiv != null ? `${r.pct_equiv.toFixed(1)}%` : '—'}</td>
-                </tr>
-              ))}
+              {rows.map(r => {
+                const isUv = r.school !== 'k12';
+                return (
+                  <tr key={r.id}>
+                    <td className="ge-subject">{r.subject}</td>
+                    <td className="ge-n">{r.units}</td>
+                    <td className="ge-n ge-avg">
+                      {r.period_avg?.toFixed(2) ?? '—'}
+                      {isUv && r.period_avg != null && uvToPct(r.period_avg) != null && (
+                        <span className="ge-grade-pct"> {uvToPct(r.period_avg).toFixed(0)}%</span>
+                      )}
+                    </td>
+                    <td className="ge-n ge-pct">{r.pct_equiv != null ? `${r.pct_equiv.toFixed(1)}%` : '—'}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

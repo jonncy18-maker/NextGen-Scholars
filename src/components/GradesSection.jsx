@@ -77,14 +77,18 @@ function GradeRow({ row, onSaved, onDeleted }) {
   }
 
   if (!editing) {
+    const isUv = row.school !== 'k12';
+    const gradeCell = (val) => val == null ? '—' : isUv ? (
+      <>{val}{uvToPct(val) != null && <span className="gr-grade-pct"> {uvToPct(val).toFixed(0)}%</span>}</>
+    ) : val;
     return (
       <tr>
         <td className="gr-subject">{row.subject}</td>
         <td className="gr-n gr-scale">{row.school === 'k12' ? 'K-12' : 'UV'}</td>
         <td className="gr-n">{row.units}</td>
-        <td className="gr-n gr-grade">{row.prelim      ?? '—'}</td>
-        <td className="gr-n gr-grade">{row.midterm     ?? '—'}</td>
-        <td className="gr-n gr-grade">{row.final_grade ?? '—'}</td>
+        <td className="gr-n gr-grade">{gradeCell(row.prelim)}</td>
+        <td className="gr-n gr-grade">{gradeCell(row.midterm)}</td>
+        <td className="gr-n gr-grade">{gradeCell(row.final_grade)}</td>
         <td className="gr-n gr-avg">{row.period_avg?.toFixed(2) ?? '—'}</td>
         <td className="gr-n gr-pct">{row.pct_equiv != null ? `${row.pct_equiv.toFixed(1)}%` : '—'}</td>
         <td className="gr-n gr-row-actions">
