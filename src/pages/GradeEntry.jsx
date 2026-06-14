@@ -182,7 +182,7 @@ function ReviewPanel({ review, setReview, scholarKey, loading, error, onConfirm,
   );
 }
 
-// ── AI grade import (session-gated — only visible when mentor is logged in) ──
+// ── AI grade import ───────────────────────────────────────────────────────────
 
 function AiGradeImport({ scholarKey, semKey, onSaved }) {
   const [open, setOpen]       = useState(false);
@@ -205,11 +205,9 @@ function AiGradeImport({ scholarKey, semKey, onSaved }) {
     if (!file || loading) return;
     setLoading(true); setError(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No active session.');
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
         body: JSON.stringify({ scholar: scholarKey, type: 'grade_ingest', sem: semKey, file: { base64: file.base64, mime: file.mime } }),
       });
       const json = await res.json();
@@ -306,11 +304,6 @@ export function GradeEntry({ scholarKey }) {
   const [form, setForm] = useState(() => emptyForm(config.defaultSchool));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
-  const [session, setSession] = useState(null);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: s } }) => setSession(s));
-  }, []);
 
   useEffect(() => {
     supabase
@@ -444,8 +437,7 @@ export function GradeEntry({ scholarKey }) {
 
           {error && <div className="et-error">{error}</div>}
 
-          {session && (
-            <AiGradeImport
+          <AiGradeImport
               scholarKey={scholarKey}
               semKey={config.semKey}
               onSaved={() => {
@@ -454,7 +446,6 @@ export function GradeEntry({ scholarKey }) {
                   .then(({ data }) => setRows(data ?? []));
               }}
             />
-          )}
 
           {!showForm ? (
             <button className="et-log-btn" onClick={() => setShowForm(true)}>
