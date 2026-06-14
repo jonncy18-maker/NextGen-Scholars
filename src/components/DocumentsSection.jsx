@@ -237,7 +237,9 @@ export function DocumentsSection({ id, collapsed, onToggle }) {
   }
 
   async function handleMarkReviewed(doc) {
-    await supabase.from('documents').update({ status: 'reviewed' }).eq('id', doc.id);
+    setDocs(prev => prev.map(d => d.id === doc.id ? { ...d, status: 'reviewed' } : d));
+    const { error } = await supabase.from('documents').update({ status: 'reviewed' }).eq('id', doc.id);
+    if (error) setDocs(prev => prev.map(d => d.id === doc.id ? { ...d, status: doc.status } : d));
   }
 
   async function handleDelete(doc) {
