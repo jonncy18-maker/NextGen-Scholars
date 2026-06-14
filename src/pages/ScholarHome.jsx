@@ -36,6 +36,13 @@ function buildConfig(key) {
   };
 }
 
+function fmtPhpShort(n) {
+  if (!n) return '₱0';
+  if (n >= 1000000) return '₱' + (n / 1000000).toFixed(2) + 'M';
+  if (n >= 1000) return '₱' + Math.round(n / 1000) + 'K';
+  return '₱' + Math.round(n).toLocaleString('en-US');
+}
+
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return 'Good morning,';
@@ -61,12 +68,15 @@ export function ScholarHome({ scholarKey }) {
     async function load() {
       try {
         const todayStr = new Date().toISOString().slice(0, 10);
-        const [expRes, acadRes, scholarsRes, periodsRes, milestonesRes] = await Promise.all([
+        const [expRes, acadRes, scholarsRes, periodsRes, milestonesRes, allExpRes, nextMilRes, nextTravelRes] = await Promise.all([
           supabase.from('expenses').select('date').eq('scholar', scholarKey).order('date', { ascending: false }).limit(1),
           supabase.from('academics').select('gpa, status, sem').eq('scholar', scholarKey).order('id', { ascending: false }),
           supabase.from('scholars').select('current_sem').eq('scholar_key', scholarKey).limit(1),
           supabase.from('english_periods').select('*').eq('scholar', scholarKey).order('start_date', { ascending: false }),
           supabase.from('milestones').select('state').eq('scholar', scholarKey).eq('state', 'done'),
+          supabase.from('expenses').select('amount, qty, bucket, cat, avb').eq('scholar', scholarKey).eq('avb', 'Actual'),
+          supabase.from('milestones').select('name, sem').eq('scholar', scholarKey).neq('state', 'done').order('id', { ascending: true }).limit(1),
+          supabase.from('travels').select('dest, sem').eq('scholar', scholarKey).neq('state', 'done').order('id', { ascending: true }).limit(1),
         ]);
 
         const liveSem = scholarsRes.data?.[0]?.current_sem || config.staticSemKey;
@@ -82,11 +92,29 @@ export function ScholarHome({ scholarKey }) {
 
         const latestExpenseDate = expRes.data?.[0]?.date ?? null;
         const latestGpa = acadRes.data?.find(a => a.gpa != null)?.gpa ?? null;
+        const latestGpaSem = acadRes.data?.find(a => a.gpa != null)?.sem ?? null;
         const gpaStatus = acadRes.data?.find(a => a.gpa != null)?.status ?? null;
         const rewardsCount = milestonesRes.data?.length ?? 0;
         const englishMinutes = englishData?.reduce((s, r) => s + (r.duration_minutes || 0), 0) ?? null;
 
-        setLiveData({ latestExpenseDate, latestGpa, gpaStatus, rewardsCount, englishMinutes, liveSem, liveEnglishTarget });
+        const byBucket = {};
+        (allExpRes.data || []).forEach(e => {
+          const b = e.bucket || 'college';
+          byBucket[b] = (byBucket[b] || 0) + (e.amount || 0) * (e.qty || 1);
+        });
+        const invTotal = Object.values(byBucket).reduce((t, v) => t + v, 0);
+        const investmentTotals = invTotal > 0 ? {
+          total: invTotal,
+          college: byBucket.college || 0,
+          life: byBucket.life || 0,
+          milestone: byBucket.milestone || 0,
+          travel: byBucket.travel || 0,
+        } : null;
+
+        const nextMilestone = nextMilRes.data?.[0] || null;
+        const nextTravel = nextTravelRes.data?.[0] || null;
+
+        setLiveData({ latestExpenseDate, latestGpa, latestGpaSem, gpaStatus, rewardsCount, englishMinutes, liveSem, liveEnglishTarget, investmentTotals, nextMilestone, nextTravel });
       } catch {
         setLiveData({});
       }
@@ -143,6 +171,22 @@ export function ScholarHome({ scholarKey }) {
     { key: 'docs',     icon: <IconDocument size={19} />,  label: 'Documents',        sub: 'Files & records', href: null },
   ];
 
+  const inv = liveData?.investmentTotals ?? null;
+  const nextMil = liveData?.nextMilestone ?? null;
+  const nextTravel = liveData?.nextTravel ?? null;
+  const latestGpa = liveData?.latestGpa ?? null;
+  const latestGpaSem = liveData?.latestGpaSem ?? null;
+  const scholarStaticGpaFloor = NGS_DATA.scholars[scholarKey]?.gpaFloor ?? 81;
+
+  const englishHoursDisplay = (() => {
+    if (!liveData) return null;
+    const mins = liveData.englishMinutes;
+    if (mins == null) return null;
+    const h = mins / 60;
+    const display = h % 1 === 0 ? String(h) : h.toFixed(1);
+    return liveData.liveEnglishTarget ? `${display} / ${liveData.liveEnglishTarget} hrs` : `${display} hrs`;
+  })();
+
   return (
     <div className="sp-page">
       <div className="sp">
@@ -155,6 +199,52 @@ export function ScholarHome({ scholarKey }) {
           </div>
           <p className="sp-greet-kicker">{getGreeting()}</p>
           <h1 className="sp-greet-name">{config.name}.</h1>
+          {(inv || latestGpa != null || nextMil || nextTravel || englishHoursDisplay) && (
+            <div className="sp-stat-cards">
+              {inv && (
+                <div className="sp-sc-card">
+                  <div className="sp-sc-label">Total Investment</div>
+                  <div className="sp-sc-val">{'₱' + Math.round(inv.total).toLocaleString('en-US')}</div>
+                  <div className="sp-sc-subs">
+                    {[['College', inv.college], ['Life', inv.life], ['Milestones', inv.milestone], ['Travel', inv.travel]].map(([lbl, amt]) => (
+                      <div key={lbl} className="sp-sc-sub"><span>{lbl}</span><span>{fmtPhpShort(amt)}</span></div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {latestGpa != null && (
+                <div className="sp-sc-card">
+                  <div className="sp-sc-label">Latest GPA{latestGpaSem ? ` · ${latestGpaSem}` : ''}</div>
+                  <div className="sp-sc-val">{latestGpa.toFixed(2)}%</div>
+                  <div className="sp-sc-subs">
+                    <div className={`sp-sc-sub sp-sc-gpa${latestGpa >= scholarStaticGpaFloor ? ' is-ok' : ' is-warn'}`}>
+                      {latestGpa >= scholarStaticGpaFloor ? `Above ${scholarStaticGpaFloor}% floor` : `Below ${scholarStaticGpaFloor}% floor`}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {nextMil && (
+                <div className="sp-sc-card">
+                  <div className="sp-sc-label">Next Milestone</div>
+                  <div className="sp-sc-val sp-sc-val--sm">{nextMil.name}</div>
+                  {nextMil.sem && <div className="sp-sc-subs"><div className="sp-sc-sub"><span>Expected</span><span>{nextMil.sem}</span></div></div>}
+                </div>
+              )}
+              {nextTravel && (
+                <div className="sp-sc-card">
+                  <div className="sp-sc-label">Next Travel Award</div>
+                  <div className="sp-sc-val sp-sc-val--sm">{nextTravel.dest}</div>
+                  {nextTravel.sem && <div className="sp-sc-subs"><div className="sp-sc-sub"><span>Expected</span><span>{nextTravel.sem}</span></div></div>}
+                </div>
+              )}
+              {englishHoursDisplay && (
+                <div className="sp-sc-card">
+                  <div className="sp-sc-label">English Hours</div>
+                  <div className="sp-sc-val sp-sc-val--sm">{englishHoursDisplay}</div>
+                </div>
+              )}
+            </div>
+          )}
           <div className="sp-head-rule" />
           <div className="sp-head-meta">
             <span className="sp-stage">{liveStage}</span>

@@ -69,15 +69,15 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
     padding: 56px 64px 40px;
     display: grid;
     grid-template-columns: 1fr auto;
-    grid-template-rows: auto auto auto auto;
+    grid-template-rows: auto auto auto auto auto;
     column-gap: 48px;
     align-items: start;
   }
   .sp-track { grid-column: 1 / -1; }
   .sp-greet-kicker { grid-column: 1; }
   .sp-greet-name { grid-column: 1; font-size: 64px; }
-  .sp-head-rule { grid-column: 1 / -1; }
-  .sp-head-meta { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 20px; }
+  .sp-head-rule { grid-column: 1; }
+  .sp-head-meta { grid-column: 1; flex-direction: row; align-items: center; gap: 20px; }
 }
 
 .sp-track {
@@ -307,6 +307,46 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
   transition: color 0.15s;
 }
 .sp-home-link:hover { color: var(--ngs-gold); }
+
+/* ── header stat cards ── */
+.sp-stat-cards {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  margin: 16px 0 0;
+}
+@media (min-width: 1024px) {
+  .sp-stat-cards {
+    grid-column: 2;
+    grid-row: 2 / 5;
+    align-self: center;
+    margin: 0;
+    grid-template-columns: 1fr 1fr;
+    min-width: 320px;
+    max-width: 440px;
+  }
+}
+.sp-sc-card {
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px; padding: 11px 13px;
+}
+.sp-sc-label {
+  font-family: var(--ngs-mono); font-size: 9.5px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(250,247,240,0.45); margin-bottom: 4px;
+}
+.sp-sc-val {
+  font-family: var(--ngs-display); font-size: 20px; font-weight: 400;
+  color: var(--ngs-gold); line-height: 1; letter-spacing: -0.02em;
+}
+.sp-sc-val--sm { font-size: 14px; line-height: 1.3; }
+.sp-sc-subs { margin-top: 6px; display: flex; flex-direction: column; gap: 3px; }
+.sp-sc-sub {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 10.5px; color: rgba(250,247,240,0.5);
+  font-family: var(--ngs-mono);
+}
+.sp-sc-gpa { font-size: 10.5px; font-family: var(--ngs-mono); }
+.sp-sc-gpa.is-ok   { color: rgba(80,200,120,0.85); }
+.sp-sc-gpa.is-warn { color: rgba(201,168,76,0.9); }
 
 /* ── loading shimmer ── */
 .sp-loading {
