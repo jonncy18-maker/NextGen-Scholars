@@ -143,6 +143,7 @@
 .ge-grade { font-family: var(--ngs-mono); color: var(--ngs-muted); }
 .ge-avg   { font-family: var(--ngs-mono); font-weight: 600; color: var(--ngs-navy); }
 .ge-pct   { font-family: var(--ngs-mono); font-weight: 600; color: var(--ngs-gold); }
+.ge-grade-pct { font-size: 9.5px; color: var(--ngs-gold); font-weight: 600; margin-left: 2px; }
 
 .ge-total-row td {
   font-family: var(--ngs-mono);
