@@ -398,7 +398,7 @@ export function Navigator() {
                   <EnglishSection id="sec-english" collapsed={false} onToggle={() => {}} />
                 </SectionErrorBoundary>
                 <SectionErrorBoundary name="Navigator AI">
-                  <NavigatorAI id="sec-navigator-ai" collapsed={false} onToggle={() => {}} />
+                  <NavigatorAI id="sec-navigator-ai" collapsed={false} onToggle={() => {}} englishOnly={true} />
                 </SectionErrorBoundary>
               </>
             } />
