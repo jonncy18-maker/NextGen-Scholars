@@ -435,6 +435,7 @@ function ReviewCard({ items: initialItems, model, scholar, sem, onDiscard, onCon
         {model && <span className="nai-review-model">{model}</span>}
       </div>
 
+      <div className="nai-review-table-wrap">
       <table className="nai-review-table">
         <thead>
           <tr>
@@ -533,6 +534,7 @@ function ReviewCard({ items: initialItems, model, scholar, sem, onDiscard, onCon
           );
         })()}
       </table>
+      </div>
 
       <div className="nai-rev-chat">
         {chatLog.length > 0 && (

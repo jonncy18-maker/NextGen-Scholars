@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { useData } from '../context/DataContext.jsx';
 import { nextMilestone } from '../utils.js';
+import { SEMESTER_OPTIONS } from '../constants.js';
 
 const SEM_DISPLAY = {
   Y1S1:'Y1·S1', Y1S2:'Y1·S2', Y2S1:'Y2·S1', Y2S2:'Y2·S2',
@@ -34,7 +35,7 @@ function daysUntil(dateStr) {
   return `${diff}d`;
 }
 
-export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCount = 0 }) {
+export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCount = 0, onSemesterChange }) {
   const { D, scholarKeys } = useData();
   const [engData, setEngData] = useState({});
 
@@ -129,7 +130,22 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
                 <div className="mh-card-meta">
                   <span>{s.track || '—'}</span>
                   <span className="mh-sep">·</span>
-                  <span>{SEM_DISPLAY[sem] || sem || '—'}</span>
+                  {onSemesterChange ? (
+                    <select
+                      className="mh-sem-select"
+                      value={sem}
+                      onChange={e => onSemesterChange(key, e.target.value)}
+                    >
+                      {sem && !SEMESTER_OPTIONS.includes(sem) && (
+                        <option value={sem}>{SEM_DISPLAY[sem] || sem}</option>
+                      )}
+                      {SEMESTER_OPTIONS.map(o => (
+                        <option key={o} value={o}>{SEM_DISPLAY[o] || o}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span>{SEM_DISPLAY[sem] || sem || '—'}</span>
+                  )}
                 </div>
               </div>
 
