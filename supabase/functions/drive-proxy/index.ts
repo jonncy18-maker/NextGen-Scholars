@@ -89,7 +89,8 @@ Deno.serve(async (req) => {
   let body: ProxyBody
   try { body = await req.json() } catch { return json({ error: 'Invalid JSON body' }, 400) }
 
-  const folderId = Deno.env.get('GOOGLE_DRIVE_FOLDER_ID')
+  // Strip any query params / fragments that get accidentally included when copying a Drive URL
+  const folderId = (Deno.env.get('GOOGLE_DRIVE_FOLDER_ID') ?? '').split(/[?#]/)[0].trim()
   if (!folderId) return json({ error: 'GOOGLE_DRIVE_FOLDER_ID not configured' }, 503)
 
   try {
