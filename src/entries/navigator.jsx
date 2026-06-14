@@ -20,6 +20,7 @@ import { NavigatorAIDrawer } from '../components/NavigatorAIDrawer.jsx';
 import { DocumentsSection } from '../components/DocumentsSection.jsx';
 import { CareerSection } from '../components/CareerSection.jsx';
 import { RiskSection } from '../components/RiskSection.jsx';
+import { GradesSection } from '../components/GradesSection.jsx';
 import { NavFooter } from '../components/NavFooter.jsx';
 
 if (!NGS_DATA || !NGS_DATA.config) {
@@ -27,7 +28,7 @@ if (!NGS_DATA || !NGS_DATA.config) {
 }
 
 const STATIC_SCHOLAR_KEYS = ['claire', 'april', 'aljane'];
-const ALL_SECTION_IDS = ['alerts', 'status', 'expenses', 'deadlines', 'english', 'navigator-ai', 'documents', 'career', 'risk'];
+const ALL_SECTION_IDS = ['alerts', 'status', 'expenses', 'deadlines', 'english', 'navigator-ai', 'documents', 'career', 'risk', 'grades'];
 
 export function Navigator() {
   const [D, setD] = useState(NGS_DATA);
@@ -422,6 +423,9 @@ export function Navigator() {
           </SectionErrorBoundary>
           <SectionErrorBoundary name="Risk">
             <RiskSection {...sec('risk')} />
+          </SectionErrorBoundary>
+          <SectionErrorBoundary name="Grades">
+            <GradesSection {...sec('grades')} />
           </SectionErrorBoundary>
         </main>
         <NavFooter sheetsStatus={sheetsStatus} writeError={writeError} />

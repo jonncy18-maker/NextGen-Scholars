@@ -2567,3 +2567,290 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 @media (max-width: 600px) {
   .risk-grid { grid-template-columns: 1fr; }
 }
+
+/* ── English Section rewrite (enp-*) ─────────────────────────────────────── */
+
+.enp-body { padding: 0 0 24px; }
+
+.enp-scholars { display: flex; flex-direction: column; gap: 24px; margin-top: 16px; }
+
+.enp-scholar-block {
+  background: #fff;
+  border: 1px solid var(--ngs-rule);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.enp-scholar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--ngs-rule);
+  background: var(--ngs-paper);
+}
+.enp-scholar-name {
+  font-family: var(--ngs-sans); font-size: 13px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase; color: var(--ngs-navy);
+}
+.enp-total-chip {
+  font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-muted);
+  background: var(--ngs-paper-2); border-radius: 20px; padding: 2px 9px;
+}
+
+/* Period row */
+.enp-period-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 10px 16px; border-bottom: 1px solid var(--ngs-rule);
+}
+.enp-no-period { font-size: 12px; color: var(--ngs-muted); font-style: italic; }
+
+.enp-period-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 10px;
+  border: 1px solid var(--ngs-rule); border-radius: 20px;
+  background: var(--ngs-paper); font-size: 12px;
+}
+.enp-period-chip.enp-period-active {
+  border-color: var(--ngs-gold); background: #FFFDF5;
+}
+.enp-period-label { font-weight: 700; font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-navy); }
+.enp-period-dates { color: var(--ngs-muted); font-family: var(--ngs-mono); font-size: 10.5px; }
+.enp-period-goal  { font-family: var(--ngs-mono); font-size: 10.5px; color: var(--ngs-green); font-weight: 600; }
+.enp-period-edit-btn, .enp-period-del-btn {
+  font-family: var(--ngs-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
+  padding: 1px 6px; border-radius: 3px; cursor: pointer;
+  border: 1px solid var(--ngs-rule); background: transparent; color: var(--ngs-muted);
+}
+.enp-period-edit-btn:hover { color: var(--ngs-navy); border-color: var(--ngs-navy); }
+.enp-period-del-btn:hover  { color: var(--ngs-red);  border-color: var(--ngs-red); }
+
+.enp-add-period-btn {
+  font-family: var(--ngs-mono); font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 4px 10px; border: 1.5px dashed var(--ngs-rule);
+  border-radius: 20px; background: transparent; color: var(--ngs-muted);
+  cursor: pointer;
+}
+.enp-add-period-btn:hover { border-color: var(--ngs-gold); color: var(--ngs-gold); }
+
+/* Form (periods + sessions) */
+.enp-form {
+  margin: 0 16px 12px;
+  background: var(--ngs-paper);
+  border: 1px solid var(--ngs-rule);
+  border-radius: 6px; padding: 14px 16px;
+}
+.enp-form-fields { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+.enp-field {
+  display: flex; flex-direction: column; gap: 3px;
+  font-family: var(--ngs-sans); font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.05em; text-transform: uppercase; color: var(--ngs-muted);
+}
+.enp-field input, .enp-field select {
+  font-family: var(--ngs-sans); font-size: 13px; color: var(--ngs-ink);
+  background: #fff; border: 1px solid var(--ngs-rule);
+  border-radius: 4px; padding: 5px 8px; min-width: 130px;
+}
+.enp-field-wide { flex: 1; min-width: 200px; }
+.enp-field-wide input { width: 100%; }
+.enp-cat-pick { display: flex; gap: 6px; }
+.enp-cat-btn {
+  padding: 5px 10px; border: 1.5px solid var(--ngs-rule);
+  border-radius: 4px; background: var(--ngs-paper);
+  font-family: var(--ngs-sans); font-size: 12px; color: var(--ngs-muted);
+  cursor: pointer; text-transform: none; letter-spacing: 0; font-weight: 500;
+}
+.enp-cat-btn.is-active { border-color: var(--ngs-navy); background: var(--ngs-navy); color: #fff; }
+.enp-form-error { font-size: 12px; color: var(--ngs-red); margin-bottom: 6px; }
+.enp-form-actions { display: flex; gap: 8px; }
+.enp-save-btn {
+  font-family: var(--ngs-mono); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  padding: 6px 16px; background: var(--ngs-navy); color: #fff;
+  border: none; border-radius: 4px; cursor: pointer;
+}
+.enp-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.enp-save-btn:not(:disabled):hover { background: var(--ngs-navy-deep); }
+.enp-cancel-btn {
+  font-family: var(--ngs-mono); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  padding: 6px 12px; background: transparent;
+  color: var(--ngs-muted); border: 1px solid var(--ngs-rule);
+  border-radius: 4px; cursor: pointer;
+}
+.enp-cancel-btn:hover { color: var(--ngs-navy); border-color: var(--ngs-navy); }
+
+/* Progress */
+.enp-progress { padding: 10px 16px; border-bottom: 1px solid var(--ngs-rule); }
+.enp-bar-track { height: 5px; background: var(--ngs-paper-2); border-radius: 999px; overflow: hidden; margin-bottom: 6px; }
+.enp-bar-fill  { height: 100%; background: var(--ngs-gold); border-radius: 999px; transition: width 0.6s cubic-bezier(0.4,0,0.2,1); min-width: 2px; }
+.enp-progress-stats { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.enp-hrs-stat  { font-family: var(--ngs-mono); font-size: 13px; font-weight: 700; color: var(--ngs-navy); }
+.enp-pct-stat  { font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-gold); font-weight: 600; }
+.enp-pace-stat { font-family: var(--ngs-mono); font-size: 10.5px; color: var(--ngs-muted); }
+
+/* Activity breakdown */
+.enp-breakdown { padding: 10px 16px; border-bottom: 1px solid var(--ngs-rule); }
+.enp-breakdown-heading { font-family: var(--ngs-sans); font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ngs-muted); margin-bottom: 8px; }
+.enp-breakdown-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.enp-breakdown-type { font-family: var(--ngs-sans); font-size: 12px; color: var(--ngs-ink); min-width: 100px; }
+.enp-breakdown-track { flex: 1; height: 4px; background: var(--ngs-paper-2); border-radius: 2px; overflow: hidden; }
+.enp-breakdown-bar { height: 100%; background: var(--ngs-navy); border-radius: 2px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
+.enp-breakdown-hrs { font-family: var(--ngs-mono); font-size: 10.5px; color: var(--ngs-muted); min-width: 36px; text-align: right; }
+
+/* Sessions */
+.enp-sessions { padding: 10px 16px 14px; }
+.enp-sessions-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.enp-sessions-label { font-family: var(--ngs-sans); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ngs-muted); }
+.enp-add-sess-btn {
+  font-family: var(--ngs-mono); font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 3px 10px; border: 1.5px solid var(--ngs-navy);
+  border-radius: 4px; background: transparent; color: var(--ngs-navy); cursor: pointer;
+}
+.enp-add-sess-btn:hover { background: var(--ngs-navy); color: #fff; }
+
+.enp-session-list { display: flex; flex-direction: column; gap: 0; }
+.enp-session-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 0; border-bottom: 1px solid var(--ngs-rule);
+  font-family: var(--ngs-sans); font-size: 12.5px;
+}
+.enp-session-row:last-child { border-bottom: none; }
+.enp-sess-date  { font-family: var(--ngs-mono); font-size: 10.5px; color: var(--ngs-muted); min-width: 52px; }
+.enp-sess-type  { color: var(--ngs-ink); font-weight: 500; flex: 1; }
+.enp-sess-cat   { font-family: var(--ngs-mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 1px 5px; border-radius: 3px; }
+.enp-cat-conversation { background: #EBF0FB; color: var(--ngs-blue-nav); }
+.enp-cat-input        { background: var(--ngs-paper-2); color: var(--ngs-muted); }
+.enp-sess-notes { font-size: 11px; color: var(--ngs-muted); font-style: italic; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.enp-sess-dur   { font-family: var(--ngs-mono); font-size: 11px; font-weight: 600; color: var(--ngs-navy); white-space: nowrap; }
+.enp-sess-del   { font-size: 14px; color: var(--ngs-muted); padding: 1px 5px; cursor: pointer; border-radius: 3px; }
+.enp-sess-del:hover:not(:disabled) { color: var(--ngs-red); background: rgba(177,27,42,0.07); }
+.enp-sess-del:disabled { opacity: 0.4; }
+
+.enp-sessions-empty { font-size: 12px; color: var(--ngs-muted); font-style: italic; padding: 8px 0; }
+
+.enp-deploy-note {
+  margin-top: 16px; font-size: 12px; color: var(--ngs-muted);
+  padding: 8px 12px; background: var(--ngs-paper-2); border-radius: 5px;
+}
+.enp-deploy-note code { font-family: var(--ngs-mono); font-size: 11px; }
+
+/* ── Section 10 — Grades ─────────────────────────────────────────────────── */
+
+.gr-body { padding: 0 0 16px; }
+
+.gr-scholars { display: flex; flex-direction: column; gap: 24px; padding: 16px 0 0; }
+
+/* Scholar block */
+.gr-scholar-block {
+  border: 1px solid var(--ngs-rule);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.gr-scholar-header {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 16px; background: var(--ngs-paper-2);
+  border-bottom: 1px solid var(--ngs-rule);
+}
+.gr-scholar-name {
+  font-family: var(--ngs-serif); font-size: 15px; font-weight: 700;
+  color: var(--ngs-navy); margin-right: 4px;
+}
+.gr-scholar-meta {
+  font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-muted); flex: 1;
+}
+
+/* Semester block */
+.gr-sem-block { border-bottom: 1px solid var(--ngs-rule); }
+.gr-sem-block:last-child { border-bottom: none; }
+.gr-sem-header {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 16px; background: var(--ngs-paper);
+}
+.gr-sem-label {
+  font-family: var(--ngs-mono); font-size: 12px; font-weight: 700;
+  color: var(--ngs-navy); min-width: 52px;
+}
+.gr-sem-gpa {
+  font-family: var(--ngs-mono); font-size: 12px; font-weight: 700; color: var(--ngs-gold);
+}
+.gr-sem-pct { font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-muted); }
+.gr-sem-meta { font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-muted); flex: 1; }
+
+/* Shared add button */
+.gr-add-btn {
+  font-family: var(--ngs-mono); font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 3px 10px; border: 1.5px solid var(--ngs-navy);
+  border-radius: 4px; background: transparent; color: var(--ngs-navy); cursor: pointer;
+  margin-left: auto;
+}
+.gr-add-btn:hover { background: var(--ngs-navy); color: #fff; }
+
+/* Grade table */
+.gr-table-wrap { overflow-x: auto; padding: 0 0 4px; }
+.gr-table {
+  width: 100%; border-collapse: collapse;
+  font-family: var(--ngs-sans); font-size: 12.5px;
+}
+.gr-table th {
+  padding: 5px 10px; text-align: left;
+  font-family: var(--ngs-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ngs-muted);
+  border-bottom: 1px solid var(--ngs-rule); background: var(--ngs-paper);
+  white-space: nowrap;
+}
+.gr-table td { padding: 6px 10px; border-bottom: 1px solid var(--ngs-rule); vertical-align: middle; }
+.gr-table tbody tr:hover td { background: var(--ngs-paper-2); }
+.gr-table tfoot tr.gr-total-row td {
+  font-family: var(--ngs-mono); font-size: 11px; font-weight: 700;
+  color: var(--ngs-navy); background: var(--ngs-paper-2); border-top: 1px solid var(--ngs-rule);
+}
+
+.gr-n    { text-align: right; }
+.gr-avg  { font-family: var(--ngs-mono); font-size: 12px; font-weight: 700; color: var(--ngs-navy); }
+.gr-pct  { font-family: var(--ngs-mono); font-size: 12px; color: var(--ngs-muted); }
+.gr-grade { font-family: var(--ngs-mono); font-size: 12px; }
+.gr-scale { font-family: var(--ngs-mono); font-size: 10px; color: var(--ngs-muted); }
+.gr-subject { font-weight: 500; max-width: 220px; }
+
+/* Editing row */
+.gr-editing-row td { background: #FFFDF0; }
+.gr-input {
+  font-family: var(--ngs-sans); font-size: 12px; padding: 3px 6px;
+  border: 1px solid var(--ngs-navy); border-radius: 4px; width: 100%; box-sizing: border-box;
+}
+.gr-input-sm { width: 72px; }
+.gr-select { font-family: var(--ngs-mono); font-size: 11px; padding: 3px 4px; border-radius: 4px; border: 1px solid var(--ngs-rule); }
+
+/* Row action buttons */
+.gr-row-actions { white-space: nowrap; display: flex; gap: 4px; justify-content: flex-end; }
+.gr-row-edit, .gr-row-save, .gr-row-cancel, .gr-row-del {
+  font-family: var(--ngs-mono); font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 3px; cursor: pointer; border: 1px solid;
+}
+.gr-row-edit   { border-color: var(--ngs-navy); color: var(--ngs-navy); background: transparent; }
+.gr-row-edit:hover { background: var(--ngs-navy); color: #fff; }
+.gr-row-save   { border-color: #1a6b2a; color: #1a6b2a; background: transparent; }
+.gr-row-save:hover:not(:disabled) { background: #1a6b2a; color: #fff; }
+.gr-row-cancel { border-color: var(--ngs-muted); color: var(--ngs-muted); background: transparent; }
+.gr-row-cancel:hover { background: var(--ngs-muted); color: #fff; }
+.gr-row-del    { border-color: var(--ngs-red); color: var(--ngs-red); background: transparent; font-size: 14px; line-height: 1; }
+.gr-row-del:hover:not(:disabled) { background: var(--ngs-red); color: #fff; }
+
+/* Add form */
+.gr-add-form { padding: 12px 16px 14px; background: #FFFDF0; border-top: 1px solid var(--ngs-rule); }
+.gr-add-fields { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.gr-field { display: flex; flex-direction: column; gap: 3px; }
+.gr-field span { font-family: var(--ngs-mono); font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ngs-muted); }
+.gr-field input, .gr-field select { font-family: var(--ngs-sans); font-size: 12px; padding: 4px 7px; border: 1px solid var(--ngs-rule); border-radius: 4px; }
+.gr-field-wide { flex: 2; min-width: 180px; }
+.gr-add-preview { font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-navy); margin-top: 8px; font-weight: 600; }
+.gr-add-err { color: var(--ngs-red); font-size: 11px; margin-top: 4px; }
+.gr-add-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+/* New sem row */
+.gr-new-sem-row { display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: var(--ngs-paper-2); border-bottom: 1px solid var(--ngs-rule); }
+.gr-new-sem-hint { font-size: 11px; color: var(--ngs-muted); font-style: italic; }
+
+.gr-empty { padding: 14px 16px; font-size: 12px; color: var(--ngs-muted); font-style: italic; }
