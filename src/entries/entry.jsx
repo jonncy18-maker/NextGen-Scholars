@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { EXPENSE_CATS, AVB_OPTIONS } from '../constants.js';
 import { NGS_DATA } from '../../scholars-data.js';
 import { updateExpense, writeActivityLog, writeSubmission, resubmitExpense, markSubmissionReadByScholar } from '../supabase-writer.js';
@@ -51,6 +51,7 @@ function makeEmptyRow(defaultSem) {
 }
 
 export function EntryApp() {
+  const routerLocation = useLocation();
   const [scholarKey, setScholarKey] = useState('claire');
   const [password, setPassword] = useState('');
   const [authed, setAuthed] = useState(false);
@@ -59,15 +60,16 @@ export function EntryApp() {
 
   useEffect(() => { loadConfig().then(setConfig); }, []);
 
-  // Auto-auth if arriving from the scholar portal (sessionStorage set by ScholarHome)
+  // Auto-auth if arriving from the scholar portal (sessionStorage set by ScholarHome).
+  // Must use react-router's location.search — window.location.search is empty in HashRouter.
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
+    const params = new URLSearchParams(routerLocation.search);
     const preauth = params.get('scholar');
     if (preauth && sessionStorage.getItem('ngs_auth_scholar') === preauth) {
       const s = SCHOLARS.find(s => s.key === preauth);
       if (s) { setScholarKey(preauth); setAuthed(true); }
     }
-  }, []);
+  }, [routerLocation.search]);
 
   function unlock(e) {
     e.preventDefault();

@@ -397,9 +397,7 @@ export function EnglishSection({ id, collapsed, onToggle }) {
               />
             ))}
           </div>
-          <p className="enp-deploy-note">
-            ⚠ Run <code>supabase/english_periods.sql</code> in the Supabase SQL editor before first use.
-          </p>
+
         </div>
       )}
     </section>
