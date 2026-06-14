@@ -41,9 +41,10 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
   }
 }
 
-/* desktop: cap content width and add generous padding */
+/* desktop: cap content width, center the frame, generous padding */
 @media (min-width: 1024px) {
-  .sp-page { background: var(--ngs-paper-2); }
+  .sp-page { background: var(--ngs-paper-2); align-items: center; }
+  .sp { max-width: 1000px; width: 100%; }
 }
 
 /* ── greeting header ── */
@@ -155,7 +156,7 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
   .sp-primary-grid { gap: 16px; padding-bottom: 28px; }
 }
 @media (min-width: 1024px) {
-  .sp-primary-grid { grid-template-columns: repeat(2, minmax(0, 320px)); gap: 20px; padding-bottom: 32px; }
+  .sp-primary-grid { grid-template-columns: 1fr 1fr; gap: 24px; padding-bottom: 36px; }
 }
 .sp-card {
   position: relative; display: flex; flex-direction: column;

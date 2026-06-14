@@ -39,6 +39,19 @@ export const CAT_TO_BUCKET = {
   'Living Expenses':     'life',
 };
 
+// English session types and their practice categories.
+// session_type is stored on english_periods; activity_type is stored on english_sessions.
+export const SESSION_TYPES = [
+  { key: 'summer_bootcamp', label: 'Summer Bootcamp' },
+  { key: 'oet_prep',        label: 'OET Prep' },
+];
+
+export const SESSION_CATEGORIES = {
+  summer_bootcamp: ['Free Conversation', 'Travel', 'Visa Interview', 'Medical English'],
+  oet_prep:        ['Reading', 'Listening', 'Writing', 'Speaking'],
+  default:         ['Speaking', 'Listening', 'Reading', 'Writing', 'Other'],
+};
+
 // Scholar name → CSS modifier class. Keys are lowercase to match data keys.
 export const NAMECLASS = { claire: '', april: 't-april', aljane: 't-aljane' };
 
