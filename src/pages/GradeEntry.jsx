@@ -557,9 +557,10 @@ export function GradeEntry({ scholarKey }) {
                     <tr className="ge-total-row">
                       <td>Weighted {semIsK12 ? 'avg' : 'GPA'}</td>
                       <td className="ge-n">{totalUnits}</td>
-                      <td colSpan={4} />
+                      <td colSpan={3} />
+                      <td className="ge-n ge-avg">{currentGpa.toFixed(2)}</td>
                       <td className="ge-n ge-pct">
-                        {semIsK12 ? `${currentGpa.toFixed(1)}%` : (currentPct != null ? `${currentPct.toFixed(1)}%` : currentGpa.toFixed(2))}
+                        {semIsK12 ? `${currentGpa.toFixed(1)}%` : (currentPct != null ? `${currentPct.toFixed(1)}%` : '—')}
                       </td>
                     </tr>
                   </tfoot>

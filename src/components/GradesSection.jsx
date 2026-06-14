@@ -226,9 +226,10 @@ function SemBlock({ sk, sem, rows, onRowSaved, onRowDeleted, onAdded, onSemDelet
                 <tr className="gr-total-row">
                   <td colSpan={2}>Weighted {isK12Sem ? 'avg' : 'GPA'}</td>
                   <td className="gr-n">{totalUnits}</td>
-                  <td colSpan={4} />
+                  <td colSpan={3} />
+                  <td className="gr-n gr-avg">{gpa.toFixed(2)}</td>
                   <td className="gr-n gr-pct">
-                    {isK12Sem ? `${gpa.toFixed(1)}%` : gpa.toFixed(2)}
+                    {isK12Sem ? `${gpa.toFixed(1)}%` : (uvToPct(gpa) != null ? `${uvToPct(gpa).toFixed(1)}%` : '—')}
                   </td>
                   <td />
                 </tr>
