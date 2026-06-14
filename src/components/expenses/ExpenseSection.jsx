@@ -748,30 +748,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
             </button>
           ))}
         </div>
-        <div className="exp-controls-right">
-          <button
-            className={`filter-toggle-btn${showFilters ? ' is-open' : ''}${activeFilters > 0 ? ' has-active' : ''}`}
-            onClick={() => setShowFilters(v => !v)}
-          >
-            {showFilters ? '▲' : '▼'} Filters{activeFilters > 0 ? ` · ${activeFilters} active` : ''}
-          </button>
-        </div>
       </div>
-
-      <TotalsRow s={s} currency={currency} />
-
-      {workbenchSlot?.(expScholar)}
-
-      {showFilters && (
-        <FilterPanel
-          filters={filters}
-          setFilters={setFilters}
-          uniqueCats={uniqueCats}
-          uniqueStatuses={uniqueStatuses}
-          uniqueSents={uniqueSents}
-          onClear={clearFilters}
-        />
-      )}
 
       {(() => {
             const pendingRows    = rows.filter(r => r.sent !== 'Yes' && !sentOverrides.has(String(r.id)));
@@ -862,6 +839,10 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
             );
           })()}
 
+      <TotalsRow s={s} currency={currency} />
+
+      {workbenchSlot?.(expScholar)}
+
           <div className="exp-table-card">
             <div className="exp-toolbar">
               <input type="text" placeholder="Search items…" value={expSearch} onChange={e => setExpSearch(e.target.value)} />
@@ -874,7 +855,7 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
               )}
             </div>
 
-            {/* Grouping controls */}
+            {/* Grouping controls (left) + Filter toggle (right) */}
             <div className="exp-groupmode">
               <span className="exp-groupmode-label">Group by</span>
               <div className="exp-groupmode-radios">
@@ -921,7 +902,26 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
                   <button className="exp-groupmode-edit-btn" onClick={() => setShowMultiModal(true)}>Edit</button>
                 </div>
               )}
+
+              <button
+                className={`filter-toggle-btn${showFilters ? ' is-open' : ''}${activeFilters > 0 ? ' has-active' : ''}`}
+                onClick={() => setShowFilters(v => !v)}
+                style={{ marginLeft: 'auto' }}
+              >
+                {showFilters ? '▲' : '▼'} Filters{activeFilters > 0 ? ` · ${activeFilters} active` : ''}
+              </button>
             </div>
+
+            {showFilters && (
+              <FilterPanel
+                filters={filters}
+                setFilters={setFilters}
+                uniqueCats={uniqueCats}
+                uniqueStatuses={uniqueStatuses}
+                uniqueSents={uniqueSents}
+                onClear={clearFilters}
+              />
+            )}
 
             <div className="exp-table-scroll">
               <table className="exp">
