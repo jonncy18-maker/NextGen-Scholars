@@ -11,6 +11,7 @@ const SECTION_NAV = [
   { id: 'sec-documents',    label: '07  Documents' },
   { id: 'sec-career',       label: '08  Career' },
   { id: 'sec-risk',         label: '09  Risk' },
+  { id: 'sec-grades',       label: '10  Grades' },
 ];
 
 export function NavBar({
