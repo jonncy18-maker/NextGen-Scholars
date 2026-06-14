@@ -1890,6 +1890,34 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 .nai-discard-btn:hover { color: var(--ngs-red); border-color: var(--ngs-red); }
 .nai-confirm-note { font-size: 12px; color: var(--ngs-muted); }
 
+/* AI chat strip inside grade review panels */
+.nai-rev-chat { margin: 10px 0 6px; }
+.nai-rev-chat-log {
+  display: flex; flex-direction: column; gap: 5px;
+  margin-bottom: 8px; max-height: 120px; overflow-y: auto;
+}
+.nai-rev-chat-msg {
+  font-size: 12px; padding: 6px 10px; border-radius: 8px; max-width: 92%;
+  font-family: var(--ngs-sans); line-height: 1.4;
+}
+.nai-rev-chat-user { background: var(--ngs-navy); color: #fff; align-self: flex-end; }
+.nai-rev-chat-ai   { background: var(--ngs-paper-2); color: var(--ngs-ink); align-self: flex-start; border: 1px solid var(--ngs-rule); }
+.nai-rev-chat-form { display: flex; gap: 6px; }
+.nai-rev-chat-input {
+  flex: 1; padding: 7px 10px; border-radius: 6px;
+  border: 1px solid var(--ngs-rule); background: #fff;
+  font-family: var(--ngs-sans); font-size: 12.5px; color: var(--ngs-ink);
+}
+.nai-rev-chat-input:focus { outline: none; border-color: var(--ngs-navy); }
+.nai-rev-chat-input::placeholder { color: var(--ngs-muted); }
+.nai-rev-chat-send {
+  padding: 7px 13px; border-radius: 6px; border: none;
+  background: var(--ngs-gold); color: var(--ngs-navy);
+  font-family: var(--ngs-mono); font-size: 11px; font-weight: 700;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+}
+.nai-rev-chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
 .nai-success {
   padding: 12px 16px; border-radius: 6px;
   background: rgba(47,125,85,0.08); border: 1px solid rgba(47,125,85,0.22);
