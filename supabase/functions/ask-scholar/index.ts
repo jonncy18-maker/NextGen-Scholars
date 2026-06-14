@@ -34,6 +34,7 @@ Deno.serve(async (req: Request) => {
     sem?:      string
     file?:     { base64: string; mime: string }
     messages?: { role: string; text: string }[]
+    grades?:   unknown[]
   }
   try {
     body = await req.json()
@@ -41,7 +42,7 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Invalid JSON body' }, 400)
   }
 
-  const { scholar, type = 'query', text, sem, file, messages } = body
+  const { scholar, type = 'query', text, sem, file, messages, grades } = body
 
   if (!scholar || !VALID_SCHOLARS.includes(scholar)) {
     return json({ error: 'Invalid or missing scholar key' }, 400)
@@ -77,6 +78,37 @@ Deno.serve(async (req: Request) => {
       return json({ tier: 3, status: 'error', error: t3.error }, 502)
     } catch (err) {
       return json({ error: (err as Error).message ?? 'Grade ingest failed' }, 500)
+    }
+  }
+
+  // Grade correction — apply a natural-language instruction to an extracted grades array
+  if (type === 'grade_edit') {
+    if (!text?.trim())       return json({ error: 'grade_edit requires instruction text' }, 400)
+    if (!Array.isArray(grades)) return json({ error: 'grade_edit requires grades array' }, 400)
+    const apiKey = Deno.env.get('GOOGLE_AI_KEY')
+    if (!apiKey) return json({ error: 'AI not configured' }, 503)
+
+    const prompt = `You are correcting AI-extracted grade entries before a student saves them.\n\nCurrent grades JSON:\n${JSON.stringify(grades, null, 2)}\n\nInstruction: ${text}\n\nReturn ONLY the corrected JSON array with the same structure (fields: subject, units, school, prelim, midterm, final_grade). No explanation, no markdown fences — raw JSON array only.`
+
+    try {
+      const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
+      const res = await fetch(`${geminiUrl}?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 2048, temperature: 0.1, thinkingConfig: { thinkingBudget: 0 } },
+        }),
+      })
+      const gJson = await res.json()
+      const raw = gJson?.candidates?.[0]?.content?.parts?.[0]?.text as string | undefined
+      if (!raw) return json({ error: 'AI returned no response' }, 502)
+      const match = raw.match(/\[[\s\S]*\]/)
+      if (!match) return json({ error: 'Could not parse corrected grades from AI response' }, 502)
+      const corrected = JSON.parse(match[0])
+      return json({ grades: corrected })
+    } catch (err) {
+      return json({ error: (err as Error).message ?? 'grade_edit failed' }, 500)
     }
   }
 

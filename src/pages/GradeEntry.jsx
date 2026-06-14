@@ -65,6 +65,123 @@ function weightedGpa(rows) {
 
 const emptyForm = (school = 'uv') => ({ subject: '', units: '3', prelim: '', midterm: '', final_grade: '', school });
 
+// ── Review panel: editable table + AI chat to fix extracted grades ────────────
+
+const SCHOOLS_OPT = [{ value: 'uv', label: 'UV' }, { value: 'k12', label: 'K-12' }];
+
+function ReviewPanel({ review, setReview, scholarKey, loading, error, onConfirm, onBack }) {
+  const [chatInput, setChatInput] = useState('');
+  const [chatBusy,  setChatBusy]  = useState(false);
+  const [chatError, setChatError] = useState(null);
+  const [chatLog,   setChatLog]   = useState([]); // [{role, text}]
+
+  function setField(i, field, val) {
+    setReview(prev => prev.map((g, idx) => idx === i ? { ...g, [field]: val } : g));
+  }
+  function removeRow(i) {
+    setReview(prev => prev.filter((_, idx) => idx !== i));
+  }
+
+  async function handleChat(e) {
+    e.preventDefault();
+    const instruction = chatInput.trim();
+    if (!instruction || chatBusy) return;
+    setChatLog(prev => [...prev, { role: 'user', text: instruction }]);
+    setChatInput('');
+    setChatBusy(true); setChatError(null);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+        body: JSON.stringify({ scholar: scholarKey, type: 'grade_edit', text: instruction, grades: review }),
+      });
+      const data = await res.json();
+      if (!res.ok || !Array.isArray(data.grades)) throw new Error(data.error || 'AI could not update grades.');
+      setReview(data.grades);
+      setChatLog(prev => [...prev, { role: 'ai', text: `Done — updated ${data.grades.length} subject${data.grades.length !== 1 ? 's' : ''}.` }]);
+    } catch (err) {
+      setChatError(err.message);
+      setChatLog(prev => [...prev, { role: 'ai', text: `Error: ${err.message}` }]);
+    } finally {
+      setChatBusy(false);
+    }
+  }
+
+  return (
+    <div>
+      <p className="ge-ai-import-hint">
+        {review.length} subject{review.length !== 1 ? 's' : ''} found. Edit cells directly or ask AI to fix.
+      </p>
+
+      {/* Editable review table */}
+      <div className="ge-review-wrap">
+        <table className="ge-review-table">
+          <thead>
+            <tr>
+              <th>Subject</th>
+              <th>Scale</th>
+              <th>Units</th>
+              <th>Prelim</th>
+              <th>Mid</th>
+              <th>Final</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {review.map((g, i) => (
+              <tr key={i}>
+                <td><input className="ge-rev-input ge-rev-wide" value={g.subject ?? ''} onChange={e => setField(i, 'subject', e.target.value)} /></td>
+                <td>
+                  <select className="ge-rev-select" value={g.school ?? 'uv'} onChange={e => setField(i, 'school', e.target.value)}>
+                    {SCHOOLS_OPT.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  </select>
+                </td>
+                <td><input className="ge-rev-input ge-rev-num" type="number" min="0.5" max="6" step="0.5" value={g.units ?? 3} onChange={e => setField(i, 'units', e.target.value)} /></td>
+                <td><input className="ge-rev-input ge-rev-num" type="number" step="0.01" value={g.prelim ?? ''} onChange={e => setField(i, 'prelim', e.target.value)} /></td>
+                <td><input className="ge-rev-input ge-rev-num" type="number" step="0.01" value={g.midterm ?? ''} onChange={e => setField(i, 'midterm', e.target.value)} /></td>
+                <td><input className="ge-rev-input ge-rev-num" type="number" step="0.01" value={g.final_grade ?? ''} onChange={e => setField(i, 'final_grade', e.target.value)} /></td>
+                <td><button className="ge-rev-del" type="button" onClick={() => removeRow(i)} title="Remove">×</button></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* AI correction chat */}
+      <div className="ge-rev-chat">
+        {chatLog.length > 0 && (
+          <div className="ge-rev-chat-log">
+            {chatLog.map((m, i) => (
+              <div key={i} className={`ge-rev-chat-msg ge-rev-chat-${m.role}`}>{m.text}</div>
+            ))}
+          </div>
+        )}
+        <form className="ge-rev-chat-form" onSubmit={handleChat}>
+          <input
+            className="ge-rev-chat-input"
+            placeholder='Ask AI to fix anything, e.g. "change Anatomy final to 1.75"'
+            value={chatInput}
+            onChange={e => setChatInput(e.target.value)}
+            disabled={chatBusy}
+          />
+          <button type="submit" className="ge-rev-chat-send" disabled={!chatInput.trim() || chatBusy}>
+            {chatBusy ? '…' : 'Fix →'}
+          </button>
+        </form>
+      </div>
+
+      {(error || chatError) && <div className="et-error">{error || chatError}</div>}
+
+      <div className="ge-rev-actions">
+        <button className="et-submit" onClick={onConfirm} disabled={loading || !review.length}>
+          {loading ? 'Saving…' : 'Confirm & save'}
+        </button>
+        <button className="et-log-btn" onClick={onBack}>Back</button>
+      </div>
+    </div>
+  );
+}
+
 // ── AI grade import (session-gated — only visible when mentor is logged in) ──
 
 function AiGradeImport({ scholarKey, semKey, onSaved }) {
@@ -167,17 +284,15 @@ function AiGradeImport({ scholarKey, semKey, onSaved }) {
           {error && <div className="et-error">{error}</div>}
         </form>
       ) : (
-        <div>
-          <p className="ge-ai-import-hint">{review.length} subject{review.length !== 1 ? 's' : ''} found — confirm to save.</p>
-          <ul className="ge-ai-preview-list">
-            {review.map((g, i) => <li key={i}><strong>{g.subject}</strong> · {g.units} units · Final: {g.final_grade ?? '—'}</li>)}
-          </ul>
-          {error && <div className="et-error">{error}</div>}
-          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            <button className="et-submit" onClick={handleConfirm} disabled={loading}>{loading ? 'Saving…' : 'Confirm & save'}</button>
-            <button className="et-log-btn" onClick={() => setReview(null)}>Back</button>
-          </div>
-        </div>
+        <ReviewPanel
+          review={review}
+          setReview={setReview}
+          scholarKey={scholarKey}
+          loading={loading}
+          error={error}
+          onConfirm={handleConfirm}
+          onBack={() => setReview(null)}
+        />
       )}
       {success && <div className="ge-ai-success">✓ {success} subjects saved.</div>}
     </div>
