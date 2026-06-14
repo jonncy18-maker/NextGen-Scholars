@@ -36,6 +36,7 @@ Deno.serve(async (req: Request) => {
     file?:     { base64: string; mime: string }
     messages?: { role: string; text: string }[]
     grades?:   unknown[]
+    items?:    unknown[]
   }
   try {
     body = await req.json()
@@ -43,7 +44,7 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Invalid JSON body' }, 400)
   }
 
-  const { scholar, type = 'query', text, sem, model: modelPref, file, messages, grades } = body
+  const { scholar, type = 'query', text, sem, model: modelPref, file, messages, grades, items } = body
 
   if (!scholar || !VALID_SCHOLARS.includes(scholar)) {
     return json({ error: 'Invalid or missing scholar key' }, 400)
@@ -132,6 +133,37 @@ Deno.serve(async (req: Request) => {
       return json({ grades: corrected })
     } catch (err) {
       return json({ error: (err as Error).message ?? 'grade_edit failed' }, 500)
+    }
+  }
+
+  // Expense correction — apply a natural-language instruction to an extracted items array
+  if (type === 'expense_edit') {
+    if (!text?.trim())        return json({ error: 'expense_edit requires instruction text' }, 400)
+    if (!Array.isArray(items)) return json({ error: 'expense_edit requires items array' }, 400)
+    const apiKey = Deno.env.get('GOOGLE_AI_KEY')
+    if (!apiKey) return json({ error: 'AI not configured' }, 503)
+
+    const prompt = `You are correcting AI-extracted expense items before the user saves them.\n\nCurrent items JSON:\n${JSON.stringify(items, null, 2)}\n\nInstruction: ${text}\n\nReturn ONLY the corrected JSON array with the same structure (fields: item, amount, qty, cat, date, vendor). No explanation, no markdown fences — raw JSON array only.`
+
+    try {
+      const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
+      const res = await fetch(`${geminiUrl}?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 2048, temperature: 0.1, thinkingConfig: { thinkingBudget: 0 } },
+        }),
+      })
+      const gJson = await res.json()
+      const raw = gJson?.candidates?.[0]?.content?.parts?.[0]?.text as string | undefined
+      if (!raw) return json({ error: 'AI returned no response' }, 502)
+      const match = raw.match(/\[[\s\S]*\]/)
+      if (!match) return json({ error: 'Could not parse corrected items from AI response' }, 502)
+      const corrected = JSON.parse(match[0])
+      return json({ items: corrected })
+    } catch (err) {
+      return json({ error: (err as Error).message ?? 'expense_edit failed' }, 500)
     }
   }
 
