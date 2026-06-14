@@ -1846,8 +1846,11 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 .nai-review-model {
   font-size: 11px; font-family: var(--ngs-mono); color: var(--ngs-muted);
 }
+.nai-review-table-wrap {
+  overflow-x: auto; margin-bottom: 14px;
+}
 .nai-review-table {
-  width: 100%; border-collapse: collapse; font-size: 12.5px; margin-bottom: 14px;
+  width: 100%; min-width: 620px; border-collapse: collapse; font-size: 12.5px;
 }
 .nai-review-table th {
   text-align: left; padding: 5px 8px;
@@ -2153,6 +2156,20 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   .docs-modal { padding: 20px 16px 18px; }
 }
 
+/* ════════════════ NAV BUDGET BUTTON ════════════════ */
+
+.nav-budget-btn {
+  display: flex; align-items: center; gap: 4px;
+  padding: 5px 12px; border-radius: 5px;
+  border: 1px solid var(--ngs-navy); color: var(--ngs-navy);
+  font-family: var(--ngs-mono); font-size: 11.5px; font-weight: 700;
+  letter-spacing: 0.07em; text-transform: uppercase;
+  background: transparent; cursor: pointer; text-decoration: none;
+  transition: background var(--dur-default), color var(--dur-default);
+  white-space: nowrap;
+}
+.nav-budget-btn:hover { background: var(--ngs-navy); color: var(--ngs-gold); }
+
 /* ════════════════ NAV AI BUTTON ════════════════ */
 
 .nav-ai-btn {
@@ -2184,7 +2201,7 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 
 .nai-drawer {
   position: fixed; top: 0; right: 0; bottom: 0;
-  width: min(480px, 100vw);
+  width: min(50vw, 960px);
   background: #fff;
   z-index: 201;
   display: flex; flex-direction: column;
@@ -2997,6 +3014,14 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 }
 
 .mh-sep { opacity: 0.35; }
+
+.mh-sem-select {
+  font-family: var(--ngs-sans); font-size: 12px; color: var(--ngs-muted);
+  border: none; background: transparent; padding: 0; cursor: pointer;
+  appearance: none; -webkit-appearance: none; outline: none;
+  max-width: 80px;
+}
+.mh-sem-select:hover { color: var(--ngs-navy); }
 
 /* Stats grid */
 .mh-stats {

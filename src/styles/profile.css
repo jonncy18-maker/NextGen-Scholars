@@ -411,3 +411,40 @@ body { background: var(--ngs-paper); }
 .ngs-profile.is-desktop .ngs-pstep { width: 110px; }
 .ngs-profile.is-desktop .ngs-pline { flex: 1 0 auto; }
 .ngs-profile.is-desktop .ngs-pfooter { padding: 48px 80px 36px; }
+
+/* ── header stat cards ── */
+.ngs-phead-meta-inner { display: flex; flex-direction: column; gap: 0; }
+.ngs-phead-meta-left { display: flex; flex-direction: column; }
+
+.ngs-phead-cards {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  margin-top: 20px;
+}
+.ngs-pc-card {
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px; padding: 12px 14px;
+}
+.ngs-pc-card-label {
+  font-family: var(--ngs-mono); font-size: 9.5px; text-transform: uppercase;
+  letter-spacing: 0.14em; color: rgba(250,247,240,0.45); margin-bottom: 5px;
+}
+.ngs-pc-card-val {
+  font-family: var(--ngs-display); font-size: 22px; font-weight: 400;
+  color: var(--ngs-gold); line-height: 1; letter-spacing: -0.02em;
+}
+.ngs-pc-card-val--sm { font-size: 15px; line-height: 1.3; }
+.ngs-pc-card-subs { margin-top: 7px; display: flex; flex-direction: column; gap: 3px; }
+.ngs-pc-card-sub {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; color: rgba(250,247,240,0.55);
+}
+.ngs-pc-gpa-status { font-size: 11px; font-family: var(--ngs-mono); }
+.ngs-pc-gpa-status.is-ok  { color: rgba(80,200,120,0.85); }
+.ngs-pc-gpa-status.is-warn { color: rgba(201,168,76,0.9); }
+
+/* desktop: cards beside name, in a side-by-side layout within meta */
+.ngs-profile.is-desktop .ngs-phead-meta-inner.has-cards {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start;
+}
+.ngs-profile.is-desktop .ngs-phead-cards { margin-top: 0; grid-template-columns: 1fr 1fr; }
+.ngs-profile.is-desktop .ngs-phead-meta-inner.has-cards .ngs-phead-name { font-size: 72px; margin-bottom: 12px; }

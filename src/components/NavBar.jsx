@@ -4,6 +4,8 @@ import { Link, useLocation } from 'react-router-dom';
 export function NavBar({ sheetsStatus, onRefresh, aiDrawerOpen, onAiDrawerToggle }) {
   const { pathname } = useLocation();
   const isHome = pathname === '/navigator' || pathname === '/navigator/';
+  const isExpenses = pathname === '/navigator/expenses';
+  const isBudget = pathname === '/navigator/budget';
 
   return (
     <header className="nav nav--slim">
@@ -13,6 +15,9 @@ export function NavBar({ sheetsStatus, onRefresh, aiDrawerOpen, onAiDrawerToggle
           <span className="nav-name">Pathway Navigator</span>
         </Link>
         <div className="nav-right">
+          {isExpenses && (
+            <Link className="nav-budget-btn" to="/navigator/budget">Budget</Link>
+          )}
           <button
             className={`nav-ai-btn${aiDrawerOpen ? ' is-active' : ''}`}
             onClick={onAiDrawerToggle}
@@ -29,7 +34,9 @@ export function NavBar({ sheetsStatus, onRefresh, aiDrawerOpen, onAiDrawerToggle
           </button>
           {isHome
             ? <a className="nav-back" href="index.html">← Go home</a>
-            : <Link className="nav-back" to="/navigator">← Dashboard</Link>
+            : isBudget
+              ? <Link className="nav-back" to="/navigator/expenses">← Expense</Link>
+              : <Link className="nav-back" to="/navigator">← Dashboard</Link>
           }
         </div>
       </div>

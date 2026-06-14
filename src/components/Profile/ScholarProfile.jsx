@@ -14,14 +14,14 @@ function fmtPhp(amountPhp, currency, rate) {
 
 // ── root export ───────────────────────────────────────────────────────────────
 
-export function ScholarProfile({ data, isMobile, relatedProfiles }) {
+export function ScholarProfile({ data, isMobile, relatedProfiles, englishHours }) {
   const fx = useFxState();
 
   return (
     <div className={`ngs-profile ${isMobile ? 'is-mobile' : 'is-desktop'}`}
          data-screen-label={`${data.firstName} — Profile`}>
       <TopNav data={data} fx={fx} isMobile={isMobile} />
-      <PhotoHeader data={data}/>
+      <PhotoHeader data={data} englishHours={englishHours}/>
       {data.quote && <PullQuote quote={data.quote}/>}
       {data.trialBanner && <TrialBanner text={data.trialBanner}/>}
       {data.trialProgress && <TrialProgressSection data={data.trialProgress}/>}
@@ -156,9 +156,78 @@ function TopNav({ data, fx, isMobile }) {
   );
 }
 
-function PhotoHeader({ data }) {
+function fmtPhpShort(n) {
+  if (!n) return '₱0';
+  if (n >= 1000000) return '₱' + (n / 1000000).toFixed(2) + 'M';
+  if (n >= 1000) return '₱' + Math.round(n / 1000) + 'K';
+  return '₱' + Math.round(n).toLocaleString('en-US');
+}
+
+function HeaderCards({ data, englishHours }) {
+  const inv = data.investmentTotals;
+  const gpa = data.latestGpa;
+  const nextMil = data.nextMilestoneAward;
+  const nextTravel = data.nextTravelAward;
+
+  if (!inv && !gpa && !nextMil && !nextTravel && !englishHours) return null;
+
+  return (
+    <div className="ngs-phead-cards">
+      {inv && (
+        <div className="ngs-pc-card">
+          <div className="ngs-pc-card-label">Total Investment</div>
+          <div className="ngs-pc-card-val">{'₱' + Math.round(inv.total).toLocaleString('en-US')}</div>
+          <div className="ngs-pc-card-subs">
+            {[['College', inv.college], ['Life', inv.life], ['Milestones', inv.milestone], ['Travel', inv.travel]].map(([label, amt]) => (
+              <div key={label} className="ngs-pc-card-sub">
+                <span>{label}</span>
+                <span>{fmtPhpShort(amt)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {gpa && (
+        <div className="ngs-pc-card">
+          <div className="ngs-pc-card-label">Latest GPA · {gpa.sem}</div>
+          <div className="ngs-pc-card-val">{gpa.value != null ? `${gpa.value}%` : '—'}</div>
+          {gpa.value != null && (
+            <div className="ngs-pc-card-subs">
+              <div className={`ngs-pc-card-sub ngs-pc-gpa-status${gpa.value >= gpa.floor ? ' is-ok' : ' is-warn'}`}>
+                {gpa.value >= gpa.floor ? `Above ${gpa.floor}% floor` : `Below ${gpa.floor}% floor`}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      {nextMil && (
+        <div className="ngs-pc-card">
+          <div className="ngs-pc-card-label">Next Milestone</div>
+          <div className="ngs-pc-card-val ngs-pc-card-val--sm">{nextMil.name}</div>
+          {nextMil.sem && <div className="ngs-pc-card-subs"><div className="ngs-pc-card-sub"><span>Expected</span><span>{nextMil.sem}</span></div></div>}
+        </div>
+      )}
+      {nextTravel && (
+        <div className="ngs-pc-card">
+          <div className="ngs-pc-card-label">Next Travel Award</div>
+          <div className="ngs-pc-card-val ngs-pc-card-val--sm">{nextTravel.dest}</div>
+          {nextTravel.sem && <div className="ngs-pc-card-subs"><div className="ngs-pc-card-sub"><span>Expected</span><span>{nextTravel.sem}</span></div></div>}
+        </div>
+      )}
+      {englishHours != null && (
+        <div className="ngs-pc-card">
+          <div className="ngs-pc-card-label">English Hours</div>
+          <div className="ngs-pc-card-val ngs-pc-card-val--sm">{englishHours.hours} <span style={{fontSize:13,opacity:0.6}}>/ {englishHours.goal} hrs</span></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PhotoHeader({ data, englishHours }) {
   const statusClass = data.status === 'paused' ? 'is-paused' :
                       data.status === 'trial' ? 'is-trial' : 'is-active';
+  const hasCards = !!(data.investmentTotals || data.latestGpa || data.nextMilestoneAward || data.nextTravelAward || englishHours);
   return (
     <section className="ngs-phead">
       <div className="ngs-phead-photo">
@@ -175,11 +244,16 @@ function PhotoHeader({ data }) {
           <span className="ngs-phead-track-dot"></span>
           {data.trackName} · {data.track}
         </div>
-        <h1 className="ngs-phead-name">{data.firstName}</h1>
-        <p className="ngs-phead-school">
-          <strong>{data.school}</strong>{data.city ? ` · ${data.city}` : ''}<br/>
-          {data.program} · {data.cohort}
-        </p>
+        <div className={`ngs-phead-meta-inner${hasCards ? ' has-cards' : ''}`}>
+          <div className="ngs-phead-meta-left">
+            <h1 className="ngs-phead-name">{data.firstName}</h1>
+            <p className="ngs-phead-school">
+              <strong>{data.school}</strong>{data.city ? ` · ${data.city}` : ''}<br/>
+              {data.program} · {data.cohort}
+            </p>
+          </div>
+          {hasCards && <HeaderCards data={data} englishHours={englishHours} />}
+        </div>
         {data.headlineStats && (
           <div className="ngs-phead-stats">
             {data.headlineStats.map((s, i) => (
