@@ -2,8 +2,9 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '../lib/supabase.js';
 import { useData } from '../context/DataContext.jsx';
 import { writeExpense } from '../supabase-writer.js';
-import { EXPENSE_CATS, SEMESTER_OPTIONS } from '../constants.js';
+import { EXPENSE_CATS, SEMESTER_OPTIONS, SESSION_CATEGORIES } from '../constants.js';
 import { uvToPct } from '../pages/GradeEntry.jsx';
+import { EnglishIngestPanel } from './EnglishIngestPanel.jsx';
 
 function gradeAvg(prelim, midterm, finalGrade) {
   const vals = [prelim, midterm, finalGrade].map(v => parseFloat(v)).filter(v => !isNaN(v));
@@ -1129,11 +1130,65 @@ export function IngestPanel({ scholar, scholarKeys }) {
   );
 }
 
+// ── English hours ingest panel (Navigator AI english-only mode) ───────────────
+
+function EnglishHoursIngestPanel({ scholarKeys }) {
+  const [scholar, setScholar] = useState(scholarKeys[0] || 'claire');
+  const [period, setPeriod]   = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [key, setKey]         = useState(0);
+
+  useEffect(() => {
+    setLoading(true);
+    supabase.from('english_periods').select('*')
+      .eq('scholar', scholar)
+      .order('start_date', { ascending: false })
+      .limit(1)
+      .then(({ data }) => { setPeriod(data?.[0] ?? null); setLoading(false); });
+  }, [scholar]);
+
+  const cats = period
+    ? (SESSION_CATEGORIES[period.session_type] ?? SESSION_CATEGORIES.default)
+    : SESSION_CATEGORIES.default;
+
+  return (
+    <div>
+      <div className="nai-ingest-row" style={{ marginBottom: 12 }}>
+        <select
+          className="nai-scholar-select"
+          value={scholar}
+          onChange={e => { setScholar(e.target.value); setKey(k => k + 1); }}
+        >
+          {scholarKeys.map(k => <option key={k} value={k}>{k.charAt(0).toUpperCase() + k.slice(1)}</option>)}
+        </select>
+        {period && (
+          <span className="section-note" style={{ marginLeft: 10 }}>
+            {period.label || period.session_type} · {period.start_date?.slice(0,7)} – {period.end_date?.slice(0,7)}
+          </span>
+        )}
+      </div>
+      {loading && <div className="nai-thinking">Loading period…</div>}
+      {!loading && !period && (
+        <div className="section-note">No active English period found for {scholar}. Create one in the English section first.</div>
+      )}
+      {!loading && period && (
+        <EnglishIngestPanel
+          key={`${scholar}-${key}`}
+          scholarKey={scholar}
+          categories={cats}
+          periodId={period.id}
+          sem={period.sem}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── Main NavigatorAI component ────────────────────────────────────────────────
 
-export function NavigatorAI({ id, collapsed, onToggle }) {
+export function NavigatorAI({ id, collapsed, onToggle, englishOnly = false }) {
   const { scholarKeys } = useData();
-  const [tab, setTab]     = useState('query'); // 'query' | 'ingest' | 'grades'
+  const [tab, setTab]     = useState(englishOnly ? 'english_hours' : 'query'); // 'query' | 'ingest' | 'grades' | 'english_hours'
   const [scholar, setScholar] = useState(scholarKeys[0] || 'claire');
   const [query, setQuery]   = useState('');
   const [loading, setLoading] = useState(false);
@@ -1190,27 +1245,41 @@ export function NavigatorAI({ id, collapsed, onToggle }) {
         <div className="nai-panel">
           {/* Mode tabs */}
           <div className="nai-tabs">
-            <button
-              type="button"
-              className={`nai-tab${tab === 'query' ? ' is-active' : ''}`}
-              onClick={() => setTab('query')}
-            >
-              Ask the data
-            </button>
-            <button
-              type="button"
-              className={`nai-tab${tab === 'ingest' ? ' is-active' : ''}`}
-              onClick={() => setTab('ingest')}
-            >
-              Upload receipts
-            </button>
-            <button
-              type="button"
-              className={`nai-tab${tab === 'grades' ? ' is-active' : ''}`}
-              onClick={() => setTab('grades')}
-            >
-              Upload grades
-            </button>
+            {!englishOnly && (
+              <button
+                type="button"
+                className={`nai-tab${tab === 'query' ? ' is-active' : ''}`}
+                onClick={() => setTab('query')}
+              >
+                Ask the data
+              </button>
+            )}
+            {!englishOnly && (
+              <button
+                type="button"
+                className={`nai-tab${tab === 'ingest' ? ' is-active' : ''}`}
+                onClick={() => setTab('ingest')}
+              >
+                Upload receipts
+              </button>
+            )}
+            {!englishOnly && (
+              <button
+                type="button"
+                className={`nai-tab${tab === 'grades' ? ' is-active' : ''}`}
+                onClick={() => setTab('grades')}
+              >
+                Upload grades
+              </button>
+            )}
+            {englishOnly && (
+              <button
+                type="button"
+                className={`nai-tab is-active`}
+              >
+                Upload English hours
+              </button>
+            )}
           </div>
 
           {tab === 'query' && (
@@ -1319,6 +1388,16 @@ export function NavigatorAI({ id, collapsed, onToggle }) {
                 <span className="section-note">Upload a grade report screenshot — Gemini extracts all subjects and grades for review</span>
               </div>
               <GradeIngestPanel scholar={scholar} scholarKeys={scholarKeys} />
+            </>
+          )}
+
+          {(tab === 'english_hours' || englishOnly) && (
+            <>
+              <div className="section-head">
+                <h2 className="section-title">Upload English hours</h2>
+                <span className="section-note">Paste a ChatGPT session summary — Claude extracts hours for your review before saving</span>
+              </div>
+              <EnglishHoursIngestPanel scholarKeys={scholarKeys} />
             </>
           )}
         </div>
