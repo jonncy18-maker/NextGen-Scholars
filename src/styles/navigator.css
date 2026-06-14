@@ -2855,3 +2855,4 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 
 .gr-empty { padding: 14px 16px; font-size: 12px; color: var(--ngs-muted); font-style: italic; }
 .gr-grade-pct { font-size: 9.5px; color: var(--ngs-gold); font-weight: 600; margin-left: 2px; }
+.gr-del-sem-btn { font-family: var(--ngs-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border: 1.5px solid var(--ngs-red); border-radius: 4px; background: transparent; color: var(--ngs-red); cursor: pointer; } .gr-del-sem-btn:hover:not(:disabled) { background: var(--ngs-red); color: #fff; } .gr-del-sem-btn:disabled { opacity: 0.4; }
