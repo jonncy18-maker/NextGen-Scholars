@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { useData } from '../context/DataContext.jsx';
 
@@ -135,12 +136,21 @@ export function MentorHome({ liveGpa, onOpenDrawer }) {
 
               <div className="mh-actions">
                 <button className="mh-btn" onClick={() => onOpenDrawer('query', key)}>Ask →</button>
-                <button className="mh-btn" onClick={() => onOpenDrawer('ingest', key)}>Log $</button>
-                <button className="mh-btn" onClick={() => onOpenDrawer('grades', key)}>Log Grades</button>
+                <Link className="mh-btn" to="/navigator/expenses">Log $</Link>
+                <Link className="mh-btn" to="/navigator/grades">Log Grades</Link>
               </div>
             </div>
           );
         })}
+      </div>
+
+      <div className="mh-quick-links">
+        <Link className="mh-quick-link" to="/navigator/expenses">Expenses →</Link>
+        <Link className="mh-quick-link" to="/navigator/grades">Grades →</Link>
+        <Link className="mh-quick-link" to="/navigator/english">English →</Link>
+        <Link className="mh-quick-link" to="/navigator/deadlines">Deadlines →</Link>
+        <Link className="mh-quick-link" to="/navigator/progress">Progress →</Link>
+        <Link className="mh-quick-link" to="/navigator/docs">Docs →</Link>
       </div>
     </section>
   );

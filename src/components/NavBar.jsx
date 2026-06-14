@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
-const SECTION_NAV = [
-  { id: 'sec-alerts',       label: '01  Alerts' },
-  { id: 'sec-status',       label: '02  Status' },
-  { id: 'sec-expenses',     label: '03  Expenses' },
-  { id: 'sec-deadlines',    label: '04  Deadlines' },
-  { id: 'sec-english',      label: '05  English' },
-  { id: 'sec-navigator-ai', label: '06  AI' },
-  { id: 'sec-documents',    label: '07  Documents' },
-  { id: 'sec-career',       label: '08  Career' },
-  { id: 'sec-risk',         label: '09  Risk' },
-  { id: 'sec-grades',       label: '10  Grades' },
+const MODULE_NAV = [
+  { path: '/navigator',           label: 'Home' },
+  { path: '/navigator/expenses',  label: 'Expenses' },
+  { path: '/navigator/grades',    label: 'Grades' },
+  { path: '/navigator/english',   label: 'English' },
+  { path: '/navigator/deadlines', label: 'Deadlines' },
+  { path: '/navigator/progress',  label: 'Progress' },
+  { path: '/navigator/docs',      label: 'Docs' },
 ];
 
 export function NavBar({
@@ -19,10 +16,10 @@ export function NavBar({
   fxMode, fxRate, fxStatus, onFxModeChange, onFxRateChange,
   sheetsStatus, onRefresh,
   fxPanelOpen, onFxPanelToggle,
-  onExpandAll, onCollapseAll,
   aiDrawerOpen, onAiDrawerToggle,
 }) {
   const [inputVal, setInputVal] = useState(String(fxRate));
+  const location = useLocation();
 
   useEffect(() => {
     setInputVal(fxRate.toFixed(2));
@@ -32,6 +29,11 @@ export function NavBar({
     setInputVal(e.target.value);
     const n = parseFloat(e.target.value);
     if (!isNaN(n) && n > 0) onFxRateChange(n);
+  }
+
+  function isActive(path) {
+    if (path === '/navigator') return location.pathname === '/navigator' || location.pathname === '/navigator/';
+    return location.pathname.startsWith(path);
   }
 
   return (
@@ -57,10 +59,6 @@ export function NavBar({
           >
             Ask AI
           </button>
-          <div className="nav-section-actions">
-            <button className="nav-sect-btn" onClick={onExpandAll} title="Expand all sections">Expand all</button>
-            <button className="nav-sect-btn" onClick={onCollapseAll} title="Collapse all sections">Collapse all</button>
-          </div>
           <button
             className={`nav-refresh${sheetsStatus === 'loading' ? ' is-loading' : ''}`}
             onClick={onRefresh}
@@ -72,16 +70,15 @@ export function NavBar({
         </div>
       </div>
 
-      {/* Row 2 — section anchors */}
+      {/* Row 2 — module route links */}
       <nav className="nav-sections-strip">
         <div className="nav-sections-inner">
-          {SECTION_NAV.map(s => (
-            <a
-              key={s.id}
-              className="nav-sec-link"
-              href={`#${s.id}`}
-              onClick={e => { e.preventDefault(); document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth' }); }}
-            >{s.label}</a>
+          {MODULE_NAV.map(m => (
+            <Link
+              key={m.path}
+              className={`nav-sec-link${isActive(m.path) ? ' is-active' : ''}`}
+              to={m.path}
+            >{m.label}</Link>
           ))}
         </div>
       </nav>

@@ -128,7 +128,7 @@ export default function App() {
           <Route path="/" element={<HomeRoute />} />
           <Route path="/claire" element={<ClairePage />} />
           <Route path="/april" element={<AprilPage />} />
-          <Route path="/navigator" element={<Navigator />} />
+          <Route path="/navigator/*" element={<Navigator />} />
           <Route path="/entry" element={<EntryApp />} />
           <Route path="/home/:scholar" element={<ScholarHomeRoute />} />
           <Route path="/english/:scholar" element={<EnglishRoute />} />
