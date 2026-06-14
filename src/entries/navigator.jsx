@@ -30,6 +30,24 @@ if (!NGS_DATA || !NGS_DATA.config) {
 const STATIC_SCHOLAR_KEYS = ['claire', 'april', 'aljane'];
 const ALL_SECTION_IDS = ['alerts', 'status', 'expenses', 'deadlines', 'english', 'navigator-ai', 'documents', 'career', 'risk', 'grades'];
 
+// Compute per-scholar GPA (as %) from the most recent sem in grade_entries
+function computeLiveGpa(rows) {
+  const byScholar = {};
+  rows.forEach(r => { (byScholar[r.scholar] ??= []).push(r); });
+  const result = {};
+  Object.entries(byScholar).forEach(([sk, list]) => {
+    const sems = [...new Set(list.map(r => r.sem))].sort((a, b) => b.localeCompare(a));
+    for (const sem of sems) {
+      const semRows = list.filter(r => r.sem === sem && r.pct_equiv != null && r.units);
+      if (!semRows.length) continue;
+      const totalUnits = semRows.reduce((s, r) => s + r.units, 0);
+      if (totalUnits) { result[sk] = semRows.reduce((s, r) => s + r.pct_equiv * r.units, 0) / totalUnits; }
+      break;
+    }
+  });
+  return result;
+}
+
 export function Navigator() {
   const [D, setD] = useState(NGS_DATA);
   const scholarKeys = STATIC_SCHOLAR_KEYS.filter(k => D.scholars[k]);
@@ -103,6 +121,17 @@ export function Navigator() {
       })
       .subscribe();
 
+    // Grade entries → live GPA for status cards
+    function reloadLiveGpa() {
+      supabase.from('grade_entries').select('scholar,sem,units,pct_equiv')
+        .then(({ data }) => { if (data) setLiveGpa(computeLiveGpa(data)); });
+    }
+    reloadLiveGpa();
+
+    const gradesChannel = supabase.channel('ngs_grade_entries')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'grade_entries' }, reloadLiveGpa)
+      .subscribe();
+
     const expChannel = supabase.channel('ngs_expenses')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'expenses' }, ({ new: e }) => {
         if (!e?.scholar || !e?.sem) return;
@@ -135,6 +164,7 @@ export function Navigator() {
       supabase.removeChannel(alertsChannel);
       supabase.removeChannel(actChannel);
       supabase.removeChannel(subChannel);
+      supabase.removeChannel(gradesChannel);
       supabase.removeChannel(expChannel);
     };
   }, [unlocked]);
