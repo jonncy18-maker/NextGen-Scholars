@@ -660,7 +660,7 @@ function GradeReviewCard({ grades: initialGrades, model, scholar, sem, onDiscard
 
 // ── Grade ingest panel ────────────────────────────────────────────────────────
 
-function GradeIngestPanel({ scholar, scholarKeys }) {
+export function GradeIngestPanel({ scholar, scholarKeys }) {
   const [gradeScholar, setGradeScholar] = useState(scholar);
   const [sem, setSem]           = useState('Y1S1');
   const [modelPref, setModel]   = useState('gemini');
@@ -793,7 +793,7 @@ function GradeIngestPanel({ scholar, scholarKeys }) {
 
 // ── Ingest panel ──────────────────────────────────────────────────────────────
 
-function IngestPanel({ scholar, scholarKeys }) {
+export function IngestPanel({ scholar, scholarKeys }) {
   const [ingestScholar, setIngestScholar] = useState(scholar);
   const [sem, setSem]           = useState('Y1S1');
   const [modelPref, setModel]   = useState('gemini');
