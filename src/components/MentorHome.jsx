@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { useData } from '../context/DataContext.jsx';
+import { nextMilestone } from '../utils.js';
 
 const SEM_DISPLAY = {
   Y1S1:'Y1·S1', Y1S2:'Y1·S2', Y2S1:'Y2·S1', Y2S2:'Y2·S2',
@@ -25,7 +26,15 @@ function riskLevel(scholar, budgetPct) {
   return 'green';
 }
 
-export function MentorHome({ liveGpa, onOpenDrawer }) {
+function daysUntil(dateStr) {
+  const diff = Math.ceil((new Date(dateStr) - new Date()) / 86400000);
+  if (diff === 0) return 'today';
+  if (diff === 1) return 'tomorrow';
+  if (diff < 0) return `${Math.abs(diff)}d ago`;
+  return `${diff}d`;
+}
+
+export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCount = 0 }) {
   const { D, scholarKeys } = useData();
   const [engData, setEngData] = useState({});
 
@@ -59,8 +68,34 @@ export function MentorHome({ liveGpa, onOpenDrawer }) {
   const today = new Date().toISOString().slice(0, 10);
   const month = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
+  const upcomingDeadlines = (D.deadlines || [])
+    .filter(d => d.sort_date >= today)
+    .sort((a, b) => a.sort_date.localeCompare(b.sort_date))
+    .slice(0, 4);
+
+  const budgetHealth = scholarKeys.map(key => {
+    const s = D.scholars[key];
+    const sem = s?.currentSem;
+    const pct = semBudgetPct(s, sem);
+    return { key, name: s?.firstName || key, pct, sem };
+  });
+
+  const nextTravels = scholarKeys.map(key => {
+    const s = D.scholars[key];
+    const next = (s?.travels || []).find(t => t.state !== 'done');
+    return { key, name: s?.firstName || key, travel: next };
+  });
+
+  const nextMilestones = scholarKeys.map(key => {
+    const s = D.scholars[key];
+    const nm = nextMilestone(s);
+    return { key, name: s?.firstName || key, milestone: nm };
+  });
+
   return (
     <section className="mh-section">
+
+      {/* ── Scholar Overview ── */}
       <div className="mh-eyebrow">
         <span className="mh-eyebrow-label">Scholar Overview</span>
         <span className="mh-eyebrow-date">{month}</span>
@@ -75,16 +110,11 @@ export function MentorHome({ liveGpa, onOpenDrawer }) {
           const budgetPct = semBudgetPct(s, sem);
           const risk = riskLevel(s, budgetPct);
           const gpaPct = liveGpa?.[key] ?? null;
-
           const eng = engData[key];
-          const engStr = eng
-            ? `${eng.hours} / ${eng.goal} hrs`
-            : '—';
-
+          const engStr = eng ? `${eng.hours} / ${eng.goal} hrs` : '—';
           const nextDl = (D.deadlines || [])
             .filter(d => (d.scholar === key || !d.scholar) && d.sort_date >= today)
             .sort((a, b) => a.sort_date.localeCompare(b.sort_date))[0];
-
           const isActive = s.status === 'active';
 
           return (
@@ -144,13 +174,125 @@ export function MentorHome({ liveGpa, onOpenDrawer }) {
         })}
       </div>
 
-      <div className="mh-quick-links">
-        <Link className="mh-quick-link" to="/navigator/expenses">Expenses →</Link>
-        <Link className="mh-quick-link" to="/navigator/grades">Grades →</Link>
-        <Link className="mh-quick-link" to="/navigator/english">English →</Link>
-        <Link className="mh-quick-link" to="/navigator/deadlines">Deadlines →</Link>
-        <Link className="mh-quick-link" to="/navigator/progress">Progress →</Link>
-        <Link className="mh-quick-link" to="/navigator/docs">Docs →</Link>
+      {/* ── Dashboard Widgets ── */}
+      <div className="mh-eyebrow mh-eyebrow--mt">
+        <span className="mh-eyebrow-label">At a Glance</span>
+      </div>
+
+      <div className="mh-dash">
+        <Link
+          className={`mh-dash-stat${pendingCount > 0 ? ' is-alert' : ''}`}
+          to="/navigator/expenses"
+        >
+          <span className="mh-dash-val">{pendingCount}</span>
+          <span className="mh-dash-lbl">Pending approvals</span>
+        </Link>
+
+        <Link
+          className={`mh-dash-stat${activityCount > 0 ? ' is-warn' : ''}`}
+          to="/navigator/expenses"
+        >
+          <span className="mh-dash-val">{activityCount}</span>
+          <span className="mh-dash-lbl">Unread activity</span>
+        </Link>
+
+        <div className="mh-dash-panel">
+          <div className="mh-dash-panel-head">Next deadlines</div>
+          {upcomingDeadlines.length === 0 ? (
+            <div className="mh-dash-empty">No upcoming deadlines</div>
+          ) : upcomingDeadlines.map((d, i) => (
+            <div key={i} className="mh-dash-dl">
+              <span className="mh-dash-dl-when">{daysUntil(d.sort_date)}</span>
+              <span className="mh-dash-dl-event">{d.event}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="mh-dash-panel">
+          <div className="mh-dash-panel-head">Budget health</div>
+          {budgetHealth.map(({ key, name, pct }) => (
+            <div key={key} className="mh-dash-budget-row">
+              <span className="mh-dash-budget-name">{name}</span>
+              <div className="mh-dash-bar-track">
+                <div
+                  className={`mh-dash-bar${pct != null && pct >= 100 ? ' is-over' : pct != null && pct >= 90 ? ' is-warn' : ''}`}
+                  style={{ width: `${Math.min(pct || 0, 100)}%` }}
+                />
+              </div>
+              <span className="mh-dash-budget-pct">{pct != null ? `${pct}%` : '—'}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Module Cards ── */}
+      <div className="mh-eyebrow mh-eyebrow--mt">
+        <span className="mh-eyebrow-label">Modules</span>
+      </div>
+
+      <div className="mh-modules">
+
+        <Link className="mm-card" to="/navigator/expenses">
+          <div className="mm-card-tag">EXP</div>
+          <div className="mm-card-label">Expenses</div>
+          <div className="mm-card-blurb">
+            {pendingCount > 0 ? `${pendingCount} pending approval${pendingCount !== 1 ? 's' : ''}` : 'Budgets & spend tracking'}
+          </div>
+        </Link>
+
+        <Link className="mm-card" to="/navigator/grades">
+          <div className="mm-card-tag">GPA</div>
+          <div className="mm-card-label">Grades</div>
+          <div className="mm-card-blurb">
+            {scholarKeys.map(k => liveGpa?.[k] != null ? `${D.scholars[k]?.firstName || k} ${liveGpa[k].toFixed(1)}%` : null).filter(Boolean).join(' · ') || 'Transcript & GPA'}
+          </div>
+        </Link>
+
+        <Link className="mm-card" to="/navigator/english">
+          <div className="mm-card-tag">ENG</div>
+          <div className="mm-card-label">English</div>
+          <div className="mm-card-blurb">OET / IELTS hours tracker</div>
+        </Link>
+
+        <div className="mm-card mm-card--info">
+          <div className="mm-card-tag">TRV</div>
+          <div className="mm-card-label">Travel</div>
+          <div className="mm-card-items">
+            {nextTravels.map(({ key, name, travel }) => (
+              <div key={key} className="mm-card-row">
+                <span className="mm-card-row-name">{name}</span>
+                {travel ? (
+                  <>
+                    <span className={`mm-state mm-state--${travel.state}`}>{travel.state}</span>
+                    <span className="mm-card-row-detail">{travel.dest}</span>
+                  </>
+                ) : (
+                  <span className="mm-card-row-detail">All done</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mm-card mm-card--info">
+          <div className="mm-card-tag">MLS</div>
+          <div className="mm-card-label">Milestones</div>
+          <div className="mm-card-items">
+            {nextMilestones.map(({ key, name, milestone }) => (
+              <div key={key} className="mm-card-row">
+                <span className="mm-card-row-name">{name}</span>
+                <span className="mm-card-row-detail">{milestone.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Link className="mm-card" to="/navigator/docs">
+          <div className="mm-card-tag">DOC</div>
+          <div className="mm-card-label">Documents</div>
+          <div className="mm-card-blurb">Files, uploads & records</div>
+        </Link>
+
       </div>
     </section>
   );
