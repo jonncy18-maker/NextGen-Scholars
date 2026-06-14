@@ -2233,6 +2233,27 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   background: var(--ngs-navy); color: #fff;
 }
 
+/* ── AI Drawer tab bar ── */
+.nai-drawer-tabs {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--ngs-rule);
+  background: var(--ngs-paper-2);
+  flex-shrink: 0;
+}
+.nai-drawer-tab {
+  flex: 1; padding: 10px 8px;
+  font-size: 12.5px; font-weight: 600; text-align: center;
+  color: var(--ngs-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color var(--dur-default), border-color var(--dur-default);
+}
+.nai-drawer-tab.is-active {
+  color: var(--ngs-navy);
+  border-bottom-color: var(--ngs-navy);
+}
+.nai-drawer-tab:not(.is-active):hover { color: var(--ngs-ink-soft); }
+
 /* ── Career Section (Step 14) ─────────────────────────────────────────────── */
 
 .cs-body { padding: 0 0 24px; }
