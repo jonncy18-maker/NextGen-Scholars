@@ -3,7 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { NGS_DATA } from '../../scholars-data.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
 import { loadFromSupabase, loadPendingSubmissions } from '../supabase-loader.js';
-import { storedMode, storedRate, persistFx, fetchMarketRate } from '../fx.js';
+import { storedRate } from '../fx.js';
 import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead, approveSubmission, rejectSubmission } from '../supabase-writer.js';
 import { supabase } from '../lib/supabase.js';
 import { FxCtx } from '../context/FxContext.jsx';
@@ -61,14 +61,10 @@ export function Navigator() {
     });
   }, []);
 
-  const [currency, setCurrency] = useState('PHP');
+  const fxRate = storedRate();
   const [liveGpa, setLiveGpa]   = useState({});
   const [sheetsStatus, setSheetsStatus] = useState('loading');
   const [refreshKey, setRefreshKey]     = useState(0);
-
-  const [fxMode, setFxMode]     = useState(() => storedMode());
-  const [fxRate, setFxRate]     = useState(() => storedRate());
-  const [fxStatus, setFxStatus] = useState('idle');
 
   const [writeError, setWriteError] = useState(false);
 
@@ -269,7 +265,6 @@ export function Navigator() {
 
   const [addedExpenses, setAddedExpenses] = useLocalStorage('ngs_added', {});
 
-  const [fxPanelOpen, setFxPanelOpen] = useLocalStorage('ngs_fx_panel', false);
   const [aiDrawerOpen, setAiDrawerOpen]           = useState(false);
   const [aiDrawerTab, setAiDrawerTab]             = useState('query');
   const [aiDrawerDefaultScholar, setAiDefaultScholar] = useState(null);
@@ -278,35 +273,6 @@ export function Navigator() {
     setAiDrawerTab(tab);
     setAiDefaultScholar(scholarKey);
     setAiDrawerOpen(true);
-  }
-
-  useEffect(() => {
-    if (fxMode !== 'market') return;
-    setFxStatus('loading');
-    fetchMarketRate()
-      .then(rate => {
-        setFxRate(rate);
-        setFxStatus('idle');
-        persistFx('market', rate);
-      })
-      .catch(() => setFxStatus('error'));
-  }, [fxMode]);
-
-  function handleFxModeChange(mode) {
-    setFxMode(mode);
-    if (mode === 'manual') {
-      setFxStatus('idle');
-      persistFx('manual', fxRate);
-    }
-  }
-
-  function handleFxRateChange(rate) {
-    setFxRate(rate);
-    persistFx('manual', rate);
-  }
-
-  function handleFxPanelToggle() {
-    setFxPanelOpen(v => !v);
   }
 
   useEffect(() => {
@@ -363,17 +329,8 @@ export function Navigator() {
       <FxCtx.Provider value={fxRate}>
         <LockScreen isHiding={unlocked} onUnlock={() => setUnlocked(true)} />
         <NavBar
-          currency={currency}
-          onCurrencyChange={setCurrency}
-          fxMode={fxMode}
-          fxRate={fxRate}
-          fxStatus={fxStatus}
-          onFxModeChange={handleFxModeChange}
-          onFxRateChange={handleFxRateChange}
           sheetsStatus={sheetsStatus}
           onRefresh={() => setRefreshKey(k => k + 1)}
-          fxPanelOpen={fxPanelOpen}
-          onFxPanelToggle={handleFxPanelToggle}
           aiDrawerOpen={aiDrawerOpen}
           onAiDrawerToggle={() => setAiDrawerOpen(v => !v)}
         />
@@ -388,7 +345,12 @@ export function Navigator() {
           <Routes>
             <Route index element={
               <SectionErrorBoundary name="MentorHome">
-                <MentorHome liveGpa={liveGpa} onOpenDrawer={openDrawer} />
+                <MentorHome
+                  liveGpa={liveGpa}
+                  onOpenDrawer={openDrawer}
+                  pendingCount={pendingSubmissions.length}
+                  activityCount={activityFeed.length}
+                />
               </SectionErrorBoundary>
             } />
             <Route path="expenses" element={
@@ -409,13 +371,13 @@ export function Navigator() {
                 </SectionErrorBoundary>
                 <SectionErrorBoundary name="Status">
                   <StatusSection
-                    currency={currency} liveGpa={liveGpa} onSemesterChange={handleSemesterChange}
+                    currency="PHP" liveGpa={liveGpa} onSemesterChange={handleSemesterChange}
                     id="sec-status" collapsed={false} onToggle={() => {}}
                   />
                 </SectionErrorBoundary>
                 <SectionErrorBoundary name="Expenses">
                   <ExpenseSection
-                    currency={currency}
+                    currency="PHP"
                     addedExpenses={addedExpenses}
                     onAddExpense={handleAddExpense}
                     onEditExpense={handleEditExpense}
