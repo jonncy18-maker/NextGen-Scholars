@@ -3248,3 +3248,74 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   .mh-dash { grid-template-columns: 1fr 1fr; }
   .mh-modules { grid-template-columns: 1fr; }
 }
+
+/* ── Submission Banner ──────────────────────────────────────────────────────── */
+.sub-banner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px;
+  font-size: 13.5px; font-weight: 500;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  transition: background 0.15s;
+}
+.sub-banner--ok {
+  background: rgba(47,125,85,0.08);
+  color: var(--ngs-green);
+}
+.sub-banner--alert {
+  background: rgba(177,27,42,0.07);
+  color: var(--ngs-red);
+  cursor: pointer;
+}
+.sub-banner--alert:hover { background: rgba(177,27,42,0.13); }
+.sub-banner-dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  background: var(--ngs-red);
+  flex-shrink: 0;
+  animation: sub-pulse 1.6s ease-in-out infinite;
+}
+@keyframes sub-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+.sub-banner-check { font-size: 15px; }
+
+/* ── Submission Modal ──────────────────────────────────────────────────────── */
+.sub-modal-overlay {
+  position: fixed; inset: 0; z-index: 1200;
+  background: rgba(0,0,0,0.35);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding-top: 72px;
+}
+.sub-modal {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.22);
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100vh - 100px);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.sub-modal-hd {
+  display: flex; align-items: center; gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  flex-shrink: 0;
+}
+.sub-modal-title { font-weight: 600; font-size: 15px; color: var(--ngs-navy); flex: 1; }
+.sub-modal-count {
+  font-size: 12px; font-weight: 600;
+  background: var(--ngs-red); color: #fff;
+  padding: 2px 8px; border-radius: 20px;
+}
+.sub-modal-close {
+  background: none; border: none; cursor: pointer;
+  font-size: 20px; color: var(--ngs-ink-soft);
+  line-height: 1; padding: 2px 6px; border-radius: 4px;
+  transition: background 0.12s;
+}
+.sub-modal-close:hover { background: rgba(0,0,0,0.07); }
+.sub-modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: 10px;
+}
