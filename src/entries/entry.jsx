@@ -6,7 +6,7 @@ import { updateExpense, writeActivityLog, writeSubmission, resubmitExpense, mark
 import { loadFromSupabase, loadScholarSubmissions } from '../supabase-loader.js';
 import { supabase } from '../lib/supabase.js';
 import { groupExpenses } from '../components/expenses/filterHelpers.js';
-import { ScholarAIPanel } from '../components/ScholarAIPanel.jsx';
+import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { ScholarIngestPanel } from '../components/ScholarIngestPanel.jsx';
 import '../styles/entry.css';
 
@@ -612,7 +612,7 @@ function ExpenseForm({ scholar, onLogout }) {
       </header>
 
       <main className="ef-main">
-        <ScholarAIPanel
+        <ScholarChatPanel
           scholarKey={scholar.key}
           ingestionLabel="Upload receipt"
           onGoToIngestion={() => document.getElementById('scholar-expense-ingest')?.scrollIntoView({ behavior: 'smooth' })}

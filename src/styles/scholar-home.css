@@ -455,3 +455,110 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
 }
 .sip-again-btn:hover { background: rgba(47,125,85,0.12); }
 
+
+/* ════════════════ SCHOLAR CHAT PANEL (.scp-*) ════════════════ */
+
+.scp-panel {
+  margin: 16px 0 8px;
+  background: var(--ngs-paper-2, #F2EDE2);
+  border-radius: 10px;
+  border: 1px solid var(--ngs-rule, #E5E0D8);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+
+.scp-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px 10px;
+  border-bottom: 1px solid var(--ngs-rule, #E5E0D8);
+  flex-shrink: 0;
+}
+.scp-header-left { display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0; }
+
+.scp-clear-btn {
+  font-family: var(--ngs-mono, 'IBM Plex Mono', monospace);
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 3px 8px; border: 1px solid var(--ngs-rule, #E5E0D8);
+  border-radius: 4px; background: transparent; color: var(--ngs-muted, #9A9590); cursor: pointer;
+}
+.scp-clear-btn:hover { border-color: var(--ngs-muted, #9A9590); color: var(--ngs-ink, #1C2235); }
+
+/* Empty state */
+.scp-empty { padding: 14px 16px 10px; }
+.scp-empty-hint {
+  font-family: var(--ngs-sans, 'Manrope', sans-serif);
+  font-size: 12px; color: var(--ngs-muted, #9A9590); margin: 0 0 8px;
+}
+
+/* Thread */
+.scp-thread {
+  flex: 1; overflow-y: auto; max-height: 360px;
+  padding: 12px 14px 6px;
+  display: flex; flex-direction: column; gap: 10px;
+  scroll-behavior: smooth;
+}
+
+/* Individual messages */
+.scp-msg { display: flex; }
+.scp-msg-user      { justify-content: flex-end; }
+.scp-msg-assistant { justify-content: flex-start; }
+
+.scp-bubble {
+  max-width: 86%;
+  padding: 9px 13px;
+  border-radius: 14px;
+  font-family: var(--ngs-sans, 'Manrope', sans-serif);
+  font-size: 13px; line-height: 1.55;
+  word-break: break-word;
+}
+.scp-bubble-user {
+  background: var(--ngs-navy, #1B2A4A);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+  display: flex; align-items: flex-start;
+}
+.scp-bubble-assistant {
+  background: #fff;
+  border: 1px solid var(--ngs-rule, #E5E0D8);
+  border-bottom-left-radius: 4px;
+  color: var(--ngs-ink, #1C2235);
+  display: flex; align-items: flex-start;
+  /* allow ResultDisplay to fill */
+  flex-direction: column;
+}
+.scp-bubble-assistant .sap-dot {
+  display: inline-block;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--ngs-navy, #1B2A4A);
+  animation: sap-dot-pulse 1.2s ease-in-out infinite;
+  margin-right: 5px;
+}
+.scp-bubble-assistant .sap-dot:nth-child(2) { animation-delay: 0.2s; }
+.scp-bubble-assistant .sap-dot:nth-child(3) { animation-delay: 0.4s; margin-right: 0; }
+.scp-bubble-err { color: #B11B2A; background: rgba(177,27,42,0.05); }
+
+.scp-answer {
+  margin: 0; white-space: pre-wrap;
+  font-size: 13px; line-height: 1.55; color: var(--ngs-ink, #1C2235);
+}
+
+/* Input form */
+.scp-form {
+  display: flex; gap: 7px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--ngs-rule, #E5E0D8);
+  flex-shrink: 0;
+  background: var(--ngs-paper-2, #F2EDE2);
+}
+.scp-send-btn { min-width: 42px; padding: 8px 12px; }
+
+/* Compact quick-prompt bar below input */
+.scp-chips-bar {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  padding: 0 14px 10px;
+}
+.scp-chip-sm {
+  font-size: 10.5px !important;
+  padding: 3px 8px !important;
+  border-radius: 12px !important;
+}
