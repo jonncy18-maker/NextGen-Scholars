@@ -167,6 +167,60 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // Grade analysis — Gemini generates a short academic commentary on extracted grades
+  if (type === 'grade_analysis') {
+    if (!Array.isArray(grades) || grades.length === 0) return json({ error: 'grade_analysis requires non-empty grades array' }, 400)
+    const apiKey = Deno.env.get('GOOGLE_AI_KEY')
+    if (!apiKey) return json({ error: 'AI not configured' }, 503)
+
+    const gradeList = (grades as Array<Record<string, unknown>>).map(g => {
+      const prelim     = g.prelim      != null ? parseFloat(String(g.prelim))      : null
+      const midterm    = g.midterm     != null ? parseFloat(String(g.midterm))     : null
+      const finalGrade = g.final_grade != null ? parseFloat(String(g.final_grade)) : null
+      const vals = [prelim, midterm, finalGrade].filter((v): v is number => v != null && !isNaN(v))
+      const avg = vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null
+      return { subject: g.subject, units: g.units, school: g.school, prelim, midterm, final: finalGrade, avg }
+    })
+
+    const totalUnits = gradeList.reduce((s, g) => s + (parseFloat(String(g.units)) || 0), 0)
+    const validForWA = gradeList.filter(g => g.avg != null && g.units)
+    const weightedAvg = validForWA.length && totalUnits
+      ? validForWA.reduce((s, g) => s + (g.avg as number) * (parseFloat(String(g.units)) || 0), 0) / totalUnits
+      : null
+
+    const isUV = gradeList.some(g => g.school === 'uv')
+    const scaleNote = isUV ? '(UV scale: 1.0 = highest, 5.0 = failing)' : '(K-12 percentage scale: 100% = highest)'
+
+    const prompt = `You are an academic advisor for NextGen Scholars, a program supporting Filipino nursing students on a pathway to international licensure.
+
+Scholar: ${scholar}${sem ? `, Semester: ${sem}` : ''}
+Grade scale: ${scaleNote}
+
+Subjects uploaded:
+${gradeList.map(g => `- ${g.subject} (${g.units} units): Prelim=${g.prelim ?? '—'}, Mid=${g.midterm ?? '—'}, Final=${g.final ?? '—'}, Period Avg=${g.avg != null ? (g.avg as number).toFixed(2) : '—'}`).join('\n')}
+${weightedAvg != null ? `\nWeighted Average: ${weightedAvg.toFixed(2)}` : ''}
+
+Write a concise 2–3 sentence academic analysis. Cover: overall performance level, any subjects that stand out (strong or at-risk), and a brief encouraging observation. Be specific to these grades. Professional and warm tone. Plain text only — no markdown, no bullet points, no headers.`
+
+    try {
+      const geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
+      const res = await fetch(`${geminiUrl}?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 512, temperature: 0.7, thinkingConfig: { thinkingBudget: 0 } },
+        }),
+      })
+      const gJson = await res.json()
+      const analysis = gJson?.candidates?.[0]?.content?.parts?.[0]?.text as string | undefined
+      if (!analysis) return json({ error: 'AI returned no response' }, 502)
+      return json({ analysis: analysis.trim() })
+    } catch (err) {
+      return json({ error: (err as Error).message ?? 'analysis failed' }, 500)
+    }
+  }
+
   // Query — Tier 1 (deterministic DB) then Tier 2 (Gemini advisory)
   if (!text?.trim()) return json({ error: 'Query requires text' }, 400)
 
