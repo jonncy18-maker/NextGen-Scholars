@@ -133,11 +133,12 @@ function GradeRow({ row, onSaved, onDeleted }) {
 
 // ── Sem block ─────────────────────────────────────────────────────────────────
 
-function SemBlock({ sk, sem, rows, onRowSaved, onRowDeleted, onAdded }) {
-  const [adding, setAdding] = useState(false);
-  const [form, setForm]     = useState({ subject: '', units: '3', school: 'uv', prelim: '', midterm: '', final_grade: '' });
-  const [saving, setSaving] = useState(false);
-  const [err, setErr]       = useState(null);
+function SemBlock({ sk, sem, rows, onRowSaved, onRowDeleted, onAdded, onSemDeleted }) {
+  const [adding,   setAdding]   = useState(false);
+  const [form,     setForm]     = useState({ subject: '', units: '3', school: 'uv', prelim: '', midterm: '', final_grade: '' });
+  const [saving,   setSaving]   = useState(false);
+  const [delSem,   setDelSem]   = useState(false);
+  const [err,      setErr]      = useState(null);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const isK12 = form.school === 'k12';
@@ -146,6 +147,13 @@ function SemBlock({ sk, sem, rows, onRowSaved, onRowDeleted, onAdded }) {
   const gpa        = weightedGpa(rows);
   const totalUnits = rows.reduce((s, r) => s + (r.units || 0), 0);
   const isK12Sem   = rows.length > 0 && rows.every(r => r.school === 'k12');
+
+  async function handleDeleteSem() {
+    if (!confirm(`Delete all ${rows.length} subject${rows.length !== 1 ? 's' : ''} in "${sem}"?`)) return;
+    setDelSem(true);
+    await supabase.from('grade_entries').delete().eq('scholar', sk).eq('sem', sem);
+    onSemDeleted(sem);
+  }
 
   async function handleAdd(e) {
     e.preventDefault();
@@ -185,6 +193,11 @@ function SemBlock({ sk, sem, rows, onRowSaved, onRowDeleted, onAdded }) {
         <button className="gr-add-btn" onClick={() => setAdding(a => !a)}>
           {adding ? 'Cancel' : '+ Add'}
         </button>
+        {rows.length > 0 && (
+          <button className="gr-del-sem-btn" onClick={handleDeleteSem} disabled={delSem} title={`Delete all of ${sem}`}>
+            Delete sem
+          </button>
+        )}
       </div>
 
       {rows.length > 0 && (
@@ -295,6 +308,9 @@ function ScholarGradeBlock({ sk, allRows }) {
   function handleAdded(entry) {
     setRows(prev => [...prev, entry]);
   }
+  function handleSemDeleted(sem) {
+    setRows(prev => prev.filter(r => r.sem !== sem));
+  }
 
   // Quick stat: all-time weighted GPA across all sems
   const allGpa = weightedGpa(rows.filter(r => r.school === 'uv'));
@@ -342,6 +358,7 @@ function ScholarGradeBlock({ sk, allRows }) {
           onRowSaved={handleRowSaved}
           onRowDeleted={handleRowDeleted}
           onAdded={handleAdded}
+          onSemDeleted={handleSemDeleted}
         />
       ))}
 
