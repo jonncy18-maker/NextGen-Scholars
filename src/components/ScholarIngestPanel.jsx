@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase.js';
 import { writeSubmission } from '../supabase-writer.js';
 import { EXPENSE_CATS, SEMESTER_OPTIONS } from '../constants.js';
@@ -117,6 +117,21 @@ function StudentReviewCard({ items: initialItems, model, scholarKey, sem, onDisc
             </tr>
           ))}
         </tbody>
+        {items.length > 0 && (() => {
+          const total = items.reduce((s, it) => s + Number(it.amount) * (Number(it.qty) || 1), 0);
+          return (
+            <tfoot>
+              <tr>
+                <td colSpan={6} style={{ padding: '8px 8px', borderTop: '2px solid var(--ngs-rule)', fontWeight: 700, fontSize: 13, color: 'var(--ngs-navy)', textAlign: 'right', fontFamily: 'var(--ngs-mono)' }}>
+                  Total
+                </td>
+                <td style={{ padding: '8px 8px', borderTop: '2px solid var(--ngs-rule)', fontWeight: 700, fontSize: 13, color: 'var(--ngs-navy)', fontFamily: 'var(--ngs-mono)' }}>
+                  ₱{total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </td>
+              </tr>
+            </tfoot>
+          );
+        })()}
       </table>
 
       <div className="nai-rev-chat">
@@ -165,6 +180,22 @@ function StudentGradeReviewCard({ grades: initialGrades, model, scholarKey, sem,
   const [chatLog, setChatLog]   = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [chatBusy, setChatBusy] = useState(false);
+  const [geminiAnalysis, setGeminiAnalysis] = useState(null);
+  const [geminiLoading, setGeminiLoading] = useState(false);
+
+  useEffect(() => {
+    if (!initialGrades.length) return;
+    setGeminiLoading(true);
+    fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+      body: JSON.stringify({ scholar: scholarKey, sem, type: 'grade_analysis', grades: initialGrades }),
+    })
+      .then(r => r.json())
+      .then(data => { if (data.analysis) setGeminiAnalysis(data.analysis); })
+      .catch(() => {})
+      .finally(() => setGeminiLoading(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function updateGrade(idx, field, value) {
     setGrades(prev => prev.map((g, i) => i === idx ? { ...g, [field]: value } : g));
@@ -268,6 +299,40 @@ function StudentGradeReviewCard({ grades: initialGrades, model, scholarKey, sem,
             );
           })}
         </tbody>
+        {grades.length > 1 && (() => {
+          const valid = grades.filter(g => {
+            const avg = gradeAvg(g.prelim, g.midterm, g.final_grade);
+            return avg != null && parseFloat(g.units) > 0;
+          });
+          const totalUnits = valid.reduce((s, g) => s + (parseFloat(g.units) || 0), 0);
+          const wa = totalUnits ? valid.reduce((s, g) => {
+            const avg = gradeAvg(g.prelim, g.midterm, g.final_grade);
+            return s + avg * (parseFloat(g.units) || 0);
+          }, 0) / totalUnits : null;
+          const isK12 = valid.every(g => g.school === 'k12');
+          const waPct = wa != null ? (isK12 ? wa : uvToPct(wa)) : null;
+          if (wa == null) return null;
+          return (
+            <tfoot>
+              <tr>
+                <td style={{ padding: '8px 8px', borderTop: '2px solid var(--ngs-rule)', fontWeight: 700, fontSize: 12, color: 'var(--ngs-navy)', fontFamily: 'var(--ngs-mono)' }}>
+                  Weighted Avg
+                </td>
+                <td style={{ padding: '8px 8px', borderTop: '2px solid var(--ngs-rule)', fontWeight: 700, fontSize: 12, color: 'var(--ngs-navy)', fontFamily: 'var(--ngs-mono)' }}>
+                  {totalUnits} u
+                </td>
+                <td colSpan={4} style={{ borderTop: '2px solid var(--ngs-rule)' }} />
+                <td className="nai-review-computed" style={{ borderTop: '2px solid var(--ngs-rule)', fontWeight: 700, color: 'var(--ngs-navy)' }}>
+                  {wa.toFixed(2)}
+                </td>
+                <td className="nai-review-computed" style={{ borderTop: '2px solid var(--ngs-rule)', fontWeight: 700, color: 'var(--ngs-navy)' }}>
+                  {waPct != null ? `${waPct.toFixed(1)}%` : '—'}
+                </td>
+                <td style={{ borderTop: '2px solid var(--ngs-rule)' }} />
+              </tr>
+            </tfoot>
+          );
+        })()}
       </table>
       <div className="nai-rev-chat">
         {chatLog.length > 0 && (
@@ -292,6 +357,15 @@ function StudentGradeReviewCard({ grades: initialGrades, model, scholarKey, sem,
           </button>
         </form>
       </div>
+      {(geminiLoading || geminiAnalysis) && (
+        <div className="nai-gemini-analysis">
+          <span className="nai-tier-badge nai-tier-2" style={{ marginBottom: 6, display: 'inline-block' }}>Gemini · Analysis</span>
+          {geminiLoading
+            ? <p className="nai-gemini-analysis-text" style={{ color: 'var(--ngs-muted)' }}>Gemini is reviewing the grades…</p>
+            : <p className="nai-gemini-analysis-text">{geminiAnalysis}</p>
+          }
+        </div>
+      )}
       {saveError && <div className="nai-error" style={{ marginBottom: 10 }}>{saveError}</div>}
       <div className="nai-review-actions">
         <button className="nai-confirm-btn" onClick={handleSave} disabled={saving || !grades.length}>

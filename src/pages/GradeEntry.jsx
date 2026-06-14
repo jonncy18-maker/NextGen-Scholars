@@ -78,11 +78,27 @@ const emptyForm = (school = 'uv') => ({ subject: '', units: '3', prelim: '', mid
 
 const SCHOOLS_OPT = [{ value: 'uv', label: 'UV' }, { value: 'k12', label: 'K-12' }];
 
-function ReviewPanel({ review, setReview, scholarKey, loading, error, onConfirm, onBack }) {
+function ReviewPanel({ review, setReview, scholarKey, sem, loading, error, onConfirm, onBack }) {
   const [chatInput, setChatInput] = useState('');
   const [chatBusy,  setChatBusy]  = useState(false);
   const [chatError, setChatError] = useState(null);
   const [chatLog,   setChatLog]   = useState([]); // [{role, text}]
+  const [geminiAnalysis, setGeminiAnalysis] = useState(null);
+  const [geminiLoading, setGeminiLoading] = useState(false);
+
+  useEffect(() => {
+    if (!review.length) return;
+    setGeminiLoading(true);
+    fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+      body: JSON.stringify({ scholar: scholarKey, sem, type: 'grade_analysis', grades: review }),
+    })
+      .then(r => r.json())
+      .then(data => { if (data.analysis) setGeminiAnalysis(data.analysis); })
+      .catch(() => {})
+      .finally(() => setGeminiLoading(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function setField(i, field, val) {
     setReview(prev => prev.map((g, idx) => idx === i ? { ...g, [field]: val } : g));
@@ -133,28 +149,74 @@ function ReviewPanel({ review, setReview, scholarKey, loading, error, onConfirm,
               <th>Prelim</th>
               <th>Mid</th>
               <th>Final</th>
+              <th>Avg</th>
+              <th>%</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            {review.map((g, i) => (
-              <tr key={i}>
-                <td><input className="ge-rev-input ge-rev-wide" value={g.subject ?? ''} onChange={e => setField(i, 'subject', e.target.value)} /></td>
-                <td>
-                  <select className="ge-rev-select" value={g.school ?? 'uv'} onChange={e => setField(i, 'school', e.target.value)}>
-                    {SCHOOLS_OPT.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                  </select>
-                </td>
-                <td><input className="ge-rev-input ge-rev-num" type="number" min="0.5" max="6" step="0.5" value={g.units ?? 3} onChange={e => setField(i, 'units', e.target.value)} /></td>
-                <td><input className="ge-rev-input ge-rev-num" type="number" step="0.01" value={g.prelim ?? ''} onChange={e => setField(i, 'prelim', e.target.value)} /></td>
-                <td><input className="ge-rev-input ge-rev-num" type="number" step="0.01" value={g.midterm ?? ''} onChange={e => setField(i, 'midterm', e.target.value)} /></td>
-                <td><input className="ge-rev-input ge-rev-num" type="number" step="0.01" value={g.final_grade ?? ''} onChange={e => setField(i, 'final_grade', e.target.value)} /></td>
-                <td><button className="ge-rev-del" type="button" onClick={() => removeRow(i)} title="Remove">×</button></td>
-              </tr>
-            ))}
+            {review.map((g, i) => {
+              const avg = (() => { const vals = [g.prelim, g.midterm, g.final_grade].map(v => parseFloat(v)).filter(v => !isNaN(v)); return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null; })();
+              const pct = avg != null ? (g.school === 'k12' ? avg : uvToPct(avg)) : null;
+              return (
+                <tr key={i}>
+                  <td><input className="ge-rev-input ge-rev-wide" value={g.subject ?? ''} onChange={e => setField(i, 'subject', e.target.value)} /></td>
+                  <td>
+                    <select className="ge-rev-select" value={g.school ?? 'uv'} onChange={e => setField(i, 'school', e.target.value)}>
+                      {SCHOOLS_OPT.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                    </select>
+                  </td>
+                  <td><input className="ge-rev-input ge-rev-num" type="number" min="0.5" max="6" step="0.5" value={g.units ?? 3} onChange={e => setField(i, 'units', e.target.value)} /></td>
+                  <td><input className="ge-rev-input ge-rev-num" type="number" step="0.01" value={g.prelim ?? ''} onChange={e => setField(i, 'prelim', e.target.value)} /></td>
+                  <td><input className="ge-rev-input ge-rev-num" type="number" step="0.01" value={g.midterm ?? ''} onChange={e => setField(i, 'midterm', e.target.value)} /></td>
+                  <td><input className="ge-rev-input ge-rev-num" type="number" step="0.01" value={g.final_grade ?? ''} onChange={e => setField(i, 'final_grade', e.target.value)} /></td>
+                  <td style={{ fontFamily: 'var(--ngs-mono)', fontSize: 12, textAlign: 'right', color: 'var(--ngs-navy)' }}>{avg != null ? avg.toFixed(2) : '—'}</td>
+                  <td style={{ fontFamily: 'var(--ngs-mono)', fontSize: 12, textAlign: 'right', color: 'var(--ngs-ink-soft)' }}>{pct != null ? `${pct.toFixed(1)}%` : '—'}</td>
+                  <td><button className="ge-rev-del" type="button" onClick={() => removeRow(i)} title="Remove">×</button></td>
+                </tr>
+              );
+            })}
           </tbody>
+          {review.length > 1 && (() => {
+            const computedRows = review.map(g => {
+              const vals = [g.prelim, g.midterm, g.final_grade].map(v => parseFloat(v)).filter(v => !isNaN(v));
+              return { ...g, avg: vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null };
+            });
+            const valid = computedRows.filter(g => g.avg != null && parseFloat(g.units) > 0);
+            const totalUnits = valid.reduce((s, g) => s + (parseFloat(g.units) || 0), 0);
+            const wa = totalUnits ? valid.reduce((s, g) => s + g.avg * (parseFloat(g.units) || 0), 0) / totalUnits : null;
+            const isK12 = valid.every(g => g.school === 'k12');
+            const waPct = wa != null ? (isK12 ? wa : uvToPct(wa)) : null;
+            if (wa == null) return null;
+            return (
+              <tfoot>
+                <tr>
+                  <td colSpan={5} style={{ padding: '6px 4px', borderTop: '2px solid var(--ngs-rule)', fontWeight: 700, fontSize: 11.5, color: 'var(--ngs-navy)', fontFamily: 'var(--ngs-mono)', textAlign: 'right' }}>
+                    Weighted Avg ({totalUnits} units)
+                  </td>
+                  <td style={{ padding: '6px 4px', borderTop: '2px solid var(--ngs-rule)', fontWeight: 700, fontSize: 12, color: 'var(--ngs-navy)', fontFamily: 'var(--ngs-mono)', textAlign: 'right' }}>
+                    {wa.toFixed(2)}
+                  </td>
+                  <td style={{ padding: '6px 4px', borderTop: '2px solid var(--ngs-rule)', fontWeight: 700, fontSize: 12, color: 'var(--ngs-navy)', fontFamily: 'var(--ngs-mono)', textAlign: 'right' }}>
+                    {waPct != null ? `${waPct.toFixed(1)}%` : '—'}
+                  </td>
+                  <td style={{ borderTop: '2px solid var(--ngs-rule)' }} />
+                </tr>
+              </tfoot>
+            );
+          })()}
         </table>
       </div>
+
+      {(geminiLoading || geminiAnalysis) && (
+        <div className="nai-gemini-analysis" style={{ margin: '10px 0' }}>
+          <span className="nai-tier-badge nai-tier-2" style={{ marginBottom: 6, display: 'inline-block' }}>Gemini · Analysis</span>
+          {geminiLoading
+            ? <p className="nai-gemini-analysis-text" style={{ color: 'var(--ngs-muted)' }}>Gemini is reviewing the grades…</p>
+            : <p className="nai-gemini-analysis-text">{geminiAnalysis}</p>
+          }
+        </div>
+      )}
 
       {/* AI correction chat */}
       <div className="ge-rev-chat">
@@ -295,6 +357,7 @@ function AiGradeImport({ scholarKey, semKey, onSaved }) {
           review={review}
           setReview={setReview}
           scholarKey={scholarKey}
+          sem={semKey}
           loading={loading}
           error={error}
           onConfirm={handleConfirm}
