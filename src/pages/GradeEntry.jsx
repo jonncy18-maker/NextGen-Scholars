@@ -14,15 +14,15 @@ const CONFIGS = {
     semOrder: ['TG11S1', 'TG11S2', 'TG12S1', 'TG12S2'], defaultSchool: 'k12' },
 };
 
-// UV grade scale — linear interpolation within each bracket
+// UV grade scale — linear interpolation within each bracket (contiguous, no gaps)
 const UV_BRACKETS = [
   { min: 1.00, max: 1.09, minPct: 95.00, maxPct: 100.00, desc: 'Excellent' },
-  { min: 1.10, max: 1.50, minPct: 90.00, maxPct: 94.99, desc: 'Superior' },
-  { min: 1.60, max: 2.00, minPct: 85.00, maxPct: 89.99, desc: 'Very Good' },
-  { min: 2.10, max: 2.50, minPct: 80.00, maxPct: 84.99, desc: 'Good' },
-  { min: 2.60, max: 2.90, minPct: 76.00, maxPct: 79.99, desc: 'Fair' },
-  { min: 3.00, max: 3.99, minPct: 75.00, maxPct: 75.99, desc: 'Pass' },
-  { min: 5.00, max: 5.00, minPct:  0.00, maxPct:  0.00, desc: 'Failing' },
+  { min: 1.10, max: 1.59, minPct: 90.00, maxPct:  94.99, desc: 'Superior' },
+  { min: 1.60, max: 2.09, minPct: 85.00, maxPct:  89.99, desc: 'Very Good' },
+  { min: 2.10, max: 2.59, minPct: 80.00, maxPct:  84.99, desc: 'Good' },
+  { min: 2.60, max: 2.99, minPct: 76.00, maxPct:  79.99, desc: 'Fair' },
+  { min: 3.00, max: 4.99, minPct: 75.00, maxPct:  75.00, desc: 'Pass' },
+  { min: 5.00, max: 5.00, minPct:  0.00, maxPct:   0.00, desc: 'Failing' },
 ];
 
 export function uvToPct(grade) {
@@ -333,9 +333,9 @@ export function GradeEntry({ scholarKey }) {
     : null;
   const totalUnits = currentRows.reduce((s, r) => s + (r.units || 0), 0);
 
-  const priorSems = (config.semOrder || [])
+  const priorSems = [...new Set((rows ?? []).map(r => r.sem))]
     .filter(s => s !== config.semKey)
-    .filter(s => (rows ?? []).some(r => r.sem === s));
+    .sort();
 
   async function handleSubmit(e) {
     e.preventDefault();

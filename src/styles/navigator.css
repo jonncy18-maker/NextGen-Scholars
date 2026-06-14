@@ -2794,7 +2794,12 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 .gr-sem-header {
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   padding: 8px 16px; background: var(--ngs-paper);
+  width: 100%; border: none; cursor: pointer; text-align: left;
+  transition: background 120ms;
 }
+.gr-sem-header:hover { background: var(--ngs-paper-2); }
+.gr-sem-chevron { font-size: 9px; color: var(--ngs-muted); flex-shrink: 0; }
+.gr-sem-actions { display: flex; gap: 6px; margin-left: auto; }
 .gr-sem-label {
   font-family: var(--ngs-mono); font-size: 12px; font-weight: 700;
   color: var(--ngs-navy); min-width: 52px;

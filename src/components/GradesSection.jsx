@@ -134,6 +134,7 @@ function GradeRow({ row, onSaved, onDeleted }) {
 // ── Sem block ─────────────────────────────────────────────────────────────────
 
 function SemBlock({ sk, sem, rows, onRowSaved, onRowDeleted, onAdded, onSemDeleted }) {
+  const [open,     setOpen]     = useState(true);
   const [adding,   setAdding]   = useState(false);
   const [form,     setForm]     = useState({ subject: '', units: '3', school: 'uv', prelim: '', midterm: '', final_grade: '' });
   const [saving,   setSaving]   = useState(false);
@@ -179,7 +180,8 @@ function SemBlock({ sk, sem, rows, onRowSaved, onRowDeleted, onAdded, onSemDelet
 
   return (
     <div className="gr-sem-block">
-      <div className="gr-sem-header">
+      <button className="gr-sem-header" onClick={() => setOpen(o => !o)}>
+        <span className="gr-sem-chevron">{open ? '▾' : '▸'}</span>
         <span className="gr-sem-label">{sem}</span>
         {gpa != null && (
           <>
@@ -190,17 +192,19 @@ function SemBlock({ sk, sem, rows, onRowSaved, onRowDeleted, onAdded, onSemDelet
           </>
         )}
         <span className="gr-sem-meta">{totalUnits} units · {rows.length} subj</span>
-        <button className="gr-add-btn" onClick={() => setAdding(a => !a)}>
-          {adding ? 'Cancel' : '+ Add'}
-        </button>
-        {rows.length > 0 && (
-          <button className="gr-del-sem-btn" onClick={handleDeleteSem} disabled={delSem} title={`Delete all of ${sem}`}>
-            Delete sem
+        <span className="gr-sem-actions" onClick={e => e.stopPropagation()}>
+          <button className="gr-add-btn" onClick={() => { setOpen(true); setAdding(a => !a); }}>
+            {adding ? 'Cancel' : '+ Add'}
           </button>
-        )}
-      </div>
+          {rows.length > 0 && (
+            <button className="gr-del-sem-btn" onClick={handleDeleteSem} disabled={delSem} title={`Delete all of ${sem}`}>
+              Delete sem
+            </button>
+          )}
+        </span>
+      </button>
 
-      {rows.length > 0 && (
+      {open && rows.length > 0 && (
         <div className="gr-table-wrap">
           <table className="gr-table">
             <thead>
@@ -239,7 +243,7 @@ function SemBlock({ sk, sem, rows, onRowSaved, onRowDeleted, onAdded, onSemDelet
         </div>
       )}
 
-      {adding && (
+      {open && adding && (
         <form className="gr-add-form" onSubmit={handleAdd}>
           <div className="gr-add-fields">
             <label className="gr-field gr-field-wide">
