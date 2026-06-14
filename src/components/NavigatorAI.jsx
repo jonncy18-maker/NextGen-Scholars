@@ -361,6 +361,9 @@ function ReviewCard({ items: initialItems, model, scholar, sem, onDiscard, onCon
   const [items, setItems] = useState(initialItems.map(it => ({ ...it })));
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [chatLog, setChatLog]   = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatBusy, setChatBusy] = useState(false);
 
   function updateItem(idx, field, value) {
     setItems(prev => prev.map((it, i) => i === idx ? { ...it, [field]: value } : it));
@@ -368,6 +371,32 @@ function ReviewCard({ items: initialItems, model, scholar, sem, onDiscard, onCon
 
   function removeItem(idx) {
     setItems(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  async function handleChat() {
+    const instruction = chatInput.trim();
+    if (!instruction || chatBusy) return;
+    setChatLog(prev => [...prev, { role: 'user', text: instruction }]);
+    setChatInput('');
+    setChatBusy(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+        body: JSON.stringify({ scholar, type: 'expense_edit', items, text: instruction }),
+      });
+      const data = await res.json();
+      if (data.items) {
+        setItems(data.items.map(it => ({ ...it })));
+        setChatLog(prev => [...prev, { role: 'ai', text: 'Done — expenses updated. Review the table above.' }]);
+      } else {
+        setChatLog(prev => [...prev, { role: 'ai', text: data.error ?? 'Could not apply the edit.' }]);
+      }
+    } catch (err) {
+      setChatLog(prev => [...prev, { role: 'ai', text: err.message ?? 'Request failed.' }]);
+    } finally {
+      setChatBusy(false);
+    }
   }
 
   async function handleConfirm() {
@@ -489,6 +518,31 @@ function ReviewCard({ items: initialItems, model, scholar, sem, onDiscard, onCon
           ))}
         </tbody>
       </table>
+
+      <div className="nai-rev-chat">
+        {chatLog.length > 0 && (
+          <div className="nai-rev-chat-log">
+            {chatLog.map((m, i) => (
+              <div key={i} className={`nai-rev-chat-msg ${m.role === 'user' ? 'nai-rev-chat-user' : 'nai-rev-chat-ai'}`}>
+                {m.text}
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="nai-rev-chat-form">
+          <input
+            className="nai-rev-chat-input"
+            value={chatInput}
+            onChange={e => setChatInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChat(); } }}
+            placeholder="e.g. Change tuition amount to 5000, remove the last item…"
+            disabled={chatBusy}
+          />
+          <button className="nai-rev-chat-send" type="button" onClick={handleChat} disabled={chatBusy || !chatInput.trim()}>
+            {chatBusy ? '…' : 'Fix →'}
+          </button>
+        </div>
+      </div>
 
       {saveError && <div className="nai-error" style={{ marginBottom: 10 }}>{saveError}</div>}
 
