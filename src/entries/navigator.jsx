@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { NGS_DATA } from '../../scholars-data.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
 import { loadFromSupabase, loadPendingSubmissions } from '../supabase-loader.js';
@@ -29,7 +30,6 @@ if (!NGS_DATA || !NGS_DATA.config) {
 }
 
 const STATIC_SCHOLAR_KEYS = ['claire', 'april', 'aljane'];
-const ALL_SECTION_IDS = ['alerts', 'status', 'expenses', 'deadlines', 'english', 'navigator-ai', 'documents', 'career', 'risk', 'grades'];
 
 // Compute per-scholar GPA (as %) from the most recent sem in grade_entries
 function computeLiveGpa(rows) {
@@ -269,9 +269,6 @@ export function Navigator() {
 
   const [addedExpenses, setAddedExpenses] = useLocalStorage('ngs_added', {});
 
-  const [collapsedSectionsArr, setCollapsedSectionsArr] = useLocalStorage('ngs_collapsed_sections', []);
-  const collapsedSections = new Set(collapsedSectionsArr);
-
   const [fxPanelOpen, setFxPanelOpen] = useLocalStorage('ngs_fx_panel', false);
   const [aiDrawerOpen, setAiDrawerOpen]           = useState(false);
   const [aiDrawerTab, setAiDrawerTab]             = useState('query');
@@ -310,22 +307,6 @@ export function Navigator() {
 
   function handleFxPanelToggle() {
     setFxPanelOpen(v => !v);
-  }
-
-  function toggleSection(sectionId) {
-    setCollapsedSectionsArr(prev => {
-      const set = new Set(prev);
-      set.has(sectionId) ? set.delete(sectionId) : set.add(sectionId);
-      return [...set];
-    });
-  }
-
-  function expandAll() {
-    setCollapsedSectionsArr([]);
-  }
-
-  function collapseAll() {
-    setCollapsedSectionsArr(ALL_SECTION_IDS);
   }
 
   useEffect(() => {
@@ -377,12 +358,6 @@ export function Navigator() {
     }));
   }
 
-  const sec = (id) => ({
-    id: `sec-${id}`,
-    collapsed: collapsedSections.has(id),
-    onToggle: () => toggleSection(id),
-  });
-
   return (
     <DataCtx.Provider value={{ D, scholarKeys }}>
       <FxCtx.Provider value={fxRate}>
@@ -399,8 +374,6 @@ export function Navigator() {
           onRefresh={() => setRefreshKey(k => k + 1)}
           fxPanelOpen={fxPanelOpen}
           onFxPanelToggle={handleFxPanelToggle}
-          onExpandAll={expandAll}
-          onCollapseAll={collapseAll}
           aiDrawerOpen={aiDrawerOpen}
           onAiDrawerToggle={() => setAiDrawerOpen(v => !v)}
         />
@@ -412,57 +385,82 @@ export function Navigator() {
           defaultScholar={aiDrawerDefaultScholar}
         />
         <main className="wrap">
-          <SectionErrorBoundary name="MentorHome">
-            <MentorHome liveGpa={liveGpa} onOpenDrawer={openDrawer} />
-          </SectionErrorBoundary>
-          <SectionErrorBoundary name="Alerts">
-            <AlertsSection
-              submissions={pendingSubmissions}
-              feed={activityFeed}
-              dbAlerts={dbAlerts}
-              onApprove={handleApproveSubmission}
-              onReject={handleRejectSubmission}
-              onApproveDelete={handleApproveDelete}
-              onDenyDelete={handleDenyDelete}
-              onMarkRead={handleMarkFeedRead}
-              onDismissAlert={handleDismissDbAlert}
-              {...sec('alerts')}
-            />
-          </SectionErrorBoundary>
-          <SectionErrorBoundary name="Status">
-            <StatusSection currency={currency} liveGpa={liveGpa} onSemesterChange={handleSemesterChange} {...sec('status')} />
-          </SectionErrorBoundary>
-          <SectionErrorBoundary name="Expenses">
-            <ExpenseSection
-              currency={currency}
-              addedExpenses={addedExpenses}
-              onAddExpense={handleAddExpense}
-              onEditExpense={handleEditExpense}
-              onDeleteExpense={handleDeleteExpenseFromTable}
-              {...sec('expenses')}
-            />
-          </SectionErrorBoundary>
-          <SectionErrorBoundary name="Deadlines">
-            <DeadlinesSection {...sec('deadlines')} />
-          </SectionErrorBoundary>
-          <SectionErrorBoundary name="English">
-            <EnglishSection {...sec('english')} />
-          </SectionErrorBoundary>
-          <SectionErrorBoundary name="Navigator AI">
-            <NavigatorAI {...sec('navigator-ai')} />
-          </SectionErrorBoundary>
-          <SectionErrorBoundary name="Documents">
-            <DocumentsSection {...sec('documents')} />
-          </SectionErrorBoundary>
-          <SectionErrorBoundary name="Career">
-            <CareerSection {...sec('career')} />
-          </SectionErrorBoundary>
-          <SectionErrorBoundary name="Risk">
-            <RiskSection {...sec('risk')} />
-          </SectionErrorBoundary>
-          <SectionErrorBoundary name="Grades">
-            <GradesSection {...sec('grades')} />
-          </SectionErrorBoundary>
+          <Routes>
+            <Route index element={
+              <SectionErrorBoundary name="MentorHome">
+                <MentorHome liveGpa={liveGpa} onOpenDrawer={openDrawer} />
+              </SectionErrorBoundary>
+            } />
+            <Route path="expenses" element={
+              <>
+                <SectionErrorBoundary name="Alerts">
+                  <AlertsSection
+                    submissions={pendingSubmissions}
+                    feed={activityFeed}
+                    dbAlerts={dbAlerts}
+                    onApprove={handleApproveSubmission}
+                    onReject={handleRejectSubmission}
+                    onApproveDelete={handleApproveDelete}
+                    onDenyDelete={handleDenyDelete}
+                    onMarkRead={handleMarkFeedRead}
+                    onDismissAlert={handleDismissDbAlert}
+                    id="sec-alerts" collapsed={false} onToggle={() => {}}
+                  />
+                </SectionErrorBoundary>
+                <SectionErrorBoundary name="Status">
+                  <StatusSection
+                    currency={currency} liveGpa={liveGpa} onSemesterChange={handleSemesterChange}
+                    id="sec-status" collapsed={false} onToggle={() => {}}
+                  />
+                </SectionErrorBoundary>
+                <SectionErrorBoundary name="Expenses">
+                  <ExpenseSection
+                    currency={currency}
+                    addedExpenses={addedExpenses}
+                    onAddExpense={handleAddExpense}
+                    onEditExpense={handleEditExpense}
+                    onDeleteExpense={handleDeleteExpenseFromTable}
+                    id="sec-expenses" collapsed={false} onToggle={() => {}}
+                  />
+                </SectionErrorBoundary>
+              </>
+            } />
+            <Route path="grades" element={
+              <SectionErrorBoundary name="Grades">
+                <GradesSection id="sec-grades" collapsed={false} onToggle={() => {}} />
+              </SectionErrorBoundary>
+            } />
+            <Route path="english" element={
+              <>
+                <SectionErrorBoundary name="English">
+                  <EnglishSection id="sec-english" collapsed={false} onToggle={() => {}} />
+                </SectionErrorBoundary>
+                <SectionErrorBoundary name="Navigator AI">
+                  <NavigatorAI id="sec-navigator-ai" collapsed={false} onToggle={() => {}} />
+                </SectionErrorBoundary>
+              </>
+            } />
+            <Route path="deadlines" element={
+              <SectionErrorBoundary name="Deadlines">
+                <DeadlinesSection id="sec-deadlines" collapsed={false} onToggle={() => {}} />
+              </SectionErrorBoundary>
+            } />
+            <Route path="progress" element={
+              <>
+                <SectionErrorBoundary name="Career">
+                  <CareerSection id="sec-career" collapsed={false} onToggle={() => {}} />
+                </SectionErrorBoundary>
+                <SectionErrorBoundary name="Risk">
+                  <RiskSection id="sec-risk" collapsed={false} onToggle={() => {}} />
+                </SectionErrorBoundary>
+              </>
+            } />
+            <Route path="docs" element={
+              <SectionErrorBoundary name="Documents">
+                <DocumentsSection id="sec-documents" collapsed={false} onToggle={() => {}} />
+              </SectionErrorBoundary>
+            } />
+          </Routes>
         </main>
         <NavFooter sheetsStatus={sheetsStatus} writeError={writeError} />
       </FxCtx.Provider>
