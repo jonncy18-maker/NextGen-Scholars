@@ -76,7 +76,12 @@ export function NavBar({
       <nav className="nav-sections-strip">
         <div className="nav-sections-inner">
           {SECTION_NAV.map(s => (
-            <a key={s.id} className="nav-sec-link" href={`#${s.id}`}>{s.label}</a>
+            <a
+              key={s.id}
+              className="nav-sec-link"
+              href={`#${s.id}`}
+              onClick={e => { e.preventDefault(); document.getElementById(s.id)?.scrollIntoView({ behavior: 'smooth' }); }}
+            >{s.label}</a>
           ))}
         </div>
       </nav>
