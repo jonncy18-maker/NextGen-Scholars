@@ -10,7 +10,8 @@ function gradeAvg(prelim, midterm, finalGrade) {
   return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
 }
 
-const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
+const SUPABASE_URL  = 'https://rhoxpfuephkuaartuqou.supabase.co';
+const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const QUICK_PROMPTS = [
   { label: 'Total spend',        tpl: s => `How much has ${s} spent overall?` },
@@ -514,12 +515,41 @@ function GradeReviewCard({ grades: initialGrades, model, scholar, sem, onDiscard
   const [grades, setGrades] = useState(initialGrades.map(g => ({ ...g })));
   const [saving, setSaving]     = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const [chatLog, setChatLog]   = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatBusy, setChatBusy] = useState(false);
 
   function updateGrade(idx, field, value) {
     setGrades(prev => prev.map((g, i) => i === idx ? { ...g, [field]: value } : g));
   }
   function removeGrade(idx) {
     setGrades(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  async function handleChat() {
+    const instruction = chatInput.trim();
+    if (!instruction || chatBusy) return;
+    setChatLog(prev => [...prev, { role: 'user', text: instruction }]);
+    setChatInput('');
+    setChatBusy(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+        body: JSON.stringify({ scholar, type: 'grade_edit', grades, text: instruction }),
+      });
+      const data = await res.json();
+      if (data.grades) {
+        setGrades(data.grades.map(g => ({ ...g })));
+        setChatLog(prev => [...prev, { role: 'ai', text: 'Done — grades updated. Review the table above.' }]);
+      } else {
+        setChatLog(prev => [...prev, { role: 'ai', text: data.error ?? 'Could not apply the edit.' }]);
+      }
+    } catch (err) {
+      setChatLog(prev => [...prev, { role: 'ai', text: err.message ?? 'Request failed.' }]);
+    } finally {
+      setChatBusy(false);
+    }
   }
 
   async function handleConfirm() {
@@ -592,6 +622,29 @@ function GradeReviewCard({ grades: initialGrades, model, scholar, sem, onDiscard
           })}
         </tbody>
       </table>
+      <div className="nai-rev-chat">
+        {chatLog.length > 0 && (
+          <div className="nai-rev-chat-log">
+            {chatLog.map((m, i) => (
+              <div key={i} className={`nai-rev-chat-msg ${m.role === 'user' ? 'nai-rev-chat-user' : 'nai-rev-chat-ai'}`}>
+                {m.text}
+              </div>
+            ))}
+          </div>
+        )}
+        <form className="nai-rev-chat-form" onSubmit={e => { e.preventDefault(); handleChat(); }}>
+          <input
+            className="nai-rev-chat-input"
+            value={chatInput}
+            onChange={e => setChatInput(e.target.value)}
+            placeholder="e.g. Change Nursing Science units to 5…"
+            disabled={chatBusy}
+          />
+          <button className="nai-rev-chat-send" type="submit" disabled={chatBusy || !chatInput.trim()}>
+            {chatBusy ? '…' : 'Fix →'}
+          </button>
+        </form>
+      </div>
       {saveError && <div className="nai-error" style={{ marginBottom: 10 }}>{saveError}</div>}
       <div className="nai-review-actions">
         <button className="nai-confirm-btn" onClick={handleConfirm} disabled={saving || !grades.length}>
