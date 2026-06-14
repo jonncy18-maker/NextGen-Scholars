@@ -632,18 +632,19 @@ function GradeReviewCard({ grades: initialGrades, model, scholar, sem, onDiscard
             ))}
           </div>
         )}
-        <form className="nai-rev-chat-form" onSubmit={e => { e.preventDefault(); handleChat(); }}>
+        <div className="nai-rev-chat-form">
           <input
             className="nai-rev-chat-input"
             value={chatInput}
             onChange={e => setChatInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleChat(); } }}
             placeholder="e.g. Change Nursing Science units to 5…"
             disabled={chatBusy}
           />
-          <button className="nai-rev-chat-send" type="submit" disabled={chatBusy || !chatInput.trim()}>
+          <button className="nai-rev-chat-send" type="button" onClick={handleChat} disabled={chatBusy || !chatInput.trim()}>
             {chatBusy ? '…' : 'Fix →'}
           </button>
-        </form>
+        </div>
       </div>
       {saveError && <div className="nai-error" style={{ marginBottom: 10 }}>{saveError}</div>}
       <div className="nai-review-actions">
