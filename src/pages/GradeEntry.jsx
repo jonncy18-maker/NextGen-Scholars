@@ -7,6 +7,15 @@ import { ScholarIngestPanel } from '../components/ScholarIngestPanel.jsx';
 const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
 const ACCEPTED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
 
+const SEM_LABELS = {
+  Y1S1:'Year 1 · Semester 1', Y1S2:'Year 1 · Semester 2',
+  Y2S1:'Year 2 · Semester 1', Y2S2:'Year 2 · Semester 2',
+  Y3S1:'Year 3 · Semester 1', Y3S2:'Year 3 · Semester 2',
+  Y4S1:'Year 4 · Semester 1', Y4S2:'Year 4 · Semester 2',
+  TG11S1:'Grade 11 · Semester 1', TG11S2:'Grade 11 · Semester 2',
+  TG12S1:'Grade 12 · Semester 1', TG12S2:'Grade 12 · Semester 2',
+};
+
 const CONFIGS = {
   claire: { name: 'Claire', semKey: 'Y2S2', semLabel: 'Year 2 · Semester 2', homeHref: '/home/claire',
     semOrder: ['Y2S1', 'Y2S2', 'Y3S1', 'Y3S2'], defaultSchool: 'uv' },
@@ -299,11 +308,18 @@ function AiGradeImport({ scholarKey, semKey, onSaved }) {
 
 export function GradeEntry({ scholarKey }) {
   const config = CONFIGS[scholarKey] || CONFIGS.claire;
+  const [semKey, setSemKey] = useState(config.semKey);
   const [rows, setRows] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(() => emptyForm(config.defaultSchool));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  // Keep semKey in sync with whatever the mentor last set
+  useEffect(() => {
+    supabase.from('scholars').select('current_sem').eq('scholar_key', scholarKey).limit(1)
+      .then(({ data }) => { if (data?.[0]?.current_sem) setSemKey(data[0].current_sem); });
+  }, [scholarKey]);
 
   useEffect(() => {
     supabase
@@ -325,7 +341,8 @@ export function GradeEntry({ scholarKey }) {
     ? (isK12 ? Math.round(previewAvg * 100) / 100 : uvToPct(previewAvg))
     : null;
 
-  const currentRows = (rows ?? []).filter(r => r.sem === config.semKey);
+  const semLabel = SEM_LABELS[semKey] || semLabel || semKey;
+  const currentRows = (rows ?? []).filter(r => r.sem === semKey);
   const semIsK12 = currentRows.length > 0 && currentRows.every(r => r.school === 'k12');
   const currentGpa = weightedGpa(currentRows);
   const currentPct = currentGpa != null
@@ -334,7 +351,7 @@ export function GradeEntry({ scholarKey }) {
   const totalUnits = currentRows.reduce((s, r) => s + (r.units || 0), 0);
 
   const priorSems = [...new Set((rows ?? []).map(r => r.sem))]
-    .filter(s => s !== config.semKey)
+    .filter(s => s !== semKey)
     .sort();
 
   async function handleSubmit(e) {
@@ -346,7 +363,7 @@ export function GradeEntry({ scholarKey }) {
 
     const entry = {
       scholar: scholarKey,
-      sem: config.semKey,
+      sem: semKey,
       school: form.school,
       subject: form.subject.trim(),
       units,
@@ -390,7 +407,7 @@ export function GradeEntry({ scholarKey }) {
           <h1 className="sp-greet-name">Grades.</h1>
           <div className="sp-head-rule" />
           <div className="sp-head-meta">
-            <span className="sp-stage">{config.semLabel}</span>
+            <span className="sp-stage">{semLabel}</span>
             <Link to={config.homeHref} className="sp-tagline" style={{ textDecoration: 'none' }}>
               ← Back to home
             </Link>
@@ -429,7 +446,7 @@ export function GradeEntry({ scholarKey }) {
                   </div>
                 </div>
                 <div className="ge-gpa-footer">
-                  {config.semLabel} · {currentRows.length} subject{currentRows.length !== 1 ? 's' : ''} · {totalUnits} units
+                  {semLabel} · {currentRows.length} subject{currentRows.length !== 1 ? 's' : ''} · {totalUnits} units
                 </div>
               </>
             )}
@@ -439,7 +456,7 @@ export function GradeEntry({ scholarKey }) {
 
           <AiGradeImport
               scholarKey={scholarKey}
-              semKey={config.semKey}
+              semKey={semKey}
               onSaved={() => {
                 supabase.from('grade_entries').select('*').eq('scholar', scholarKey)
                   .order('sem').order('created_at')
@@ -517,7 +534,7 @@ export function GradeEntry({ scholarKey }) {
           <section className="sp-section ge-grades-section">
             <div className="sp-eyebrow">
               <span className="sp-eyebrow-rule" />
-              {config.semLabel}
+              {semLabel}
               <span className="sp-eyebrow-count">{String(currentRows.length).padStart(2, '0')}</span>
             </div>
             <div className="ge-table-wrap">
@@ -588,7 +605,7 @@ export function GradeEntry({ scholarKey }) {
           id="scholar-grade-ingest"
           type="grades"
           scholarKey={scholarKey}
-          sem={config.semKey}
+          sem={semKey}
         />
 
         <footer className="sp-footer">

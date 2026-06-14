@@ -8,19 +8,19 @@ import {
 } from '../components/ScholarIcons.jsx';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 
-// Stage, tagline, and englishTarget are portal-specific copy that doesn't live in Supabase.
-// name, trackCode, and semKey are derived from NGS_DATA to avoid duplication.
+const SEM_LABELS = {
+  Y1S1:'Year 1 · Semester 1', Y1S2:'Year 1 · Semester 2',
+  Y2S1:'Year 2 · Semester 1', Y2S2:'Year 2 · Semester 2',
+  Y3S1:'Year 3 · Semester 1', Y3S2:'Year 3 · Semester 2',
+  Y4S1:'Year 4 · Semester 1', Y4S2:'Year 4 · Semester 2',
+  TG11S1:'Grade 11 · Semester 1', TG11S2:'Grade 11 · Semester 2',
+  TG12S1:'Grade 12 · Semester 1', TG12S2:'Grade 12 · Semester 2',
+};
+
+// tagline is portal copy — stage and englishTarget now come from live Supabase data
 const CONFIGS = {
-  claire: {
-    stage: 'Year 2 · Semester 2',
-    tagline: <>Four semesters to clear — <em>steady as you go.</em></>,
-    englishTarget: 200,
-  },
-  april: {
-    stage: 'Grade 11 · Semester 1',
-    tagline: <>Trial period in progress — <em>one step at a time.</em></>,
-    englishTarget: null,
-  },
+  claire: { tagline: <>Four semesters to clear — <em>steady as you go.</em></> },
+  april:  { tagline: <>Trial period in progress — <em>one step at a time.</em></> },
 };
 
 function buildConfig(key) {
@@ -29,7 +29,7 @@ function buildConfig(key) {
     name: s.firstName || key,
     track: s.publicProfile?.trackName || s.track || '',
     trackCode: s.track || '',
-    semKey: s.currentSem || '',
+    staticSemKey: s.currentSem || '',
     expensesHref: `/entry?scholar=${key}`,
     gradesHref: `/${key}`,
     ...(CONFIGS[key] || {}),
@@ -60,37 +60,33 @@ export function ScholarHome({ scholarKey }) {
   useEffect(() => {
     async function load() {
       try {
-        const [{ data: expenses }, { data: academics }, { data: scholars }, { data: englishData }] = await Promise.all([
-          supabase.from('expenses')
-            .select('date')
-            .eq('scholar', scholarKey)
-            .order('date', { ascending: false })
-            .limit(1),
-          supabase.from('academics')
-            .select('gpa, status, sem')
-            .eq('scholar', scholarKey)
-            .order('id', { ascending: false }),
-          supabase.from('scholars')
-            .select('current_sem')
-            .eq('scholar_key', scholarKey)
-            .limit(1),
-          supabase.from('english_sessions')
-            .select('duration_minutes')
-            .eq('scholar', scholarKey)
-            .eq('sem', config.semKey),
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const [expRes, acadRes, scholarsRes, periodsRes, milestonesRes] = await Promise.all([
+          supabase.from('expenses').select('date').eq('scholar', scholarKey).order('date', { ascending: false }).limit(1),
+          supabase.from('academics').select('gpa, status, sem').eq('scholar', scholarKey).order('id', { ascending: false }),
+          supabase.from('scholars').select('current_sem').eq('scholar_key', scholarKey).limit(1),
+          supabase.from('english_periods').select('*').eq('scholar', scholarKey).order('start_date', { ascending: false }),
+          supabase.from('milestones').select('state').eq('scholar', scholarKey).eq('state', 'done'),
         ]);
 
-        const latestExpenseDate = expenses?.[0]?.date ?? null;
-        const latestGpa = academics?.find(a => a.gpa != null)?.gpa ?? null;
-        const gpaStatus = academics?.find(a => a.gpa != null)?.status ?? null;
-        const milestonesRes = await supabase.from('milestones')
-          .select('state')
-          .eq('scholar', scholarKey)
-          .eq('state', 'done');
+        const liveSem = scholarsRes.data?.[0]?.current_sem || config.staticSemKey;
+        const periods = periodsRes.data || [];
+        const activePeriod = periods.find(p => p.start_date <= todayStr && p.end_date >= todayStr) ?? periods[0] ?? null;
+        const liveEnglishTarget = activePeriod?.hour_goal ? Number(activePeriod.hour_goal) : null;
+
+        const engQ = activePeriod
+          ? supabase.from('english_sessions').select('duration_minutes').eq('scholar', scholarKey)
+              .gte('date', activePeriod.start_date).lte('date', activePeriod.end_date)
+          : supabase.from('english_sessions').select('duration_minutes').eq('scholar', scholarKey).eq('sem', liveSem);
+        const { data: englishData } = await engQ;
+
+        const latestExpenseDate = expRes.data?.[0]?.date ?? null;
+        const latestGpa = acadRes.data?.find(a => a.gpa != null)?.gpa ?? null;
+        const gpaStatus = acadRes.data?.find(a => a.gpa != null)?.status ?? null;
         const rewardsCount = milestonesRes.data?.length ?? 0;
         const englishMinutes = englishData?.reduce((s, r) => s + (r.duration_minutes || 0), 0) ?? null;
 
-        setLiveData({ latestExpenseDate, latestGpa, gpaStatus, rewardsCount, englishMinutes });
+        setLiveData({ latestExpenseDate, latestGpa, gpaStatus, rewardsCount, englishMinutes, liveSem, liveEnglishTarget });
       } catch {
         setLiveData({});
       }
@@ -108,13 +104,17 @@ export function ScholarHome({ scholarKey }) {
 
   const rewardsCount = liveData?.rewardsCount ?? 0;
 
+  const liveEnglishTarget = liveData?.liveEnglishTarget ?? null;
+  const liveSem = liveData?.liveSem || config.staticSemKey;
+  const liveStage = SEM_LABELS[liveSem] || config.stage || liveSem;
+
   const englishSub = (() => {
     if (!liveData) return 'Tracking hours';
     const mins = liveData.englishMinutes;
     if (mins === null || mins === undefined) return 'Log hours';
     const h = mins / 60;
     const display = h % 1 === 0 ? String(h) : h.toFixed(1);
-    return config.englishTarget ? `${display} / ${config.englishTarget} hrs` : `${display} hrs`;
+    return liveEnglishTarget ? `${display} / ${liveEnglishTarget} hrs` : `${display} hrs`;
   })();
 
   const PRIMARY = [
@@ -157,7 +157,7 @@ export function ScholarHome({ scholarKey }) {
           <h1 className="sp-greet-name">{config.name}.</h1>
           <div className="sp-head-rule" />
           <div className="sp-head-meta">
-            <span className="sp-stage">{config.stage}</span>
+            <span className="sp-stage">{liveStage}</span>
             <p className="sp-tagline">{config.tagline}</p>
           </div>
         </header>
