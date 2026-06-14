@@ -17,6 +17,7 @@ import { DeadlinesSection } from '../components/DeadlinesSection.jsx';
 import { EnglishSection } from '../components/EnglishSection.jsx';
 import { NavigatorAI } from '../components/NavigatorAI.jsx';
 import { NavigatorAIDrawer } from '../components/NavigatorAIDrawer.jsx';
+import { MentorHome } from '../components/MentorHome.jsx';
 import { DocumentsSection } from '../components/DocumentsSection.jsx';
 import { CareerSection } from '../components/CareerSection.jsx';
 import { RiskSection } from '../components/RiskSection.jsx';
@@ -272,8 +273,15 @@ export function Navigator() {
   const collapsedSections = new Set(collapsedSectionsArr);
 
   const [fxPanelOpen, setFxPanelOpen] = useLocalStorage('ngs_fx_panel', false);
-  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
-  const [aiDrawerTab, setAiDrawerTab]   = useState('query');
+  const [aiDrawerOpen, setAiDrawerOpen]           = useState(false);
+  const [aiDrawerTab, setAiDrawerTab]             = useState('query');
+  const [aiDrawerDefaultScholar, setAiDefaultScholar] = useState(null);
+
+  function openDrawer(tab = 'query', scholarKey = null) {
+    setAiDrawerTab(tab);
+    setAiDefaultScholar(scholarKey);
+    setAiDrawerOpen(true);
+  }
 
   useEffect(() => {
     if (fxMode !== 'market') return;
@@ -401,8 +409,12 @@ export function Navigator() {
           onClose={() => setAiDrawerOpen(false)}
           tab={aiDrawerTab}
           onTabChange={setAiDrawerTab}
+          defaultScholar={aiDrawerDefaultScholar}
         />
         <main className="wrap">
+          <SectionErrorBoundary name="MentorHome">
+            <MentorHome liveGpa={liveGpa} onOpenDrawer={openDrawer} />
+          </SectionErrorBoundary>
           <SectionErrorBoundary name="Alerts">
             <AlertsSection
               submissions={pendingSubmissions}

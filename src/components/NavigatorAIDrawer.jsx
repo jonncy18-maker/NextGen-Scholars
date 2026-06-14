@@ -5,9 +5,9 @@ import { ResultDisplay, QUICK_PROMPTS, IngestPanel, GradeIngestPanel } from './N
 
 const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
 
-export function NavigatorAIDrawer({ open, onClose, tab = 'query', onTabChange }) {
+export function NavigatorAIDrawer({ open, onClose, tab = 'query', onTabChange, defaultScholar }) {
   const { scholarKeys } = useData();
-  const [scholar, setScholar] = useState(scholarKeys[0] || 'claire');
+  const [scholar, setScholar] = useState(defaultScholar || scholarKeys[0] || 'claire');
   const [query, setQuery]     = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult]   = useState(null);
@@ -156,11 +156,11 @@ export function NavigatorAIDrawer({ open, onClose, tab = 'query', onTabChange })
           )}
 
           {tab === 'ingest' && (
-            <IngestPanel scholar={scholarKeys[0] || 'claire'} scholarKeys={scholarKeys} />
+            <IngestPanel scholar={scholar} scholarKeys={scholarKeys} />
           )}
 
           {tab === 'grades' && (
-            <GradeIngestPanel scholar={scholarKeys[0] || 'claire'} scholarKeys={scholarKeys} />
+            <GradeIngestPanel scholar={scholar} scholarKeys={scholarKeys} />
           )}
 
         </div>
