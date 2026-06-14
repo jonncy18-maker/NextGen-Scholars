@@ -5,7 +5,6 @@ import { writeExpense } from '../supabase-writer.js';
 import { EXPENSE_CATS, SEMESTER_OPTIONS } from '../constants.js';
 
 const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
-const STORAGE_BUCKET = 'documents';
 const DOC_TYPES = ['receipt', 'transcript', 'visa', 'oet', 'other'];
 const ACCEPTED_TYPES = 'image/jpeg,image/png,image/webp,image/gif,application/pdf';
 
@@ -177,18 +176,28 @@ export function DocumentsSection({ id, collapsed, onToggle }) {
     setUploading(true);
     setUploadError(null);
     try {
-      const uid = crypto.randomUUID();
-      const storagePath = `${upScholar}/${uid}/${upFile.name}`;
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Session expired — please log in again.');
 
-      const { error: storageErr } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .upload(storagePath, upFile.blob, { contentType: upFile.mime, upsert: false });
-      if (storageErr) throw new Error(`Storage: ${storageErr.message}`);
+      const base64 = await new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload  = () => res(reader.result.split(',')[1]);
+        reader.onerror = rej;
+        reader.readAsDataURL(upFile.blob);
+      });
+
+      const driveRes = await fetch(`${SUPABASE_URL}/functions/v1/drive-proxy`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'upload', filename: upFile.name, mimeType: upFile.mime, base64 }),
+      });
+      const driveData = await driveRes.json();
+      if (!driveRes.ok) throw new Error(driveData.error || 'Drive upload failed.');
 
       const { error: dbErr } = await supabase.from('documents').insert({
         scholar: upScholar,
         filename: upFile.name,
-        storage_path: storagePath,
+        storage_path: driveData.fileId,
         doc_type: upType,
         sem: upSem || null,
         notes: upNotes || null,
@@ -208,11 +217,23 @@ export function DocumentsSection({ id, collapsed, onToggle }) {
   }
 
   async function handleDownload(doc) {
-    const { data, error } = await supabase.storage
-      .from(STORAGE_BUCKET)
-      .createSignedUrl(doc.storage_path, 120);
-    if (error) { alert(`Download error: ${error.message}`); return; }
-    window.open(data.signedUrl, '_blank');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { alert('Session expired — please log in again.'); return; }
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/drive-proxy`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'download', fileId: doc.storage_path }),
+      });
+      if (!res.ok) { alert('Download failed.'); return; }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = doc.filename; a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(`Download error: ${err.message}`);
+    }
   }
 
   async function handleMarkReviewed(doc) {
@@ -221,7 +242,16 @@ export function DocumentsSection({ id, collapsed, onToggle }) {
 
   async function handleDelete(doc) {
     if (!confirm(`Delete "${doc.filename}"?`)) return;
-    await supabase.storage.from(STORAGE_BUCKET).remove([doc.storage_path]);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await fetch(`${SUPABASE_URL}/functions/v1/drive-proxy`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', fileId: doc.storage_path }),
+        });
+      }
+    } catch { /* best-effort Drive delete */ }
     await supabase.from('documents').delete().eq('id', doc.id);
   }
 
@@ -232,19 +262,14 @@ export function DocumentsSection({ id, collapsed, onToggle }) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Session expired — please log in again.');
 
-      const { data: fileData, error: dlErr } = await supabase.storage
-        .from(STORAGE_BUCKET)
-        .download(doc.storage_path);
-      if (dlErr) throw new Error(`Download: ${dlErr.message}`);
-
-      const base64 = await new Promise((res, rej) => {
-        const reader = new FileReader();
-        reader.onload  = () => res(reader.result.split(',')[1]);
-        reader.onerror = rej;
-        reader.readAsDataURL(fileData);
+      const driveRes = await fetch(`${SUPABASE_URL}/functions/v1/drive-proxy`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get_base64', fileId: doc.storage_path }),
       });
-
-      const mime = fileData.type || 'application/octet-stream';
+      const driveData = await driveRes.json();
+      if (!driveRes.ok) throw new Error(driveData.error || 'Could not fetch file from Drive.');
+      const { base64, mimeType: mime } = driveData;
 
       const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
         method: 'POST',
@@ -255,7 +280,6 @@ export function DocumentsSection({ id, collapsed, onToggle }) {
         body: JSON.stringify({
           scholar: doc.scholar,
           type: 'ingest',
-          text: doc.filename,
           file: { base64, mime },
         }),
       });
