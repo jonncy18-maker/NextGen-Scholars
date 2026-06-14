@@ -1134,17 +1134,16 @@ export function IngestPanel({ scholar, scholarKeys }) {
 
 function EnglishHoursIngestPanel({ scholarKeys }) {
   const [scholar, setScholar] = useState(scholarKeys[0] || 'claire');
-  const [period, setPeriod]   = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [period, setPeriod]   = useState(undefined); // undefined = loading, null = none found
   const [key, setKey]         = useState(0);
 
   useEffect(() => {
-    setLoading(true);
+    setPeriod(undefined);
     supabase.from('english_periods').select('*')
       .eq('scholar', scholar)
       .order('start_date', { ascending: false })
       .limit(1)
-      .then(({ data }) => { setPeriod(data?.[0] ?? null); setLoading(false); });
+      .then(({ data }) => setPeriod(data?.[0] ?? null));
   }, [scholar]);
 
   const cats = period
@@ -1166,18 +1165,20 @@ function EnglishHoursIngestPanel({ scholarKeys }) {
             {period.label || period.session_type} · {period.start_date?.slice(0,7)} – {period.end_date?.slice(0,7)}
           </span>
         )}
+        {period === null && (
+          <span className="section-note" style={{ marginLeft: 10, color: 'var(--ngs-warn, #b45309)' }}>
+            No active period — sessions will be saved without a period link
+          </span>
+        )}
       </div>
-      {loading && <div className="nai-thinking">Loading period…</div>}
-      {!loading && !period && (
-        <div className="section-note">No active English period found for {scholar}. Create one in the English section first.</div>
-      )}
-      {!loading && period && (
+      {period === undefined && <div className="nai-thinking">Loading period…</div>}
+      {period !== undefined && (
         <EnglishIngestPanel
           key={`${scholar}-${key}`}
           scholarKey={scholar}
           categories={cats}
-          periodId={period.id}
-          sem={period.sem}
+          periodId={period?.id ?? null}
+          sem={period?.sem ?? null}
         />
       )}
     </div>
