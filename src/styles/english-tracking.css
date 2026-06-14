@@ -337,3 +337,58 @@
   text-align: center;
 }
 .et-empty em { font-style: normal; font-weight: 600; color: var(--ngs-navy); }
+
+/* ── pace row (period end + needed pace) ── */
+.et-pace-row {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  font-family: var(--ngs-mono); font-size: 10px;
+  font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(250,247,240,0.5); margin-top: 4px; margin-bottom: 12px;
+}
+.et-pace-stat   { color: var(--ngs-gold-soft); }
+.et-pace-needed { color: rgba(250,247,240,0.7); }
+.et-pace-weeks  { color: rgba(250,247,240,0.45); }
+
+/* ── 8-week chart ── */
+.et-weekly-chart {
+  display: flex; align-items: flex-end; gap: 4px;
+  padding: 16px 0 20px;
+  border-bottom: 1px solid var(--ngs-rule);
+  margin-bottom: 18px;
+}
+.et-week-col {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; gap: 4px;
+}
+.et-week-bar-wrap {
+  width: 100%; height: 60px; display: flex;
+  align-items: flex-end;
+}
+.et-week-bar {
+  width: 100%; background: var(--ngs-navy);
+  border-radius: 3px 3px 0 0; min-height: 3px;
+  transition: height 0.5s cubic-bezier(0.4,0,0.2,1);
+}
+.et-week-current .et-week-bar { background: var(--ngs-gold); }
+.et-week-hrs {
+  font-family: var(--ngs-mono); font-size: 9px;
+  color: var(--ngs-muted); line-height: 1;
+}
+.et-week-label {
+  font-family: var(--ngs-mono); font-size: 8.5px;
+  color: var(--ngs-muted); text-align: center; white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+.et-week-current .et-week-label { color: var(--ngs-gold); }
+
+/* ── delete button on history rows ── */
+.et-row-right {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.et-row-del {
+  font-size: 15px; color: var(--ngs-rule);
+  padding: 1px 5px; border-radius: 3px; cursor: pointer;
+  transition: color 150ms, background 150ms; line-height: 1;
+}
+.et-row-del:hover:not(:disabled) { color: var(--ngs-red); background: rgba(177,27,42,0.07); }
+.et-row-del:disabled { opacity: 0.3; cursor: not-allowed; }
