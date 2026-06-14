@@ -2910,3 +2910,127 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 .gr-empty { padding: 14px 16px; font-size: 12px; color: var(--ngs-muted); font-style: italic; }
 .gr-grade-pct { font-size: 9.5px; color: var(--ngs-gold); font-weight: 600; margin-left: 2px; }
 .gr-del-sem-btn { font-family: var(--ngs-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border: 1.5px solid var(--ngs-red); border-radius: 4px; background: transparent; color: var(--ngs-red); cursor: pointer; } .gr-del-sem-btn:hover:not(:disabled) { background: var(--ngs-red); color: #fff; } .gr-del-sem-btn:disabled { opacity: 0.4; }
+
+/* ── MentorHome Scholar Cards (Phase 2) ──────────────────────────────────── */
+
+.mh-section {
+  padding: 24px 0 28px;
+  border-bottom: 2px solid var(--ngs-rule);
+  margin-bottom: 4px;
+}
+
+.mh-eyebrow {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.mh-eyebrow-label {
+  font-family: var(--ngs-mono); font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ngs-muted);
+}
+
+.mh-eyebrow-date {
+  font-size: 12px; color: var(--ngs-muted);
+}
+
+.mh-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.mh-card {
+  background: #fff;
+  border: 1px solid var(--ngs-rule);
+  border-radius: 10px;
+  border-left: 4px solid transparent;
+  padding: 18px 20px 16px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+
+.mh-card--active { border-left-color: var(--ngs-gold); }
+.mh-card--trial  { border-left-color: var(--ngs-navy); }
+
+.mh-card-header { display: flex; flex-direction: column; gap: 5px; }
+
+.mh-card-name-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+
+.mh-card-first {
+  font-family: var(--ngs-display); font-size: 19px; font-weight: 700;
+  color: var(--ngs-navy);
+}
+
+.mh-risk {
+  font-family: var(--ngs-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.06em; padding: 3px 9px; border-radius: 20px;
+}
+
+.mh-risk--green { background: rgba(47,125,85,0.10); color: #2f7d55; }
+.mh-risk--amber { background: rgba(210,130,0,0.12);  color: #a66800; }
+.mh-risk--red   { background: rgba(185,28,28,0.10);  color: #b91c1c; }
+
+.mh-card-meta {
+  font-size: 12px; color: var(--ngs-muted);
+  display: flex; align-items: center; gap: 6px;
+}
+
+.mh-sep { opacity: 0.35; }
+
+/* Stats grid */
+.mh-stats {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  border: 1px solid var(--ngs-rule); border-radius: 7px; overflow: hidden;
+}
+
+.mh-stat {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px 6px; background: var(--ngs-paper-2); gap: 3px;
+  border-right: 1px solid var(--ngs-rule);
+}
+.mh-stat:last-child { border-right: none; }
+
+.mh-stat-val {
+  font-family: var(--ngs-mono); font-size: 13.5px; font-weight: 700;
+  color: var(--ngs-navy);
+}
+
+.mh-stat-val.is-warn { color: #b91c1c; }
+
+.mh-stat-label {
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.09em;
+  color: var(--ngs-muted); font-weight: 600;
+}
+
+/* Next deadline row */
+.mh-deadline-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  background: var(--ngs-paper-2); border-radius: 6px;
+  font-size: 12px; min-height: 34px;
+}
+
+.mh-dl-icon { font-size: 13px; flex-shrink: 0; }
+.mh-dl-text { flex: 1; color: var(--ngs-ink); font-weight: 500; line-height: 1.4; }
+.mh-dl-date { color: var(--ngs-muted); font-family: var(--ngs-mono); font-size: 11px; flex-shrink: 0; }
+.mh-dl-none { color: var(--ngs-muted); font-style: italic; font-size: 12px; }
+
+/* Action buttons */
+.mh-actions { display: flex; gap: 6px; }
+
+.mh-btn {
+  flex: 1; padding: 7px 6px;
+  font-size: 11px; font-weight: 700; font-family: var(--ngs-mono);
+  letter-spacing: 0.04em; text-align: center;
+  border: 1.5px solid var(--ngs-navy); border-radius: 5px;
+  background: transparent; color: var(--ngs-navy);
+  cursor: pointer;
+  transition: background var(--dur-default), color var(--dur-default);
+}
+
+.mh-btn:hover { background: var(--ngs-navy); color: #fff; }
+
+@media (max-width: 600px) {
+  .mh-grid { grid-template-columns: 1fr; }
+}
