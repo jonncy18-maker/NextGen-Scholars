@@ -24,7 +24,7 @@ export function NavBar({ sheetsStatus, onRefresh, aiDrawerOpen, onAiDrawerToggle
           >
             <span className="refresh-icon">↻</span><span className="refresh-label"> Refresh</span>
           </button>
-          <Link className="nav-back" to="/">← All scholars</Link>
+          <Link className="nav-back" to="/navigator">← Dashboard</Link>
         </div>
       </div>
     </header>

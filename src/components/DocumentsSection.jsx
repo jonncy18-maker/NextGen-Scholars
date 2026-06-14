@@ -319,7 +319,7 @@ export function DocumentsSection({ id, collapsed, onToggle }) {
   return (
     <section className="section" id={id}>
       <div className="eyebrow">
-        <span className="num">07</span> Documents
+        Documents
         <span className="eyebrow-rule" />
         <button className="docs-upload-trigger" onClick={() => setUploadOpen(true)}>
           Upload ↑

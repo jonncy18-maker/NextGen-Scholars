@@ -3177,6 +3177,68 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 /* slim nav (no section strip or fx panel) */
 .nav--slim { padding-bottom: 0; }
 
+/* ── Expense module wrapper ── */
+.exp-module { padding: 32px 0; }
+.exp-module .exp-controls { margin-bottom: 0; }
+
+/* ── Expense Workbench ── */
+.ewb-panel {
+  margin: 24px 0;
+  border: 1.5px solid var(--ngs-rule); border-radius: 10px;
+  background: var(--ngs-paper-2);
+  overflow: hidden;
+}
+.ewb-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--ngs-rule);
+  background: rgba(27,42,74,0.03);
+}
+.ewb-tabs { display: flex; }
+.ewb-tab {
+  font-family: var(--ngs-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ngs-muted); background: none; border: none;
+  padding: 14px 18px; cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.ewb-tab:hover { color: var(--ngs-navy); }
+.ewb-tab.is-active { color: var(--ngs-navy); border-bottom-color: var(--ngs-gold); }
+
+.ewb-scholar-select {
+  font-family: var(--ngs-mono); font-size: 11px; letter-spacing: 0.06em;
+  color: var(--ngs-navy); border: 1px solid var(--ngs-rule); border-radius: 4px;
+  padding: 5px 10px; background: #fff; cursor: pointer;
+}
+.ewb-body { padding: 24px 20px; }
+
+.ewb-ask-form {
+  display: flex; gap: 8px; margin-bottom: 12px;
+}
+.ewb-input {
+  flex: 1;
+  font-family: var(--ngs-body); font-size: 14px;
+  border: 1.5px solid var(--ngs-rule); border-radius: 6px;
+  padding: 10px 14px; outline: none;
+  transition: border-color 0.15s;
+}
+.ewb-input:focus { border-color: var(--ngs-navy); }
+.ewb-submit {
+  font-family: var(--ngs-mono); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  background: var(--ngs-navy); color: #fff;
+  border: none; border-radius: 6px;
+  padding: 10px 20px; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.ewb-submit:disabled { opacity: 0.4; cursor: default; }
+.ewb-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.ewb-history { margin-top: 20px; }
+.nai-chip--dim { opacity: 0.65; }
+
+.ewb-upload, .ewb-manual { min-height: 200px; }
+
 @media (max-width: 900px) {
   .mh-dash { grid-template-columns: 1fr 1fr; }
   .mh-modules { grid-template-columns: repeat(2, 1fr); }

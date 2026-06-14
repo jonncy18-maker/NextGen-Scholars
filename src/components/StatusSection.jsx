@@ -216,7 +216,7 @@ export function StatusSection({ currency, liveGpa, onSemesterChange, id, collaps
   return (
     <section className="section" id={id}>
       <div className="eyebrow">
-        <span className="num">02</span> Scholar Status
+        Scholar Status
         <span className="eyebrow-rule" />
         <button className="section-collapse-btn" onClick={onToggle} title={collapsed ? 'Expand section' : 'Collapse section'}>
           {collapsed ? '▶' : '▼'}

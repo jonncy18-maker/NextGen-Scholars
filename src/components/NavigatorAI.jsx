@@ -1048,7 +1048,7 @@ export function NavigatorAI({ id, collapsed, onToggle }) {
   return (
     <section className="section" id={id}>
       <div className="eyebrow">
-        <span className="num">06</span> Navigator
+        Navigator
         <span className="nai-eyebrow-badge">AI</span>
         <span className="eyebrow-rule" />
         <button className="section-collapse-btn" onClick={onToggle} title={collapsed ? 'Expand section' : 'Collapse section'}>

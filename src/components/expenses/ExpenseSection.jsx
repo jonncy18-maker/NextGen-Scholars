@@ -4,8 +4,7 @@ import { useFmt } from '../../context/FxContext.jsx';
 import { allExpenses } from '../../utils.js';
 import { writeSent } from '../../supabase-writer.js';
 import { FilterPanel } from './FilterPanel.jsx';
-import { AddExpenseForm } from './AddExpenseForm.jsx';
-import { TotalsRow, ChartSem, ChartCat } from './ExpenseCharts.jsx';
+import { TotalsRow } from './ExpenseCharts.jsx';
 import { EMPTY_FILTERS, countActiveFilters, applyFilters, applySorting, groupExpenses, groupMultiLevel } from './filterHelpers.js';
 import { EXPENSE_CATS, SEMESTER_OPTIONS } from '../../constants.js';
 import { MultiGroupModal } from './MultiGroupModal.jsx';
@@ -31,13 +30,12 @@ function SortTh({ label, field, sortField, sortDir, onSort, className }) {
   );
 }
 
-export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditExpense, onDeleteExpense, id, collapsed, onToggle }) {
+export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditExpense, onDeleteExpense, id, collapsed, onToggle, workbenchSlot }) {
   const $fmt = useFmt();
   const { D, scholarKeys } = useData();
   const todayISO = new Date().toISOString().split('T')[0];
 
   const [expScholar, setExpScholar] = useState(scholarKeys[0]);
-  const [expView, setExpView]       = useState('sem');
   const [expSearch, setExpSearch]   = useState('');
   const [expSem, setExpSem]         = useState('all');
 
@@ -55,8 +53,6 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
   });
   const sentOverrides = new Set(sentAll[expScholar] || []);
   const deletedIds    = new Set(deletedAll[expScholar] || []);
-  const [showAddForm, setShowAddForm] = useState(false);
-
   // Inline edit state
   const [editingId, setEditingId]   = useState(null);
   const [editDraft, setEditDraft]   = useState({});
@@ -730,77 +726,41 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
   }
 
   return (
-    <section className="section" id={id}>
-      <div className="eyebrow">
-        <span className="num">03</span> Expense Dashboard
-        <span className="eyebrow-rule" />
-        <button className="section-collapse-btn" onClick={onToggle} title={collapsed ? 'Expand section' : 'Collapse section'}>
-          {collapsed ? '▶' : '▼'}
-        </button>
-      </div>
-      {!collapsed && (
-        <>
-          <div className="section-head">
-            <h2 className="section-title">Where the investment goes</h2>
-            <button
-              className={`filter-toggle-btn${showFilters ? ' is-open' : ''}${activeFilters > 0 ? ' has-active' : ''}`}
-              onClick={() => setShowFilters(v => !v)}
-            >
-              {showFilters ? '▲' : '▼'} Filters{activeFilters > 0 ? ` · ${activeFilters} active` : ''}
+    <div className="exp-module" id={id}>
+      <div className="exp-controls">
+        <div className="tabs">
+          {scholarKeys.map(k => (
+            <button key={k} className={`tab${expScholar === k ? ' active' : ''}`} onClick={() => switchScholar(k)}>
+              {D.scholars[k].firstName}
             </button>
-          </div>
+          ))}
+        </div>
+        <div className="exp-controls-right">
+          <button
+            className={`filter-toggle-btn${showFilters ? ' is-open' : ''}${activeFilters > 0 ? ' has-active' : ''}`}
+            onClick={() => setShowFilters(v => !v)}
+          >
+            {showFilters ? '▲' : '▼'} Filters{activeFilters > 0 ? ` · ${activeFilters} active` : ''}
+          </button>
+        </div>
+      </div>
 
-          {showFilters && (
-            <FilterPanel
-              filters={filters}
-              setFilters={setFilters}
-              uniqueCats={uniqueCats}
-              uniqueStatuses={uniqueStatuses}
-              uniqueSents={uniqueSents}
-              onClear={clearFilters}
-            />
-          )}
+      <TotalsRow s={s} currency={currency} />
 
-          <div className="exp-controls">
-            <div className="tabs">
-              {scholarKeys.map(k => (
-                <button key={k} className={`tab${expScholar === k ? ' active' : ''}`} onClick={() => switchScholar(k)}>
-                  {D.scholars[k].firstName}
-                </button>
-              ))}
-            </div>
-            <div className="exp-controls-right">
-              <div className="viewtoggle">
-                {[['sem', 'By Semester'], ['cat', 'By Category']].map(([v, lbl]) => (
-                  <button key={v} className={expView === v ? 'active' : ''} onClick={() => setExpView(v)}>{lbl}</button>
-                ))}
-              </div>
-              <button
-                className={`add-exp-btn${showAddForm ? ' is-open' : ''}`}
-                onClick={() => setShowAddForm(v => !v)}
-              >
-                {showAddForm ? '✕ Cancel' : '+ Add Expense'}
-              </button>
-            </div>
-          </div>
+      {workbenchSlot?.(expScholar)}
 
-          {showAddForm && (
-            <AddExpenseForm
-              scholar={expScholar}
-              onAdd={(scholar, exp) => { onAddExpense(scholar, exp); }}
-              onCancel={() => setShowAddForm(false)}
-            />
-          )}
+      {showFilters && (
+        <FilterPanel
+          filters={filters}
+          setFilters={setFilters}
+          uniqueCats={uniqueCats}
+          uniqueStatuses={uniqueStatuses}
+          uniqueSents={uniqueSents}
+          onClear={clearFilters}
+        />
+      )}
 
-          <TotalsRow s={s} currency={currency} />
-          <div className="chart-card">
-            {expView === 'sem'
-              ? <ChartSem key={expScholar + '-sem'} s={s} currency={currency} extraRows={localRows} />
-              : <ChartCat key={expScholar + '-cat'} s={s} currency={currency} extraRows={localRows} />
-            }
-          </div>
-
-          {(() => {
+      {(() => {
             const pendingRows    = rows.filter(r => r.sent !== 'Yes' && !sentOverrides.has(String(r.id)));
             const pendingTotal   = pendingRows.reduce((t, r) => t + (r.amount || 0) * (r.qty || 1), 0);
             const allUnsent      = allRows.filter(r => r.sent !== 'Yes' && !sentOverrides.has(String(r.id)));
@@ -989,9 +949,6 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
               <div className="exp-count">{rows.length} row{rows.length !== 1 ? 's' : ''}</div>
             )}
           </div>
-        </>
-      )}
-
       {showMultiModal && (
         <MultiGroupModal
           currentDims={multiDims}
@@ -999,6 +956,6 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
           onCancel={handleMultiCancel}
         />
       )}
-    </section>
+    </div>
   );
 }
