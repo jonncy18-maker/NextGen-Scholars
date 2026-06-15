@@ -56,13 +56,14 @@ export async function loadFromSupabase() {
       .forEach(e => {
         const sem = e.sem;
         if (!expenses[sem]) expenses[sem] = [];
+        const rawBucket = CAT_TO_BUCKET[e.cat] ?? e.bucket ?? 'college';
         expenses[sem].push({
           id:     e.id,
           item:   e.item,
           amount: num(e.amount),
           qty:    num(e.qty) || 1,
           cat:    e.cat,
-          bucket: CAT_TO_BUCKET[e.cat] ?? e.bucket ?? 'college',
+          bucket: rawBucket === 'trial' ? 'college' : rawBucket,
           date:   e.date,
           sent:   e.sent,
           avb:    e.avb,

@@ -41,7 +41,7 @@ export function scholarTotals(s) {
   const expenses = allExpenses(s);
   const byBucket = {};
   expenses.forEach(e => {
-    if (e.avb !== 'Actual') return;
+    if (e.avb === 'Budget') return;
     const b = e.bucket || 'college';
     byBucket[b] = (byBucket[b] || 0) + (e.amount || 0) * (e.qty || 1);
   });
