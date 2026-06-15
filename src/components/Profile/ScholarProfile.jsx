@@ -29,7 +29,14 @@ export function ScholarProfile({ data, isMobile, relatedProfiles, englishHours }
       {data.academics && <AcademicSection data={data.academics}/>}
       {data.support && <SupportSection data={data.support} currency={fx.currency} fxRate={fx.fxRate} />}
       {data.milestones && <MilestonesSection items={data.milestones}/>}
-      {data.travels && <TravelsSection items={data.travels}/>}
+      {data.travels && (
+        <TravelsSection
+          items={data.travels}
+          currentSem={data.currentSem}
+          gpaFloor={data.gpaFloor}
+          latestGpa={data.latestGpa?.value}
+        />
+      )}
       {data.english && <EnglishSection data={data.english}/>}
       {data.pathway && <PathwaySection data={data.pathway}/>}
       <ProfileFooter data={data} relatedProfiles={relatedProfiles}/>
@@ -501,30 +508,99 @@ function MilestonesSection({ items }) {
   );
 }
 
-function TravelsSection({ items }) {
+// ── Vacation Tracker timeline ─────────────────────────────────────────────────
+
+const TRAVEL_SEM_ORDER = [
+  'TG11S1','TG11S2','TG12S1','TG12S2',
+  'Y1S1','Y1S2','Y2S1','Y2S2',
+  'Y3S1','Y3S2','Y4S1','Y4S2','PostY1',
+];
+
+const TRAVEL_MILESTONES = [
+  { key: 'cebu-entry',   dest: 'Cebu',         label: 'Welcome Excursion',      sub: 'Scholarship Entry · Grade 10', emoji: '🏝', doneGte: 'TG11S1' },
+  { key: 'cebu-g11',    dest: 'Cebu',         label: 'Year One Complete',      sub: 'End of Grade 11',              emoji: '🏝', doneGte: 'TG12S1' },
+  { key: 'boracay',     dest: 'Boracay',      label: 'High School Graduation', sub: 'End of Grade 12',              emoji: '🌊', doneGte: 'Y1S1'   },
+  { key: 'bohol',       dest: 'Bohol',        label: 'Freshman Year Complete', sub: 'End of Year 1',                emoji: '🏖', doneGte: 'Y2S1'   },
+  { key: 'hong-kong',   dest: 'Hong Kong',    label: 'Sophomore Year Complete',sub: 'End of Year 2',                emoji: '🌆', doneGte: 'Y3S1'   },
+  { key: 'asian-cruise',dest: 'Asian Cruise', label: 'Junior Year Complete',   sub: 'End of Year 3',                emoji: '🚢', doneGte: 'Y4S1'   },
+  { key: 'us',          dest: 'United States',label: 'College Graduate',       sub: '3 months · Post-graduation',   emoji: '✈', doneGte: 'PostY1' },
+];
+
+function tvSemIdx(sem) {
+  return sem ? TRAVEL_SEM_ORDER.indexOf(sem) : -1;
+}
+
+function tvGpaClass(gpa, floor) {
+  if (gpa == null || floor == null) return 'tm-gpa-amber';
+  if (gpa >= floor + 2) return 'tm-gpa-green';
+  if (gpa >= floor)     return 'tm-gpa-amber';
+  return 'tm-gpa-red';
+}
+
+function tvBuildStatuses(items, currentSem) {
+  const curIdx = tvSemIdx(currentSem);
+  let currentSet = false;
+  return TRAVEL_MILESTONES.map(m => {
+    const tMatch = (items || []).find(
+      t => t.dest?.toLowerCase() === m.dest.toLowerCase() && t.state === 'done'
+    );
+    if (tMatch) return { ...m, status: 'done' };
+    const doneIdx = tvSemIdx(m.doneGte);
+    if (doneIdx >= 0 && curIdx >= doneIdx) return { ...m, status: 'done' };
+    if (!currentSet) { currentSet = true; return { ...m, status: 'current' }; }
+    return { ...m, status: 'future' };
+  });
+}
+
+function TravelsSection({ items, currentSem, gpaFloor, latestGpa }) {
+  const statuses  = tvBuildStatuses(items, currentSem);
+  const gc        = tvGpaClass(latestGpa, gpaFloor);
+  const nextStop  = statuses.find(m => m.status === 'current');
+
   return (
-    <section className="ngs-psection">
-      <SectionEyebrow>Travel program</SectionEyebrow>
+    <section className="ngs-psection" id="travel">
+      <SectionEyebrow>Vacation tracker</SectionEyebrow>
       <h2>Worlds <em className="ngs-italic">opened.</em></h2>
       <p className="ngs-psection-intro">
         Annual reward trips that scale with milestones — each a deliberate widening of horizons.
       </p>
 
-      <div className="ngs-travels">
-        {items.map((t, i) => {
-          const IconComp = NGSIcons[t.icon];
+      {nextStop && (
+        <p className="tm-next-callout">
+          Next destination · {nextStop.emoji} <strong>{nextStop.dest}</strong> — {nextStop.label}
+        </p>
+      )}
+
+      <div className="tm-timeline">
+        {statuses.map((m, i) => {
+          const isLast = i === statuses.length - 1;
+          const cls = [
+            'tm-stop',
+            `tm-${m.status}`,
+            m.status === 'current' ? gc : '',
+          ].filter(Boolean).join(' ');
+
+          const pillLabel =
+            m.status === 'done'    ? 'Complete'
+            : m.status === 'current' && latestGpa != null ? `${latestGpa.toFixed(1)}%`
+            : m.status === 'current' ? 'Active'
+            : 'Upcoming';
+
           return (
-            <article key={i} className={`ngs-travel is-${t.state}`}>
-              <div className="ngs-travel-icon">
-                {IconComp && <IconComp size={28}/>}
+            <div key={m.key} className={cls}>
+              <div className="tm-track-col">
+                <div className="tm-badge">{m.status === 'done' ? '✓' : m.emoji}</div>
+                {!isLast && <div className="tm-connector" />}
               </div>
-              <div className="ngs-travel-dest">{t.dest}</div>
-              <div className="ngs-travel-when">{t.when}</div>
-              <span className={`ngs-travel-status is-${t.state}`}>
-                {t.state === 'done' ? 'Completed' :
-                 t.state === 'booked' ? 'Booked' : 'Planned'}
-              </span>
-            </article>
+              <div className="tm-stop-body">
+                <span className="tm-dest">{m.dest}</span>
+                <span className="tm-stop-label">{m.label}</span>
+                <span className="tm-stop-sub">{m.sub}</span>
+              </div>
+              <div className="tm-pill-wrap">
+                <span className={`tm-pill tm-pill-${m.status}`}>{pillLabel}</span>
+              </div>
+            </div>
           );
         })}
       </div>
