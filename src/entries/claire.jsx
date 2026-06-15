@@ -65,7 +65,7 @@ function mergeSheetData(base, s) {
       : base.milestones,
     travels: s.travels?.length
       ? s.travels.map((t, i) => {
-          const stat = base.travels[i] || {};
+          const stat = (base.travels || [])[i] || {};
           return { ...stat, state: t.state };
         })
       : base.travels,
