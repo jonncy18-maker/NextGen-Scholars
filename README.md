@@ -6,56 +6,89 @@ licensure abroad (PH → OET → NCLEX → AHPRA Australia).
 
 - **Repo:** `jonncy18-maker/NextGen-Scholars`
 - **Live:** https://jonncy18-maker.github.io/NextGen-Scholars/ (GitHub Pages, `main`)
-- **Stack:** Vite + React 18, Google Sheets for live operational data
+- **Stack:** Vite + React 18 + React Router v6, Supabase (Postgres) for live operational data
 
 ## Project overview
 
-Four HTML pages served as a Vite multi-page app:
+A single React app with hash-based routing (`HashRouter`), served from `index.html`.
+A `404.html` redirect handles GitHub Pages deep-link compatibility.
 
-| Page | Role |
-|---|---|
-| `index.html` | Public homepage — hero, scholar cards, pathway, apply form |
-| `claire.html` | Public scholar profile — Claire |
-| `april.html` | Public scholar profile — April |
-| `navigator.html` | Private mentor ops dashboard (cosmetic password lock, not real auth) |
+### Routes
 
-Page sources live under `src/`. The navigator is the primary feature surface:
+| Route | Component | Role |
+|---|---|---|
+| `/` | `HomePage` | Public homepage — hero, scholar cards, pathway, apply form |
+| `/claire` | `ClairePage` | Public scholar profile — Claire |
+| `/april` | `AprilPage` | Public scholar profile — April |
+| `/navigator/*` | `Navigator` | Private mentor ops dashboard (cosmetic password lock) |
+| `/entry` | `EntryApp` | Scholar-facing data entry portal |
+| `/home/:scholar` | `ScholarHome` | Scholar personal dashboard |
+| `/english/:scholar` | `EnglishTracking` | English progress tracking for a scholar |
+| `/grades/:scholar` | `GradeEntry` | GPA / grade entry for a scholar |
 
-| Path | Role |
-|---|---|
-| `src/navigator.jsx` | Root `Navigator` component; manages data state and composes sections |
-| `src/components/` | Section-level components: alerts, status cards, expenses, deadlines, actions, English pulse, nav, footer |
-| `src/components/expenses/` | Expense sub-components: charts, filter panel, add-expense form, filter helpers |
-| `src/context/` | React contexts: `DataContext` (live data snapshot) and `FxContext` (currency rate) |
-| `src/styles/` | CSS — token-based `--ngs-*` vars, navy + gold palette, Newsreader/Manrope fonts |
-| `src/sheets-loader.js` | Fetches live operational data from Google Sheets |
-| `src/sheets-writer.js` | Fire-and-forget writes back to Sheets via Apps Script |
-| `src/utils.js` | Scholar computation helpers (`scholarTotals`, `nextMilestone`, etc.) |
-| `src/fx.js` | FX rate utilities — market fetch + localStorage persistence |
-| `src/constants.js` | Shared UI constants (`EXPENSE_CATS`, `NAMECLASS`) |
-| `scholars-data.js` | Static fallback data + narrative copy + program config |
+Legacy multi-page URLs (`claire.html`, `navigator.html`, etc.) are redirected
+to their SPA equivalents at runtime.
+
+## Source layout
+
+```
+src/
+  App.jsx                     # Root — HashRouter, routes, top-level ErrorBoundary
+  entries/                    # Vite entry components (claire, april, navigator, entry, main)
+  pages/                      # Full-page React components (HomePage, ScholarHome, EnglishTracking, GradeEntry)
+  components/                 # Section-level components
+    expenses/                 # Expense sub-components (charts, filter, add form, workbench)
+    Profile/                  # Scholar profile card components
+    AlertsSection, BudgetSection, CareerSection, DeadlinesSection,
+    DocumentsSection, EnglishSection, GradesSection, RiskSection,
+    StatusSection, TravelModule, ActivityFeed, EnglishIngestPanel,
+    ScholarIngestPanel, NavigatorAI, NavigatorAIDrawer,
+    ScholarAIPanel, ScholarChatPanel, MentorHome, LockScreen, ...
+  context/
+    DataContext.jsx            # Live merged data snapshot via useData()
+    FxContext.jsx              # Currency rate context + useFmt() hook
+  hooks/
+    useLocalStorage.js
+    useMediaQuery.js
+    useScholarProfile.js
+  lib/
+    supabase.js               # Supabase client singleton
+  styles/                     # CSS — token-based --ngs-* vars, navy + gold palette
+  supabase-loader.js          # Fetches all operational data from Supabase
+  supabase-writer.js          # Fire-and-forget writes back to Supabase
+  utils.js                    # Scholar computation helpers (scholarTotals, nextMilestone, …)
+  fx.js                       # FX rate utilities — market fetch + localStorage persistence
+  constants.js                # Shared UI constants (EXPENSE_CATS, NAMECLASS)
+
+scholars-data.js              # Static fallback data, narrative copy, program config
+supabase/                     # SQL schema files and Supabase function definitions
+```
 
 ## Data architecture
 
-Two tiers of data, merged at runtime by `sheets-loader.js`:
+Three layers, merged at runtime:
 
-- **`scholars-data.js`** — static fallback and narrative fields: scholar bio,
-  English profile observations, public profile copy, program config, cosmetic lock
-  password. Used as fallback when Sheets is unavailable, and as the source for
-  fields not held in Sheets (e.g. `english`, `publicProfile`).
-- **Google Sheets** — operational data: expenses, GPA history, milestone and
-  travel states, budgets, alerts, deadlines, action items.
-- **Frontend merge layer** (`sheets-loader.js` + `Navigator`) — fetches Sheets
-  data, merges it with static narrative fields, then stores the result in React
-  state. All components read from this merged state via `DataContext`.
+- **`scholars-data.js`** — static narrative fields: scholar bio, English profile
+  observations, public profile copy, program config, cosmetic lock password.
+  Source of truth for hand-authored fields not held in the database.
+- **Supabase (Postgres)** — operational data: expenses, GPA history, milestone
+  and travel states, budgets, alerts, deadlines, action items, documents, English
+  periods, career steps.
+- **Frontend merge layer** — `supabase-loader.js` fetches Supabase tables in
+  parallel, `Navigator` / `ScholarHome` merge the result with static fields, and
+  store everything in React state. All sections read from this via `DataContext`.
+
+When Supabase is unreachable, the app falls back to `scholars-data.js` as a
+static snapshot (nav shows an offline indicator).
 
 ## Development
 
 ```bash
 npm install
-npm run dev      # Vite dev server — http://localhost:5173/
+npm run dev      # Vite dev server — http://localhost:5173/NextGen-Scholars/
 npm run build    # Production build → dist/
 npm run preview  # Preview the build locally
+npm run format   # Prettier — formats src/**/*.{js,jsx,css} and scholars-data.js
 ```
 
 ## Notes for contributors
@@ -68,4 +101,5 @@ npm run preview  # Preview the build locally
   `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` via
   `/opt/node22/lib/node_modules/playwright` (CommonJS `require`).
 - See `CLAUDE.md` for full project context, conventions, and known issues.
-- See `ROADMAP.md` for the tech-debt backlog and architecture decisions.
+- See `ROADMAP.md` and `ROADMAP-AI.md` for the tech-debt and AI feature backlogs.
+- See `DECISIONS.md` for significant architectural decisions and their rationale.
