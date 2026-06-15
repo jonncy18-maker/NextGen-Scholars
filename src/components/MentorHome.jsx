@@ -270,11 +270,11 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
           <div className="mm-card-blurb">OET / IELTS hours tracker</div>
         </Link>
 
-        <div className="mm-card mm-card--info">
+        <Link className="mm-card" to="/navigator/travel">
           <div className="mm-card-tag">TRV</div>
           <div className="mm-card-label">Travel</div>
           <div className="mm-card-items">
-            {nextTravels.map(({ key, name, travel }) => (
+            {nextTravels.filter(({ key }) => D.scholars[key]?.track === 'NGN').map(({ key, name, travel }) => (
               <div key={key} className="mm-card-row">
                 <span className="mm-card-row-name">{name}</span>
                 {travel ? (
@@ -288,7 +288,7 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
               </div>
             ))}
           </div>
-        </div>
+        </Link>
 
         <div className="mm-card mm-card--info">
           <div className="mm-card-tag">MLS</div>

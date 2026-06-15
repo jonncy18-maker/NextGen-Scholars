@@ -134,7 +134,7 @@ function GradeRow({ row, onSaved, onDeleted }) {
 // ── Sem block ─────────────────────────────────────────────────────────────────
 
 function SemBlock({ sk, sem, rows, onRowSaved, onRowDeleted, onAdded, onSemDeleted }) {
-  const [open,     setOpen]     = useState(true);
+  const [open,     setOpen]     = useState(false);
   const [adding,   setAdding]   = useState(false);
   const [form,     setForm]     = useState({ subject: '', units: '3', school: 'uv', prelim: '', midterm: '', final_grade: '' });
   const [saving,   setSaving]   = useState(false);
