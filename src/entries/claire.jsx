@@ -20,6 +20,8 @@ function mergeSheetData(base, s) {
 
   return {
     ...base,
+    currentSem: s.currentSem || STATIC_SCHOLAR.currentSem || null,
+    gpaFloor:   s.gpaFloor ?? base.academics?.current?.floor ?? 81,
     investmentTotals: {
       total: tots.total,
       college: tots.college,
