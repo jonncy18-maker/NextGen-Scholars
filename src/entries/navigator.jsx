@@ -26,6 +26,7 @@ import { RiskSection } from '../components/RiskSection.jsx';
 import { GradesSection } from '../components/GradesSection.jsx';
 import { NavFooter } from '../components/NavFooter.jsx';
 import { BudgetSection } from '../components/BudgetSection.jsx';
+import { TravelModule } from '../components/TravelModule.jsx';
 
 if (!NGS_DATA || !NGS_DATA.config) {
   throw new Error('NGS_DATA missing — hard-refresh (Ctrl/Cmd+Shift+R)');
@@ -425,6 +426,11 @@ export function Navigator() {
             <Route path="budget" element={
               <SectionErrorBoundary name="Budget">
                 <BudgetSection />
+              </SectionErrorBoundary>
+            } />
+            <Route path="travel" element={
+              <SectionErrorBoundary name="Travel">
+                <TravelModule id="sec-travel" collapsed={false} onToggle={() => {}} />
               </SectionErrorBoundary>
             } />
           </Routes>
