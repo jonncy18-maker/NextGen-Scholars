@@ -405,15 +405,17 @@ function AcademicSection({ data }) {
         Minimum required: {floorPct}% · UV grade scale
       </div>
 
-      <div className="ngs-history">
-        <div className="ngs-history-head">History</div>
-        {data.history.map((h, i) => (
-          <div key={i} className={`ngs-history-row ${h.status === 'active' ? 'is-current' : ''}`}>
-            <span className="ngs-history-term">{h.label}</span>
-            <span className={`ngs-history-grade is-${h.status}`}>{h.value}</span>
-          </div>
-        ))}
-      </div>
+      {data.history?.length > 0 && (
+        <div className="ngs-history">
+          <div className="ngs-history-head">History</div>
+          {data.history.map((h, i) => (
+            <div key={i} className={`ngs-history-row ${h.status === 'active' ? 'is-current' : ''}`}>
+              <span className="ngs-history-term">{h.label}</span>
+              <span className={`ngs-history-grade is-${h.status}`}>{h.value}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
