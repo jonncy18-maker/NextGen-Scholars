@@ -138,7 +138,7 @@ function classify(text: string, liveCategories: string[]): Classified {
 // ── Resolvers ─────────────────────────────────────────────────────────────────
 
 async function expenseTotal(scholar: string, sb: SupabaseClient, category?: string): Promise<Tier1Result> {
-  let q = sb.from('expenses').select('amount,qty,cat,sem').eq('scholar', scholar)
+  let q = sb.from('expenses').select('amount,qty,cat,sem').eq('scholar', scholar).neq('avb', 'Budget')
   if (category) q = q.eq('cat', category)
   const { data, error } = await q
   if (error) throw error
@@ -172,7 +172,7 @@ async function expenseTotal(scholar: string, sb: SupabaseClient, category?: stri
 async function budgetStatus(scholar: string, sb: SupabaseClient): Promise<Tier1Result> {
   const [{ data: budgets, error: e1 }, { data: expenses, error: e2 }] = await Promise.all([
     sb.from('budgets').select('sem,amount_php').eq('scholar', scholar),
-    sb.from('expenses').select('amount,qty,sem').eq('scholar', scholar),
+    sb.from('expenses').select('amount,qty,sem').eq('scholar', scholar).neq('avb', 'Budget'),
   ])
   if (e1) throw e1
   if (e2) throw e2
