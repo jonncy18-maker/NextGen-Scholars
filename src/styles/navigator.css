@@ -3220,9 +3220,8 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 
 .mh-sem-select {
   font-family: var(--ngs-sans); font-size: 12px; color: var(--ngs-muted);
-  border: none; background: transparent; padding: 0; cursor: pointer;
-  appearance: none; -webkit-appearance: none; outline: none;
-  max-width: 80px;
+  border: none; background: transparent; padding: 0 2px; cursor: pointer;
+  outline: none;
 }
 .mh-sem-select:hover { color: var(--ngs-navy); }
 

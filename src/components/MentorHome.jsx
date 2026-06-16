@@ -6,9 +6,10 @@ import { nextMilestone } from '../utils.js';
 import { SEMESTER_OPTIONS } from '../constants.js';
 
 const SEM_DISPLAY = {
+  TG11S1:'G11·S1', TG11S2:'G11·S2', TG12S1:'G12·S1', TG12S2:'G12·S2',
   Y1S1:'Y1·S1', Y1S2:'Y1·S2', Y2S1:'Y2·S1', Y2S2:'Y2·S2',
   Y3S1:'Y3·S1', Y3S2:'Y3·S2', Y4S1:'Y4·S1', Y4S2:'Y4·S2',
-  TG11S1:'G11·S1', TG11S2:'G11·S2', TG12S1:'G12·S1', TG12S2:'G12·S2',
+  PostY1:'Post·Y1', PostY2:'Post·Y2', PostY3:'Post·Y3', PostY4:'Post·Y4',
 };
 
 function semBudgetPct(scholar, sem) {
