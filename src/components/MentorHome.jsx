@@ -10,6 +10,7 @@ const SEM_DISPLAY = {
   Y1S1:'Y1·S1', Y1S2:'Y1·S2', Y2S1:'Y2·S1', Y2S2:'Y2·S2',
   Y3S1:'Y3·S1', Y3S2:'Y3·S2', Y4S1:'Y4·S1', Y4S2:'Y4·S2',
   PostY1:'Post·Y1', PostY2:'Post·Y2', PostY3:'Post·Y3', PostY4:'Post·Y4',
+  TESDA:'TESDA',
 };
 
 function semBudgetPct(scholar, sem) {
@@ -163,10 +164,12 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
                   </span>
                   <span className="mh-stat-label">Budget</span>
                 </div>
-                <div className="mh-stat">
-                  <span className="mh-stat-val">{engStr}</span>
-                  <span className="mh-stat-label">English</span>
-                </div>
+                {s.track !== 'TESDA' && (
+                  <div className="mh-stat">
+                    <span className="mh-stat-val">{engStr}</span>
+                    <span className="mh-stat-label">English</span>
+                  </div>
+                )}
               </div>
 
               <div className="mh-deadline-row">

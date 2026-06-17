@@ -15,6 +15,7 @@ import { NGSSite } from './pages/HomePage.jsx';
 import { FAQPage } from './pages/FAQPage.jsx';
 import { ClairePage } from './entries/claire.jsx';
 import { AprilPage } from './entries/april.jsx';
+import { JanndilynePage } from './entries/janndilyne.jsx';
 import { Navigator } from './entries/navigator.jsx';
 import { EntryApp } from './entries/entry.jsx';
 import { ScholarHome } from './pages/ScholarHome.jsx';
@@ -48,6 +49,7 @@ const LEGACY_PATHS = {
   '/index.html': '/',
   '/claire.html': '/claire',
   '/april.html': '/april',
+  '/janndilyne.html': '/janndilyne',
   '/navigator.html': '/navigator',
   '/entry.html': '/entry',
   '/claire-home.html': '/home/claire',
@@ -130,6 +132,7 @@ export default function App() {
           <Route path="/faq" element={<FAQPage />} />
           <Route path="/claire" element={<ClairePage />} />
           <Route path="/april" element={<AprilPage />} />
+          <Route path="/janndilyne" element={<JanndilynePage />} />
           <Route path="/navigator/*" element={<Navigator />} />
           <Route path="/entry" element={<EntryApp />} />
           <Route path="/home/:scholar" element={<ScholarHomeRoute />} />

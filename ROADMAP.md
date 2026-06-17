@@ -54,6 +54,31 @@ See `docs/SPA-MIGRATION-ROADMAP.md` for full plan and route map.
 
 ---
 
+## Phase 4 — TESDA module (Janndilyne)
+
+A third, **unadvertised** track — **TESDA** — for a single scholar, Janndilyne.
+She gets her own public dashboard (like Claire/April) and appears in the private
+navigator with everything the other scholars show, with two differences: **no
+English hours** and **no vacation/travel tracker**. The track is intentionally not
+linked from the public homepage.
+
+Decisions: track code `TESDA` ("NextGen TESDA"); a **single rolling term**
+(`currentSem = 'TESDA'`, no semester progression).
+
+| Phase | Status | Detail |
+|---|---|---|
+| A — Static profile data | ✅ Done | `janndilyne` block in `scholars-data.js`; `publicProfile` omits `travels`/`english`; no `card` (keeps her off the homepage). Placeholder copy pending owner confirmation. |
+| B — Public dashboard page | ✅ Done | `src/entries/janndilyne.jsx` (no English fetch, no travels, `englishHours={null}`); route `/janndilyne` + `/janndilyne.html` legacy redirect in `App.jsx`. |
+| C — Navigator integration | ✅ Done | `'janndilyne'` added to `STATIC_SCHOLAR_KEYS`; English stat hidden for TESDA in `MentorHome`; English overview grid excludes TESDA; `NAMECLASS`/`SEM_DISPLAY` entries. Travel module already NGN-only. |
+| D — Supabase data row | 🔵 Pending | Insert her `scholars` row (see manual step) so she appears in **live** navigator data. The public page already works from static data alone. |
+| E — Roadmap | ✅ Done | This section. |
+
+Sections that needed **no change** — Expenses, Grades, Deadlines, Career, Risk,
+Documents, Budget, Program Details — read generically off `scholarKeys`, so she
+appears automatically once Phase D is in place.
+
+---
+
 ## AI Intelligence Layer
 
 Tiered system — Tier 1 (smart query, no LLM) handles ~80%, escalates to
@@ -78,6 +103,11 @@ See `ROADMAP-AI.md` for full step-by-step status.
 
 > Run `supabase/gpa_risk_trigger.sql` in the Supabase SQL editor to activate
 > auto-generated GPA risk alerts (Step 10 trigger not yet deployed).
+
+> Insert Janndilyne's `scholars` row (Phase 4D): `scholar_key='janndilyne'`,
+> `track='TESDA'`, `first_name='Janndilyne'`, `status='active'`,
+> `current_sem='TESDA'`, plus school/city/program/cohort, so she appears in
+> live navigator data. No schema change needed.
 
 ---
 
