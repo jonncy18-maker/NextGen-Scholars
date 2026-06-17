@@ -181,24 +181,49 @@ function CategoryGoalsForm({ period, onSave, onCancel }) {
 
 function AddSessionForm({ scholar, period, onSave, onCancel }) {
   const cats = sessionCategories(period);
+  const today = todayStr();
   const [form, setForm] = useState({
-    date: todayStr(), duration: '', activity_type: cats[0] ?? 'Other', notes: '',
+    start_date:    today,
+    end_date:      today,
+    daily_hours:   '',
+    activity_type: cats[0] ?? 'Other',
+    notes:         '',
   });
   const [saving, setSaving] = useState(false);
-  const [err, setErr] = useState(null);
+  const [err,    setErr]    = useState(null);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
+  const dayCount = (() => {
+    if (!form.start_date || !form.end_date) return 0;
+    const s = new Date(form.start_date + 'T00:00:00');
+    const e = new Date(form.end_date   + 'T00:00:00');
+    return Math.max(0, Math.round((e - s) / 86400000) + 1);
+  })();
+
+  const totalMins = (() => {
+    const h = parseFloat(form.daily_hours);
+    if (!h || h <= 0 || dayCount < 1) return 0;
+    return Math.round(dayCount * h * 60);
+  })();
+
+  const totalHrsLabel = (() => {
+    if (!totalMins) return null;
+    const h = Math.floor(totalMins / 60), m = totalMins % 60;
+    const hrsStr = h && m ? `${h}h ${m}m` : h ? `${h}h` : `${m}m`;
+    return `${dayCount} day${dayCount !== 1 ? 's' : ''} × ${form.daily_hours}h/day = ${hrsStr} total`;
+  })();
+
   async function handleSave() {
-    const mins = parseInt(form.duration, 10);
-    if (!mins || mins < 1) { setErr('Enter a valid duration.'); return; }
-    if (!form.date) { setErr('Date required.'); return; }
+    if (!form.start_date || !form.end_date) { setErr('Both dates are required.'); return; }
+    if (form.end_date < form.start_date)    { setErr('End date must be on or after start date.'); return; }
+    if (!totalMins || totalMins < 1)        { setErr('Enter a valid daily hours amount.'); return; }
     setSaving(true); setErr(null);
     try {
       const { error } = await supabase.from('english_sessions').insert({
         scholar,
-        date:             form.date,
-        duration_minutes: mins,
+        date:             form.start_date,
+        duration_minutes: totalMins,
         activity_type:    form.activity_type,
         category:         'conversation',
         notes:            form.notes || null,
@@ -215,13 +240,20 @@ function AddSessionForm({ scholar, period, onSave, onCancel }) {
     <div className="enp-form">
       <div className="enp-form-fields">
         <label className="enp-field">
-          <span>Date</span>
-          <input type="date" value={form.date} max={todayStr()} onChange={e => set('date', e.target.value)} />
+          <span>Start date</span>
+          <input type="date" value={form.start_date} max={today}
+            onChange={e => set('start_date', e.target.value)} />
         </label>
         <label className="enp-field">
-          <span>Duration (min)</span>
-          <input type="number" min="1" max="600" placeholder="90"
-            value={form.duration} onChange={e => set('duration', e.target.value)} style={{ width: 90 }} />
+          <span>End date</span>
+          <input type="date" value={form.end_date} min={form.start_date} max={today}
+            onChange={e => set('end_date', e.target.value)} />
+        </label>
+        <label className="enp-field">
+          <span>Avg hours/day</span>
+          <input type="number" min="0.25" max="24" step="0.25" placeholder="e.g. 2"
+            value={form.daily_hours} onChange={e => set('daily_hours', e.target.value)}
+            style={{ width: 90 }} />
         </label>
         <label className="enp-field">
           <span>Category</span>
@@ -234,6 +266,9 @@ function AddSessionForm({ scholar, period, onSave, onCancel }) {
           <input type="text" value={form.notes} onChange={e => set('notes', e.target.value)} />
         </label>
       </div>
+      {totalHrsLabel && (
+        <div className="enp-form-calc">{totalHrsLabel}</div>
+      )}
       {err && <p className="enp-form-error">{err}</p>}
       <div className="enp-form-actions">
         <button className="enp-save-btn" onClick={handleSave} disabled={saving}>

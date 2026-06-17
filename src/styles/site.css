@@ -668,6 +668,41 @@ body { margin: 0; }
   font-family: 'IBM Plex Mono', monospace; font-size: 10.5px;
   color: #9A9590; line-height: 1.4;
 }
+
+/* Multi-turn thread */
+.paw-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  max-height: 320px;
+  padding: 4px 2px;
+}
+.paw-bubble {
+  max-width: 88%;
+  padding: 9px 13px;
+  border-radius: 12px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.paw-bubble--user {
+  align-self: flex-end;
+  background: var(--ngs-navy);
+  color: var(--ngs-paper);
+  border-bottom-right-radius: 4px;
+}
+.paw-bubble--assistant {
+  align-self: flex-start;
+  background: var(--ngs-paper-2);
+  color: var(--ngs-ink);
+  border-bottom-left-radius: 4px;
+}
+.paw-thinking-inline {
+  display: flex; align-items: center; gap: 4px; padding: 2px 0;
+}
+.paw-bubble-error { color: var(--ngs-red); font-style: italic; }
+
 .paw-ask-another {
   align-self: flex-start;
   padding: 6px 12px; border-radius: 5px;

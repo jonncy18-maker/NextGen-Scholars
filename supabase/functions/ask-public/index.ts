@@ -1,5 +1,8 @@
 // Public program-info endpoint — answers visitor questions about NextGen Scholars
-// using only a static program description. No auth required. No scholar data exposed.
+// using program details stored in Supabase config (key: 'program_details').
+// No auth required. No scholar data exposed.
+
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const GEMINI_MODEL = 'gemini-2.5-flash'
 const GEMINI_URL   = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
@@ -17,9 +20,8 @@ function json(data: unknown, status = 200) {
   })
 }
 
-// Static program description — the only context Gemini receives.
-// No Supabase tables are queried. No scholar data is present here.
-const PROGRAM_INFO = `\
+// Fallback program info used when the config table has no 'program_details' row.
+const FALLBACK_INFO = `\
 NextGen Scholars (NGS) is a privately funded mentorship program that supports
 Filipino nursing students on a pathway toward international nursing licensure.
 
@@ -39,7 +41,6 @@ What mentorship includes:
 - OET English proficiency preparation support
 - Academic progress monitoring
 - Application and licensure pathway guidance
-- Program support to help scholars reach each milestone
 
 Who can apply:
 - Motivated Filipino nursing students (BSN or Grade 11)
@@ -49,12 +50,7 @@ Who can apply:
 How to apply:
 - Complete the application form on the NextGen Scholars website
 - The mentor reviews all applications and contacts shortlisted candidates
-- Shortlisted applicants go through a brief interview/assessment
-
-Program values:
-- Student-centered, practical, and milestone-driven
-- Grounded in real scholarship tracks (OET, NCLEX, AHPRA)
-- Transparent progress tracking and accountability`
+- Shortlisted applicants go through a brief interview/assessment`
 
 const SYSTEM_PROMPT = `\
 You are a friendly and helpful program information assistant for NextGen Scholars (NGS).
@@ -78,7 +74,7 @@ Deno.serve(async (req: Request) => {
   const apiKey = Deno.env.get('GOOGLE_AI_KEY')
   if (!apiKey) return json({ error: 'AI not configured', status: 'not_configured' }, 503)
 
-  let body: { text?: unknown }
+  let body: { text?: unknown; messages?: { role: string; text: string }[] }
   try {
     body = await req.json()
   } catch {
@@ -86,10 +82,38 @@ Deno.serve(async (req: Request) => {
   }
 
   const text = typeof body.text === 'string' ? body.text.trim() : ''
-  if (!text)          return json({ error: 'Question is required' }, 400)
+  if (!text)             return json({ error: 'Question is required' }, 400)
   if (text.length > 500) return json({ error: 'Question must be under 500 characters' }, 400)
 
-  const userMessage = `Program information:\n${PROGRAM_INFO}\n\nVisitor question: ${text}`
+  // Load program details from Supabase config table (falls back to hardcoded text)
+  let programInfo = FALLBACK_INFO
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    if (supabaseUrl && serviceKey) {
+      const sb = createClient(supabaseUrl, serviceKey)
+      const { data } = await sb.from('config').select('value').eq('key', 'program_details').maybeSingle()
+      if (data?.value) programInfo = data.value
+    }
+  } catch { /* use fallback */ }
+
+  // Build conversation history for multi-turn support
+  const history = Array.isArray(body.messages)
+    ? body.messages
+        .filter(m => (m.role === 'user' || m.role === 'model') && typeof m.text === 'string' && m.text)
+        .map(m => ({ role: m.role as 'user' | 'model', parts: [{ text: m.text }] }))
+    : []
+
+  const firstUserText = `Program information:\n${programInfo}\n\nVisitor question: ${text}`
+
+  // Build contents array: prior history + current turn
+  const contents = history.length > 0
+    ? [
+        { role: 'user',  parts: [{ text: firstUserText }] },
+        ...history.slice(1),
+        { role: 'user',  parts: [{ text }] },
+      ]
+    : [{ role: 'user', parts: [{ text: firstUserText }] }]
 
   let res: Response
   try {
@@ -98,7 +122,7 @@ Deno.serve(async (req: Request) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        contents: [{ role: 'user', parts: [{ text: userMessage }] }],
+        contents,
         generationConfig: {
           maxOutputTokens: 512,
           temperature: 0.4,
