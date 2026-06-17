@@ -82,6 +82,17 @@ Scholars are prepared for US daily life covering:
 - Financial System: Cashless culture (cards, Apple Pay, tap-to-pay), sales tax 6-10% added at checkout, tipping 15-20% expected at restaurants and services
 - Climate: Varies by region — cold winters in Midwest/Northeast, mild West Coast, hot humid summers in the South
 
+US VISA REQUIREMENTS
+The US Immersion requires a student visa. To be eligible, scholars must meet:
+1. Good academic standing — minimum grade floor of 81% (this threshold is adjustable by the mentor based on individual circumstances)
+2. Satisfactory completion of the Summer English Bootcamp held the summer before the visa interview — this is required for two reasons:
+   a. To improve the scholar's English proficiency ahead of the trip
+   b. To prepare the scholar for the in-person US visa interview, maximizing the likelihood of approval
+   Note: The bootcamp preparation process can be intensive.
+
+ELIGIBILITY FOR US IMMERSION
+The US Immersion program is available exclusively to NGN (nursing) scholars. It is not available to scholars on other tracks.
+
 ---
 
 PROGRAM VALUES
