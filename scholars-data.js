@@ -320,33 +320,6 @@ const NGS_DATA = {
       },
     },
 
-    // ── ALJANE ────────────────────────────────────────────────────────────────
-    aljane: {
-      name: 'Aljane',
-      firstName: 'Aljane',
-      track: 'NGH',
-      school: 'University (External Scholarship)',
-      city: 'Cebu',
-      program: 'External Scholarship — NGH Paused',
-      cohort: 'Cohort 2028',
-      status: 'paused',
-      currentSem: null,
-      gpaFloor: null,
-      note: 'External scholarship covering university through Y3/Y4. NGH pathway remains open post-graduation.',
-
-      card: {
-        name: 'Aljane',
-        track: 'NGH',
-        status: 'Paused',
-        stage: 'On hold — external scholarship',
-        year: '2028 cohort',
-        note: 'Received an external scholarship covering university. NGH remains an option post-graduation.',
-        quote: 'My path is on pause, but not forgotten.',
-        progress: 0.45,
-        accentKey: 'red',
-      },
-    },
-
     // ── JANNDILYNE ──────────────────────────────────────────────────────────────
     // TESDA track — a separate, unadvertised one-off program. No English hours
     // tracking and no travel/vacation program (unlike NGN/NGH scholars). Deliberately

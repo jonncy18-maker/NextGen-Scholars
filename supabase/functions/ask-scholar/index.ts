@@ -8,7 +8,7 @@ import { buildContext }             from '../ask/context.ts'
 import { tier2Ask }                 from '../ask/tier2.ts'
 import { tier3Ingest, tier3GradeIngest, tier3IngestClaude, tier3GradeIngestClaude, tier3EnglishIngestClaude } from '../ask/tier3.ts'
 
-const VALID_SCHOLARS = ['claire', 'april', 'aljane']
+const VALID_SCHOLARS = ['claire', 'april']
 
 const cors = {
   'Access-Control-Allow-Origin':  '*',

@@ -128,7 +128,7 @@ export async function loadFromSupabase() {
         quote:     s.quote,
         progress:  num(s.card_progress),
         accentKey: s.status === 'paused' ? 'red' : 'gold',
-        ...(key !== 'aljane' ? { href: `${key}.html` } : {}),
+        href: `${key}.html`,
         ...(s.note ? { note: s.note } : {}),
       },
     };
