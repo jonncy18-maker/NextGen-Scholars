@@ -2802,7 +2802,7 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   font-family: var(--ngs-sans); font-size: 12.5px;
 }
 .enp-session-row:last-child { border-bottom: none; }
-.enp-sess-date  { font-family: var(--ngs-mono); font-size: 10.5px; color: var(--ngs-muted); min-width: 52px; }
+.enp-sess-date  { font-family: var(--ngs-mono); font-size: 10.5px; color: var(--ngs-muted); min-width: 90px; }
 .enp-sess-type  { color: var(--ngs-ink); font-weight: 500; flex: 1; }
 .enp-sess-cat   { font-family: var(--ngs-mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 1px 5px; border-radius: 3px; }
 .enp-cat-conversation { background: #EBF0FB; color: var(--ngs-blue-nav); }
@@ -2978,6 +2978,29 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 
 /* Add row (detail view) */
 .enp-add-row { display: flex; gap: 8px; margin: 12px 0 4px; }
+
+.enp-form-calc {
+  font-family: var(--ngs-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ngs-navy);
+  padding: 6px 10px;
+  background: rgba(27,42,74,0.06);
+  border-radius: 5px;
+  letter-spacing: 0.02em;
+}
+
+/* Session row in detail view */
+.enp-sess-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--ngs-rule);
+  font-family: var(--ngs-sans);
+  font-size: 12.5px;
+}
+.enp-sess-row:last-child { border-bottom: none; }
 
 /* Inline session edit */
 .enp-sess-row--editing { flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 0; }
@@ -3661,3 +3684,81 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 .tm-pill-current { background: rgba(201,168,76,0.12); color: var(--ngs-warn);  }
 .tm-current.tm-gpa-green .tm-pill-current { background: rgba(47,125,85,0.12); color: var(--ngs-green); }
 .tm-current.tm-gpa-red   .tm-pill-current { background: rgba(177,27,42,0.12); color: var(--ngs-red);   }
+
+/* ── Program Details section (.pgd-*) ── */
+.pgd-body { padding: 0 0 20px; }
+.pgd-loading { padding: 20px 0; font-size: 13px; color: var(--ngs-muted); font-style: italic; }
+.pgd-view { display: flex; flex-direction: column; gap: 12px; }
+.pgd-pre {
+  font-family: var(--ngs-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ngs-ink);
+  background: var(--ngs-paper-2);
+  border: 1px solid var(--ngs-rule);
+  border-radius: 8px;
+  padding: 16px 18px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 480px;
+  overflow-y: auto;
+}
+.pgd-editor { display: flex; flex-direction: column; gap: 10px; }
+.pgd-textarea {
+  width: 100%;
+  font-family: var(--ngs-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ngs-ink);
+  background: var(--ngs-paper);
+  border: 1px solid var(--ngs-rule);
+  border-radius: 8px;
+  padding: 14px 16px;
+  resize: vertical;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 180ms;
+}
+.pgd-textarea:focus { border-color: var(--ngs-navy); }
+.pgd-editor-note {
+  font-family: var(--ngs-mono);
+  font-size: 10.5px;
+  color: var(--ngs-muted);
+  letter-spacing: 0.04em;
+}
+.pgd-actions { display: flex; align-items: center; gap: 10px; }
+.pgd-edit-btn, .pgd-save-btn {
+  padding: 8px 16px;
+  background: var(--ngs-navy);
+  color: var(--ngs-paper);
+  border-radius: 5px;
+  font-family: var(--ngs-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 180ms;
+}
+.pgd-save-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.pgd-cancel-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--ngs-rule);
+  border-radius: 5px;
+  font-family: var(--ngs-sans);
+  font-size: 13px;
+  color: var(--ngs-muted);
+  cursor: pointer;
+  background: transparent;
+}
+.pgd-cancel-btn:hover { border-color: var(--ngs-muted); color: var(--ngs-ink); }
+.pgd-saved-msg {
+  font-family: var(--ngs-mono);
+  font-size: 11px;
+  color: #1d6636;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.pgd-error {
+  font-family: var(--ngs-sans);
+  font-size: 13px;
+  color: var(--ngs-red);
+}

@@ -27,6 +27,7 @@ import { GradesSection } from '../components/GradesSection.jsx';
 import { NavFooter } from '../components/NavFooter.jsx';
 import { BudgetSection } from '../components/BudgetSection.jsx';
 import { TravelModule } from '../components/TravelModule.jsx';
+import { ProgramDetailsSection } from '../components/ProgramDetailsSection.jsx';
 
 if (!NGS_DATA || !NGS_DATA.config) {
   throw new Error('NGS_DATA missing — hard-refresh (Ctrl/Cmd+Shift+R)');
@@ -426,6 +427,11 @@ export function Navigator() {
             <Route path="budget" element={
               <SectionErrorBoundary name="Budget">
                 <BudgetSection />
+              </SectionErrorBoundary>
+            } />
+            <Route path="program-details" element={
+              <SectionErrorBoundary name="Program Details">
+                <ProgramDetailsSection id="sec-program-details" collapsed={false} onToggle={() => {}} />
               </SectionErrorBoundary>
             } />
             <Route path="travel" element={

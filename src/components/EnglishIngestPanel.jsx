@@ -123,7 +123,16 @@ export function EnglishIngestPanel({ scholarKey, categories, periodId, sem, onSa
       if (data.status === 'not_configured') throw new Error('AI not configured — contact your mentor.');
       if (data.status === 'error') throw new Error(data.error || 'Extraction failed.');
       if (!data.sessions?.length) throw new Error('No sessions found in the text. Try pasting more detail.');
-      setReview({ sessions: data.sessions.map(s => ({ ...s, scholar: scholarKey, period_id: periodId, sem })), model: data.model });
+      setReview({
+        sessions: data.sessions.map(s => ({
+          ...s,
+          scholar:   scholarKey,
+          period_id: periodId,
+          sem,
+          category: categories.includes(s.category) ? s.category : categories[0],
+        })),
+        model: data.model,
+      });
     } catch (err) {
       setError(err.message);
     } finally {

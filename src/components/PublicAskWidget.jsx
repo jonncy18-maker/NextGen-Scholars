@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -12,52 +12,64 @@ const QUICK_PROMPTS = [
   'What does mentorship include?',
 ];
 
+let _id = 0;
+const uid = () => ++_id;
+
 export function PublicAskWidget() {
-  const [open, setOpen]       = useState(false);
-  const [query, setQuery]     = useState('');
-  const [loading, setLoading] = useState(false);
-  const [answer, setAnswer]   = useState(null);
-  const [error, setError]     = useState(null);
+  const [open,     setOpen]     = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [input,    setInput]    = useState('');
+  const [busy,     setBusy]     = useState(false);
+  const bottomRef = useRef(null);
+  const inputRef  = useRef(null);
 
-  function handleOpen() {
-    setOpen(true);
-    setAnswer(null);
-    setError(null);
-  }
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
+  function handleOpen() { setOpen(true); }
   function handleClose() {
     setOpen(false);
-    setAnswer(null);
-    setError(null);
-    setQuery('');
+    setMessages([]);
+    setInput('');
   }
 
-  async function handleAsk(e) {
-    e?.preventDefault();
-    const text = query.trim();
-    if (!text || loading) return;
-    setLoading(true);
-    setError(null);
-    setAnswer(null);
+  async function send(text) {
+    const trimmed = text.trim();
+    if (!trimmed || busy) return;
+
+    const userMsg     = { id: uid(), role: 'user',      text: trimmed };
+    const thinkingMsg = { id: uid(), role: 'assistant', loading: true };
+    setMessages(prev => [...prev, userMsg, thinkingMsg]);
+    setInput('');
+    setBusy(true);
+
+    const history = messages
+      .filter(m => !m.loading && m.text)
+      .map(m => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text }));
+
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-public`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON,
-        },
-        body: JSON.stringify({ text }),
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+        body: JSON.stringify({ text: trimmed, messages: history }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      setAnswer(data.answer);
-      setQuery('');
+      setMessages(prev => prev.map(m =>
+        m.loading ? { id: m.id, role: 'assistant', text: data.answer } : m
+      ));
     } catch (err) {
-      setError(err.message);
+      setMessages(prev => prev.map(m =>
+        m.loading ? { id: m.id, role: 'assistant', text: null, error: err.message } : m
+      ));
     } finally {
-      setLoading(false);
+      setBusy(false);
+      inputRef.current?.focus();
     }
   }
+
+  const hasMessages = messages.length > 0;
 
   return (
     <div className="paw-root">
@@ -74,65 +86,55 @@ export function PublicAskWidget() {
             </div>
 
             <div className="paw-body">
-              {!answer && !loading && (
+              {!hasMessages && (
                 <div className="paw-chips">
                   {QUICK_PROMPTS.map(p => (
-                    <button
-                      key={p}
-                      type="button"
-                      className="paw-chip"
-                      onClick={() => setQuery(p)}
-                      disabled={loading}
-                    >
+                    <button key={p} type="button" className="paw-chip"
+                      onClick={() => send(p)} disabled={busy}>
                       {p}
                     </button>
                   ))}
                 </div>
               )}
 
-              {loading && (
-                <div className="paw-thinking">
-                  <span className="paw-dot" /><span className="paw-dot" /><span className="paw-dot" />
+              {hasMessages && (
+                <div className="paw-thread">
+                  {messages.map(m => (
+                    <div key={m.id} className={`paw-bubble paw-bubble--${m.role}`}>
+                      {m.loading ? (
+                        <span className="paw-thinking-inline">
+                          <span className="paw-dot" /><span className="paw-dot" /><span className="paw-dot" />
+                        </span>
+                      ) : m.error ? (
+                        <span className="paw-bubble-error">{m.error}</span>
+                      ) : (
+                        m.text
+                      )}
+                    </div>
+                  ))}
+                  <div ref={bottomRef} />
                 </div>
               )}
 
-              {error && <div className="paw-error">{error}</div>}
-
-              {answer && (
-                <div className="paw-answer">
-                  <p className="paw-answer-text">{answer}</p>
-                  <p className="paw-disclosure">AI-generated · May contain errors · Verify important details directly with the program</p>
-                  <button
-                    type="button"
-                    className="paw-ask-another"
-                    onClick={() => { setAnswer(null); setError(null); }}
-                  >
-                    Ask another question
-                  </button>
-                </div>
+              {hasMessages && !busy && (
+                <p className="paw-disclosure">AI-generated · May contain errors · Verify important details directly with the program</p>
               )}
             </div>
 
-            <form className="paw-form" onSubmit={handleAsk}>
+            <form className="paw-form" onSubmit={e => { e.preventDefault(); send(input); }}>
               <input
+                ref={inputRef}
                 className="paw-input"
                 type="text"
                 placeholder="Ask anything about the program…"
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                disabled={loading}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                disabled={busy}
                 autoComplete="off"
-                autoFocus={!answer}
                 maxLength={500}
               />
-              <button
-                className="paw-submit"
-                type="submit"
-                disabled={!query.trim() || loading}
-                aria-label="Send"
-              >
-                →
-              </button>
+              <button className="paw-submit" type="submit"
+                disabled={!input.trim() || busy} aria-label="Send">→</button>
             </form>
           </div>
         </>
