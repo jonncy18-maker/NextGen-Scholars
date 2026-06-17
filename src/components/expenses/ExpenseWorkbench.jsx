@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase.js';
 import { useData } from '../../context/DataContext.jsx';
 import { ResultDisplay, QUICK_PROMPTS, IngestPanel } from '../NavigatorAI.jsx';
 import { AddExpenseForm } from './AddExpenseForm.jsx';
+import { GcashCalculator } from './GcashCalculator.jsx';
 
 const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
 
@@ -158,6 +159,7 @@ export function ExpenseWorkbench({ scholar, onAddExpense }) {
 
         {tab === 'manual' && (
           <div className="ewb-manual">
+            {activeScholar === 'janndilyne' && <GcashCalculator scholar={activeScholar} />}
             <AddExpenseForm
               scholar={activeScholar}
               onAdd={(sk, exp) => onAddExpense?.(sk, exp)}
