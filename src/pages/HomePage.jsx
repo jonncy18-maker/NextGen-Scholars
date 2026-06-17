@@ -419,7 +419,6 @@ function Scholars() {
   const scholars = [
     NGS_DATA.scholars.claire.card,
     NGS_DATA.scholars.april.card,
-    NGS_DATA.scholars.aljane.card,
   ].map(c => ({ ...c, accent: accentMap[c.accentKey] || PALETTE.gold }));
 
   return (
@@ -429,7 +428,7 @@ function Scholars() {
         Meet the scholars
       </div>
       <h2 className="ngs-h2">
-        Three lives <span className="ngs-italic">in motion.</span>
+        Two lives <span className="ngs-italic">in motion.</span>
       </h2>
       <p className="ngs-lede ngs-lede-short">
         Names and photos are shared with each scholar's permission.
