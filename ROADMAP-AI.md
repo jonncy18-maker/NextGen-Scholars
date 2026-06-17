@@ -135,7 +135,7 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 
 ## Are we ready to start?
 
-**Steps 1–12 complete. Steps 13–18 defined. Next: Step 13 — Documents tracker page + Supabase Storage integration.**
+**Steps 1–13, 19–20 complete. Now on Step 14. See Build Status table below.**
 
 | Layer | Priority | Status | Gap |
 |---|---|---|---|
@@ -151,8 +151,8 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 | Academic risk alerts | P1 | ✅ Done | Step 10 |
 | OET readiness assessment | P1 | ✅ Done | Step 11 |
 | Budget trajectory | P1 | ✅ Done | Step 12 |
-| Documents tracker | P2 | Not started | Step 13 |
-| Career tracker | P2 | Not started | Step 14 |
+| Documents tracker | P2 | ✅ Done | Step 13 |
+| Career tracker | P2 | **Next** | Step 14 |
 | Risk/cohort dashboard | P2 | Not started | Step 15 |
 | Weekly report draft | P2 | Not started | Step 16 |
 | Scholar pathway chatbot | P2 | Not started | Step 17 |
@@ -173,8 +173,8 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 | ✅ 10 | P1 | Academic risk alerts — DB trigger on `academics`; surfaces in AlertsSection |
 | ✅ 11 | P1 | OET readiness assessment — `oet_readiness` Tier 1 intent + Tier 2 narrative; live progress bar in EnglishSection |
 | ✅ 12 | P1 | Budget trajectory projection — client-side burn-rate in StatusSection (green/amber/red) |
-| **→ 13** | **P2** | **Documents tracker page + Supabase Storage integration** |
-| 14 | P2 | Career tracker — PNLE → OET → NCLEX → AHPRA checklist |
+| ✅ 13 | P2 | Documents tracker page + Supabase Storage integration |
+| **→ 14** | **P2** | **Career tracker — PNLE → OET → NCLEX → AHPRA checklist** |
 | 15 | P2 | Risk/cohort dashboard — Navigator Section 07 |
 | 16 | P2 | Mentor weekly report draft (Tier 2) |
 | 17 | P2 | Scholar pathway chatbot — scoped public widget on profile pages |
