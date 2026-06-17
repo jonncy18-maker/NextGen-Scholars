@@ -1147,11 +1147,96 @@ function EnglishHoursIngestPanel({ scholarKeys }) {
   );
 }
 
+// ── Weekly cohort report panel (Tier 2) ───────────────────────────────────────
+
+export function WeeklyReportPanel({ scholarKeys }) {
+  const [loading, setLoading] = useState(false);
+  const [report, setReport]   = useState(null);
+  const [model, setModel]     = useState(null);
+  const [error, setError]     = useState(null);
+  const [copied, setCopied]   = useState(false);
+
+  async function generate() {
+    if (loading) return;
+    setLoading(true); setError(null); setReport(null); setCopied(false);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Session expired — please refresh and log in again.');
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scholar: 'all', scholars: scholarKeys, type: 'weekly_report' }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      if (json.status === 'not_configured') throw new Error('GOOGLE_AI_KEY not configured — add it to Supabase secrets.');
+      if (json.status === 'error' || !json.report) throw new Error(json.error || 'Gemini returned an empty report.');
+      setReport(json.report);
+      setModel(json.model);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function copyReport() {
+    try {
+      await navigator.clipboard.writeText(report);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* clipboard unavailable */ }
+  }
+
+  return (
+    <>
+      <div className="section-head">
+        <h2 className="section-title">Weekly report</h2>
+        <span className="section-note">Gemini drafts a shareable cohort update from every scholar's live data</span>
+      </div>
+
+      <div className="nai-ingest-row">
+        <button className="nai-submit" type="button" onClick={generate} disabled={loading} style={{ flex: 'none' }}>
+          {loading ? '…' : report ? 'Regenerate report' : 'Generate weekly report'}
+        </button>
+        {loading && (
+          <div className="nai-loading" style={{ marginBottom: 0 }}>
+            <span className="nai-loading-dot" /><span className="nai-loading-dot" /><span className="nai-loading-dot" />
+            <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>Gemini is reviewing the cohort…</span>
+          </div>
+        )}
+      </div>
+
+      {error && <div className="nai-error">{error}</div>}
+
+      {report && (
+        <div className="nai-result nai-result-escalate" style={{ marginTop: 12 }}>
+          <div className="nai-result-meta">
+            <span className="nai-tier-badge nai-tier-2">Tier 2 · Gemini</span>
+            {model && <span className="nai-intent">{model}</span>}
+            <button
+              type="button"
+              className="nai-history-rerun"
+              onClick={copyReport}
+              title="Copy report to clipboard"
+              style={{ marginLeft: 'auto' }}
+            >
+              {copied ? '✓ Copied' : 'Copy'}
+            </button>
+          </div>
+          <p className="nai-answer-text nai-gemini-answer" style={{ whiteSpace: 'pre-wrap' }}>{report}</p>
+          <p className="nai-ai-disclosure">AI-generated · May contain errors · Verify important details with official sources</p>
+        </div>
+      )}
+    </>
+  );
+}
+
 // ── Main NavigatorAI component ────────────────────────────────────────────────
 
 export function NavigatorAI({ id, collapsed, onToggle, englishOnly = false }) {
   const { scholarKeys } = useData();
-  const [tab, setTab]     = useState(englishOnly ? 'english_hours' : 'query'); // 'query' | 'ingest' | 'grades' | 'english_hours'
+  const [tab, setTab]     = useState(englishOnly ? 'english_hours' : 'query'); // 'query' | 'ingest' | 'grades' | 'report' | 'english_hours'
   const [scholar, setScholar] = useState(scholarKeys[0] || 'claire');
   const [query, setQuery]   = useState('');
   const [loading, setLoading] = useState(false);
@@ -1233,6 +1318,15 @@ export function NavigatorAI({ id, collapsed, onToggle, englishOnly = false }) {
                 onClick={() => setTab('grades')}
               >
                 Upload grades
+              </button>
+            )}
+            {!englishOnly && (
+              <button
+                type="button"
+                className={`nai-tab${tab === 'report' ? ' is-active' : ''}`}
+                onClick={() => setTab('report')}
+              >
+                Weekly report
               </button>
             )}
             {englishOnly && (
@@ -1352,6 +1446,10 @@ export function NavigatorAI({ id, collapsed, onToggle, englishOnly = false }) {
               </div>
               <GradeIngestPanel scholar={scholar} scholarKeys={scholarKeys} />
             </>
+          )}
+
+          {tab === 'report' && !englishOnly && (
+            <WeeklyReportPanel scholarKeys={scholarKeys} />
           )}
 
           {(tab === 'english_hours' || englishOnly) && (

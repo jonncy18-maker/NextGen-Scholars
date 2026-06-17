@@ -8,8 +8,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { tier1Resolve } from './tier1.ts'
 import { buildContext } from './context.ts'
-import { tier2Ask } from './tier2.ts'
-import { tier3Ingest, tier3GradeIngest } from './tier3.ts'
+import { tier2Ask, tier2WeeklyReport } from './tier2.ts'
+import { tier3Ingest, tier3GradeIngest, tier3IngestClaude, tier3GradeIngestClaude } from './tier3.ts'
 import { resolveSendAction } from './action.ts'
 
 const cors = {
@@ -25,11 +25,13 @@ function json(data: unknown, status = 200) {
 }
 
 interface AskBody {
-  scholar: string
-  type:    'query' | 'ingest' | 'grade_ingest' | 'coach' | 'action'
-  text?:   string
-  sem?:    string
-  file?:   { base64: string; mime: string }
+  scholar:   string
+  scholars?: string[]
+  type:      'query' | 'ingest' | 'grade_ingest' | 'coach' | 'action' | 'weekly_report'
+  text?:     string
+  sem?:      string
+  file?:     { base64: string; mime: string }
+  model?:    'gemini' | 'claude'
 }
 
 Deno.serve(async (req) => {
@@ -56,10 +58,32 @@ Deno.serve(async (req) => {
     return json({ error: 'Invalid JSON body' }, 400)
   }
 
-  const { scholar, type, text, sem, file } = body
-  if (!scholar) return json({ error: 'Missing required field: scholar' }, 400)
-  if (type !== 'query' && type !== 'ingest' && type !== 'grade_ingest' && type !== 'coach' && type !== 'action') {
-    return json({ error: 'Field "type" must be "query", "ingest", "grade_ingest", "coach", or "action"' }, 400)
+  const { scholar, type, text, sem, file, model: modelPref } = body
+  // weekly_report operates over the whole cohort, so it does not require a single scholar.
+  if (!scholar && type !== 'weekly_report') return json({ error: 'Missing required field: scholar' }, 400)
+  if (type !== 'query' && type !== 'ingest' && type !== 'grade_ingest' && type !== 'coach' && type !== 'action' && type !== 'weekly_report') {
+    return json({ error: 'Field "type" must be "query", "ingest", "grade_ingest", "coach", "action", or "weekly_report"' }, 400)
+  }
+
+  // type === 'weekly_report' — build context for every scholar and ask Tier 2
+  // (Gemini) to draft a single shareable cohort update. Read-only.
+  if (type === 'weekly_report') {
+    const geminiKey = Deno.env.get('GOOGLE_AI_KEY')
+    if (!geminiKey) return json({ tier: 2, status: 'not_configured', hint: 'Add GOOGLE_AI_KEY to Supabase secrets.' }, 503)
+    try {
+      let keys = Array.isArray(body.scholars) ? body.scholars.filter(Boolean) : []
+      if (keys.length === 0) {
+        const { data } = await sb.from('scholars').select('scholar_key').order('scholar_key')
+        keys = (data ?? []).map((r: { scholar_key: string }) => r.scholar_key)
+      }
+      if (keys.length === 0) return json({ tier: 2, status: 'error', error: 'No scholars found.' }, 502)
+      const contexts = await Promise.all(keys.map(k => buildContext(k, sb)))
+      const t2 = await tier2WeeklyReport(contexts, geminiKey)
+      if (t2.answered) return json({ tier: 2, type: 'weekly_report', report: t2.answer, model: t2.model })
+      return json({ tier: 2, status: 'error', error: t2.error }, 502)
+    } catch (err) {
+      return json({ error: (err as Error).message ?? 'Weekly report generation failed' }, 500)
+    }
   }
 
   // type === 'action' — resolve a free-text "record a send" request into the

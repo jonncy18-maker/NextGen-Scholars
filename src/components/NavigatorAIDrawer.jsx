@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { supabase, SUPABASE_URL } from '../lib/supabase.js';
 import { useData } from '../context/DataContext.jsx';
-import { ResultDisplay, QUICK_PROMPTS, IngestPanel, GradeIngestPanel } from './NavigatorAI.jsx';
+import { ResultDisplay, QUICK_PROMPTS, IngestPanel, GradeIngestPanel, WeeklyReportPanel } from './NavigatorAI.jsx';
 
 export function NavigatorAIDrawer({ open, onClose, tab = 'query', onTabChange, defaultScholar }) {
   const { scholarKeys } = useData();
@@ -45,6 +45,7 @@ export function NavigatorAIDrawer({ open, onClose, tab = 'query', onTabChange, d
     { id: 'query',  label: 'Ask' },
     { id: 'ingest', label: 'Log Expense' },
     { id: 'grades', label: 'Log Grades' },
+    { id: 'report', label: 'Weekly Report' },
   ];
 
   return (
@@ -159,6 +160,10 @@ export function NavigatorAIDrawer({ open, onClose, tab = 'query', onTabChange, d
 
           {tab === 'grades' && (
             <GradeIngestPanel scholar={scholar} scholarKeys={scholarKeys} />
+          )}
+
+          {tab === 'report' && (
+            <WeeklyReportPanel scholarKeys={scholarKeys} />
           )}
 
         </div>
