@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useData } from '../context/DataContext.jsx';
 import { supabase } from '../lib/supabase.js';
-import { NAMECLASS, SESSION_TYPES, SESSION_CATEGORIES } from '../constants.js';
+import { NAMECLASS, SESSION_TYPES, SESSION_CATEGORIES, classifyActivity } from '../constants.js';
 import { EnglishIngestPanel } from './EnglishIngestPanel.jsx';
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
@@ -291,10 +291,15 @@ function SessionRow({ sess, period, onSaved, onDeleted }) {
   const [err, setErr]           = useState(null);
 
   function startEdit() {
+    // Initialize the dropdown to the bucket this session actually falls in, so a
+    // legacy/synonym activity_type (e.g. "Speaking") shows its real category
+    // instead of the <select>'s misleading first-option fallback. Saving then
+    // normalizes the stored value to a canonical category.
+    const resolved = classifyActivity(sess.activity_type, cats);
     setForm({
       date:          sess.date,
       duration:      String(sess.duration_minutes),
-      activity_type: sess.activity_type,
+      activity_type: cats.includes(resolved) ? resolved : cats[0],
       notes:         sess.notes ?? '',
     });
     setEditing(true);
@@ -373,8 +378,9 @@ function CategoryBarChart({ period, sessions }) {
   const byCategory = {};
   cats.forEach(c => { byCategory[c] = 0; });
   sessions.forEach(s => {
-    if (cats.includes(s.activity_type)) {
-      byCategory[s.activity_type] = (byCategory[s.activity_type] || 0) + (s.duration_minutes || 0) / 60;
+    const c = classifyActivity(s.activity_type, cats);
+    if (c !== 'Other') {
+      byCategory[c] = (byCategory[c] || 0) + (s.duration_minutes || 0) / 60;
     }
   });
 
@@ -465,7 +471,7 @@ function ScholarEnglishDetail({ sk, periods, sessions, onBack, onRefresh }) {
   const grouped = {};
   cats.forEach(c => { grouped[c] = []; });
   filtered.forEach(s => {
-    const c = cats.includes(s.activity_type) ? s.activity_type : 'Other';
+    const c = classifyActivity(s.activity_type, cats);
     (grouped[c] ??= []).push(s);
   });
 
