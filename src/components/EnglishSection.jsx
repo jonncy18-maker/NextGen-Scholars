@@ -291,10 +291,15 @@ function SessionRow({ sess, period, onSaved, onDeleted }) {
   const [err, setErr]           = useState(null);
 
   function startEdit() {
+    // Initialize the dropdown to the bucket this session actually falls in, so a
+    // legacy/synonym activity_type (e.g. "Speaking") shows its real category
+    // instead of the <select>'s misleading first-option fallback. Saving then
+    // normalizes the stored value to a canonical category.
+    const resolved = classifyActivity(sess.activity_type, cats);
     setForm({
       date:          sess.date,
       duration:      String(sess.duration_minutes),
-      activity_type: sess.activity_type,
+      activity_type: cats.includes(resolved) ? resolved : cats[0],
       notes:         sess.notes ?? '',
     });
     setEditing(true);
