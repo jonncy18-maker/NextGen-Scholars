@@ -633,6 +633,7 @@ function Footer() {
           <a href="#about">About</a>
           <a href="#journey">Journey</a>
           <a href="#scholars">Scholars</a>
+          <a href="#/faq">FAQ</a>
         </div>
         <div>
           <h4>Get in touch</h4>
@@ -666,6 +667,7 @@ function TopNav({ isDesktop, onLoginOpen }) {
             <a href="#tracks">Tracks</a>
             <JourneyDropdown />
             <a href="#scholars">Scholars</a>
+            <a href="#/faq">FAQ</a>
             <a href="#apply" className="ngs-nav-cta-link">Apply</a>
             <button className="ngs-nav-login-btn" onClick={onLoginOpen}>Login</button>
           </nav>
@@ -705,6 +707,7 @@ function TopNav({ isDesktop, onLoginOpen }) {
             </div>
           )}
           <a href="#scholars">Scholars</a>
+          <a href="#/faq">FAQ</a>
           <a href="#apply" className="ngs-nav-menu-cta">Apply</a>
           <div className="ngs-nav-menu-divider"></div>
           <button className="ngs-nav-menu-login" onClick={() => { setOpen(false); onLoginOpen(); }}>
