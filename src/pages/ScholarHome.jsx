@@ -7,6 +7,7 @@ import {
   IconBriefcase, IconTrophy, IconMessage, IconDocument, IconArrow,
 } from '../components/ScholarIcons.jsx';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
+import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
 import { CAT_TO_BUCKET } from '../constants.js';
 
 const SEM_LABELS = {
@@ -295,6 +296,8 @@ export function ScholarHome({ scholarKey }) {
             })}
           </div>
         </section>
+
+        <PublicAskWidget />
 
         <footer className="sp-footer">
           <div className="sp-mark">NGS</div>
