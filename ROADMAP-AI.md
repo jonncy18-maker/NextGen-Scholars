@@ -213,7 +213,7 @@ Steps 1–16, 19–20 complete (Step 16 awaits an `ask` edge function deploy). N
 | 13 | P2 | ✅ | Documents tracker (section 07) + Supabase Storage integration |
 | 14 | P2 | ✅ | Career tracker — PNLE → OET → NCLEX → OSCE → AHPRA checklist; `career_steps` table deployed to Supabase |
 | 15 | P2 | ✅ | Risk/cohort dashboard — RiskSection (GPA · English · Budget · Milestones) on Navigator `/progress` |
-| 16 | P2 | ✅ built · ⏳ deploy | Mentor weekly report draft (Tier 2) — `weekly_report` route in `ask` + Weekly Report tab in Navigator AI; **redeploy `ask` to activate** |
+| 16 | P2 | ✅ built · auto-deploys on merge | Mentor weekly report draft (Tier 2) — `weekly_report` route in `ask` + Weekly Report tab in Navigator AI; `ask` redeploys via deploy-functions.yml on merge to main |
 | **→ 17** | P2 | — | Scholar pathway chatbot — scoped public widget on profile pages |
 | 18 | P2 | — | Tighten RLS; audit anon access |
 | 19 | P2 | ✅ | Multi-file ingest — receipt ingest panel accepts multiple files in one go; items merged into one ReviewCard |
@@ -225,10 +225,12 @@ Steps 1–16, 19–20 complete (Step 16 awaits an `ask` edge function deploy). N
 
 ## Pending manual step
 
-> **Step 16 — redeploy the `ask` edge function.** The `weekly_report` route was
-> added to `supabase/functions/ask/` (index.ts + tier2.ts). Redeploy the `ask`
-> function (Supabase dashboard → Edge Functions, or `supabase functions deploy ask`)
-> so the Navigator AI "Weekly Report" tab works against the live function.
+> **Step 16 — `ask` edge function deploy.** The `weekly_report` route was added to
+> `supabase/functions/ask/` (index.ts + tier2.ts). This deploys **automatically on
+> merge to `main`** via `.github/workflows/deploy-functions.yml` (triggers on pushes
+> touching `supabase/functions/**`). No manual step needed — just merge the PR. To
+> deploy out-of-band, run the "Deploy Supabase Edge Functions" workflow via
+> `workflow_dispatch`.
 
 > **Step 10 trigger not yet deployed.** Run `supabase/gpa_risk_trigger.sql` in the
 > [Supabase SQL editor](https://supabase.com/dashboard/project/rhoxpfuephkuaartuqou/sql/new)
