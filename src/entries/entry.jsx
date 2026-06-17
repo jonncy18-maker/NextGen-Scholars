@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase.js';
 import { groupExpenses } from '../components/expenses/filterHelpers.js';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { ScholarIngestPanel } from '../components/ScholarIngestPanel.jsx';
+import { ExpenseAskWidget } from '../components/ExpenseAskWidget.jsx';
 import '../styles/entry.css';
 
 async function loadConfig() {
@@ -812,6 +813,8 @@ function ExpenseForm({ scholar, onLogout }) {
           sem={currentSem}
         />
       </main>
+
+      <ExpenseAskWidget scholarKey={scholar.key} sem={currentSem} />
     </div>
   );
 }

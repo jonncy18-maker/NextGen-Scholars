@@ -677,3 +677,57 @@ input, select { font-family: inherit; }
   flex-shrink: 0;
   margin-top: 0 !important;
 }
+
+/* ════════════════ AI ADD-EXPENSE FLOATING WIDGET (.eaw-*) ════════════════ */
+/* Reuses .paw-* (FAB, panel chrome) from site.css; widens the panel to fit
+   the shared expense review table and goes near-fullscreen on phones. */
+
+.eaw-panel {
+  width: min(560px, calc(100vw - 32px));
+  max-height: min(640px, calc(100vh - 88px));
+}
+.eaw-body {
+  padding: 16px;
+  overflow: auto;
+}
+.eaw-hint {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ngs-muted);
+}
+.eaw-success {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  text-align: center;
+  padding: 18px 8px;
+}
+.eaw-success-tick {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--ngs-navy); color: var(--ngs-gold);
+  font-size: 20px; font-weight: 700;
+}
+.eaw-success p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ngs-navy);
+}
+.eaw-again-btn {
+  margin-top: 4px;
+  padding: 8px 16px;
+  border: 1px solid var(--ngs-rule); border-radius: 8px;
+  background: #fff; color: var(--ngs-navy);
+  font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
+}
+.eaw-again-btn:hover { background: var(--ngs-paper-2, #f5f1e8); }
+
+/* Let the review table scroll horizontally inside the narrow panel */
+.eaw-body .nai-review { overflow-x: auto; }
+
+@media (max-width: 600px) {
+  .eaw-panel {
+    width: calc(100vw - 24px);
+    max-height: calc(100vh - 72px);
+  }
+}

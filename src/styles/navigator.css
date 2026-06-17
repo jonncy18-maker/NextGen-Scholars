@@ -349,7 +349,6 @@
   background: var(--ngs-navy); color: var(--ngs-gold); white-space: nowrap;
 }
 .scholar-tag.t-april  { background: var(--ngs-navy-deep); }
-.scholar-tag.t-aljane { background: var(--ngs-muted); color: var(--ngs-paper); }
 .alert-x {
   width: 26px; height: 26px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;

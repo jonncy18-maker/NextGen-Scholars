@@ -5,6 +5,7 @@ import { DEFAULT_RATE } from '../../fx.js';
 import { useFxState } from '../../context/FxContext.jsx';
 import { JourneyDropdown } from '../JourneyDropdown.jsx';
 import { JOURNEY_STAGES } from '../../constants.js';
+import { PublicAskWidget } from '../PublicAskWidget.jsx';
 
 function fmtPhp(amountPhp, currency, rate) {
   if (amountPhp == null) return null;
@@ -40,6 +41,7 @@ export function ScholarProfile({ data, isMobile, relatedProfiles, englishHours }
       {data.english && <EnglishSection data={data.english}/>}
       {data.pathway && <PathwaySection data={data.pathway}/>}
       <ProfileFooter data={data} relatedProfiles={relatedProfiles}/>
+      <PublicAskWidget />
     </div>
   );
 }

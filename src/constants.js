@@ -84,7 +84,7 @@ export function classifyActivity(activityType, cats) {
 }
 
 // Scholar name → CSS modifier class. Keys are lowercase to match data keys.
-export const NAMECLASS = { claire: '', april: 't-april', aljane: 't-aljane', janndilyne: 't-janndilyne' };
+export const NAMECLASS = { claire: '', april: 't-april', janndilyne: 't-janndilyne' };
 
 export const AVB_OPTIONS = ['Actual', 'Budget'];
 

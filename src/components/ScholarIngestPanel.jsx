@@ -15,7 +15,7 @@ function gradeAvg(prelim, midterm, finalGrade) {
 
 // ── Expense review card (submits to expense_submissions for mentor approval) ──
 
-function StudentReviewCard({ items: initialItems, model, scholarKey, sem, onDiscard, onConfirmed }) {
+export function StudentReviewCard({ items: initialItems, model, scholarKey, sem, onDiscard, onConfirmed }) {
   const [items, setItems]     = useState(initialItems.map(it => ({ ...it })));
   const [saving, setSaving]   = useState(false);
   const [saveError, setSaveError] = useState(null);
