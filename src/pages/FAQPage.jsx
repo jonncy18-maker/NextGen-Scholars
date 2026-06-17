@@ -137,7 +137,8 @@ export function FAQPage() {
             <ul>
               <li>Grades are accessible online via the university's student portal — they will be reviewed directly from that platform.</li>
               <li>Inform the mentor about upcoming projects and other academic requirements.</li>
-              <li>Maintain an average of <strong>85% or higher</strong>.</li>
+              <li><strong>Trial period (Grade 11–12):</strong> Maintain an average of <strong>85% or higher</strong>.</li>
+              <li><strong>College:</strong> The goal is still <strong>85% or higher</strong>. The minimum floor is <strong>81%</strong> — dropping below 81% puts the scholarship at risk.</li>
               <li>If grades drop below 85%, report immediately so solutions can be discussed together — honesty is the most important thing.</li>
             </ul>
           </FAQItem>
@@ -199,21 +200,23 @@ export function FAQPage() {
           </FAQItem>
 
           <FAQItem q="What happens after the third year of college?">
-            <p>A <strong>Royal Caribbean Cruise</strong> experience — luxury travel from the sea. The scholar leads the experience, reinforcing independence, responsibility, and global exposure.</p>
+            <p>An <strong>Asian Cruise</strong> experience — luxury travel from the sea. The scholar leads the experience, reinforcing independence, responsibility, and global exposure.</p>
           </FAQItem>
 
           <FAQItem q="What happens after college graduation?">
             <ul>
               <li><strong>3-month U.S. Immersion</strong> — a structured cultural and professional immersion across multiple American cities.</li>
-              <li>Study for nursing board exams (NCLEX) continues during the immersion.</li>
+              <li>Study for the Philippine nursing board exam (<strong>PNLE</strong>) during the immersion.</li>
+              <li>Take the PNLE and become a <strong>Registered Nurse in the Philippines</strong>.</li>
+              <li>Begin 1–2 years of clinical experience in a Philippine hospital.</li>
               <li>Scholar begins mentoring younger students in the program.</li>
             </ul>
           </FAQItem>
 
           <FAQItem q="What is the long-term career pathway?">
             <ul>
-              <li><strong>After 2 years of PH clinical experience:</strong> Begin the 1-year process to immigrate to Australia (AHPRA registration).</li>
-              <li><strong>6–7 years after graduation:</strong> Working in Australia as a registered nurse.</li>
+              <li><strong>After 1 year of PH clinical experience:</strong> Begin OET and NCLEX preparation — this process takes approximately one year.</li>
+              <li><strong>After 2 years of PH clinical experience:</strong> Begin the process to immigrate to Australia (AHPRA registration).</li>
               <li>Scholars continue mentoring future program participants throughout their career.</li>
             </ul>
           </FAQItem>
@@ -226,7 +229,7 @@ export function FAQPage() {
             <ul>
               <li><strong>Starting Grade 11:</strong> Brand-new mid-level smartphone + phone plan.</li>
               <li><strong>Finishing Grade 12:</strong> Chromebook (good quality, brand new).</li>
-              <li><strong>Finishing Grade 12:</strong> e-Bike (primarily for college transport — minimize non-school use).</li>
+              <li><strong>Finishing Grade 12:</strong> Motor (primarily for college transport — minimize non-school use).</li>
               <li><strong>Finishing 1st year college:</strong> iPhone or Samsung Galaxy (3-year-old model) — for study, work, and daily life.</li>
               <li><strong>Finishing 2nd year college:</strong> iPad or Android tablet (primarily for note-taking and digital drawings).</li>
               <li><strong>Finishing 2nd year college:</strong> Authorized credit card — connected to the mentor's account for travel and approved expenses.</li>
@@ -246,7 +249,7 @@ export function FAQPage() {
               <li><strong>Boracay</strong> — After 1st year college. Celebrate graduation. Enjoy adventure.</li>
               <li><strong>Bohol</strong> — After 1st year college. Domestic natural beauty and culture.</li>
               <li><strong>Hong Kong / Bangkok</strong> — After 2nd year college. First international trip. Scholar leads the group.</li>
-              <li><strong>Royal Caribbean Cruise</strong> — After 3rd year college. Luxury from the sea. Guide the first international cruise experience.</li>
+              <li><strong>Asian Cruise</strong> — After 3rd year college. Luxury from the sea. Guide the first international cruise experience.</li>
               <li><strong>3-Month U.S. Immersion</strong> — After college graduation. Multi-city cultural and professional development program.</li>
             </ol>
           </FAQItem>
@@ -277,7 +280,7 @@ export function FAQPage() {
           </FAQItem>
 
           <FAQItem q="Do scholars study during the U.S. Immersion?">
-            <p>Yes. NCLEX board exam preparation continues throughout the trip:</p>
+            <p>Yes. PNLE (Philippine nursing board exam) preparation continues throughout the trip:</p>
             <ul>
               <li>6–8 study sessions per week.</li>
               <li>3–4 hours per day of guided self-review and flashcard recall.</li>
@@ -328,9 +331,9 @@ export function FAQPage() {
 
           <FAQItem q="What is the pre-departure checklist?">
             <p><strong>Documents:</strong> Passports · Visas · Boarding passes · Travel itinerary · Medical insurance</p>
-            <p><strong>Finances:</strong> Travel credit card · Download Credit Karma · Confirm budget</p>
+            <p><strong>Finances:</strong> Travel credit card · Confirm budget</p>
             <p><strong>Connectivity:</strong> Activate eSIM (Holafly = unlimited; Airalo = affordable) · Download Google Maps with offline maps · Download Uber/Grab for the country · Charge all devices</p>
-            <p><strong>Apps to download:</strong> Google Maps · Uber/Lyft/Grab · Airline app (register flight) · Google Translate (download local language offline) · Credit Karma</p>
+            <p><strong>Apps to download:</strong> Google Maps · Uber/Lyft/Grab · Airline app (register flight) · Google Translate (download local language offline)</p>
             <p><strong>Culture:</strong> Learn basic phrases in the local language · Research the weather · Know what behaviors are rude or illegal in the country · Avoid politics or religion in public</p>
           </FAQItem>
 
@@ -440,7 +443,7 @@ export function FAQPage() {
               <li>Extras outside the approved plan</li>
               <li>Cash advances — this triggers a 20%+ interest charge on the advance</li>
             </ul>
-            <p><strong>Expense tracking:</strong> Download <strong>Credit Karma</strong> before traveling. Sync the credit card to the app and use it to track all transactions. If the card is ever lost or blocked, notify the mentor immediately.</p>
+            <p>If the card is ever lost or blocked, notify the mentor immediately.</p>
           </FAQItem>
         </FAQSection>
 
