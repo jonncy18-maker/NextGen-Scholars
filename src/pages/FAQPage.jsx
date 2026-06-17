@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
 
 // ── chevron icon ──────────────────────────────────────────────────────────────
 function ChevronIcon({ open }) {
@@ -487,6 +488,8 @@ export function FAQPage() {
         </FAQSection>
 
       </div>
+
+      <PublicAskWidget />
 
       {/* ── footer ── */}
       <footer className="ngs-faq-footer">
