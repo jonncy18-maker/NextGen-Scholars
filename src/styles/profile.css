@@ -342,6 +342,12 @@ body { background: var(--ngs-paper); }
   color: var(--ngs-muted);
 }
 .ngs-pathway-nav { display: flex; gap: 8px; }
+/* The pathway footer is mobile-only and the nav arrows otherwise sit in the
+   bottom-right corner — exactly where the fixed Ask AI FAB lives. Pin the
+   arrows to the left so the FAB can never cover them. */
+@media (max-width: 600px) {
+  .ngs-pathway-footer { flex-direction: row-reverse; justify-content: flex-end; gap: 14px; padding-right: 60px; }
+}
 .ngs-pathway-nav-btn {
   width: 30px; height: 30px; border-radius: 999px;
   background: var(--ngs-paper-2); border: 1px solid var(--ngs-rule);
