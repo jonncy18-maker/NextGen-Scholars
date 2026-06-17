@@ -12,6 +12,7 @@ import './styles/english-tracking.css';
 import './styles/grade-entry.css';
 
 import { NGSSite } from './pages/HomePage.jsx';
+import { FAQPage } from './pages/FAQPage.jsx';
 import { ClairePage } from './entries/claire.jsx';
 import { AprilPage } from './entries/april.jsx';
 import { Navigator } from './entries/navigator.jsx';
@@ -126,6 +127,7 @@ export default function App() {
       <HashRouter>
         <Routes>
           <Route path="/" element={<HomeRoute />} />
+          <Route path="/faq" element={<FAQPage />} />
           <Route path="/claire" element={<ClairePage />} />
           <Route path="/april" element={<AprilPage />} />
           <Route path="/navigator/*" element={<Navigator />} />
