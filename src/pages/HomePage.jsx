@@ -51,9 +51,10 @@ const IconArrow = ({ size = 14, color = 'currentColor' }) => (
 // ── login modal ───────────────────────────────────────────────────────────────
 
 const ROLES = [
-  { key: 'claire', label: 'Claire', configKey: 'claire_password', dest: '/home/claire' },
-  { key: 'april',  label: 'April',  configKey: 'april_password',  dest: '/home/april'  },
-  { key: 'mentor', label: 'Mentor', configKey: 'password',        dest: '/navigator'   },
+  { key: 'claire',     label: 'Claire',     configKey: 'claire_password',     dest: '/home/claire'     },
+  { key: 'april',      label: 'April',      configKey: 'april_password',      dest: '/home/april'      },
+  { key: 'janndilyne', label: 'Janndilyne', configKey: 'janndilyne_password', dest: '/home/janndilyne' },
+  { key: 'mentor',     label: 'Mentor',     configKey: 'password',            dest: '/navigator'       },
 ];
 
 function LoginModal({ onClose }) {
