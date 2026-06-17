@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase.js';
 
-const DEFAULT_DETAILS = `NextGen Scholars (NGS) is a privately funded mentorship program that supports Filipino nursing students on a pathway toward international nursing licensure.
+const DEFAULT_DETAILS = `NEXTGEN SCHOLARS — PROGRAM DETAILS
+
+NextGen Scholars (NGS) is a privately funded mentorship program that supports Filipino nursing students on a pathway toward international nursing licensure.
 
 PATHWAY
 1. Philippines — complete BSN (Bachelor of Science in Nursing) or Grade 11 pre-nursing
@@ -31,10 +33,73 @@ HOW TO APPLY
 - The mentor reviews all applications and contacts shortlisted candidates
 - Shortlisted applicants go through a brief interview/assessment
 
+---
+
+US IMMERSION PROGRAM
+
+NextGen Scholars includes a structured 3-month US Immersion experience as part of the scholar development pathway.
+
+OVERVIEW
+The US Immersion is a professional and cultural exchange experience designed to transform competence into confidence through real-world exposure. Scholars gain cultural immersion, professional growth, leadership development, and English mastery across diverse US environments.
+
+VISION
+Gain exposure through real-world immersion, cultural connection, English mastery, and self-leadership across diverse US environments.
+
+OBJECTIVES
+- Cultural Immersion: Experience the rhythm of everyday US life — from New York's energy to Nashville's southern charm.
+- Professional & Personal Growth: Think, speak, live in English. Build independence, adaptability, and confidence while learning from diverse communities.
+- Leadership & Global Mindset: Cultivate resilience, adaptability, and purpose — the foundation of future-ready global citizens.
+
+EXPECTED OUTCOMES
+- Enhanced adaptability
+- Deeper understanding of US culture
+- Strengthened independence and initiative
+- Functional English Proficiency (B2+)
+- Increased confidence and self-leadership
+
+TRAVEL ITINERARY
+The immersion follows a structured journey across the United States:
+1. New York City, NY — 3 days (global exposure, first city on arrival)
+2. Carmel, IN — Visit Alexandria, Anderson, Carmel & Fishers; Indianapolis Zoo
+3. Chicago, IL — Architectural discovery, structured big city experience (weekend)
+4. Mammoth Cave, KY — Historical landmark, rural Kentucky exposure (weekend)
+5. King's Island, OH — Theme park experience, Midwest culture (weekend)
+6. Nashville, TN — Southern charm, live country music (weekend)
+7. Miami, FL & Caribbean Cruise — Latin-American culture, 7-day Caribbean cruise (week-long)
+8. Return to Cebu
+
+STUDY DURING IMMERSION
+Scholars continue structured NCLEX study throughout the immersion:
+- 6-8 study sessions per week
+- 3-4 hours per day of guided self-review and flashcard recall
+- Mock practice and self-tracking
+- Resources: CBRC-Hybrid (recorded lectures, digital handouts, module quizzes, score tracking, mock exams, mobile app)
+- All CBRC Hybrid resources remain fully available overseas; in-person review completed upon return to the Philippines
+
+US ORIENTATION
+Scholars are prepared for US daily life covering:
+- US Geography: 4 time zones, major regions (Northeast, South, Midwest, West)
+- Financial System: Cashless culture (cards, Apple Pay, tap-to-pay), sales tax 6-10% added at checkout, tipping 15-20% expected at restaurants and services
+- Climate: Varies by region — cold winters in Midwest/Northeast, mild West Coast, hot humid summers in the South
+
+US VISA REQUIREMENTS
+The US Immersion requires a student visa. To be eligible, scholars must meet:
+1. Good academic standing — minimum grade floor of 81% (this threshold is adjustable by the mentor based on individual circumstances)
+2. Satisfactory completion of the Summer English Bootcamp held the summer before the visa interview — this is required for two reasons:
+   a. To improve the scholar's English proficiency ahead of the trip
+   b. To prepare the scholar for the in-person US visa interview, maximizing the likelihood of approval
+   Note: The bootcamp preparation process can be intensive.
+
+ELIGIBILITY FOR US IMMERSION
+The US Immersion program is available exclusively to NGN (nursing) scholars. It is not available to scholars on other tracks.
+
+---
+
 PROGRAM VALUES
 - Student-centered, practical, and milestone-driven
 - Grounded in real scholarship tracks (OET, NCLEX, AHPRA)
-- Transparent progress tracking and accountability`;
+- Transparent progress tracking and accountability
+- Global exposure as a core pillar of scholar development`;
 
 const CONFIG_KEY = 'program_details';
 
