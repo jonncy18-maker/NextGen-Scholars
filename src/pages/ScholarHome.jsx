@@ -62,6 +62,11 @@ export function ScholarHome({ scholarKey }) {
   const config = buildConfig(scholarKey);
   const [liveData, setLiveData] = useState(null);
 
+  // Janndilyne is a TESDA expenses-only dashboard: no English goals, and no
+  // career/vacation/reward trackers. The English stat card is hidden and the
+  // investment card spans the full row on mobile.
+  const isExpensesOnly = scholarKey === 'janndilyne';
+
   useEffect(() => {
     sessionStorage.setItem('ngs_auth_scholar', scholarKey);
   }, [scholarKey]);
@@ -171,7 +176,7 @@ export function ScholarHome({ scholarKey }) {
     { key: 'rewards',  icon: <IconTrophy size={19} />,    label: 'Rewards Tracker',  sub: `${rewardsCount} unlocked`, reward: true, href: `/${scholarKey}#milestones` },
     { key: 'messages', icon: <IconMessage size={19} />,   label: 'Messages',         sub: 'No new messages', href: null },
     { key: 'docs',     icon: <IconDocument size={19} />,  label: 'Documents',        sub: 'Files & records', href: null },
-  ];
+  ].filter(t => !(isExpensesOnly && ['english', 'vacation', 'career', 'rewards'].includes(t.key)));
 
   const inv = liveData?.investmentTotals ?? null;
   const nextMil = liveData?.nextMilestone ?? null;
@@ -201,10 +206,10 @@ export function ScholarHome({ scholarKey }) {
           </div>
           <p className="sp-greet-kicker">{getGreeting()}</p>
           <h1 className="sp-greet-name">{config.name}.</h1>
-          {(inv || latestGpa != null || nextMil || nextTravel || englishHoursDisplay) && (
+          {(inv || latestGpa != null || nextMil || nextTravel || (englishHoursDisplay && !isExpensesOnly)) && (
             <div className="sp-stat-cards">
               {inv && (
-                <div className="sp-sc-card">
+                <div className={`sp-sc-card${isExpensesOnly ? ' sp-sc-card--full' : ''}`}>
                   <div className="sp-sc-label">Total Investment</div>
                   <div className="sp-sc-val">{'₱' + Math.round(inv.total).toLocaleString('en-US')}</div>
                   <div className="sp-sc-subs">
@@ -239,7 +244,7 @@ export function ScholarHome({ scholarKey }) {
                   {nextTravel.sem && <div className="sp-sc-subs"><div className="sp-sc-sub"><span>Expected</span><span>{nextTravel.sem}</span></div></div>}
                 </div>
               )}
-              {englishHoursDisplay && (
+              {englishHoursDisplay && !isExpensesOnly && (
                 <div className="sp-sc-card">
                   <div className="sp-sc-label">English Hours</div>
                   <div className="sp-sc-val sp-sc-val--sm">{englishHoursDisplay}</div>
@@ -277,7 +282,7 @@ export function ScholarHome({ scholarKey }) {
           <div className="sp-eyebrow">
             <span className="sp-eyebrow-rule" />
             Trackers
-            <span className="sp-eyebrow-count">06</span>
+            <span className="sp-eyebrow-count">{String(TRACKERS.length).padStart(2, '0')}</span>
           </div>
           <div className="sp-tracker-grid">
             {TRACKERS.map(tile => {
