@@ -61,18 +61,36 @@ function sessionCategories(period) {
 
 // ── Period form (add/edit) ─────────────────────────────────────────────────────
 
-const EMPTY_PERIOD = { label: '', session_type: 'summer_bootcamp', start_date: '', end_date: '', hour_goal: 200 };
+const EMPTY_PERIOD = { label: '', session_type: 'summer_bootcamp', start_date: '', end_date: '', hours_per_day: '', minutes_per_day: 0 };
+
+function calcTotalHours(start_date, end_date, hours_per_day, minutes_per_day) {
+  if (!start_date || !end_date || hours_per_day === '' || hours_per_day === undefined) return null;
+  const days = Math.round((new Date(end_date) - new Date(start_date)) / 86400000) + 1;
+  if (days <= 0) return null;
+  return Math.round(days * (Number(hours_per_day) + Number(minutes_per_day || 0) / 60) * 10) / 10;
+}
 
 function PeriodForm({ scholar, initial, onSave, onCancel }) {
-  const [form, setForm] = useState({ ...EMPTY_PERIOD, ...initial });
+  const initForm = { ...EMPTY_PERIOD, ...initial };
+  // When editing an existing period that has no hours_per_day, keep fields blank
+  if (initial?.id && !initial.hours_per_day) {
+    initForm.hours_per_day = '';
+    initForm.minutes_per_day = 0;
+  }
+  const [form, setForm] = useState(initForm);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState(null);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
+  const totalHours = calcTotalHours(form.start_date, form.end_date, form.hours_per_day, form.minutes_per_day);
+
   async function handleSave() {
-    if (!form.label || !form.start_date || !form.end_date || !form.hour_goal) {
+    if (!form.label || !form.start_date || !form.end_date || form.hours_per_day === '') {
       setErr('All fields are required.'); return;
+    }
+    if (totalHours === null || totalHours <= 0) {
+      setErr('End date must be after start date.'); return;
     }
     setSaving(true); setErr(null);
     try {
@@ -82,7 +100,7 @@ function PeriodForm({ scholar, initial, onSave, onCancel }) {
         session_type: form.session_type,
         start_date:   form.start_date,
         end_date:     form.end_date,
-        hour_goal:    Number(form.hour_goal),
+        hour_goal:    totalHours,
       };
       const { error } = initial?.id
         ? await supabase.from('english_periods').update(payload).eq('id', initial.id)
@@ -118,10 +136,25 @@ function PeriodForm({ scholar, initial, onSave, onCancel }) {
           <input type="date" value={form.end_date} onChange={e => set('end_date', e.target.value)} />
         </label>
         <label className="enp-field">
-          <span>Total hour goal</span>
-          <input type="number" min="1" step="1" value={form.hour_goal}
-            onChange={e => set('hour_goal', e.target.value)} style={{ width: 90 }} />
+          <span>Time per day</span>
+          <span className="enp-time-per-day">
+            <input type="number" min="0" max="24" step="1" placeholder="h"
+              value={form.hours_per_day}
+              onChange={e => set('hours_per_day', e.target.value)}
+              style={{ width: 56 }} />
+            <span className="enp-time-sep">h</span>
+            <input type="number" min="0" max="59" step="5" placeholder="m"
+              value={form.minutes_per_day}
+              onChange={e => set('minutes_per_day', e.target.value)}
+              style={{ width: 56 }} />
+            <span className="enp-time-sep">min</span>
+          </span>
         </label>
+        {totalHours !== null && (
+          <div className="enp-hour-calc">
+            Total goal: <strong>{totalHours} hrs</strong>
+          </div>
+        )}
       </div>
       <div className="enp-form-note">Categories for this session: {cats.join(', ')}</div>
       {err && <p className="enp-form-error">{err}</p>}
