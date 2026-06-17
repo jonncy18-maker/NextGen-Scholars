@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
-import { SESSION_CATEGORIES, SESSION_TYPES } from '../constants.js';
+import { SESSION_CATEGORIES, SESSION_TYPES, classifyActivity } from '../constants.js';
 import { EnglishIngestPanel } from '../components/EnglishIngestPanel.jsx';
 import '../styles/english-tracking.css';
 
@@ -116,8 +116,9 @@ function CategoryBarChart({ period, sessions }) {
   const byCategory = {};
   cats.forEach(c => { byCategory[c] = 0; });
   sessions.forEach(s => {
-    if (cats.includes(s.activity_type)) {
-      byCategory[s.activity_type] = (byCategory[s.activity_type] || 0) + (s.duration_minutes || 0) / 60;
+    const c = classifyActivity(s.activity_type, cats);
+    if (c !== 'Other') {
+      byCategory[c] = (byCategory[c] || 0) + (s.duration_minutes || 0) / 60;
     }
   });
 
@@ -404,7 +405,7 @@ export function EnglishTracking({ scholarKey }) {
   const grouped = {};
   cats.forEach(c => { grouped[c] = []; });
   (sessions ?? []).forEach(s => {
-    const c = cats.includes(s.activity_type) ? s.activity_type : 'Other';
+    const c = classifyActivity(s.activity_type, cats);
     (grouped[c] ??= []).push(s);
   });
 

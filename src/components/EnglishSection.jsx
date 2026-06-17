@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useData } from '../context/DataContext.jsx';
 import { supabase } from '../lib/supabase.js';
-import { NAMECLASS, SESSION_TYPES, SESSION_CATEGORIES } from '../constants.js';
+import { NAMECLASS, SESSION_TYPES, SESSION_CATEGORIES, classifyActivity } from '../constants.js';
 import { EnglishIngestPanel } from './EnglishIngestPanel.jsx';
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
@@ -373,8 +373,9 @@ function CategoryBarChart({ period, sessions }) {
   const byCategory = {};
   cats.forEach(c => { byCategory[c] = 0; });
   sessions.forEach(s => {
-    if (cats.includes(s.activity_type)) {
-      byCategory[s.activity_type] = (byCategory[s.activity_type] || 0) + (s.duration_minutes || 0) / 60;
+    const c = classifyActivity(s.activity_type, cats);
+    if (c !== 'Other') {
+      byCategory[c] = (byCategory[c] || 0) + (s.duration_minutes || 0) / 60;
     }
   });
 
@@ -465,7 +466,7 @@ function ScholarEnglishDetail({ sk, periods, sessions, onBack, onRefresh }) {
   const grouped = {};
   cats.forEach(c => { grouped[c] = []; });
   filtered.forEach(s => {
-    const c = cats.includes(s.activity_type) ? s.activity_type : 'Other';
+    const c = classifyActivity(s.activity_type, cats);
     (grouped[c] ??= []).push(s);
   });
 

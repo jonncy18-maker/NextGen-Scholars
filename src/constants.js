@@ -52,6 +52,37 @@ export const SESSION_CATEGORIES = {
   default:         ['Speaking', 'Listening', 'Reading', 'Writing', 'Other'],
 };
 
+// Synonyms that should resolve onto a canonical category when that category is
+// present in the active period's set. Keys are normalized (lowercased, trimmed).
+// Lets a session stored under a generic skill name (e.g. "Speaking" from the
+// default/OET set, or a casing/spacing variant) classify into the right bucket
+// instead of falling through to "Other".
+const CATEGORY_ALIASES = {
+  'speaking':          'Free Conversation',
+  'conversation':      'Free Conversation',
+  'free convo':        'Free Conversation',
+  'travel':            'Travel',
+  'travel english':    'Travel',
+  'visa':              'Visa Interview',
+  'interview':         'Visa Interview',
+  'medical':           'Medical English',
+  'medical vocab':     'Medical English',
+};
+
+// Resolve a session's stored activity_type to one of the period's categories.
+// Tries: exact match → case/whitespace-insensitive match → synonym alias.
+// Returns 'Other' when nothing matches.
+export function classifyActivity(activityType, cats) {
+  if (!activityType) return 'Other';
+  if (cats.includes(activityType)) return activityType;
+  const norm = String(activityType).trim().toLowerCase();
+  const ci = cats.find(c => c.toLowerCase() === norm);
+  if (ci) return ci;
+  const alias = CATEGORY_ALIASES[norm];
+  if (alias && cats.includes(alias)) return alias;
+  return 'Other';
+}
+
 // Scholar name → CSS modifier class. Keys are lowercase to match data keys.
 export const NAMECLASS = { claire: '', april: 't-april', aljane: 't-aljane' };
 
