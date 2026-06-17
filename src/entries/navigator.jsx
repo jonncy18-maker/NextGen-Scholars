@@ -33,7 +33,7 @@ if (!NGS_DATA || !NGS_DATA.config) {
   throw new Error('NGS_DATA missing — hard-refresh (Ctrl/Cmd+Shift+R)');
 }
 
-const STATIC_SCHOLAR_KEYS = ['claire', 'april', 'aljane'];
+const STATIC_SCHOLAR_KEYS = ['claire', 'april', 'aljane', 'janndilyne'];
 
 // Compute per-scholar GPA (as %) from the most recent sem in grade_entries
 function computeLiveGpa(rows) {

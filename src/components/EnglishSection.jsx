@@ -719,7 +719,9 @@ function ScholarOverviewCard({ sk, periods, sessions, onSelect }) {
 // ── Section ────────────────────────────────────────────────────────────────────
 
 export function EnglishSection({ id, collapsed, onToggle }) {
-  const { scholarKeys } = useData();
+  const { D, scholarKeys } = useData();
+  // TESDA-track scholars have no English-hours program — exclude them.
+  const englishKeys = scholarKeys.filter(sk => D.scholars[sk]?.track !== 'TESDA');
   const [periods,  setPeriods]  = useState([]);
   const [sessions, setSessions] = useState([]);
   const [selected, setSelected] = useState(null); // null = overview, else sk
@@ -754,7 +756,7 @@ export function EnglishSection({ id, collapsed, onToggle }) {
                 <span className="section-note">Click a scholar to view and manage their sessions</span>
               </div>
               <div className="enp-overview-grid">
-                {scholarKeys.map(sk => (
+                {englishKeys.map(sk => (
                   <ScholarOverviewCard
                     key={sk} sk={sk}
                     periods={periods.filter(p => p.scholar === sk)}
