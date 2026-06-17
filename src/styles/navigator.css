@@ -3510,6 +3510,91 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 
 .ewb-upload, .ewb-manual { min-height: 200px; }
 
+/* ── GCash transfer calculator (Janndilyne only) ── */
+.gcc-card {
+  background: #fff; border: 1px solid var(--ngs-gold);
+  border-radius: 8px; padding: 24px; margin-bottom: 22px;
+  animation: filterIn 0.2s ease both;
+}
+.gcc-title {
+  font-family: var(--ngs-display); font-size: 19px; color: var(--ngs-navy);
+  margin-bottom: 18px;
+}
+.gcc-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+}
+.gcc-box {
+  border: 1px solid var(--ngs-rule); border-radius: 7px;
+  padding: 16px; background: var(--ngs-paper-2);
+  display: flex; flex-direction: column;
+}
+.gcc-dir { display: flex; gap: 0; margin-bottom: 14px; border: 1px solid var(--ngs-rule); border-radius: 5px; overflow: hidden; }
+.gcc-dir-btn {
+  flex: 1; font-family: var(--ngs-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.04em; padding: 8px 6px; cursor: pointer;
+  background: transparent; color: var(--ngs-muted); border: none;
+  transition: background 0.15s, color 0.15s;
+}
+.gcc-dir-btn.is-on { background: var(--ngs-navy); color: var(--ngs-gold); }
+.gcc-lbl {
+  font-family: var(--ngs-mono); font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.12em; color: var(--ngs-muted); margin-bottom: 9px;
+}
+.gcc-input-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.gcc-peso { font-size: 18px; color: var(--ngs-muted); }
+.gcc-input {
+  flex: 1; width: 100%; padding: 9px 11px;
+  border: 2px solid var(--ngs-rule); border-radius: 8px;
+  font-family: var(--ngs-mono); font-size: 20px; font-weight: 600;
+  background: #fff; color: var(--ngs-ink); outline: none;
+  transition: border-color 0.15s;
+}
+.gcc-input:focus { border-color: var(--ngs-gold); }
+.gcc-result { display: flex; flex-direction: column; gap: 9px; }
+.gcc-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--ngs-muted); }
+.gcc-mono { font-family: var(--ngs-mono); font-weight: 600; color: var(--ngs-ink); }
+.gcc-fee { color: var(--ngs-red); }
+.gcc-divider { height: 1px; background: var(--ngs-rule); margin: 2px 0; }
+.gcc-row-total span:first-child { font-weight: 600; color: var(--ngs-navy); }
+.gcc-total-val { font-size: 17px; color: var(--ngs-navy); }
+.gcc-row-usd { font-size: 11px; }
+.gcc-row-usd .gcc-mono { font-weight: 500; color: var(--ngs-muted); }
+.gcc-warn {
+  margin-top: 13px; padding: 9px 12px; border-radius: 6px;
+  background: rgba(193,70,57,0.07); border: 1px solid rgba(193,70,57,0.25);
+  font-size: 12px; color: var(--ngs-red); line-height: 1.45;
+}
+.gcc-hint { font-size: 11px; color: var(--ngs-muted); margin-bottom: 9px; }
+.gcc-items { max-height: 290px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.gcc-empty { font-size: 12px; color: var(--ngs-muted); font-style: italic; padding: 8px 0; }
+.gcc-item {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  width: 100%; text-align: left; padding: 9px 11px;
+  border: 1px solid var(--ngs-rule); border-radius: 6px;
+  background: #fff; cursor: pointer; font-size: 13px; color: var(--ngs-ink);
+  transition: border-color 0.15s, background 0.15s;
+}
+.gcc-item:hover { border-color: var(--ngs-gold); }
+.gcc-item.is-sel { border-color: var(--ngs-gold); background: rgba(201,168,76,0.1); }
+.gcc-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gcc-sub {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--ngs-rule);
+  font-size: 13px; color: var(--ngs-muted);
+}
+.gcc-sub-val { color: var(--ngs-navy); }
+.gcc-use-btn {
+  margin-top: 12px; font-family: var(--ngs-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.04em; padding: 10px 14px; border-radius: 5px;
+  background: var(--ngs-navy); color: var(--ngs-gold);
+  border: none; cursor: pointer; transition: opacity 0.15s;
+}
+.gcc-use-btn:hover:not(:disabled) { opacity: 0.9; }
+.gcc-use-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+@media (max-width: 720px) {
+  .gcc-grid { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 900px) {
   .mh-dash { grid-template-columns: 1fr 1fr; }
   .mh-modules { grid-template-columns: repeat(2, 1fr); }
