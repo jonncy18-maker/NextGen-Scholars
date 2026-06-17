@@ -4,8 +4,9 @@ import { NGS_DATA } from '../../scholars-data.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
 import { loadFromSupabase, loadPendingSubmissions } from '../supabase-loader.js';
 import { storedRate } from '../fx.js';
-import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead, approveSubmission, rejectSubmission } from '../supabase-writer.js';
+import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead, approveSubmission, rejectSubmission, writeSent } from '../supabase-writer.js';
 import { supabase } from '../lib/supabase.js';
+import { CAT_TO_BUCKET } from '../constants.js';
 import { FxCtx } from '../context/FxContext.jsx';
 import { DataCtx } from '../context/DataContext.jsx';
 import { LockScreen } from '../components/LockScreen.jsx';
@@ -317,6 +318,36 @@ export function Navigator() {
     writeExpense(scholar, exp).catch(() => setWriteError(true));
   }
 
+  // Record a GCash send: insert the transfer fee as a (sent) expense, then mark
+  // every item included in the send as sent. Used by the GCash calculator's
+  // "Record send" button and its AI box. Returns a summary for the caller's toast.
+  function handleRecordSend(scholar, { itemIds = [], fee = 0, sem, feeLabel } = {}) {
+    const today = new Date().toISOString().split('T')[0];
+    let feeExp = null;
+    if (fee > 0) {
+      feeExp = {
+        id:     `local_${Date.now()}_gcfee`,
+        item:   feeLabel || 'GCash fee (transfer)',
+        cat:    'Other',
+        bucket: CAT_TO_BUCKET['Other'] || 'college',
+        amount: fee,
+        qty:    1,
+        date:   today,
+        avb:    'Actual',
+        sent:   'Yes',
+        sem:    sem || D.scholars[scholar]?.currentSem || '',
+      };
+      addExpenseToD(scholar, { ...feeExp, status: 'Actual' });
+      setAddedExpenses(prev => ({ ...prev, [scholar]: [...(prev[scholar] || []), feeExp] }));
+      writeExpense(scholar, feeExp).catch(() => setWriteError(true));
+    }
+    itemIds.forEach(id => {
+      updateExpenseInD(scholar, id, { sent: 'Yes' });
+      writeSent(id, scholar).catch(() => setWriteError(true));
+    });
+    return { feeRecorded: !!feeExp, fee, count: itemIds.length };
+  }
+
   function handleSemesterChange(scholar, sem) {
     writeSemester(scholar, sem);
     setD(prev => ({
@@ -383,6 +414,7 @@ export function Navigator() {
                       <ExpenseWorkbench
                         scholar={scholar}
                         onAddExpense={handleAddExpense}
+                        onRecordSend={handleRecordSend}
                       />
                     )}
                   />

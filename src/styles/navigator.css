@@ -3591,8 +3591,43 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 }
 .gcc-use-btn:hover:not(:disabled) { opacity: 0.9; }
 .gcc-use-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.gcc-sub-fee { margin-top: 4px; padding-top: 0; border-top: 0; font-size: 12px; }
+.gcc-actions { display: flex; gap: 8px; margin-top: 12px; }
+.gcc-actions .gcc-use-btn { margin-top: 0; flex: 1; }
+.gcc-use-btn--ghost {
+  background: transparent; color: var(--ngs-navy);
+  border: 1px solid var(--ngs-rule);
+}
+.gcc-use-btn--ghost:hover:not(:disabled) { border-color: var(--ngs-navy); opacity: 1; }
+
+/* AI "record a send in words" box */
+.gcc-ai { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--ngs-rule); }
+.gcc-ai-row { display: flex; gap: 8px; margin-top: 9px; }
+.gcc-ai-input {
+  flex: 1; padding: 11px 13px; font-size: 14px;
+  background: var(--ngs-paper-2); border: 1px solid var(--ngs-rule);
+  border-radius: 6px; color: var(--ngs-ink); outline: none;
+  transition: border-color 0.15s;
+}
+.gcc-ai-input:focus { border-color: var(--ngs-gold); background: #fff; }
+.gcc-ai-submit {
+  font-family: var(--ngs-mono); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  background: var(--ngs-gold); color: var(--ngs-navy);
+  border: none; border-radius: 6px; padding: 11px 20px; cursor: pointer;
+  transition: opacity 0.15s;
+}
+.gcc-ai-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+.gcc-ai-hint { font-size: 11px; color: var(--ngs-muted); margin-top: 8px; }
+.gcc-toast {
+  margin-top: 14px; padding: 10px 14px; border-radius: 6px;
+  font-family: var(--ngs-mono); font-size: 12px; line-height: 1.4;
+}
+.gcc-toast--ok  { background: rgba(43,122,75,0.08); border: 1px solid rgba(43,122,75,0.3); color: var(--ngs-green); }
+.gcc-toast--err { background: rgba(193,70,57,0.07); border: 1px solid rgba(193,70,57,0.25); color: var(--ngs-red); }
 @media (max-width: 720px) {
   .gcc-grid { grid-template-columns: 1fr; }
+  .gcc-actions { flex-direction: column; }
 }
 
 @media (max-width: 900px) {

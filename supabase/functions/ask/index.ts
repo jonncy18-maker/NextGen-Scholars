@@ -10,6 +10,7 @@ import { tier1Resolve } from './tier1.ts'
 import { buildContext } from './context.ts'
 import { tier2Ask } from './tier2.ts'
 import { tier3Ingest, tier3GradeIngest, tier3IngestClaude, tier3GradeIngestClaude } from './tier3.ts'
+import { resolveSendAction } from './action.ts'
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -25,7 +26,7 @@ function json(data: unknown, status = 200) {
 
 interface AskBody {
   scholar: string
-  type:    'query' | 'ingest' | 'grade_ingest' | 'coach'
+  type:    'query' | 'ingest' | 'grade_ingest' | 'coach' | 'action'
   text?:   string
   sem?:    string
   file?:   { base64: string; mime: string }
@@ -58,8 +59,22 @@ Deno.serve(async (req) => {
 
   const { scholar, type, text, sem, file, model: modelPref } = body
   if (!scholar) return json({ error: 'Missing required field: scholar' }, 400)
-  if (type !== 'query' && type !== 'ingest' && type !== 'grade_ingest' && type !== 'coach') {
-    return json({ error: 'Field "type" must be "query", "ingest", "grade_ingest", or "coach"' }, 400)
+  if (type !== 'query' && type !== 'ingest' && type !== 'grade_ingest' && type !== 'coach' && type !== 'action') {
+    return json({ error: 'Field "type" must be "query", "ingest", "grade_ingest", "coach", or "action"' }, 400)
+  }
+
+  // type === 'action' — resolve a free-text "record a send" request into the
+  // unsent items it covers. Returns a plan; the client performs the writes.
+  if (type === 'action') {
+    if (!text) return json({ error: 'Action request requires text' }, 400)
+    const geminiKey = Deno.env.get('GOOGLE_AI_KEY')
+    if (!geminiKey) return json({ status: 'not_configured', hint: 'Add GOOGLE_AI_KEY to Supabase secrets.' }, 503)
+    try {
+      const result = await resolveSendAction(scholar, text, sb, geminiKey)
+      return json(result)
+    } catch (err) {
+      return json({ error: (err as Error).message ?? 'Action failed' }, 500)
+    }
   }
 
   if (type === 'ingest') {

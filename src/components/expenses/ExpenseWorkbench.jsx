@@ -17,7 +17,7 @@ const TABS = [
   { id: 'manual', label: 'Add Manually' },
 ];
 
-export function ExpenseWorkbench({ scholar, onAddExpense }) {
+export function ExpenseWorkbench({ scholar, onAddExpense, onRecordSend }) {
   const { scholarKeys } = useData();
   const [activeScholar, setActiveScholar] = useState(scholar || scholarKeys[0] || 'claire');
   const [tab, setTab]       = useState('ask');
@@ -159,7 +159,7 @@ export function ExpenseWorkbench({ scholar, onAddExpense }) {
 
         {tab === 'manual' && (
           <div className="ewb-manual">
-            {activeScholar === 'janndilyne' && <GcashCalculator scholar={activeScholar} />}
+            {activeScholar === 'janndilyne' && <GcashCalculator scholar={activeScholar} onRecordSend={onRecordSend} />}
             <AddExpenseForm
               scholar={activeScholar}
               onAdd={(sk, exp) => onAddExpense?.(sk, exp)}
