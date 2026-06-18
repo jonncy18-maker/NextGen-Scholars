@@ -121,9 +121,9 @@ items below the line need deployment or larger work.
 | `drive-proxy` IDOR — download/get_base64/delete now require the `fileId` to be registered in the `documents` table (was: any authenticated caller could read/delete any file in the mentor's Drive by ID) | ✅ Code done — **needs `supabase functions deploy drive-proxy`** |
 | `scholar-summary` `qty=0` inflated totals to 1 (inconsistent with tier1/context) | ✅ Code done — **needs deploy** |
 | `.env` was tracked in git; now untracked + gitignored, `.env.example` added | ✅ Done |
-| **`ask-scholar` is unauthenticated** — trusts a client-supplied `scholar` key with the service-role key; anyone who knows `claire`/`april` can read that scholar's data | 🔴 Open — fix is Step 21 (PIN auth) + Step 18 (RLS). Accepted risk for now. |
+| **`ask-scholar` is unauthenticated** — trusts a client-supplied `scholar` key with the service-role key; anyone who knows `claire`/`april` can read that scholar's data | 🟡 **Accepted risk** (owner decision, 2026-06) — data is minimally private for this phase. Real fix is Step 21 (PIN auth) + Step 18 (RLS). See note below. |
 | **GPA risk trigger assumes a percentage scale** — misfires on UV-scale (1.0–5.0) GPAs; needs a grade-scale column to fix | 🔵 Pending — `gpa_risk_trigger.sql` |
-| **Tier 3 Claude paths still reachable** despite the "migrated to Gemini" status; English ingest is Claude-only (hard-depends on `ANTHROPIC_KEY`) | 🔵 Decide — remove Claude branches or document as intentional fallback |
+| **Tier 3 standardised on Gemini** — removed all reachable Claude code paths in `ask`/`ask-scholar`/`tier3.ts` and the mentor model toggle; added a Gemini English-ingest path so English ingest no longer needs `ANTHROPIC_KEY`. `ANTHROPIC_KEY` is now unused. | ✅ Code done — **needs `supabase functions deploy ask ask-scholar`** |
 
 ---
 
@@ -147,6 +147,21 @@ mitigation for the operational data layer. The static narrative copy in
 Current anon access allows reading scholar operational data via the Edge
 Functions. Step 18 will restrict anon reads to the `config` table only.
 Non-blocking for current phase; **do not store sensitive PII before Step 18.**
+
+Because anon RLS is `using (true)` on every scholar table, the public anon key
+can read all scholar data **directly** — so gating `ask-scholar` alone would not
+provide confidentiality. Real protection requires the Step 18 RLS hardening, not
+just an endpoint check.
+
+### ScholarHome is public and grants the entry-portal auto-auth
+
+`/home/:scholar` (`ScholarHome.jsx`) has no password gate and sets
+`sessionStorage['ngs_auth_scholar'] = scholarKey` on mount. The expense-entry
+portal (`entry.jsx`) trusts that flag for auto-auth, so visiting `/home/april`
+and then opening `/entry?scholar=april` admits the visitor into April's
+expense-entry portal without the per-scholar password. Accepted risk for the
+current phase (data is minimally private); the real fix is the Step 21 scholar
+auth upgrade. Revisit before storing anything sensitive.
 
 ---
 

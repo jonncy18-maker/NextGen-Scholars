@@ -51,7 +51,7 @@ export function ExpenseAskWidget({ scholarKey, sem }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
-        body: JSON.stringify({ scholar: scholarKey, type: 'ingest', model: 'claude', text: trimmed, sem }),
+        body: JSON.stringify({ scholar: scholarKey, type: 'ingest', text: trimmed, sem }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
@@ -121,7 +121,7 @@ export function ExpenseAskWidget({ scholarKey, sem }) {
                     <div className="nai-loading" style={{ marginTop: 12 }}>
                       <span className="nai-loading-dot" /><span className="nai-loading-dot" /><span className="nai-loading-dot" />
                       <span style={{ marginLeft: 10, fontFamily: 'var(--ngs-mono)', fontSize: 12, color: 'var(--ngs-muted)' }}>
-                        Claude is drafting your expense…
+                        Gemini is drafting your expense…
                       </span>
                     </div>
                   )}

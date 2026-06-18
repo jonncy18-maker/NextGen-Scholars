@@ -86,7 +86,7 @@ export function StudentReviewCard({ items: initialItems, model, scholarKey, sem,
   return (
     <div className="nai-review">
       <div className="nai-review-header">
-        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Claude</span>
+        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Gemini</span>
         <span className="nai-review-title">
           {items.length} expense{items.length !== 1 ? 's' : ''} extracted — review before submitting
         </span>
@@ -265,7 +265,7 @@ function StudentGradeReviewCard({ grades: initialGrades, model, scholarKey, sem,
   return (
     <div className="nai-review">
       <div className="nai-review-header">
-        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Claude</span>
+        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Gemini</span>
         <span className="nai-review-title">
           {grades.length} subject{grades.length !== 1 ? 's' : ''} extracted — review before saving
         </span>
@@ -424,7 +424,7 @@ export function ScholarIngestPanel({ id, type, scholarKey, sem }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
-        body: JSON.stringify({ scholar: scholarKey, type: ingestType, sem, model: 'claude', file }),
+        body: JSON.stringify({ scholar: scholarKey, type: ingestType, sem, file }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
@@ -461,7 +461,7 @@ export function ScholarIngestPanel({ id, type, scholarKey, sem }) {
       <div className="sip-header">
         <span className="sip-badge">AI</span>
         <span className="sip-title">{isExpense ? 'Upload receipt' : 'Upload grade report'}</span>
-        <span className="sip-note">Claude extracts the data — you review before {isExpense ? 'submitting' : 'saving'}</span>
+        <span className="sip-note">Gemini extracts the data — you review before {isExpense ? 'submitting' : 'saving'}</span>
       </div>
 
       {success && (
@@ -518,7 +518,7 @@ export function ScholarIngestPanel({ id, type, scholarKey, sem }) {
             <div className="nai-loading">
               <span className="nai-loading-dot" /><span className="nai-loading-dot" /><span className="nai-loading-dot" />
               <span style={{ marginLeft: 10, fontFamily: 'var(--ngs-mono)', fontSize: 12, color: 'var(--ngs-muted)' }}>
-                Claude is reading your {isExpense ? 'receipt' : 'grade report'}…
+                Gemini is reading your {isExpense ? 'receipt' : 'grade report'}…
               </span>
             </div>
           )}

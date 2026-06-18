@@ -324,37 +324,6 @@ export function ResultDisplay({ result }) {
   return null;
 }
 
-// ── Model toggle (Gemini / Claude) ────────────────────────────────────────────
-
-function ModelToggle({ value, onChange, disabled }) {
-  const btn = (id, label) => (
-    <button
-      type="button"
-      onClick={() => onChange(id)}
-      disabled={disabled}
-      style={{
-        padding: '4px 10px',
-        fontSize: 11,
-        fontFamily: 'var(--ngs-mono)',
-        fontWeight: value === id ? 700 : 400,
-        background: value === id ? 'var(--ngs-navy)' : 'transparent',
-        color: value === id ? '#fff' : 'var(--ngs-muted)',
-        border: '1px solid var(--ngs-navy)',
-        borderRadius: id === 'gemini' ? '4px 0 0 4px' : '0 4px 4px 0',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        transition: 'background 0.15s, color 0.15s',
-        lineHeight: 1.4,
-      }}
-    >{label}</button>
-  );
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 0, marginLeft: 'auto' }}>
-      {btn('gemini', 'Gemini')}
-      {btn('claude', 'Claude')}
-    </div>
-  );
-}
-
 // ── Ingest review card ────────────────────────────────────────────────────────
 
 function ReviewCard({ items: initialItems, model, scholar, sem, onDiscard, onConfirmed }) {
@@ -428,7 +397,7 @@ function ReviewCard({ items: initialItems, model, scholar, sem, onDiscard, onCon
   return (
     <div className="nai-review">
       <div className="nai-review-header">
-        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Claude</span>
+        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Gemini</span>
         <span className="nai-review-title">
           {items.length} expense{items.length !== 1 ? 's' : ''} extracted — review before saving
         </span>
@@ -674,7 +643,7 @@ function GradeReviewCard({ grades: initialGrades, model, scholar, sem, onDiscard
   return (
     <div className="nai-review">
       <div className="nai-review-header">
-        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Claude</span>
+        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Gemini</span>
         <span className="nai-review-title">
           {grades.length} subject{grades.length !== 1 ? 's' : ''} extracted — review before saving
         </span>
@@ -793,7 +762,6 @@ function GradeReviewCard({ grades: initialGrades, model, scholar, sem, onDiscard
 export function GradeIngestPanel({ scholar, scholarKeys }) {
   const [gradeScholar, setGradeScholar] = useState(scholar);
   const [sem, setSem]           = useState('Y1S1');
-  const [modelPref, setModel]   = useState('claude');
   const [file, setFile]         = useState(null);
   const [isDragOver, setOver]   = useState(false);
   const [loading, setLoading]   = useState(false);
@@ -837,14 +805,14 @@ export function GradeIngestPanel({ scholar, scholarKeys }) {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scholar: gradeScholar, type: 'grade_ingest', sem, model: modelPref, file: { base64: file.base64, mime: file.mime } }),
+        body: JSON.stringify({ scholar: gradeScholar, type: 'grade_ingest', sem, file: { base64: file.base64, mime: file.mime } }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
-      if (json.status === 'not_configured') throw new Error(modelPref === 'claude' ? 'ANTHROPIC_KEY not configured — add it to Supabase secrets.' : 'GOOGLE_AI_KEY not configured — add it to Supabase secrets.');
+      if (json.status === 'not_configured') throw new Error('GOOGLE_AI_KEY not configured — add it to Supabase secrets.');
       if (json.status === 'error') throw new Error(json.error || 'Extraction failed.');
-      if (!Array.isArray(json.grades)) throw new Error(`Unexpected response from ${modelPref === 'claude' ? 'Claude' : 'Gemini'}.`);
-      if (json.grades.length === 0) { setError(`${modelPref === 'claude' ? 'Claude' : 'Gemini'} found no grade entries in this document.`); return; }
+      if (!Array.isArray(json.grades)) throw new Error('Unexpected response from Gemini.');
+      if (json.grades.length === 0) { setError('Gemini found no grade entries in this document.'); return; }
       setReview({ grades: json.grades, model: json.model });
     } catch (err) {
       setError(err.message);
@@ -862,7 +830,6 @@ export function GradeIngestPanel({ scholar, scholarKeys }) {
         <select className="nai-scholar-select" value={sem} onChange={e => setSem(e.target.value)} disabled={loading}>
           {SEMESTER_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-        <ModelToggle value={modelPref} onChange={setModel} disabled={loading} />
       </div>
 
       <div
@@ -900,7 +867,7 @@ export function GradeIngestPanel({ scholar, scholarKeys }) {
         {loading && (
           <div className="nai-loading" style={{ marginBottom: 0 }}>
             <span className="nai-loading-dot" /><span className="nai-loading-dot" /><span className="nai-loading-dot" />
-            <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>{modelPref === 'claude' ? 'Claude' : 'Gemini'} is reading the grade report…</span>
+            <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>Gemini is reading the grade report…</span>
           </div>
         )}
       </div>
@@ -926,7 +893,6 @@ export function GradeIngestPanel({ scholar, scholarKeys }) {
 export function IngestPanel({ scholar, scholarKeys }) {
   const [ingestScholar, setIngestScholar] = useState(scholar);
   const [sem, setSem]           = useState('Y1S1');
-  const [modelPref, setModel]   = useState('claude');
   const [files, setFiles]       = useState([]);   // [{ name, base64, mime }]
   const [pasteText, setPaste]   = useState('');
   const [isDragOver, setOver]   = useState(false);
@@ -983,18 +949,16 @@ export function IngestPanel({ scholar, scholarKeys }) {
       if (!session) throw new Error('Session expired — please refresh and log in again.');
 
       const allItems = [];
-      let usedModel = modelPref === 'claude' ? 'claude-sonnet-4-6' : 'gemini-2.5-flash';
-      const modelLabel = modelPref === 'claude' ? 'Claude' : 'Gemini';
-      const notConfiguredHint = modelPref === 'claude'
-        ? 'ANTHROPIC_KEY not configured — add it to Supabase secrets.'
-        : 'GOOGLE_AI_KEY not configured — add it to Supabase secrets.';
+      let usedModel = 'gemini-2.5-flash';
+      const modelLabel = 'Gemini';
+      const notConfiguredHint = 'GOOGLE_AI_KEY not configured — add it to Supabase secrets.';
 
       if (pasteText.trim()) {
         setProgress('Processing pasted text…');
         const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scholar: ingestScholar, type: 'ingest', sem, model: modelPref, text: pasteText.trim() }),
+          body: JSON.stringify({ scholar: ingestScholar, type: 'ingest', sem, text: pasteText.trim() }),
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
@@ -1010,7 +974,7 @@ export function IngestPanel({ scholar, scholarKeys }) {
         const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scholar: ingestScholar, type: 'ingest', sem, model: modelPref, file: { base64: f.base64, mime: f.mime } }),
+          body: JSON.stringify({ scholar: ingestScholar, type: 'ingest', sem, file: { base64: f.base64, mime: f.mime } }),
         });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
@@ -1053,7 +1017,6 @@ export function IngestPanel({ scholar, scholarKeys }) {
         <select className="nai-scholar-select" value={sem} onChange={e => setSem(e.target.value)} disabled={loading}>
           {SEMESTER_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-        <ModelToggle value={modelPref} onChange={setModel} disabled={loading} />
       </div>
 
       {/* Drop zone */}
@@ -1112,7 +1075,7 @@ export function IngestPanel({ scholar, scholarKeys }) {
         {loading && (
           <div className="nai-loading" style={{ marginBottom: 0 }}>
             <span className="nai-loading-dot" /><span className="nai-loading-dot" /><span className="nai-loading-dot" />
-            <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>{progress || `${modelPref === 'claude' ? 'Claude' : 'Gemini'} is reading the document…`}</span>
+            <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>{progress || 'Gemini is reading the document…'}</span>
           </div>
         )}
       </div>
@@ -1395,7 +1358,7 @@ export function NavigatorAI({ id, collapsed, onToggle, englishOnly = false }) {
             <>
               <div className="section-head">
                 <h2 className="section-title">Upload English hours</h2>
-                <span className="section-note">Paste a ChatGPT session summary — Claude extracts hours for your review before saving</span>
+                <span className="section-note">Paste a ChatGPT session summary — Gemini extracts hours for your review before saving</span>
               </div>
               <EnglishHoursIngestPanel scholarKeys={scholarKeys} />
             </>
