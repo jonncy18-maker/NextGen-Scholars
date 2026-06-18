@@ -12,6 +12,16 @@ export const EXPENSE_CATS = [
   'Medical Equipment', 'Motor', 'Milestones', 'Other',
   'Flights', 'Hotel & Accommodation', 'Meals & Dining',
   'Activities & Tours', 'Visa & Documents', 'Local Transport',
+  'Device & Electronics', 'Equipment', 'Infrastructure',
+];
+
+// Category dropdowns for the mentor expense drawer, per bucket.
+export const TRAVEL_CATS = [
+  'Flights', 'Hotel & Accommodation', 'Meals & Dining',
+  'Activities & Tours', 'Visa & Documents', 'Local Transport',
+];
+export const MILESTONE_CATS = [
+  'Milestones', 'Device & Electronics', 'Equipment', 'Motor', 'Infrastructure',
 ];
 
 export const EXPENSE_BUCKETS = [
@@ -45,6 +55,9 @@ export const CAT_TO_BUCKET = {
   'Activities & Tours':     'travel',
   'Visa & Documents':       'travel',
   'Local Transport':        'travel',
+  'Device & Electronics':   'milestone',
+  'Equipment':              'milestone',
+  'Infrastructure':         'milestone',
 };
 
 // English session types and their practice categories.

@@ -22,6 +22,7 @@ import { ScholarHome } from './pages/ScholarHome.jsx';
 import { EnglishTracking } from './pages/EnglishTracking.jsx';
 import { GradeEntry } from './pages/GradeEntry.jsx';
 import { VacationTracker } from './pages/VacationTracker.jsx';
+import { MilestonesTracker } from './pages/MilestonesTracker.jsx';
 
 function HomeRoute() {
   const isDesktop = useMediaQuery('(min-width: 960px)');
@@ -46,6 +47,11 @@ function GradeRoute() {
 function VacationRoute() {
   const { scholar } = useParams();
   return <VacationTracker scholarKey={scholar || 'claire'} />;
+}
+
+function MilestonesRoute() {
+  const { scholar } = useParams();
+  return <MilestonesTracker scholarKey={scholar || 'claire'} />;
 }
 
 // Maps legacy MPA URLs (e.g. /navigator.html, /claire-home.html?scholar=claire)
@@ -145,6 +151,7 @@ export default function App() {
           <Route path="/english/:scholar" element={<EnglishRoute />} />
           <Route path="/grades/:scholar" element={<GradeRoute />} />
           <Route path="/vacation/:scholar" element={<VacationRoute />} />
+          <Route path="/milestones/:scholar" element={<MilestonesRoute />} />
           <Route path="*" element={<LegacyRedirect />} />
         </Routes>
       </HashRouter>

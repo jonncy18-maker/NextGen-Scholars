@@ -4,12 +4,11 @@ import { supabase } from '../lib/supabase.js';
 import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
 import '../styles/vacation-tracker.css';
 
-// State metadata for a single reward trip. The travels table stores one of
-// three states: done (taken), booked (confirmed, upcoming), planned (intended).
-export const TRIP_STATES = {
-  done:    { label: 'Completed', badge: '✓', cls: 'is-done'    },
-  booked:  { label: 'Booked',    badge: '✈', cls: 'is-booked'  },
-  planned: { label: 'Planned',   badge: '○', cls: 'is-planned' },
+// Milestone states mirror the travels table: done (unlocked), booked, planned.
+export const MS_STATES = {
+  done:    { label: 'Unlocked', badge: '✓', cls: 'is-done'    },
+  booked:  { label: 'Booked',   badge: '◆', cls: 'is-booked'  },
+  planned: { label: 'Planned',  badge: '○', cls: 'is-planned' },
 };
 
 const FALLBACK = {
@@ -18,19 +17,19 @@ const FALLBACK = {
   janndilyne: { name: 'Janndilyne', homeHref: '/home/janndilyne' },
 };
 
-// A loose emoji map so each destination gets a sense of place. Falls back to
-// the trip-state badge when nothing matches.
-const DEST_EMOJI = [
-  [/cebu/i, '🏝'], [/boracay/i, '🌊'], [/bohol/i, '🏖'],
-  [/hong ?kong/i, '🌆'], [/cruise/i, '🚢'], [/taiwan/i, '🚢'],
-  [/manila|visa/i, '🛂'], [/u\.?s\.?|united states|america|immersion/i, '✈'],
-  [/japan|tokyo/i, '🗼'], [/korea|seoul/i, '🏙'], [/singapore/i, '🌃'],
+// A loose emoji map so each milestone gets a sense of what it is. Falls back to
+// a target when nothing matches.
+const NAME_EMOJI = [
+  [/phone|smartphone|mobile/i, '📱'], [/laptop|computer|pc/i, '💻'],
+  [/tablet|ipad/i, '📲'], [/bike|bicycle/i, '🚲'], [/motor|scooter/i, '🏍'],
+  [/watch/i, '⌚'], [/camera/i, '📷'], [/desk|chair|furniture/i, '🪑'],
+  [/internet|wifi|router/i, '📶'], [/printer/i, '🖨'], [/medical|equipment/i, '🩺'],
 ];
 
-function destEmoji(dest) {
-  if (!dest) return '📍';
-  const hit = DEST_EMOJI.find(([re]) => re.test(dest));
-  return hit ? hit[1] : '📍';
+function nameEmoji(name) {
+  if (!name) return '🎯';
+  const hit = NAME_EMOJI.find(([re]) => re.test(name));
+  return hit ? hit[1] : '🎯';
 }
 
 function fmtPhp(n) {
@@ -38,10 +37,10 @@ function fmtPhp(n) {
   return '₱' + Math.round(n).toLocaleString('en-US');
 }
 
-export function VacationTracker({ scholarKey }) {
+export function MilestonesTracker({ scholarKey }) {
   const fallback = FALLBACK[scholarKey] || FALLBACK.claire;
-  const [name,    setName]    = useState(fallback.name);
-  const [travels, setTravels] = useState(null);
+  const [name,       setName]       = useState(fallback.name);
+  const [milestones, setMilestones] = useState(null);
 
   useEffect(() => {
     sessionStorage.setItem('ngs_auth_scholar', scholarKey);
@@ -51,21 +50,21 @@ export function VacationTracker({ scholarKey }) {
     let cancelled = false;
     Promise.all([
       supabase.from('scholars').select('first_name').eq('scholar_key', scholarKey).limit(1),
-      supabase.from('travels').select('*').eq('scholar', scholarKey).order('id', { ascending: true }),
-    ]).then(([scholarRes, travelRes]) => {
+      supabase.from('milestones').select('*').eq('scholar', scholarKey).order('id', { ascending: true }),
+    ]).then(([scholarRes, msRes]) => {
       if (cancelled) return;
       const fn = scholarRes.data?.[0]?.first_name;
       if (fn) setName(fn);
-      setTravels(travelRes.data ?? []);
-    }).catch(() => { if (!cancelled) setTravels([]); });
+      setMilestones(msRes.data ?? []);
+    }).catch(() => { if (!cancelled) setMilestones([]); });
     return () => { cancelled = true; };
   }, [scholarKey]);
 
-  const trips        = travels ?? [];
-  const completed    = trips.filter(t => t.state === 'done');
-  const upcoming     = trips.filter(t => t.state !== 'done');
-  const nextTrip     = upcoming[0] || null;
-  const investedPhp  = trips.reduce((s, t) => s + (Number(t.amount_php) || 0), 0);
+  const items       = milestones ?? [];
+  const unlocked    = items.filter(m => m.state === 'done');
+  const upcoming    = items.filter(m => m.state !== 'done');
+  const next        = upcoming[0] || null;
+  const investedPhp = items.reduce((s, m) => s + (Number(m.amount_php) || 0), 0);
 
   return (
     <div className="sp-page">
@@ -73,15 +72,15 @@ export function VacationTracker({ scholarKey }) {
         <header className="sp-head">
           <div className="sp-track">
             <span className="sp-track-dot" />
-            NextGen Nurses
+            NextGen Scholars
             <span className="sp-track-sep">·</span>
-            NGN
+            Rewards
           </div>
           <p className="sp-greet-kicker">{name}</p>
-          <h1 className="sp-greet-name">Worlds<br/>opened.</h1>
+          <h1 className="sp-greet-name">Tools<br/>to rise.</h1>
           <div className="sp-head-rule" />
           <div className="sp-head-meta">
-            <span className="sp-stage">Vacation Tracker</span>
+            <span className="sp-stage">Milestones Tracker</span>
             <Link to={fallback.homeHref} className="sp-tagline" style={{ textDecoration: 'none' }}>
               ← Back to home
             </Link>
@@ -91,55 +90,55 @@ export function VacationTracker({ scholarKey }) {
         <section className="sp-section">
           {/* Summary card */}
           <div className="vt-summary">
-            {travels === null ? (
+            {milestones === null ? (
               <div className="vt-loading">Loading…</div>
             ) : (
               <div className="vt-summary-grid">
                 <div className="vt-stat">
-                  <div className="vt-stat-val">{completed.length}</div>
-                  <div className="vt-stat-label">Trips taken</div>
+                  <div className="vt-stat-val">{unlocked.length}</div>
+                  <div className="vt-stat-label">Unlocked</div>
                 </div>
                 <div className="vt-stat">
                   <div className="vt-stat-val">{fmtPhp(investedPhp)}</div>
-                  <div className="vt-stat-label">Travel invested</div>
+                  <div className="vt-stat-label">Invested</div>
                 </div>
                 <div className="vt-stat">
                   <div className="vt-stat-val vt-stat-val--sm">
-                    {nextTrip ? `${destEmoji(nextTrip.dest)} ${nextTrip.dest}` : '—'}
+                    {next ? `${nameEmoji(next.name)} ${next.name}` : '—'}
                   </div>
-                  <div className="vt-stat-label">Next destination</div>
+                  <div className="vt-stat-label">Next milestone</div>
                 </div>
               </div>
             )}
           </div>
 
           <p className="vt-intro">
-            Annual reward trips that scale with each milestone — every destination
-            a deliberate widening of horizons.
+            Devices and infrastructure unlocked as academic targets are hit —
+            every reward a step toward standing on your own.
           </p>
 
           {/* Timeline */}
-          {travels !== null && trips.length > 0 && (
+          {milestones !== null && items.length > 0 && (
             <div className="vt-timeline">
-              {trips.map((t, i) => {
-                const meta   = TRIP_STATES[t.state] || TRIP_STATES.planned;
-                const isLast = i === trips.length - 1;
-                const amt    = Number(t.amount_php) || 0;
+              {items.map((m, i) => {
+                const meta   = MS_STATES[m.state] || MS_STATES.planned;
+                const isLast = i === items.length - 1;
+                const amt    = Number(m.amount_php) || 0;
                 return (
-                  <div key={t.id} className={`vt-trip ${meta.cls}`}>
+                  <div key={m.id} className={`vt-trip ${meta.cls}`}>
                     <div className="vt-trip-rail">
                       <div className="vt-trip-badge">
-                        {t.state === 'done' ? '✓' : destEmoji(t.dest)}
+                        {m.state === 'done' ? '✓' : nameEmoji(m.name)}
                       </div>
                       {!isLast && <div className="vt-trip-connector" />}
                     </div>
                     <div className="vt-trip-body">
                       <div className="vt-trip-head">
-                        <span className="vt-trip-dest">{t.dest}</span>
+                        <span className="vt-trip-dest">{m.name}</span>
                         <span className={`vt-trip-pill ${meta.cls}`}>{meta.label}</span>
                       </div>
                       <div className="vt-trip-meta">
-                        {t.sem && <span className="vt-trip-sem">{t.sem}</span>}
+                        {m.sem && <span className="vt-trip-sem">{m.sem}</span>}
                         {amt > 0 && <span className="vt-trip-amt">{fmtPhp(amt)}</span>}
                       </div>
                     </div>
@@ -149,10 +148,10 @@ export function VacationTracker({ scholarKey }) {
             </div>
           )}
 
-          {travels !== null && trips.length === 0 && (
+          {milestones !== null && items.length === 0 && (
             <div className="vt-empty">
-              No reward trips logged yet. Your mentor adds destinations as
-              milestones are reached.
+              No milestones logged yet. Your mentor adds rewards as academic
+              targets are reached.
             </div>
           )}
         </section>

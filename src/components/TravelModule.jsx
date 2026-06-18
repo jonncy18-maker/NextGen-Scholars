@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useData } from '../context/DataContext.jsx';
+import { MentorExpenseDrawer } from './MentorExpenseDrawer.jsx';
+import { TRAVEL_CATS } from '../constants.js';
 
 // Trip states stored in the travels table: done (taken), booked (confirmed,
 // upcoming), planned (intended). Each maps to a badge + pill label.
@@ -27,7 +29,9 @@ function fmtPhp(n) {
   return '₱' + Math.round(n).toLocaleString('en-US');
 }
 
-function ScholarTravel({ s }) {
+function ScholarTravel({ sk, s }) {
+  // Bump after an expense write so the next drawer open re-reads fresh totals.
+  const [, setTick] = useState(0);
   const travels  = s.travels || [];
   const taken    = travels.filter(t => t.state === 'done').length;
   const nextTrip = travels.find(t => t.state !== 'done') || null;
@@ -69,6 +73,15 @@ function ScholarTravel({ s }) {
                   <div className="tm-stop-body">
                     <span className="tm-dest">{t.dest}</span>
                     <span className="tm-stop-sub">{t.sem || t.when}{amt ? ` · ${amt}` : ''}</span>
+                    {t.state === 'done' && t.sem && (
+                      <MentorExpenseDrawer
+                        scholarKey={sk}
+                        sem={t.sem}
+                        bucket="travel"
+                        cats={TRAVEL_CATS}
+                        onAdded={() => setTick(n => n + 1)}
+                      />
+                    )}
                   </div>
                   <div className="tm-pill-wrap">
                     <span className={`tm-pill tm-pill-${meta.cls}`}>{meta.label}</span>
@@ -83,7 +96,7 @@ function ScholarTravel({ s }) {
   );
 }
 
-export function TravelModule({ id, collapsed, onToggle }) {
+export function TravelModule({ id }) {
   const { D, scholarKeys } = useData();
   const ngnKeys = scholarKeys.filter(sk => D.scholars[sk]?.track === 'NGN');
 
@@ -92,29 +105,18 @@ export function TravelModule({ id, collapsed, onToggle }) {
       <div className="eyebrow">
         Vacation Tracker ✈
         <span className="eyebrow-rule" />
-        <button
-          className="section-collapse-btn"
-          onClick={onToggle}
-          title={collapsed ? 'Expand section' : 'Collapse section'}
-        >
-          {collapsed ? '▶' : '▼'}
-        </button>
       </div>
-      {!collapsed && (
-        <>
-          <div className="section-head">
-            <h2 className="section-title">Journey Rewards</h2>
-            <span className="section-note">
-              Reward trips · NGN scholars · taken, booked, and planned.
-            </span>
-          </div>
-          <div className="tm-grid">
-            {ngnKeys.map(sk => (
-              <ScholarTravel key={sk} s={D.scholars[sk]} />
-            ))}
-          </div>
-        </>
-      )}
+      <div className="section-head">
+        <h2 className="section-title">Journey Rewards</h2>
+        <span className="section-note">
+          Reward trips · NGN scholars · taken, booked, and planned.
+        </span>
+      </div>
+      <div className="tm-grid">
+        {ngnKeys.map(sk => (
+          <ScholarTravel key={sk} sk={sk} s={D.scholars[sk]} />
+        ))}
+      </div>
     </section>
   );
 }

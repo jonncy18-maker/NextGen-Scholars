@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { useData } from '../context/DataContext.jsx';
-import { nextMilestone } from '../utils.js';
 import { SEMESTER_OPTIONS } from '../constants.js';
 
 const SEM_DISPLAY = {
@@ -91,8 +90,8 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
 
   const nextMilestones = scholarKeys.map(key => {
     const s = D.scholars[key];
-    const nm = nextMilestone(s);
-    return { key, name: s?.firstName || key, milestone: nm };
+    const next = (s?.milestones || []).find(m => m.state !== 'done');
+    return { key, name: s?.firstName || key, milestone: next };
   });
 
   return (
@@ -294,18 +293,25 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
           </div>
         </Link>
 
-        <div className="mm-card mm-card--info">
+        <Link className="mm-card" to="/navigator/milestones">
           <div className="mm-card-tag">MLS</div>
           <div className="mm-card-label">Milestones</div>
           <div className="mm-card-items">
             {nextMilestones.map(({ key, name, milestone }) => (
               <div key={key} className="mm-card-row">
                 <span className="mm-card-row-name">{name}</span>
-                <span className="mm-card-row-detail">{milestone.name}</span>
+                {milestone ? (
+                  <>
+                    <span className={`mm-state mm-state--${milestone.state}`}>{milestone.state}</span>
+                    <span className="mm-card-row-detail">{milestone.name}</span>
+                  </>
+                ) : (
+                  <span className="mm-card-row-detail">All done</span>
+                )}
               </div>
             ))}
           </div>
-        </div>
+        </Link>
 
         <Link className="mm-card" to="/navigator/docs">
           <div className="mm-card-tag">DOC</div>
