@@ -3812,6 +3812,33 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 .tm-current.tm-gpa-green .tm-pill-current { background: rgba(47,125,85,0.12); color: var(--ngs-green); }
 .tm-current.tm-gpa-red   .tm-pill-current { background: rgba(177,27,42,0.12); color: var(--ngs-red);   }
 
+/* Trip-state variants (done / booked / planned) */
+.tm-booked .tm-badge {
+  background: rgba(201,168,76,0.16); border: 1px solid var(--ngs-gold);
+  color: var(--ngs-navy); font-size: 13px;
+}
+.tm-planned .tm-badge {
+  background: transparent; border: 1px dashed var(--ngs-muted);
+  color: var(--ngs-muted); font-size: 13px;
+}
+.tm-planned .tm-dest { color: var(--ngs-muted); }
+.tm-pill-booked  { background: rgba(201,168,76,0.14); color: var(--ngs-warn);  }
+.tm-pill-planned { background: var(--ngs-rule);       color: var(--ngs-muted); }
+
+/* Per-scholar stat strip + empty state */
+.tm-stat-row {
+  display: flex; flex-wrap: wrap; gap: 16px;
+  padding: 12px 20px 0;
+}
+.tm-stat {
+  font-family: var(--ngs-mono); font-size: 11px; letter-spacing: 0.04em;
+  color: var(--ngs-muted);
+}
+.tm-stat b { color: var(--ngs-ink); font-weight: 700; }
+.tm-empty {
+  padding: 18px 20px; font-size: 13px; color: var(--ngs-muted);
+}
+
 /* ── Program Details section (.pgd-*) ── */
 .pgd-body { padding: 0 0 20px; }
 .pgd-loading { padding: 20px 0; font-size: 13px; color: var(--ngs-muted); font-style: italic; }
