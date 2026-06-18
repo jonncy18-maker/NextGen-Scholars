@@ -10,6 +10,8 @@ export const EXPENSE_CATS = [
   'Tuition', 'Enrollment', 'Uniforms', 'Books', 'Living Expenses',
   'Printing & Research', 'School Supplies', 'Activities',
   'Medical Equipment', 'Motor', 'Milestones', 'Other',
+  'Flights', 'Hotel & Accommodation', 'Meals & Dining',
+  'Activities & Tours', 'Visa & Documents', 'Local Transport',
 ];
 
 export const EXPENSE_BUCKETS = [
@@ -34,9 +36,15 @@ export const CAT_TO_BUCKET = {
   'Activities':          'college',
   'Medical Equipment':   'college',
   'Other':               'college',
-  'Milestones':          'milestone',
-  'Motor':               'milestone',
-  'Living Expenses':     'life',
+  'Milestones':             'milestone',
+  'Motor':                  'milestone',
+  'Living Expenses':        'life',
+  'Flights':                'travel',
+  'Hotel & Accommodation':  'travel',
+  'Meals & Dining':         'travel',
+  'Activities & Tours':     'travel',
+  'Visa & Documents':       'travel',
+  'Local Transport':        'travel',
 };
 
 // English session types and their practice categories.
