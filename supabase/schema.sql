@@ -25,7 +25,8 @@ create table if not exists scholars (
   cohort        text,
   status        text,
   current_sem   text,
-  gpa_floor     numeric,
+  gpa_floor     numeric,                 -- percentage (0–100) unless gpa_scale='uv'
+  gpa_scale     text default 'percent',  -- 'percent' (default) or 'uv' (1.00–5.00, lower better)
   note          text,
   quote         text,
   card_stage    text,
@@ -38,7 +39,8 @@ create table if not exists academics (
   id      bigint generated always as identity primary key,
   scholar text references scholars(scholar_key) on delete cascade,
   sem     text,
-  gpa     numeric,
+  gpa     numeric,   -- stored on the scholar's gpa_scale (default percentage 0–100;
+                     -- UV grades are converted to percent via uvToPct at entry time)
   status  text,
   note    text
 );
