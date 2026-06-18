@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
   // Aggregate expense totals by semester
   const expensesBySem: Record<string, { totalPhp: number; items: number }> = {}
   for (const e of expenses ?? []) {
-    const amt = num(e.amount) * (num(e.qty) || 1)
+    const amt = num(e.amount) * (e.qty ?? 1)
     if (!expensesBySem[e.sem]) expensesBySem[e.sem] = { totalPhp: 0, items: 0 }
     expensesBySem[e.sem].totalPhp += amt
     expensesBySem[e.sem].items++

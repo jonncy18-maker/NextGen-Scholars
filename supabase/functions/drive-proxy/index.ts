@@ -89,6 +89,18 @@ Deno.serve(async (req) => {
   let body: ProxyBody
   try { body = await req.json() } catch { return json({ error: 'Invalid JSON body' }, 400) }
 
+  // IDOR guard: read/delete actions may only touch file IDs that the app has
+  // registered in the `documents` table. Without this, any authenticated caller
+  // could download or delete *any* file in the mentor's Drive by guessing an ID.
+  async function assertRegistered(fileId: string): Promise<boolean> {
+    const { data, error } = await sb
+      .from('documents')
+      .select('id')
+      .eq('storage_path', fileId)
+      .limit(1)
+    return !error && Array.isArray(data) && data.length > 0
+  }
+
   // Strip any query params / fragments that get accidentally included when copying a Drive URL
   const folderId = (Deno.env.get('GOOGLE_DRIVE_FOLDER_ID') ?? '').split(/[?#]/)[0].trim()
   if (!folderId) return json({ error: 'GOOGLE_DRIVE_FOLDER_ID not configured' }, 503)
@@ -135,6 +147,7 @@ Deno.serve(async (req) => {
     if (body.action === 'download') {
       const { fileId } = body
       if (!fileId) return json({ error: 'Missing fileId' }, 400)
+      if (!await assertRegistered(fileId)) return json({ error: 'Forbidden' }, 403)
       const [meta, fileRes] = await Promise.all([
         getFileMeta(token, fileId),
         fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
@@ -155,6 +168,7 @@ Deno.serve(async (req) => {
     if (body.action === 'get_base64') {
       const { fileId } = body
       if (!fileId) return json({ error: 'Missing fileId' }, 400)
+      if (!await assertRegistered(fileId)) return json({ error: 'Forbidden' }, 403)
       const [meta, fileRes] = await Promise.all([
         getFileMeta(token, fileId),
         fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
@@ -170,6 +184,7 @@ Deno.serve(async (req) => {
     if (body.action === 'delete') {
       const { fileId } = body
       if (!fileId) return json({ error: 'Missing fileId' }, 400)
+      if (!await assertRegistered(fileId)) return json({ error: 'Forbidden' }, 403)
       const res = await fetch(
         `https://www.googleapis.com/drive/v3/files/${fileId}`,
         { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }

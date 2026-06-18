@@ -2,9 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../../context/DataContext.jsx';
 import { useFmt, FxCtx } from '../../context/FxContext.jsx';
 import { allExpenses } from '../../utils.js';
-import { supabase } from '../../lib/supabase.js';
-
-const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
+import { supabase, SUPABASE_URL } from '../../lib/supabase.js';
 
 // GCash cash-out fee: ₱15 per ₱500 block (or any fraction of one).
 // Matches the fee model from the original Jann TESDA tracker.

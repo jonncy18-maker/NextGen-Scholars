@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../lib/supabase.js';
+import { supabase, SUPABASE_URL } from '../lib/supabase.js';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { ScholarIngestPanel } from '../components/ScholarIngestPanel.jsx';
-
-const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
 const ACCEPTED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
 
 const SEM_LABELS = {

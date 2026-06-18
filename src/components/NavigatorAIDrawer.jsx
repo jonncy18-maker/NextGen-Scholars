@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { supabase } from '../lib/supabase.js';
+import { supabase, SUPABASE_URL } from '../lib/supabase.js';
 import { useData } from '../context/DataContext.jsx';
 import { ResultDisplay, QUICK_PROMPTS, IngestPanel, GradeIngestPanel } from './NavigatorAI.jsx';
-
-const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
 
 export function NavigatorAIDrawer({ open, onClose, tab = 'query', onTabChange, defaultScholar }) {
   const { scholarKeys } = useData();
