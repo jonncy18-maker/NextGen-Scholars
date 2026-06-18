@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { supabase } from '../lib/supabase.js';
+import { supabase, SUPABASE_URL } from '../lib/supabase.js';
 import { useData } from '../context/DataContext.jsx';
 import { writeExpense } from '../supabase-writer.js';
 import { EXPENSE_CATS, SEMESTER_OPTIONS, SESSION_CATEGORIES } from '../constants.js';
@@ -11,7 +11,6 @@ function gradeAvg(prelim, midterm, finalGrade) {
   return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
 }
 
-const SUPABASE_URL  = 'https://rhoxpfuephkuaartuqou.supabase.co';
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const QUICK_PROMPTS = [

@@ -122,7 +122,7 @@ export async function loadFromSupabase() {
       card: {
         name:      s.first_name,
         track:     s.track,
-        status:    s.status.charAt(0).toUpperCase() + s.status.slice(1),
+        status:    s.status ? s.status.charAt(0).toUpperCase() + s.status.slice(1) : 'Active',
         stage:     s.card_stage,
         year:      s.card_year,
         quote:     s.quote,

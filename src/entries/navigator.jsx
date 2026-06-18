@@ -3,11 +3,10 @@ import { Routes, Route } from 'react-router-dom';
 import { NGS_DATA } from '../../scholars-data.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
 import { loadFromSupabase, loadPendingSubmissions } from '../supabase-loader.js';
-import { storedRate } from '../fx.js';
 import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead, approveSubmission, rejectSubmission, writeSent } from '../supabase-writer.js';
 import { supabase } from '../lib/supabase.js';
 import { CAT_TO_BUCKET } from '../constants.js';
-import { FxCtx } from '../context/FxContext.jsx';
+import { FxCtx, useFxState } from '../context/FxContext.jsx';
 import { DataCtx } from '../context/DataContext.jsx';
 import { LockScreen } from '../components/LockScreen.jsx';
 import { SectionErrorBoundary } from '../components/SectionErrorBoundary.jsx';
@@ -36,6 +35,13 @@ if (!NGS_DATA || !NGS_DATA.config) {
 }
 
 const STATIC_SCHOLAR_KEYS = ['claire', 'april', 'janndilyne'];
+
+// Derive the spend bucket for an expense the same way supabase-loader does, so
+// realtime INSERT/UPDATE rows get bucketed correctly (not silently → 'college').
+function bucketFor(cat, fallback) {
+  const raw = CAT_TO_BUCKET[cat] ?? fallback ?? 'college';
+  return raw === 'trial' ? 'college' : raw;
+}
 
 // Compute per-scholar GPA (as %) from the most recent sem in grade_entries
 function computeLiveGpa(rows) {
@@ -67,7 +73,9 @@ export function Navigator() {
     });
   }, []);
 
-  const fxRate = storedRate();
+  // Reactive FX rate (auto-refreshes in market mode), shared with profile pages
+  // via localStorage. Replaces a one-time storedRate() read that never updated.
+  const { fxRate } = useFxState();
   const [liveGpa, setLiveGpa]   = useState({});
   const [sheetsStatus, setSheetsStatus] = useState('loading');
   const [refreshKey, setRefreshKey]     = useState(0);
@@ -138,7 +146,7 @@ export function Navigator() {
     const expChannel = supabase.channel('ngs_expenses')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'expenses' }, ({ new: e }) => {
         if (!e?.scholar || !e?.sem) return;
-        const row = { id: e.id, item: e.item, amount: parseFloat(e.amount) || 0, qty: parseFloat(e.qty) || 1, cat: e.cat, date: e.date, sent: e.sent, avb: e.avb, vendor: e.vendor || '', sem: e.sem, group_id: e.group_id || null };
+        const row = { id: e.id, item: e.item, amount: parseFloat(e.amount) || 0, qty: parseFloat(e.qty) || 1, cat: e.cat, bucket: bucketFor(e.cat, e.bucket), date: e.date, sent: e.sent, avb: e.avb, vendor: e.vendor || '', sem: e.sem, group_id: e.group_id || null };
         setD(prev => {
           const sd = prev.scholars[e.scholar];
           if (!sd) return prev;
@@ -155,7 +163,7 @@ export function Navigator() {
           const newExp = {};
           Object.entries(sd.expenses || {}).forEach(([sem, list]) => {
             newExp[sem] = list.map(ex => String(ex.id) === String(e.id)
-              ? { ...ex, item: e.item, amount: parseFloat(e.amount) || 0, qty: parseFloat(e.qty) || 1, cat: e.cat, date: e.date, sent: e.sent, avb: e.avb, vendor: e.vendor || '', sem: e.sem, group_id: e.group_id || null }
+              ? { ...ex, item: e.item, amount: parseFloat(e.amount) || 0, qty: parseFloat(e.qty) || 1, cat: e.cat, bucket: bucketFor(e.cat, e.bucket), date: e.date, sent: e.sent, avb: e.avb, vendor: e.vendor || '', sem: e.sem, group_id: e.group_id || null }
               : ex);
           });
           return { ...prev, scholars: { ...prev.scholars, [e.scholar]: { ...sd, expenses: newExp } } };

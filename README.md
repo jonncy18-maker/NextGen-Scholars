@@ -102,4 +102,3 @@ npm run format   # Prettier — formats src/**/*.{js,jsx,css} and scholars-data.
   `/opt/node22/lib/node_modules/playwright` (CommonJS `require`).
 - See `CLAUDE.md` for full project context, conventions, and known issues.
 - See `ROADMAP.md` and `ROADMAP-AI.md` for the tech-debt and AI feature backlogs.
-- See `DECISIONS.md` for significant architectural decisions and their rationale.

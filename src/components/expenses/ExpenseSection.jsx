@@ -249,7 +249,6 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
     setFilters(EMPTY_FILTERS);
     setSortField(null);
     setSortDir('asc');
-    setShowAddForm(false);
     setGroupMode('multi');
     setMultiDims(['year', 'month']);
     setExpandedGroups(new Set());

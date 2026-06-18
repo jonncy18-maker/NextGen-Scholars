@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase.js';
+import { supabase, SUPABASE_URL } from '../lib/supabase.js';
 import { useData } from '../context/DataContext.jsx';
 import { writeExpense } from '../supabase-writer.js';
 import { EXPENSE_CATS, SEMESTER_OPTIONS } from '../constants.js';
-
-const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
 const DOC_TYPES = ['receipt', 'transcript', 'visa', 'oet', 'other'];
 const ACCEPTED_TYPES = 'image/jpeg,image/png,image/webp,image/gif,application/pdf';
 

@@ -3,9 +3,7 @@ import { useData } from '../context/DataContext.jsx';
 import { useFmt } from '../context/FxContext.jsx';
 import { scholarTotals, nextMilestone, accentFor } from '../utils.js';
 import { SEMESTER_OPTIONS } from '../constants.js';
-import { supabase } from '../lib/supabase.js';
-
-const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
+import { supabase, SUPABASE_URL } from '../lib/supabase.js';
 
 const SEM_WEEKS = 16;
 

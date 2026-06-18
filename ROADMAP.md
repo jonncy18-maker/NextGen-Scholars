@@ -111,6 +111,22 @@ See `ROADMAP-AI.md` for full step-by-step status.
 
 ---
 
+## Security audit follow-ups (2026-06)
+
+A full-repo audit pass produced these. Frontend/contained fixes are done; the
+items below the line need deployment or larger work.
+
+| Item | Status |
+|---|---|
+| `drive-proxy` IDOR — download/get_base64/delete now require the `fileId` to be registered in the `documents` table (was: any authenticated caller could read/delete any file in the mentor's Drive by ID) | ✅ Code done — **needs `supabase functions deploy drive-proxy`** |
+| `scholar-summary` `qty=0` inflated totals to 1 (inconsistent with tier1/context) | ✅ Code done — **needs deploy** |
+| `.env` was tracked in git; now untracked + gitignored, `.env.example` added | ✅ Done |
+| **`ask-scholar` is unauthenticated** — trusts a client-supplied `scholar` key with the service-role key; anyone who knows `claire`/`april` can read that scholar's data | 🔴 Open — fix is Step 21 (PIN auth) + Step 18 (RLS). Accepted risk for now. |
+| **GPA risk trigger assumes a percentage scale** — misfires on UV-scale (1.0–5.0) GPAs; needs a grade-scale column to fix | 🔵 Pending — `gpa_risk_trigger.sql` |
+| **Tier 3 Claude paths still reachable** despite the "migrated to Gemini" status; English ingest is Claude-only (hard-depends on `ANTHROPIC_KEY`) | 🔵 Decide — remove Claude branches or document as intentional fallback |
+
+---
+
 ## Accepted risks (carry forward)
 
 ### Navigator data is publicly accessible

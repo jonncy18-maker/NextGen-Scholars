@@ -22,7 +22,7 @@ export function countActiveFilters(f) {
 
 export function applyFilters(rows, f) {
   return rows.filter(r => {
-    if (f.item && !r.item.toLowerCase().includes(f.item.toLowerCase())) return false;
+    if (f.item && !(r.item || '').toLowerCase().includes(f.item.toLowerCase())) return false;
     if (f.buckets.length > 0 && !f.buckets.includes(r.bucket || 'college')) return false;
     if (f.cats.length > 0 && !f.cats.includes(r.cat)) return false;
     if (f.dateFrom && r.date < f.dateFrom) return false;

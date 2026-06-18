@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
-import { supabase } from '../../lib/supabase.js';
+import { supabase, SUPABASE_URL } from '../../lib/supabase.js';
 import { useData } from '../../context/DataContext.jsx';
 import { ResultDisplay, QUICK_PROMPTS, IngestPanel } from '../NavigatorAI.jsx';
 import { AddExpenseForm } from './AddExpenseForm.jsx';
 import { GcashCalculator } from './GcashCalculator.jsx';
-
-const SUPABASE_URL = 'https://rhoxpfuephkuaartuqou.supabase.co';
 
 const EXPENSE_PROMPTS = QUICK_PROMPTS.filter(p =>
   ['Total spend', 'Budget status', 'Pending milestones', 'Recent expenses'].includes(p.label)
