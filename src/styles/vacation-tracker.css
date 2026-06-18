@@ -1,0 +1,114 @@
+/* ════════════════ VACATION TRACKER (.vt-*) ════════════════
+   Scholar-facing reward-trip timeline. Inherits the .sp-* dashboard
+   shell (scholar-home.css); this file styles only the trip-specific UI. */
+
+.vt-loading {
+  color: var(--ngs-muted);
+  font-family: var(--ngs-mono); font-size: 12px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 8px 2px;
+}
+
+/* ── summary card ── */
+.vt-summary {
+  background: var(--ngs-navy);
+  border-radius: 8px;
+  padding: 18px 18px;
+  margin-bottom: 16px;
+}
+.vt-summary-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;
+}
+@media (max-width: 480px) {
+  .vt-summary-grid { grid-template-columns: 1fr 1fr; }
+  .vt-stat:last-child { grid-column: 1 / -1; }
+}
+.vt-stat { display: flex; flex-direction: column; gap: 5px; }
+.vt-stat-val {
+  font-family: var(--ngs-display); font-size: 26px; font-weight: 400;
+  color: var(--ngs-gold); line-height: 1; letter-spacing: -0.02em;
+}
+.vt-stat-val--sm { font-size: 16px; line-height: 1.25; }
+.vt-stat-label {
+  font-family: var(--ngs-mono); font-size: 9.5px; font-weight: 500;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(250,247,240,0.5);
+}
+
+.vt-intro {
+  font-size: 14px; line-height: 1.6; color: var(--ngs-ink-soft);
+  margin: 0 0 22px; max-width: 56ch;
+}
+
+/* ── timeline ── */
+.vt-timeline { display: flex; flex-direction: column; }
+
+.vt-trip { display: flex; align-items: flex-start; gap: 14px; }
+
+.vt-trip-rail {
+  display: flex; flex-direction: column; align-items: center;
+  align-self: stretch;
+}
+.vt-trip-badge {
+  width: 34px; height: 34px; border-radius: 999px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; line-height: 1;
+  background: var(--ngs-paper-2); border: 1px solid var(--ngs-rule);
+}
+.vt-trip.is-done .vt-trip-badge {
+  background: var(--ngs-green); color: #fff;
+  border-color: var(--ngs-green); font-size: 13px; font-weight: 700;
+}
+.vt-trip.is-booked .vt-trip-badge {
+  border-color: var(--ngs-gold); color: var(--ngs-navy);
+  background: rgba(201,168,76,0.16);
+}
+.vt-trip.is-planned .vt-trip-badge {
+  border-style: dashed; color: var(--ngs-muted);
+}
+.vt-trip-connector {
+  flex: 1; width: 2px; min-height: 14px;
+  background: var(--ngs-rule); margin: 3px 0;
+}
+.vt-trip.is-done .vt-trip-connector { background: var(--ngs-green); opacity: 0.4; }
+
+.vt-trip-body {
+  flex: 1; padding-bottom: 20px; min-width: 0;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.vt-trip-head {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.vt-trip-dest {
+  font-family: var(--ngs-display); font-size: 18px;
+  color: var(--ngs-navy); letter-spacing: -0.01em;
+}
+.vt-trip.is-planned .vt-trip-dest { color: var(--ngs-ink-soft); }
+
+.vt-trip-pill {
+  font-family: var(--ngs-mono); font-size: 9.5px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 999px;
+}
+.vt-trip-pill.is-done    { background: rgba(47,125,85,0.14);  color: var(--ngs-green); }
+.vt-trip-pill.is-booked  { background: rgba(201,168,76,0.16); color: var(--ngs-warn);  }
+.vt-trip-pill.is-planned { background: var(--ngs-rule);       color: var(--ngs-muted); }
+
+.vt-trip-meta {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-muted);
+}
+.vt-trip-sem {
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.vt-trip-amt {
+  color: var(--ngs-navy); font-weight: 600;
+}
+.vt-trip-amt::before { content: '· '; color: var(--ngs-muted); font-weight: 400; }
+
+/* ── empty state ── */
+.vt-empty {
+  padding: 28px 18px; text-align: center;
+  color: var(--ngs-muted); font-size: 14px; line-height: 1.6;
+  border: 1px dashed var(--ngs-rule); border-radius: 8px;
+}

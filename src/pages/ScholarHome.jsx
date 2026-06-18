@@ -171,7 +171,7 @@ export function ScholarHome({ scholarKey }) {
 
   const TRACKERS = [
     { key: 'english',  icon: <IconClock size={19} />,     label: 'English Hours',    sub: englishSub, href: `/english/${scholarKey}` },
-    { key: 'vacation', icon: <IconIsland size={19} />,    label: 'Vacation Tracker', sub: 'Trip log', href: `/${scholarKey}#travel` },
+    { key: 'vacation', icon: <IconIsland size={19} />,    label: 'Vacation Tracker', sub: liveData?.nextTravel ? `Next · ${liveData.nextTravel.dest}` : 'Trip log', href: `/vacation/${scholarKey}` },
     { key: 'career',   icon: <IconBriefcase size={19} />, label: 'Career Tracker',   sub: 'Pathway steps', href: null },
     { key: 'rewards',  icon: <IconTrophy size={19} />,    label: 'Rewards Tracker',  sub: `${rewardsCount} unlocked`, reward: true, href: `/${scholarKey}#milestones` },
     { key: 'messages', icon: <IconMessage size={19} />,   label: 'Messages',         sub: 'No new messages', href: null },
