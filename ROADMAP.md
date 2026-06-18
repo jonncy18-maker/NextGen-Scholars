@@ -122,7 +122,7 @@ items below the line need deployment or larger work.
 | `scholar-summary` `qty=0` inflated totals to 1 (inconsistent with tier1/context) | ✅ Code done — **needs deploy** |
 | `.env` was tracked in git; now untracked + gitignored, `.env.example` added | ✅ Done |
 | **`ask-scholar` is unauthenticated** — trusts a client-supplied `scholar` key with the service-role key; anyone who knows `claire`/`april` can read that scholar's data | 🟡 **Accepted risk** (owner decision, 2026-06) — data is minimally private for this phase. Real fix is Step 21 (PIN auth) + Step 18 (RLS). See note below. |
-| **GPA risk trigger assumes a percentage scale** — misfires on UV-scale (1.0–5.0) GPAs; needs a grade-scale column to fix | 🔵 Pending — `gpa_risk_trigger.sql` |
+| **GPA risk trigger scale-awareness** — trigger is now scale-aware via a `scholars.gpa_scale` column (`percent` default / `uv`), with a defensive guard that skips raw-UV values (≤5) mis-entered under the percent scale. `academics.gpa`/`gpa_floor` remain percentages by default (UV converted via `uvToPct` at entry). | ✅ Code done — **needs re-running `supabase/gpa_risk_trigger.sql`** in the SQL editor |
 | **Tier 3 standardised on Gemini** — removed all reachable Claude code paths in `ask`/`ask-scholar`/`tier3.ts` and the mentor model toggle; added a Gemini English-ingest path so English ingest no longer needs `ANTHROPIC_KEY`. `ANTHROPIC_KEY` is now unused. | ✅ Code done — **needs `supabase functions deploy ask ask-scholar`** |
 
 ---
