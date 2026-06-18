@@ -9,7 +9,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { tier1Resolve } from './tier1.ts'
 import { buildContext } from './context.ts'
 import { tier2Ask } from './tier2.ts'
-import { tier3Ingest, tier3GradeIngest, tier3IngestClaude, tier3GradeIngestClaude } from './tier3.ts'
+import { tier3Ingest, tier3GradeIngest } from './tier3.ts'
 import { resolveSendAction } from './action.ts'
 
 const cors = {
@@ -30,7 +30,6 @@ interface AskBody {
   text?:   string
   sem?:    string
   file?:   { base64: string; mime: string }
-  model?:  'gemini' | 'claude'
 }
 
 Deno.serve(async (req) => {
@@ -57,7 +56,7 @@ Deno.serve(async (req) => {
     return json({ error: 'Invalid JSON body' }, 400)
   }
 
-  const { scholar, type, text, sem, file, model: modelPref } = body
+  const { scholar, type, text, sem, file } = body
   if (!scholar) return json({ error: 'Missing required field: scholar' }, 400)
   if (type !== 'query' && type !== 'ingest' && type !== 'grade_ingest' && type !== 'coach' && type !== 'action') {
     return json({ error: 'Field "type" must be "query", "ingest", "grade_ingest", "coach", or "action"' }, 400)
@@ -80,18 +79,6 @@ Deno.serve(async (req) => {
   if (type === 'ingest') {
     if (!file && !text) return json({ error: 'Ingest request requires file or text' }, 400)
 
-    if (modelPref === 'claude') {
-      const anthropicKey = Deno.env.get('ANTHROPIC_KEY')
-      if (!anthropicKey) return json({ tier: 3, status: 'not_configured', hint: 'Add ANTHROPIC_KEY to Supabase secrets.' }, 503)
-      try {
-        const t3 = await tier3IngestClaude({ text, file }, scholar, anthropicKey)
-        if (t3.answered) return json({ tier: 3, items: t3.items, model: t3.model, escalated: t3.escalated })
-        return json({ tier: 3, status: 'error', error: t3.error }, 502)
-      } catch (err) {
-        return json({ error: (err as Error).message ?? 'Ingest failed' }, 500)
-      }
-    }
-
     const geminiKey = Deno.env.get('GOOGLE_AI_KEY')
     if (!geminiKey) return json({ tier: 3, status: 'not_configured', hint: 'Add GOOGLE_AI_KEY to Supabase secrets.' }, 503)
     try {
@@ -106,18 +93,6 @@ Deno.serve(async (req) => {
   // type === 'grade_ingest' — Tier 3 extracts grade entries from a screenshot / text
   if (type === 'grade_ingest') {
     if (!file && !text) return json({ error: 'Grade ingest request requires file or text' }, 400)
-
-    if (modelPref === 'claude') {
-      const anthropicKey = Deno.env.get('ANTHROPIC_KEY')
-      if (!anthropicKey) return json({ tier: 3, status: 'not_configured', hint: 'Add ANTHROPIC_KEY to Supabase secrets.' }, 503)
-      try {
-        const t3 = await tier3GradeIngestClaude({ text, file }, scholar, anthropicKey)
-        if (t3.answered) return json({ tier: 3, grades: t3.grades, model: t3.model, escalated: t3.escalated })
-        return json({ tier: 3, status: 'error', error: t3.error }, 502)
-      } catch (err) {
-        return json({ error: (err as Error).message ?? 'Grade ingest failed' }, 500)
-      }
-    }
 
     const geminiKey = Deno.env.get('GOOGLE_AI_KEY')
     if (!geminiKey) return json({ tier: 3, status: 'not_configured', hint: 'Add GOOGLE_AI_KEY to Supabase secrets.' }, 503)

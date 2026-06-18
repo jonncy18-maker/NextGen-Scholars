@@ -53,7 +53,7 @@ function ReviewTable({ sessions: initial, categories, onDiscard, onConfirm }) {
   return (
     <div className="eip-review">
       <div className="eip-review-header">
-        <span className="eip-ai-badge">AI · Claude</span>
+        <span className="eip-ai-badge">AI · Gemini</span>
         <span className="eip-review-title">
           {sessions.length} session{sessions.length !== 1 ? 's' : ''} found — review before saving
         </span>
@@ -177,7 +177,7 @@ export function EnglishIngestPanel({ scholarKey, categories, periodId, sem, onSa
       <div className="eip-header">
         <span className="eip-ai-badge">AI</span>
         <span className="eip-title">Paste your ChatGPT session summary</span>
-        <span className="eip-hint">Claude extracts sessions · you review before saving</span>
+        <span className="eip-hint">Gemini extracts sessions · you review before saving</span>
       </div>
       <form className="eip-form" onSubmit={handleExtract}>
         <textarea
@@ -192,7 +192,7 @@ export function EnglishIngestPanel({ scholarKey, categories, periodId, sem, onSa
         {loading && (
           <div className="eip-loading">
             <span className="eip-dot" /><span className="eip-dot" /><span className="eip-dot" />
-            <span>Claude is reading your summary…</span>
+            <span>Gemini is reading your summary…</span>
           </div>
         )}
         <button className="eip-submit" type="submit" disabled={!text.trim() || loading}>

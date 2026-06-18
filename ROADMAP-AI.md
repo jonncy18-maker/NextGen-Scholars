@@ -15,7 +15,7 @@ User query
                │ escalates only if needed
        ┌───────┴────────┐
        ▼                ▼
-  Gemini API       Claude API
+  Gemini API       Gemini API
   (advisory /      (data ingestion /
   outside info)    multimodal)
 ```
@@ -128,7 +128,7 @@ Current RLS policies are overly permissive for anon users. Before exposing the A
 
 ### P2 · Human-in-the-loop review UI
 Before any AI-generated write hits the database, the mentor or scholar reviews a diff card:
-- "Claude read this receipt and extracted 3 expenses. Confirm?"
+- "Gemini read this receipt and extracted 3 expenses. Confirm?"
 - Edit fields inline, then confirm or discard
 
 ---
@@ -167,7 +167,7 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 | ✅ 4 | P1 | Test Tier 1 end-to-end on the mentor dashboard; tune until it handles 80%+ of common queries |
 | ✅ 5 | P1 | Build scholar context builder (compact JSON for LLM injection) — `context.ts`; includes `SCHEMA_REGISTRY` for future-proofing |
 | ✅ 6 | P1 | Wire Gemini for Tier 2 (advisory) — add `GOOGLE_AI_KEY` to Supabase secrets |
-| ✅ 7 | P1 | Wire Claude for Tier 3 (ingestion) — model pinned to `claude-sonnet-4-6` |
+| ✅ 7 | P1 | Tier 3 (ingestion) standardised on Gemini 2.5 Flash — all Claude code paths and the mentor model toggle removed; `ANTHROPIC_KEY` no longer used |
 | ✅ 8 | P1 | Confirmation UI for AI-proposed writes — ReviewCard in NavigatorAI (already built) |
 | ✅ 9 | P1 | Coaching note generator — "Draft coaching note" button on each ScholarCard in StatusSection |
 | ✅ 10 | P1 | Academic risk alerts — DB trigger on `academics`; surfaces in AlertsSection |

@@ -99,8 +99,8 @@ snapshot (nav shows an offline indicator).
 A tiered intelligence system behind the `/ask` family of Edge Functions. Tier 1 is a
 deterministic, rule-based SQL resolver (no LLM, ~80% of queries); Tier 2 is Gemini
 advisory; Tier 3 is Gemini 2.5 Flash ingestion (receipts, grade reports). See
-`ROADMAP-AI.md` for full status. API keys (`GOOGLE_AI_KEY`, optional `ANTHROPIC_KEY`)
-live only in Supabase secrets — never in the client.
+`ROADMAP-AI.md` for full status. The AI layer is Gemini-only; the `GOOGLE_AI_KEY`
+secret lives only in Supabase secrets — never in the client.
 
 ## Known issues / drift watch
 
