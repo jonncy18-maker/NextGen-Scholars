@@ -173,7 +173,7 @@ export function ScholarHome({ scholarKey }) {
     { key: 'english',  icon: <IconClock size={19} />,     label: 'English Hours',    sub: englishSub, href: `/english/${scholarKey}` },
     { key: 'vacation', icon: <IconIsland size={19} />,    label: 'Vacation Tracker', sub: liveData?.nextTravel ? `Next · ${liveData.nextTravel.dest}` : 'Trip log', href: `/vacation/${scholarKey}` },
     { key: 'career',   icon: <IconBriefcase size={19} />, label: 'Career Tracker',   sub: 'Pathway steps', href: null },
-    { key: 'rewards',  icon: <IconTrophy size={19} />,    label: 'Rewards Tracker',  sub: `${rewardsCount} unlocked`, reward: true, href: `/${scholarKey}#milestones` },
+    { key: 'rewards',  icon: <IconTrophy size={19} />,    label: 'Rewards Tracker',  sub: liveData?.nextMilestone ? `Next · ${liveData.nextMilestone.name}` : `${rewardsCount} unlocked`, reward: true, href: `/milestones/${scholarKey}` },
     { key: 'messages', icon: <IconMessage size={19} />,   label: 'Messages',         sub: 'No new messages', href: null },
     { key: 'docs',     icon: <IconDocument size={19} />,  label: 'Documents',        sub: 'Files & records', href: null },
   ].filter(t => !(isExpensesOnly && ['english', 'vacation', 'career', 'rewards'].includes(t.key)));

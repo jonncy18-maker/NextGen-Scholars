@@ -28,6 +28,7 @@ import { GradesSection } from '../components/GradesSection.jsx';
 import { NavFooter } from '../components/NavFooter.jsx';
 import { BudgetSection } from '../components/BudgetSection.jsx';
 import { TravelModule } from '../components/TravelModule.jsx';
+import { MilestonesModule } from '../components/MilestonesModule.jsx';
 import { ProgramDetailsSection } from '../components/ProgramDetailsSection.jsx';
 
 if (!NGS_DATA || !NGS_DATA.config) {
@@ -468,11 +469,26 @@ export function Navigator() {
             } />
             <Route path="travel" element={
               <SectionErrorBoundary name="Travel">
-                <TravelModule id="sec-travel" collapsed={false} onToggle={() => {}} />
+                <TravelModule id="sec-travel" />
+              </SectionErrorBoundary>
+            } />
+            <Route path="milestones" element={
+              <SectionErrorBoundary name="Milestones">
+                <MilestonesModule id="sec-milestones" />
               </SectionErrorBoundary>
             } />
           </Routes>
         </main>
+        {unlocked && !aiDrawerOpen && (
+          <button
+            className="nav-ai-fab"
+            onClick={() => openDrawer('query')}
+            title="Ask the Navigator AI"
+          >
+            <span className="nav-ai-fab-dot" />
+            Ask AI
+          </button>
+        )}
         <NavFooter sheetsStatus={sheetsStatus} writeError={writeError} />
       </FxCtx.Provider>
     </DataCtx.Provider>

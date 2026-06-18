@@ -3839,6 +3839,115 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   padding: 18px 20px; font-size: 13px; color: var(--ngs-muted);
 }
 
+/* ── Mentor expense drawer (.me-*) — sits under a completed reward in the
+   Travel/Milestones modules. Mentor-only; scholars never see this. ── */
+.me-wrap { margin-top: 8px; }
+
+.me-toggle {
+  background: none; border: none; cursor: pointer; padding: 0;
+  font-family: var(--ngs-mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ngs-navy); opacity: 0.6;
+  display: flex; align-items: center; gap: 5px;
+  transition: opacity 0.15s;
+}
+.me-toggle:hover { opacity: 1; }
+.me-toggle-icon { font-size: 8px; }
+
+.me-drawer {
+  margin-top: 8px;
+  border: 1px solid var(--ngs-rule); border-radius: 6px;
+  overflow: hidden; background: #fff;
+}
+
+.me-list { border-bottom: 1px solid var(--ngs-rule); }
+.me-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 11px; border-bottom: 1px solid var(--ngs-rule);
+  font-size: 12.5px;
+}
+.me-row:last-child { border-bottom: none; }
+.me-item { flex: 1; color: var(--ngs-ink); }
+.me-cat {
+  font-family: var(--ngs-mono); font-size: 9px; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--ngs-muted);
+}
+.me-date {
+  font-family: var(--ngs-mono); font-size: 9.5px; color: var(--ngs-muted);
+  white-space: nowrap;
+}
+.me-amt {
+  font-family: var(--ngs-mono); font-size: 11.5px; font-weight: 700;
+  color: var(--ngs-ink); white-space: nowrap;
+}
+.me-empty {
+  padding: 9px 11px; font-size: 11.5px; color: var(--ngs-muted); font-style: italic;
+}
+.me-total {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 11px; background: rgba(27,42,74,0.04);
+  border-bottom: 1px solid var(--ngs-rule);
+  font-family: var(--ngs-mono); font-size: 10.5px; font-weight: 700;
+  color: var(--ngs-navy); letter-spacing: 0.05em;
+}
+
+.me-form { padding: 11px; display: flex; flex-direction: column; gap: 8px; }
+.me-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 420px) { .me-form-row { grid-template-columns: 1fr; } }
+.me-field { display: flex; flex-direction: column; gap: 3px; }
+.me-label {
+  font-family: var(--ngs-mono); font-size: 8.5px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ngs-muted);
+}
+.me-input, .me-select {
+  background: #fff; border: 1px solid var(--ngs-rule); border-radius: 5px;
+  padding: 6px 8px; font-family: inherit; font-size: 12.5px; color: var(--ngs-ink);
+  width: 100%; box-sizing: border-box;
+}
+.me-input:focus, .me-select:focus {
+  outline: none; border-color: var(--ngs-navy);
+  box-shadow: 0 0 0 2px rgba(27,42,74,0.1);
+}
+.me-submit {
+  align-self: flex-end;
+  background: var(--ngs-navy); color: var(--ngs-gold);
+  border: none; border-radius: 6px; cursor: pointer;
+  padding: 8px 16px; font-family: var(--ngs-mono);
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  transition: opacity 0.15s;
+}
+.me-submit:hover:not(:disabled) { opacity: 0.85; }
+.me-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+.me-err { font-size: 11.5px; color: var(--ngs-warn, #b5532f); font-family: var(--ngs-mono); }
+
+/* ── Floating "Ask AI" button — opens the Navigator AI drawer, matches the
+   public .paw-fab look so the mentor view has the same affordance as every
+   other page. ── */
+.nav-ai-fab {
+  position: fixed; z-index: 290;
+  bottom: calc(24px + env(safe-area-inset-bottom)); right: 24px;
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 18px 10px 16px;
+  border-radius: 28px; border: none;
+  background: var(--ngs-navy); color: var(--ngs-gold);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+  font-family: var(--ngs-sans, 'Manrope', sans-serif);
+  font-size: 13.5px; font-weight: 600; cursor: pointer;
+  transition: opacity 0.15s, transform 0.15s;
+}
+.nav-ai-fab:hover { opacity: 0.88; transform: translateY(-2px); }
+.nav-ai-fab-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--ngs-gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.25);
+}
+@media (max-width: 600px) {
+  .nav-ai-fab { padding: 0; width: 52px; height: 52px; justify-content: center; gap: 0; }
+  .nav-ai-fab span:not(.nav-ai-fab-dot) { display: none; }
+}
+@media (max-width: 480px) {
+  .nav-ai-fab { bottom: calc(16px + env(safe-area-inset-bottom)); right: 16px; }
+}
+
 /* ── Program Details section (.pgd-*) ── */
 .pgd-body { padding: 0 0 20px; }
 .pgd-loading { padding: 20px 0; font-size: 13px; color: var(--ngs-muted); font-style: italic; }
