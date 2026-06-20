@@ -63,31 +63,45 @@ function bufToBase64(buf: ArrayBuffer): string {
 }
 
 interface ProxyBody {
-  action:    string
-  filename?: string
-  mimeType?: string
-  base64?:   string
-  fileId?:   string
+  action:      string
+  filename?:   string
+  mimeType?:   string
+  base64?:     string
+  fileId?:     string
+  scholar_key?: string
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
+  let body: ProxyBody
+  try { body = await req.json() } catch { return json({ error: 'Invalid JSON body' }, 400) }
+
   const authHeader = req.headers.get('Authorization')
-  if (!authHeader) return json({ error: 'Unauthorized' }, 401)
 
   const sb = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   )
-  const { data: { user }, error: authErr } = await sb.auth.getUser(
-    authHeader.replace('Bearer ', '')
-  )
-  if (authErr || !user) return json({ error: 'Unauthorized' }, 401)
 
-  let body: ProxyBody
-  try { body = await req.json() } catch { return json({ error: 'Invalid JSON body' }, 400) }
+  // Scholar upload path: upload only, no JWT required — scholar_key validated against DB.
+  // Download/delete/get_base64 still require full mentor JWT to prevent IDOR.
+  const isScholarUpload = body.action === 'upload' && !authHeader && !!body.scholar_key
+  if (isScholarUpload) {
+    const { data: rows, error: skErr } = await sb
+      .from('scholars')
+      .select('scholar_key')
+      .eq('scholar_key', body.scholar_key)
+      .limit(1)
+    if (skErr || !rows || rows.length === 0) return json({ error: 'Invalid scholar key' }, 401)
+  } else {
+    if (!authHeader) return json({ error: 'Unauthorized' }, 401)
+    const { data: { user }, error: authErr } = await sb.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    )
+    if (authErr || !user) return json({ error: 'Unauthorized' }, 401)
+  }
 
   // IDOR guard: read/delete actions may only touch file IDs that the app has
   // registered in the `documents` table. Without this, any authenticated caller
