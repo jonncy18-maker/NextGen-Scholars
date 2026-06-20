@@ -764,11 +764,19 @@ table.exp thead th.sort-active { color: var(--ngs-navy); }
 .pending-due-empty { font-size: 13px; color: var(--ngs-ink-soft); }
 .pending-due-rows { display: flex; flex-direction: column; gap: 6px; }
 .pending-due-row {
-  display: grid; grid-template-columns: 110px 1fr auto auto;
-  gap: 10px; align-items: baseline;
+  display: grid; grid-template-columns: 110px 1fr auto auto auto;
+  gap: 10px; align-items: center;
   font-size: 13px; color: var(--ngs-ink);
   padding: 6px 8px; border-radius: 5px; background: rgba(181,134,42,0.05);
 }
+.pending-due-mark-sent {
+  font-family: var(--ngs-mono); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 4px; cursor: pointer;
+  border: 1px solid var(--ngs-green); color: var(--ngs-green); background: none;
+  white-space: nowrap;
+}
+.pending-due-mark-sent:hover { background: #EBF5EB; }
 .pending-due-day {
   font-family: var(--ngs-mono); font-size: 10.5px; font-weight: 600;
   color: var(--ngs-amber); white-space: nowrap;

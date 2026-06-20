@@ -853,6 +853,7 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
                               <span className="pending-due-item">{r.item}</span>
                               <span className="pending-due-cat">{r.cat}</span>
                               <span className="pending-due-amt">{$fmt((r.amount || 0) * (r.qty || 1), currency)}</span>
+                              <button className="pending-due-mark-sent" onClick={() => handleMarkSent(r)}>Mark sent</button>
                             </div>
                           );
                         })}
