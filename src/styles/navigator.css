@@ -740,6 +740,9 @@ table.exp thead th.sort-active { color: var(--ngs-navy); }
 .pending-send-due-btn.active {
   background: var(--ngs-amber); color: #fff; border-color: var(--ngs-amber);
 }
+.pending-send-due-btn--past { color: var(--ngs-red); border-color: rgba(177,27,42,0.3); }
+.pending-send-due-btn--past:hover { background: rgba(177,27,42,0.08); }
+.pending-send-due-btn--past.active { background: var(--ngs-red); color: #fff; border-color: var(--ngs-red); }
 
 /* Due-date expanded list */
 .pending-due-list {

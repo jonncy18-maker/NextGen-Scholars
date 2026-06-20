@@ -782,10 +782,12 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
             };
             const dueNowRows  = pendingRows.filter(r => { const o = dayOffset(r); return o !== null && o >= 0 && o <= 2; });
             const weekOutRows = pendingRows.filter(r => { const o = dayOffset(r); return o !== null && o >= 3 && o <= 7; });
+            const pastDueRows = pendingRows.filter(r => { const o = dayOffset(r); return o !== null && o < 0; });
             const dueNowTotal  = dueNowRows.reduce((t, r)  => t + (r.amount || 0) * (r.qty || 1), 0);
             const weekOutTotal = weekOutRows.reduce((t, r) => t + (r.amount || 0) * (r.qty || 1), 0);
+            const pastDueTotal = pastDueRows.reduce((t, r) => t + (r.amount || 0) * (r.qty || 1), 0);
 
-            const activeList = dueView === 'now' ? dueNowRows : dueView === 'week' ? weekOutRows : [];
+            const activeList = dueView === 'now' ? dueNowRows : dueView === 'week' ? weekOutRows : dueView === 'past' ? pastDueRows : [];
 
             return (
               <>
@@ -798,6 +800,13 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
                         : `${pendingRows.length} item${pendingRows.length !== 1 ? 's' : ''} not yet sent · all rows`}
                     </div>
                     <div className="pending-send-due-btns">
+                      <button
+                        className={`pending-send-due-btn pending-send-due-btn--past${dueView === 'past' ? ' active' : ''}`}
+                        onClick={() => setDueView(v => v === 'past' ? null : 'past')}
+                        title="Unsent expenses with a date in the past"
+                      >
+                        Past Due{pastDueRows.length > 0 ? ` (${pastDueRows.length})` : ''}
+                      </button>
                       <button
                         className={`pending-send-due-btn${dueView === 'now' ? ' active' : ''}`}
                         onClick={() => setDueView(v => v === 'now' ? null : 'now')}
@@ -827,9 +836,9 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
                   <div className="pending-due-list">
                     <div className="pending-due-list-header">
                       <span className="pending-due-list-title">
-                        {dueView === 'now' ? 'Due Now — next 3 days' : '1 Week Out — days 3–7'}
+                        {dueView === 'past' ? 'Past Due — overdue & unsent' : dueView === 'now' ? 'Due Now — next 3 days' : '1 Week Out — days 3–7'}
                       </span>
-                      <span className="pending-due-list-total">{$fmt(dueView === 'now' ? dueNowTotal : weekOutTotal, currency)}</span>
+                      <span className="pending-due-list-total">{$fmt(dueView === 'past' ? pastDueTotal : dueView === 'now' ? dueNowTotal : weekOutTotal, currency)}</span>
                     </div>
                     {activeList.length === 0 ? (
                       <div className="pending-due-empty">No expenses in this window.</div>
@@ -837,7 +846,7 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
                       <div className="pending-due-rows">
                         {activeList.map(r => {
                           const offset = dayOffset(r);
-                          const dayLabel = offset === 0 ? 'Today' : offset === 1 ? 'Tomorrow' : offset === 2 ? 'Day after tomorrow' : `In ${offset} days`;
+                          const dayLabel = offset === 0 ? 'Today' : offset === 1 ? 'Tomorrow' : offset === 2 ? 'Day after tomorrow' : offset < 0 ? `${Math.abs(offset)} day${Math.abs(offset) !== 1 ? 's' : ''} ago` : `In ${offset} days`;
                           return (
                             <div key={r.id} className="pending-due-row">
                               <span className="pending-due-day">{dayLabel}</span>
