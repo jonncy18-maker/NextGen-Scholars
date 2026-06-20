@@ -608,3 +608,22 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
   padding: 3px 8px !important;
   border-radius: 12px !important;
 }
+
+
+/* ── Scholar Documents page (.sd-*) ── */
+.sd-loading {
+  color: var(--ngs-muted);
+  font-family: var(--ngs-mono); font-size: 12px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 8px 2px;
+}
+
+.sd-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 14px; flex-wrap: wrap;
+}
+
+.sd-count {
+  font-family: var(--ngs-mono); font-size: 12px;
+  color: var(--ngs-muted); letter-spacing: 0.06em;
+}
