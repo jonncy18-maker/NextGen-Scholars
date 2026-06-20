@@ -75,7 +75,12 @@ export function Navigator() {
 
   // Reactive FX rate (auto-refreshes in market mode), shared with profile pages
   // via localStorage. Replaces a one-time storedRate() read that never updated.
-  const { fxRate } = useFxState();
+  const { fxRate, fxStatus, currency, setCurrency, handleModeChange } = useFxState();
+
+  function handleExpCurrencyChange(c) {
+    setCurrency(c);
+    if (c === 'USD') handleModeChange('market');
+  }
   const [liveGpa, setLiveGpa]   = useState({});
   const [sheetsStatus, setSheetsStatus] = useState('loading');
   const [refreshKey, setRefreshKey]     = useState(0);
@@ -413,7 +418,10 @@ export function Navigator() {
                 />
                 <SectionErrorBoundary name="Expenses">
                   <ExpenseSection
-                    currency="PHP"
+                    currency={currency}
+                    onCurrencyChange={handleExpCurrencyChange}
+                    fxRate={fxRate}
+                    fxStatus={fxStatus}
                     addedExpenses={addedExpenses}
                     onAddExpense={handleAddExpense}
                     onEditExpense={handleEditExpense}

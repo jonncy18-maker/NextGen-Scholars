@@ -31,7 +31,7 @@ function SortTh({ label, field, sortField, sortDir, onSort, className }) {
   );
 }
 
-export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditExpense, onDeleteExpense, id, collapsed, onToggle, workbenchSlot }) {
+export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, addedExpenses, onAddExpense, onEditExpense, onDeleteExpense, id, collapsed, onToggle, workbenchSlot }) {
   const $fmt = useFmt();
   const { D, scholarKeys } = useData();
   const todayISO = new Date().toISOString().split('T')[0];
@@ -747,6 +747,23 @@ export function ExpenseSection({ currency, addedExpenses, onAddExpense, onEditEx
             </button>
           ))}
         </div>
+        {onCurrencyChange && (
+          <div className="exp-fx-toggle">
+            <button
+              className={`exp-fx-btn${currency === 'PHP' ? ' is-active' : ''}`}
+              onClick={() => onCurrencyChange('PHP')}
+            >₱ PHP</button>
+            <button
+              className={`exp-fx-btn${currency === 'USD' ? ' is-active' : ''}`}
+              onClick={() => onCurrencyChange('USD')}
+            >$ USD</button>
+            {currency === 'USD' && (
+              <span className="exp-fx-rate">
+                {fxStatus === 'loading' ? 'fetching…' : fxRate ? `@ ₱${fxRate.toFixed(1)}/$` : ''}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {(() => {

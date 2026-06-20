@@ -642,6 +642,23 @@ table.exp thead th.sort-active { color: var(--ngs-navy); }
 
 .exp-controls { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
 .exp-controls-right { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+.exp-fx-toggle {
+  display: inline-flex; align-items: center; gap: 2px;
+  background: var(--ngs-paper-2); border-radius: 6px; padding: 2px;
+}
+.exp-fx-btn {
+  font-family: var(--ngs-mono); font-size: 11px; font-weight: 600;
+  letter-spacing: 0.04em; padding: 4px 10px; border-radius: 4px;
+  border: none; background: none; color: var(--ngs-muted); cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.exp-fx-btn:hover { color: var(--ngs-navy); }
+.exp-fx-btn.is-active { background: var(--ngs-navy); color: #fff; }
+.exp-fx-rate {
+  font-family: var(--ngs-mono); font-size: 10px; color: var(--ngs-muted);
+  letter-spacing: 0.06em; padding: 0 6px;
+}
 .tabs { display: inline-flex; gap: 6px; }
 .tab {
   font-family: var(--ngs-mono); font-size: 12px; letter-spacing: 0.04em;
