@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../lib/supabase.js';
+import { supabase, SUPABASE_URL } from '../lib/supabase.js';
+import { SEMESTER_OPTIONS } from '../constants.js';
 import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
 
 const DOC_TYPES = ['receipt', 'transcript', 'visa', 'oet', 'other'];
+const ACCEPTED_TYPES = 'image/jpeg,image/png,image/webp,image/gif,application/pdf';
 
 const TYPE_STYLE = {
   receipt:    { bg: '#EBF5EB', color: '#2F7D55' },
@@ -20,9 +22,9 @@ const STATUS_MAP = {
 };
 
 const FALLBACK = {
-  claire:     { name: 'Claire',     homeHref: '/home/claire' },
-  april:      { name: 'April',      homeHref: '/home/april' },
-  janndilyne: { name: 'Janndilyne', homeHref: '/home/janndilyne' },
+  claire:     { name: 'Claire',     homeHref: '/home/claire',     sem: 'Y2S1' },
+  april:      { name: 'April',      homeHref: '/home/april',      sem: 'TG11S1' },
+  janndilyne: { name: 'Janndilyne', homeHref: '/home/janndilyne', sem: 'Y1S1' },
 };
 
 function TypeBadge({ type }) {
@@ -35,16 +37,27 @@ function TypeBadge({ type }) {
 }
 
 function StatusBadge({ status }) {
-  const { label, cls } = STATUS_MAP[status] || { label: status, cls: 'sd-status-pending' };
+  const { label, cls } = STATUS_MAP[status] || { label: status, cls: 'doc-status-pending' };
   return <span className={`doc-status-badge ${cls}`}>{label}</span>;
 }
 
 export function ScholarDocuments({ scholarKey }) {
   const fallback = FALLBACK[scholarKey] || FALLBACK.claire;
-  const [name, setName]       = useState(fallback.name);
-  const [docs, setDocs]       = useState(null);
+  const [name, setName]             = useState(fallback.name);
+  const [currentSem, setCurrentSem] = useState(fallback.sem);
+  const [docs, setDocs]             = useState(null);
   const [filterType, setFilterType] = useState('all');
   const [loadError, setLoadError]   = useState(null);
+
+  // Upload modal state
+  const [uploadOpen, setUploadOpen]   = useState(false);
+  const [upFile, setUpFile]           = useState(null);
+  const [upType, setUpType]           = useState('receipt');
+  const [upSem, setUpSem]             = useState(fallback.sem);
+  const [upNotes, setUpNotes]         = useState('');
+  const [uploading, setUploading]     = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     sessionStorage.setItem('ngs_auth_scholar', scholarKey);
@@ -55,12 +68,13 @@ export function ScholarDocuments({ scholarKey }) {
     async function load() {
       try {
         const [scholarRes, docsRes] = await Promise.all([
-          supabase.from('scholars').select('first_name').eq('scholar_key', scholarKey).limit(1),
+          supabase.from('scholars').select('first_name, current_sem').eq('scholar_key', scholarKey).limit(1),
           supabase.from('documents').select('*').eq('scholar', scholarKey).order('uploaded_at', { ascending: false }),
         ]);
         if (cancelled) return;
-        const fn = scholarRes.data?.[0]?.first_name;
-        if (fn) setName(fn);
+        const row = scholarRes.data?.[0];
+        if (row?.first_name) setName(row.first_name);
+        if (row?.current_sem) { setCurrentSem(row.current_sem); setUpSem(row.current_sem); }
         if (docsRes.error) throw docsRes.error;
         setDocs(docsRes.data ?? []);
       } catch (err) {
@@ -68,8 +82,82 @@ export function ScholarDocuments({ scholarKey }) {
       }
     }
     load();
-    return () => { cancelled = true; };
+
+    const ch = supabase.channel(`scholar_docs_${scholarKey}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'documents', filter: `scholar=eq.${scholarKey}` },
+        payload => setDocs(prev => prev ? [payload.new, ...prev] : [payload.new]))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'documents', filter: `scholar=eq.${scholarKey}` },
+        payload => setDocs(prev => prev ? prev.map(d => d.id === payload.new.id ? payload.new : d) : prev))
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'documents', filter: `scholar=eq.${scholarKey}` },
+        payload => setDocs(prev => prev ? prev.filter(d => d.id !== payload.old.id) : prev))
+      .subscribe();
+
+    return () => { cancelled = true; supabase.removeChannel(ch); };
   }, [scholarKey]);
+
+  function onFileInput(e) {
+    const f = e.target.files?.[0];
+    if (f) setUpFile({ name: f.name, blob: f, mime: f.type });
+  }
+
+  async function handleUpload(e) {
+    e.preventDefault();
+    if (!upFile) { setUploadError('Please select a file.'); return; }
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const base64 = await new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload  = () => res(reader.result.split(',')[1]);
+        reader.onerror = rej;
+        reader.readAsDataURL(upFile.blob);
+      });
+
+      const driveRes = await fetch(`${SUPABASE_URL}/functions/v1/drive-proxy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'upload',
+          scholar_key: scholarKey,
+          filename: upFile.name,
+          mimeType: upFile.mime,
+          base64,
+        }),
+      });
+      const driveData = await driveRes.json();
+      if (!driveRes.ok) throw new Error(driveData.error || 'Upload failed.');
+
+      const { error: dbErr } = await supabase.from('documents').insert({
+        scholar: scholarKey,
+        filename: upFile.name,
+        storage_path: driveData.fileId,
+        doc_type: upType,
+        sem: upSem || null,
+        notes: upNotes || null,
+        status: 'pending_review',
+      });
+      if (dbErr) throw new Error(`DB: ${dbErr.message}`);
+
+      setUpFile(null);
+      setUpNotes('');
+      setUploadOpen(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (err) {
+      setUploadError(err.message);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function openModal() {
+    setUpFile(null);
+    setUpType('receipt');
+    setUpSem(currentSem);
+    setUpNotes('');
+    setUploadError(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    setUploadOpen(true);
+  }
 
   const filtered = (docs ?? []).filter(d => filterType === 'all' || d.doc_type === filterType);
   const total = (docs ?? []).length;
@@ -102,16 +190,21 @@ export function ScholarDocuments({ scholarKey }) {
             <>
               <div className="sd-header">
                 <span className="sd-count">{total} file{total !== 1 ? 's' : ''} on record</span>
-                <select
-                  className="docs-filter-sel"
-                  value={filterType}
-                  onChange={e => setFilterType(e.target.value)}
-                >
-                  <option value="all">All types</option>
-                  {DOC_TYPES.map(t => (
-                    <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
-                  ))}
-                </select>
+                <div className="sd-header-actions">
+                  <select
+                    className="docs-filter-sel"
+                    value={filterType}
+                    onChange={e => setFilterType(e.target.value)}
+                  >
+                    <option value="all">All types</option>
+                    {DOC_TYPES.map(t => (
+                      <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                    ))}
+                  </select>
+                  <button className="docs-upload-trigger" onClick={openModal}>
+                    Upload ↑
+                  </button>
+                </div>
               </div>
 
               {loadError && (
@@ -121,7 +214,7 @@ export function ScholarDocuments({ scholarKey }) {
               {filtered.length === 0 ? (
                 <div className="docs-empty">
                   {total === 0
-                    ? 'No documents on file yet. Your mentor uploads receipts, transcripts, and records here.'
+                    ? 'No documents on file yet. Tap Upload ↑ to add receipts, transcripts, or other files.'
                     : 'No documents match the current filter.'}
                 </div>
               ) : (
@@ -154,6 +247,63 @@ export function ScholarDocuments({ scholarKey }) {
           <Link to="/" className="sp-home-link">← Home</Link>
         </footer>
       </div>
+
+      {/* Upload modal */}
+      {uploadOpen && (
+        <div className="docs-modal-overlay" onClick={e => { if (e.target === e.currentTarget) setUploadOpen(false); }}>
+          <form className="docs-modal" onSubmit={handleUpload}>
+            <div className="docs-modal-header">
+              <h3 className="docs-modal-title">Upload document</h3>
+              <button type="button" className="docs-modal-close" onClick={() => setUploadOpen(false)}>✕</button>
+            </div>
+
+            <label className="docs-field-label">Document type
+              <select className="docs-field-input" value={upType} onChange={e => setUpType(e.target.value)}>
+                {DOC_TYPES.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+              </select>
+            </label>
+
+            <label className="docs-field-label">Semester
+              <select className="docs-field-input" value={upSem} onChange={e => setUpSem(e.target.value)}>
+                {SEMESTER_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </label>
+
+            <label className="docs-field-label">File
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={ACCEPTED_TYPES}
+                className="docs-field-file"
+                onChange={onFileInput}
+                required
+              />
+            </label>
+            {upFile && <p className="docs-file-selected">{upFile.name}</p>}
+
+            <label className="docs-field-label">Notes (optional)
+              <input
+                type="text"
+                className="docs-field-input"
+                value={upNotes}
+                onChange={e => setUpNotes(e.target.value)}
+                placeholder="e.g. Semester 1 tuition receipt"
+              />
+            </label>
+
+            {uploadError && <p className="docs-upload-error">{uploadError}</p>}
+
+            <div className="docs-modal-footer">
+              <button type="submit" className="docs-submit-btn" disabled={uploading || !upFile}>
+                {uploading ? 'Uploading…' : 'Upload'}
+              </button>
+              <button type="button" className="docs-cancel-btn" onClick={() => setUploadOpen(false)} disabled={uploading}>
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }
