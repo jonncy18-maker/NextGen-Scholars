@@ -90,7 +90,7 @@ The immersion follows a structured journey across the United States:
 8. Return to Cebu
 
 STUDY DURING IMMERSION
-Scholars continue structured NCLEX study throughout the immersion:
+Scholars continue structured PNLE study throughout the immersion:
 - 6-8 study sessions per week
 - 3-4 hours per day of guided self-review and flashcard recall
 - Mock practice and self-tracking
