@@ -3011,6 +3011,31 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 .enp-cat-bar-fill--risk    { background: rgba(177,27,42,0.75); }
 .enp-cat-bar-val { font-family: var(--ngs-mono); font-size: 9.5px; color: var(--ngs-muted); white-space: nowrap; }
 
+/* Weekly hours chart */
+.enp-weekly-chart {
+  margin-bottom: 18px; padding: 14px;
+  background: var(--ngs-paper-2); border-radius: 6px;
+  border: 1px solid var(--ngs-rule);
+}
+.enp-weekly-chart-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+}
+.enp-weekly-chart-title {
+  font-family: var(--ngs-sans); font-size: 11px; font-weight: 700;
+  color: var(--ngs-navy); letter-spacing: 0.06em; text-transform: uppercase;
+}
+.enp-weekly-chart-legend { display: flex; gap: 14px; align-items: center; }
+.enp-wc-leg {
+  font-family: var(--ngs-mono); font-size: 10px; color: var(--ngs-muted);
+  display: flex; align-items: center; gap: 5px;
+}
+.enp-wc-leg::before {
+  content: ''; display: inline-block; width: 10px; height: 10px; border-radius: 2px;
+}
+.enp-wc-leg--exp::before { background: rgba(201,168,76,0.45); }
+.enp-wc-leg--act::before { background: var(--ngs-navy); opacity: 0.7; }
+.enp-weekly-chart-scroll { overflow-x: auto; }
+
 /* Add row (detail view) */
 .enp-add-row { display: flex; gap: 8px; margin: 12px 0 4px; }
 

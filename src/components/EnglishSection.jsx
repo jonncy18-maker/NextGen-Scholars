@@ -401,6 +401,163 @@ function SessionRow({ sess, period, onSaved, onDeleted }) {
   );
 }
 
+// ── Weekly hours chart ─────────────────────────────────────────────────────────
+
+function mondayOfWeek(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const dow = d.getDay();
+  d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+  return d;
+}
+
+function isoDate(d) { return d.toISOString().slice(0, 10); }
+
+function weeksInPeriod(startDate, endDate) {
+  const end = new Date(endDate + 'T00:00:00');
+  const weeks = [];
+  const cur = mondayOfWeek(startDate);
+  while (cur <= end) {
+    weeks.push(new Date(cur));
+    cur.setDate(cur.getDate() + 7);
+  }
+  return weeks;
+}
+
+function WeeklyHoursChart({ period, sessions }) {
+  if (!period?.hour_goal) return null;
+
+  const weeks = weeksInPeriod(period.start_date, period.end_date);
+  if (weeks.length === 0) return null;
+
+  const hourGoal = Number(period.hour_goal);
+  const expectedPerWeek = hourGoal / weeks.length;
+  const today = todayStr();
+
+  const weeklyActuals = weeks.map(wStart => {
+    const wEnd = new Date(wStart); wEnd.setDate(wEnd.getDate() + 6);
+    const ws = isoDate(wStart), we = isoDate(wEnd);
+    return sessions.filter(s => s.date >= ws && s.date <= we)
+      .reduce((sum, s) => sum + (s.duration_minutes || 0) / 60, 0);
+  });
+
+  const maxVal = Math.max(expectedPerWeek * 1.15, ...weeklyActuals, 1);
+
+  const BAR_W = 14, BAR_GAP = 4, GROUP_W = BAR_W * 2 + BAR_GAP + 10;
+  const PAD_L = 36, PAD_R = 8, PAD_TOP = 14, PAD_BOT = 38, CHART_H = 130;
+  const svgW = PAD_L + weeks.length * GROUP_W + PAD_R;
+  const svgH = CHART_H + PAD_BOT + PAD_TOP;
+  const bH = val => Math.max(0, (val / maxVal) * CHART_H);
+
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map(t => ({
+    y: PAD_TOP + CHART_H - t * CHART_H,
+    label: (t * maxVal).toFixed(1) + 'h',
+  }));
+
+  return (
+    <div className="enp-weekly-chart">
+      <div className="enp-weekly-chart-header">
+        <span className="enp-weekly-chart-title">Weekly Pace</span>
+        <div className="enp-weekly-chart-legend">
+          <span className="enp-wc-leg enp-wc-leg--exp">Expected / wk</span>
+          <span className="enp-wc-leg enp-wc-leg--act">Actual</span>
+        </div>
+      </div>
+      <div className="enp-weekly-chart-scroll">
+        <svg width={svgW} height={svgH} style={{ display: 'block', overflow: 'visible' }}>
+          {yTicks.map(({ y, label }) => (
+            <g key={label}>
+              <line x1={PAD_L} x2={svgW - PAD_R} y1={y} y2={y}
+                stroke="rgba(27,42,74,0.07)" strokeWidth={1} />
+              <text x={PAD_L - 4} y={y + 3.5} textAnchor="end"
+                style={{ fontSize: 8.5, fill: 'var(--ngs-muted)', fontFamily: 'var(--ngs-mono)' }}>
+                {label}
+              </text>
+            </g>
+          ))}
+          <line x1={PAD_L} x2={svgW - PAD_R}
+            y1={PAD_TOP + CHART_H} y2={PAD_TOP + CHART_H}
+            stroke="rgba(27,42,74,0.18)" strokeWidth={1} />
+
+          {weeks.map((wStart, i) => {
+            const wEnd = new Date(wStart); wEnd.setDate(wEnd.getDate() + 6);
+            const ws = isoDate(wStart), we = isoDate(wEnd);
+            const isCurrent = ws <= today && today <= we;
+            const isFuture  = ws > today;
+            const actual    = weeklyActuals[i];
+
+            let prorated = expectedPerWeek;
+            if (isCurrent) {
+              const wStartMs = new Date(ws + 'T00:00:00').getTime();
+              const wEndMs   = new Date(we + 'T00:00:00').getTime() + 86400000;
+              const todayMs  = new Date(today + 'T00:00:00').getTime();
+              prorated = expectedPerWeek * Math.min(1, (todayMs - wStartMs) / (wEndMs - wStartMs));
+            }
+
+            const status = isFuture ? 'neutral' : getStatus(actual, isCurrent ? prorated : expectedPerWeek);
+            const actColor = status === 'good'    ? '#2f7d55'
+                           : status === 'warning' ? 'var(--ngs-gold)'
+                           : status === 'risk'    ? 'var(--ngs-red)'
+                           : 'rgba(27,42,74,0.22)';
+
+            const x = PAD_L + i * GROUP_W;
+            const expH = bH(expectedPerWeek);
+            const actH = bH(actual);
+
+            const labelParts = wStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).split(' ');
+
+            return (
+              <g key={ws}>
+                {isCurrent && (
+                  <rect x={x - 2} y={PAD_TOP} width={GROUP_W - 2} height={CHART_H}
+                    fill="var(--ngs-gold)" opacity={0.07} rx={3} />
+                )}
+                {/* Expected bar */}
+                <rect x={x} y={PAD_TOP + CHART_H - expH} width={BAR_W} height={expH}
+                  fill="rgba(201,168,76,0.32)" rx={2} />
+                <rect x={x} y={PAD_TOP + CHART_H - expH} width={BAR_W} height={2}
+                  fill="rgba(201,168,76,0.75)" rx={1} />
+                {/* Actual bar */}
+                {(!isFuture || actual > 0) && (
+                  <rect x={x + BAR_W + BAR_GAP} y={PAD_TOP + CHART_H - actH}
+                    width={BAR_W} height={Math.max(actH, actual > 0 ? 2 : 0)}
+                    fill={actColor} rx={2} />
+                )}
+                {/* Value label above actual bar */}
+                {actual > 0 && (
+                  <text x={x + BAR_W + BAR_GAP + BAR_W / 2} y={PAD_TOP + CHART_H - actH - 3}
+                    textAnchor="middle"
+                    style={{ fontSize: 7, fill: actColor, fontFamily: 'var(--ngs-mono)' }}>
+                    {actual % 1 === 0 ? actual : actual.toFixed(1)}
+                  </text>
+                )}
+                {/* X-axis label — two lines */}
+                <text x={x + BAR_W + BAR_GAP / 2} y={PAD_TOP + CHART_H + 13}
+                  textAnchor="middle"
+                  style={{
+                    fontSize: 7.5, fontFamily: 'var(--ngs-mono)',
+                    fill: isCurrent ? 'var(--ngs-navy)' : 'var(--ngs-muted)',
+                    fontWeight: isCurrent ? '700' : '400',
+                  }}>
+                  {labelParts[0]}
+                </text>
+                <text x={x + BAR_W + BAR_GAP / 2} y={PAD_TOP + CHART_H + 23}
+                  textAnchor="middle"
+                  style={{
+                    fontSize: 7.5, fontFamily: 'var(--ngs-mono)',
+                    fill: isCurrent ? 'var(--ngs-navy)' : 'var(--ngs-muted)',
+                    fontWeight: isCurrent ? '700' : '400',
+                  }}>
+                  {labelParts[1]}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 // ── Category bar chart ──────────────────────────────────────────────────────────
 
 function CategoryBarChart({ period, sessions }) {
@@ -582,6 +739,11 @@ function ScholarEnglishDetail({ sk, periods, sessions, onBack, onRefresh }) {
             <div className="enp-bar-fill" style={{ width: `${pct}%` }} />
           </div>
         </div>
+      )}
+
+      {/* Weekly pace chart */}
+      {active && (
+        <WeeklyHoursChart period={active} sessions={filtered} />
       )}
 
       {/* Category bar chart */}
