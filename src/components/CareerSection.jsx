@@ -231,10 +231,6 @@ export function CareerSection({ id, collapsed, onToggle }) {
               <ScholarTrack key={sk} sk={sk} steps={byScholar(sk)} />
             ))}
           </div>
-
-          <p className="cs-deploy-note">
-            ⚠ Run <code>supabase/career_steps.sql</code> in the Supabase SQL editor to create the table before first use.
-          </p>
         </div>
       )}
     </section>

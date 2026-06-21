@@ -135,7 +135,7 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 
 ## Are we ready to start?
 
-**Steps 1–13, 19–20 complete. Now on Step 14. See Build Status table below.**
+**Steps 1–16, 19–20 complete. Step 16 (weekly report) awaits an `ask` edge function deploy. Now on Step 17. See Build Status table below.**
 
 | Layer | Priority | Status | Gap |
 |---|---|---|---|
@@ -152,10 +152,10 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 | OET readiness assessment | P1 | ✅ Done | Step 11 |
 | Budget trajectory | P1 | ✅ Done | Step 12 |
 | Documents tracker | P2 | ✅ Done | Step 13 |
-| Career tracker | P2 | **Next** | Step 14 |
-| Risk/cohort dashboard | P2 | Not started | Step 15 |
-| Weekly report draft | P2 | Not started | Step 16 |
-| Scholar pathway chatbot | P2 | Not started | Step 17 |
+| Career tracker | P2 | ✅ Done | Step 14 — `career_steps` table deployed |
+| Risk/cohort dashboard | P2 | ✅ Done | Step 15 — RiskSection (Navigator `/progress`) |
+| Weekly report draft | P2 | ✅ Built · ⏳ deploy | Step 16 — needs `ask` edge function redeploy |
+| Scholar pathway chatbot | P2 | **Next** | Step 17 |
 
 **Recommended build order:**
 
@@ -174,10 +174,10 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 | ✅ 11 | P1 | OET readiness assessment — `oet_readiness` Tier 1 intent + Tier 2 narrative; live progress bar in EnglishSection |
 | ✅ 12 | P1 | Budget trajectory projection — client-side burn-rate in StatusSection (green/amber/red) |
 | ✅ 13 | P2 | Documents tracker page + Supabase Storage integration |
-| **→ 14** | **P2** | **Career tracker — PNLE → OET → NCLEX → AHPRA checklist** |
-| 15 | P2 | Risk/cohort dashboard — Navigator Section 07 |
-| 16 | P2 | Mentor weekly report draft (Tier 2) |
-| 17 | P2 | Scholar pathway chatbot — scoped public widget on profile pages |
+| ✅ 14 | P2 | Career tracker — PNLE → OET → NCLEX → OSCE → AHPRA checklist (`career_steps` table deployed) |
+| ✅ 15 | P2 | Risk/cohort dashboard — RiskSection on Navigator `/progress` |
+| ✅ 16 | P2 | Mentor weekly report draft (Tier 2) — built; needs `ask` edge function redeploy to go live |
+| **→ 17** | **P2** | Scholar pathway chatbot — scoped public widget on profile pages |
 | 18 | P2 | Tighten RLS; audit anon access |
 
 ---
@@ -194,7 +194,7 @@ Both keys stored in Supabase secrets — never exposed to the client.
 
 ## Build Status
 
-Steps 1–13, 19–20 complete. Now on Step 14. Tier 3 migrated from Claude to Gemini 2.5 Flash.
+Steps 1–16, 19–20 complete (Step 16 awaits an `ask` edge function deploy). Now on Step 17. Tier 3 migrated from Claude to Gemini 2.5 Flash.
 
 | Step | Priority | Status | Description |
 |---|---|---|---|
@@ -211,10 +211,10 @@ Steps 1–13, 19–20 complete. Now on Step 14. Tier 3 migrated from Claude to G
 | 11 | P1 | ✅ | OET readiness — `oet_readiness` Tier 1 intent + Tier 2 narrative; live progress bar in EnglishSection |
 | 12 | P1 | ✅ | Budget trajectory — client-side burn-rate projection on ScholarCard (green/amber/red) |
 | 13 | P2 | ✅ | Documents tracker (section 07) + Supabase Storage integration |
-| **→ 14** | **P2** | **Next** | **Career tracker — PNLE → OET → NCLEX → AHPRA checklist** |
-| 15 | P2 | — | Risk/cohort dashboard — Navigator Section 08 |
-| 16 | P2 | — | Mentor weekly report draft (Tier 2) |
-| 17 | P2 | — | Scholar pathway chatbot — scoped public widget on profile pages |
+| 14 | P2 | ✅ | Career tracker — PNLE → OET → NCLEX → OSCE → AHPRA checklist; `career_steps` table deployed to Supabase |
+| 15 | P2 | ✅ | Risk/cohort dashboard — RiskSection (GPA · English · Budget · Milestones) on Navigator `/progress` |
+| 16 | P2 | ✅ built · auto-deploys on merge | Mentor weekly report draft (Tier 2) — `weekly_report` route in `ask` + Weekly Report tab in Navigator AI; `ask` redeploys via deploy-functions.yml on merge to main |
+| **→ 17** | P2 | — | Scholar pathway chatbot — scoped public widget on profile pages |
 | 18 | P2 | — | Tighten RLS; audit anon access |
 | 19 | P2 | ✅ | Multi-file ingest — receipt ingest panel accepts multiple files in one go; items merged into one ReviewCard |
 | 20 | P2 | ✅ | Grade screenshot ingestion — new "Ingest grades" tab in Navigator AI (Tier 3); AI import widget on student grade pages (session-gated) |
@@ -224,6 +224,13 @@ Steps 1–13, 19–20 complete. Now on Step 14. Tier 3 migrated from Claude to G
 ---
 
 ## Pending manual step
+
+> **Step 16 — `ask` edge function deploy.** The `weekly_report` route was added to
+> `supabase/functions/ask/` (index.ts + tier2.ts). This deploys **automatically on
+> merge to `main`** via `.github/workflows/deploy-functions.yml` (triggers on pushes
+> touching `supabase/functions/**`). No manual step needed — just merge the PR. To
+> deploy out-of-band, run the "Deploy Supabase Edge Functions" workflow via
+> `workflow_dispatch`.
 
 > **Step 10 trigger not yet deployed.** Run `supabase/gpa_risk_trigger.sql` in the
 > [Supabase SQL editor](https://supabase.com/dashboard/project/rhoxpfuephkuaartuqou/sql/new)
@@ -245,9 +252,9 @@ New page (`/career/:scholar`). Step-by-step PNLE → OET → NCLEX → OSCE → 
 
 New collapsible Navigator section (07). Side-by-side scholar risk view — GPA vs floor, English hours vs target, budget used %, next milestone + days until due, risk flag (On Track / Watch / At Risk). Pure Tier 1 — no LLM.
 
-### Step 16 · Mentor weekly report draft
+### Step 16 · Mentor weekly report draft ✅ (built; awaiting deploy)
 
-"Generate weekly report" in NavigatorAI. Tier 2 summarises all scholars' week — GPA updates, expenses, English hours, milestones, deadlines, open actions — into a shareable narrative.
+"Weekly Report" tab in Navigator AI (section + drawer). A `weekly_report` route in the `ask` edge function builds every scholar's context bundle and asks Tier 2 (Gemini, `tier2WeeklyReport`) to draft a single shareable cohort update — cohort overview, per-scholar bullets (GPA vs floor, spend vs budget, OET hours vs target, next milestone, deadlines, open actions, alerts), and a "Needs attention this week" list. Output is read-only with a copy-to-clipboard button. **Redeploy `ask` to activate** (see Pending manual step).
 
 ### Step 17 · Scholar pathway chatbot
 

@@ -128,3 +128,69 @@ export async function tier2Ask(
 
   return { answered: true, answer: text, model: GEMINI_MODEL }
 }
+
+// ── Weekly cohort report (Tier 2) ─────────────────────────────────────────────
+// Builds one Gemini call from every scholar's context bundle and returns a single
+// shareable mentor update. Read-only — never writes to the DB.
+
+const WEEKLY_REPORT_PROMPT = `\
+Draft this week's mentor report for the NextGen Scholars cohort, using the data for every scholar below.
+
+Structure the report in plain Markdown:
+1. A 2–3 sentence cohort overview.
+2. A "## Per scholar" section with one subsection per scholar (use their name as a heading). For each, give 3–5 tight bullets covering: academic standing (latest GPA vs the minimum floor), spending vs current-semester budget, OET/English progress vs the 200-hour target, the next pending milestone, the nearest upcoming deadline, open action items, and any active alerts.
+3. A "## Needs attention this week" section listing the 3–5 most important items across the whole cohort, most urgent first.
+
+Rules:
+- Use only the data provided — never invent GPA numbers, amounts, hours, or dates.
+- Use Philippine Peso (₱) for amounts.
+- Be concise and practical, written so the mentor can paste it straight into a weekly update.
+- If a scholar is missing data for a metric, say so briefly rather than guessing.`
+
+export async function tier2WeeklyReport(
+  contexts: ScholarContext[],
+  apiKey: string,
+): Promise<Tier2Result> {
+  const cohortBlock = contexts
+    .map((c, i) => `Scholar ${i + 1} data:\n\`\`\`json\n${compactContext(c)}\n\`\`\``)
+    .join('\n\n')
+
+  const userText = `${cohortBlock}\n\nas-of: ${new Date().toISOString()}\n\n${WEEKLY_REPORT_PROMPT}`
+
+  let res: Response
+  try {
+    res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: NGS_SYSTEM_PROMPT }] },
+        contents: [{ role: 'user', parts: [{ text: userText }] }],
+        generationConfig: {
+          // Cohort report spans several scholars — allow more room than a single
+          // advisory answer, but keep thinking off for speed/cost.
+          maxOutputTokens: 2048,
+          temperature: 0.3,
+          thinkingConfig: { thinkingBudget: 0 },
+        },
+      }),
+    })
+  } catch (err) {
+    return { answered: false, error: `Gemini network error: ${(err as Error).message}` }
+  }
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    let message = `Gemini API error ${res.status}`
+    try {
+      const inner = JSON.parse(body)?.error?.message as string | undefined
+      if (inner) message = res.status === 429 ? `Gemini quota exceeded — ${inner.split('.')[0]}.` : inner
+    } catch { /* leave default message */ }
+    return { answered: false, error: message }
+  }
+
+  const json = await res.json()
+  const text = json?.candidates?.[0]?.content?.parts?.[0]?.text as string | undefined
+  if (!text) return { answered: false, error: 'Gemini returned an empty response.' }
+
+  return { answered: true, answer: text, model: GEMINI_MODEL }
+}

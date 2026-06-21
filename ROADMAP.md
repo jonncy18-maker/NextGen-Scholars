@@ -86,16 +86,17 @@ Tier 2 (Gemini advisory) or Tier 3 (Gemini ingestion).
 
 See `ROADMAP-AI.md` for full step-by-step status.
 
-**Current position:** Steps 1–13, 19–20 complete. Step 14 next (Career tracker).
+**Current position:** Steps 1–16, 19–20 complete. Step 16 (weekly report) awaits an
+`ask` edge function redeploy. Step 17 next (Scholar pathway chatbot).
 
 | Step | Area | Status |
 |---|---|---|
 | 1–13 | Schema, edge functions, Tier 1–3, review UI, coaching, risk alerts, OET readiness, budget trajectory, documents tracker | ✅ Done |
 | 19–20 | Multi-file ingest, grade screenshot ingestion | ✅ Done |
-| **14** | **Career tracker — PNLE → OET → NCLEX → AHPRA checklist** | **Next** |
-| 15 | Risk/cohort dashboard | 🔵 Pending |
-| 16 | Mentor weekly report draft (Tier 2) | 🔵 Pending |
-| 17 | Scholar pathway chatbot | 🔵 Pending |
+| 14 | Career tracker — PNLE → OET → NCLEX → OSCE → AHPRA checklist (`career_steps` table deployed) | ✅ Done |
+| 15 | Risk/cohort dashboard — RiskSection on Navigator `/progress` | ✅ Done |
+| 16 | Mentor weekly report draft (Tier 2) | ✅ Built · ⏳ redeploy `ask` |
+| **17** | **Scholar pathway chatbot** | **Next** |
 | 18 | RLS hardening | 🔵 Pending |
 | 21–22 | Navigator AI in entry module · Google Drive storage backend | 🔵 Pending |
 
