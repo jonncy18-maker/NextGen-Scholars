@@ -133,6 +133,16 @@ secret lives only in Supabase secrets — never in the client.
   `node` + `/opt/node22/lib/node_modules/playwright` (CommonJS `require`) +
   executablePath `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 
+## Agentic Loop Framework
+
+This project follows the **Objective Loop** framework defined in:
+**https://github.com/jonncy18-maker/Agentic-Loop**
+
+Before starting any multi-step task, consult that repo for the loop structure,
+objective-setting conventions, and iteration protocol. The framework governs how
+Claude agents should plan, execute, verify, and loop back on tasks within this
+project.
+
 ## Conventions
 
 - Match the existing inline style of each file (token-based CSS vars `--ngs-*`,
