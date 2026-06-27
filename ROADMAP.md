@@ -214,6 +214,36 @@ anon key (same RLS already in place), with an agreed schema:
 
 ---
 
+## Resume Writer Module
+
+A resume/CV builder scoped to the NGN pathway — tailored to the PH → OET → NCLEX → AHPRA
+progression and the specific documentation requirements scholars need at each stage
+(Philippine nursing licensure, Australian registration, hospital applications).
+
+### Planned scope
+
+- **Mentor-facing:** draft and manage a resume per scholar inside the Navigator; sections
+  map to data already in Supabase (academics/GPA, milestones, career steps, English hours)
+  so fields can be pre-populated rather than typed from scratch
+- **Scholar-facing:** read-only preview of their current resume from `ScholarHome`; download
+  as PDF
+- **AI assist:** Tier 2 (Gemini advisory) to suggest bullet phrasing, flag missing sections,
+  and tailor language for a target country/employer (AU hospital vs. US staffing agency)
+- **Templates:** at minimum two layouts — Australian AHPRA-ready and US NCLEX pathway; both
+  in NGS brand style
+
+### Phases
+
+| Phase | Status | Detail |
+|---|---|---|
+| A — Data model | 🔵 Pending | `resume_sections` table (scholar, section_type, content jsonb, sort_order, updated_at); section types: summary, education, licensure, english\_scores, work\_experience, skills, references |
+| B — Mentor draft UI | 🔵 Pending | Resume editor panel in Navigator — section cards, drag-to-reorder, auto-fill from Supabase (GPA, milestones, OET/NCLEX status, English hours) |
+| C — AI polish | 🔵 Pending | "Improve this bullet" / "Fill missing sections" via Tier 2 Gemini; target role/country selector |
+| D — Scholar preview | 🔵 Pending | Read-only rendered resume at `/home/:scholar` or a dedicated `/resume/:scholar` route |
+| E — PDF export | 🔵 Pending | Client-side PDF via `@react-pdf/renderer` or a Supabase Edge Function wrapping a headless browser |
+
+---
+
 ## Nice-to-have (no priority)
 
 - **Accessibility pass** — keyboard flow and screen-reader audit across all pages.
