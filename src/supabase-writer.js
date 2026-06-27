@@ -123,3 +123,46 @@ export async function markSubmissionReadByScholar(id) {
     .eq('id', id);
   if (error) throw error;
 }
+
+// ── English forecasts + scenarios ─────────────────────────────────────────────
+
+export async function upsertEnglishForecast(forecastData) {
+  const { error } = await supabase
+    .from('english_forecasts')
+    .upsert(forecastData, { onConflict: 'scholar,period_id' });
+  if (error) throw error;
+}
+
+export async function saveEnglishScenario(scenario) {
+  if (scenario.id) {
+    const { data, error } = await supabase
+      .from('english_scenarios')
+      .update({ ...scenario, updated_at: new Date().toISOString() })
+      .eq('id', scenario.id)
+      .select().single();
+    if (error) throw error;
+    return data;
+  }
+  const { data, error } = await supabase
+    .from('english_scenarios')
+    .insert(scenario)
+    .select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteEnglishScenario(id) {
+  const { error } = await supabase.from('english_scenarios').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function updatePeriodWeeklyTargets(periodId, weeklyTargetHours, weeklyTargetByCategory) {
+  const { error } = await supabase
+    .from('english_periods')
+    .update({
+      weekly_target_hours:        weeklyTargetHours,
+      weekly_target_by_category:  weeklyTargetByCategory,
+    })
+    .eq('id', periodId);
+  if (error) throw error;
+}

@@ -3,6 +3,8 @@ import { useData } from '../context/DataContext.jsx';
 import { supabase } from '../lib/supabase.js';
 import { NAMECLASS, SESSION_TYPES, SESSION_CATEGORIES, classifyActivity } from '../constants.js';
 import { EnglishIngestPanel } from './EnglishIngestPanel.jsx';
+import { calcForecast, calcScenarioOutcomes } from '../lib/english-forecast.js';
+import { upsertEnglishForecast, saveEnglishScenario, deleteEnglishScenario, updatePeriodWeeklyTargets } from '../supabase-writer.js';
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 
@@ -206,6 +208,235 @@ function CategoryGoalsForm({ period, onSave, onCancel }) {
         <button className="enp-save-btn" onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
         <button className="enp-cancel-btn" onClick={onCancel} disabled={saving}>Cancel</button>
       </div>
+    </div>
+  );
+}
+
+// ── Weekly targets form ────────────────────────────────────────────────────────
+
+function WeeklyTargetsForm({ period, onSave, onCancel }) {
+  const cats   = sessionCategories(period);
+  const stored = period.weekly_target_by_category ?? {};
+  const [weeklyTotal, setWeeklyTotal] = useState(period.weekly_target_hours ?? '');
+  const [catTargets, setCatTargets]   = useState(
+    Object.fromEntries(cats.map(c => [c, stored[c] ?? '']))
+  );
+  const [saving, setSaving] = useState(false);
+  const [err, setErr]       = useState(null);
+
+  async function handleSave() {
+    setSaving(true); setErr(null);
+    try {
+      const cleanedCats = Object.fromEntries(
+        Object.entries(catTargets).map(([k, v]) => [k, v === '' ? null : Number(v)])
+      );
+      await updatePeriodWeeklyTargets(
+        period.id,
+        weeklyTotal === '' ? null : Number(weeklyTotal),
+        cleanedCats
+      );
+      onSave();
+    } catch (e) { setErr(e.message ?? 'Save failed.'); }
+    finally { setSaving(false); }
+  }
+
+  const catSum = Object.values(catTargets).reduce((s, v) => s + (v === '' ? 0 : Number(v)), 0);
+
+  return (
+    <div className="enp-catgoals-form">
+      <div className="enp-catgoals-title">Weekly targets</div>
+      <div className="enp-catgoals-fields">
+        <label className="enp-catgoals-field">
+          <span>Total per week</span>
+          <input type="number" min="0" step="0.5" placeholder="e.g. 5"
+            value={weeklyTotal} onChange={e => setWeeklyTotal(e.target.value)}
+            style={{ width: 80 }} />
+          <span className="enp-catgoals-unit">hrs/wk</span>
+        </label>
+        <div className="enp-catgoals-sep">By category</div>
+        {cats.map(cat => (
+          <label key={cat} className="enp-catgoals-field">
+            <span>{cat}</span>
+            <input type="number" min="0" step="0.25" placeholder="—"
+              value={catTargets[cat] ?? ''}
+              onChange={e => setCatTargets(g => ({ ...g, [cat]: e.target.value }))}
+              style={{ width: 80 }} />
+            <span className="enp-catgoals-unit">hrs/wk</span>
+          </label>
+        ))}
+        {catSum > 0 && weeklyTotal !== '' && (
+          <div className="enp-hour-calc">
+            Category sum: <strong>{catSum.toFixed(1)} hrs/wk</strong>
+            {' '}(total target: {weeklyTotal})
+          </div>
+        )}
+      </div>
+      {err && <p className="enp-form-error">{err}</p>}
+      <div className="enp-form-actions">
+        <button className="enp-save-btn" onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+        <button className="enp-cancel-btn" onClick={onCancel} disabled={saving}>Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Scenarios panel ────────────────────────────────────────────────────────────
+
+function fmtScDate(iso) {
+  if (!iso) return null;
+  const d = new Date(iso + 'T00:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function ScenariosPanel({ scholar, period, forecast, scenarios, onScenariosChange }) {
+  const cats = sessionCategories(period);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm]         = useState({
+    name: '', description: '', additional_hrs_per_week: '',
+    additional_by_category: {},
+  });
+  const [saving, setSaving] = useState(false);
+  const [err, setErr]       = useState(null);
+
+  const setF = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  async function handleSave() {
+    if (!form.name.trim())           { setErr('Scenario name is required.'); return; }
+    if (!form.additional_hrs_per_week) { setErr('Additional hrs/week is required.'); return; }
+    setSaving(true); setErr(null);
+    try {
+      const cleanedCats = {};
+      cats.forEach(cat => {
+        const v = parseFloat(form.additional_by_category[cat]);
+        if (!isNaN(v) && v > 0) cleanedCats[cat] = v;
+      });
+      const outcomes = calcScenarioOutcomes(
+        { additional_hrs_per_week: parseFloat(form.additional_hrs_per_week), additional_by_category: cleanedCats },
+        period, forecast
+      );
+      await saveEnglishScenario({
+        scholar,
+        period_id:               period.id,
+        name:                    form.name.trim(),
+        description:             form.description.trim() || null,
+        additional_hrs_per_week: parseFloat(form.additional_hrs_per_week),
+        additional_by_category:  cleanedCats,
+        ...outcomes,
+      });
+      setForm({ name: '', description: '', additional_hrs_per_week: '', additional_by_category: {} });
+      setShowForm(false);
+      onScenariosChange();
+    } catch (e) { setErr(e.message ?? 'Save failed.'); }
+    finally { setSaving(false); }
+  }
+
+  async function handleDelete(id) {
+    if (!confirm('Delete this scenario?')) return;
+    await deleteEnglishScenario(id).catch(console.error);
+    onScenariosChange();
+  }
+
+  return (
+    <div className="enp-scenarios">
+      <div className="enp-scenarios-header">
+        <span className="enp-scenarios-title">Scenarios</span>
+        <button className="enp-add-scenario-btn" onClick={() => setShowForm(v => !v)}>
+          {showForm ? 'Cancel' : '+ Add scenario'}
+        </button>
+      </div>
+
+      {/* Baseline */}
+      {forecast && (
+        <div className="enp-scenario-card enp-scenario-card--baseline">
+          <div className="enp-sc-name">Baseline · Current pace</div>
+          <div className="enp-sc-stats">
+            <span>{(forecast.pace_hrs_per_week || 0).toFixed(1)} h/wk pace</span>
+            <span>→ {(forecast.projected_total || 0).toFixed(1)} h projected</span>
+            <span className={forecast.gap_vs_goal >= 0 ? 'enp-sc-pos' : 'enp-sc-neg'}>
+              {forecast.gap_vs_goal >= 0 ? '+' : ''}{(forecast.gap_vs_goal || 0).toFixed(1)} h vs goal
+            </span>
+            <span style={{ color: 'var(--ngs-muted)' }}>
+              {(forecast.weeks_remaining || 0).toFixed(1)} wk remaining
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Saved scenarios */}
+      {scenarios.map(sc => (
+        <div key={sc.id} className="enp-scenario-card">
+          <div className="enp-sc-header">
+            <span className="enp-sc-name">{sc.name}</span>
+            <button className="enp-sc-del" onClick={() => handleDelete(sc.id)} title="Delete">×</button>
+          </div>
+          {sc.description && <div className="enp-sc-desc">{sc.description}</div>}
+          <div className="enp-sc-stats">
+            <span>+{sc.additional_hrs_per_week} h/wk</span>
+            <span>→ {(sc.projected_total || 0).toFixed(1)} h projected</span>
+            <span className={sc.gap_vs_goal >= 0 ? 'enp-sc-pos' : 'enp-sc-neg'}>
+              {sc.gap_vs_goal >= 0 ? '+' : ''}{(sc.gap_vs_goal || 0).toFixed(1)} h vs goal
+            </span>
+            {sc.projected_completion_date && (
+              <span style={{ color: 'var(--ngs-muted)' }}>
+                done by {fmtScDate(sc.projected_completion_date)}
+              </span>
+            )}
+          </div>
+        </div>
+      ))}
+
+      {scenarios.length === 0 && !showForm && (
+        <div style={{ padding: '10px 14px', fontSize: 12, color: 'var(--ngs-muted)', fontStyle: 'italic' }}>
+          No scenarios yet. Add one to model different pacing strategies.
+        </div>
+      )}
+
+      {/* Add form */}
+      {showForm && (
+        <div className="enp-scenario-form">
+          <div className="enp-form-fields">
+            <label className="enp-field">
+              <span>Name</span>
+              <input type="text" placeholder="e.g. Add Saturday session"
+                value={form.name} onChange={e => setF('name', e.target.value)} />
+            </label>
+            <label className="enp-field">
+              <span>Description <span className="enp-optional">(optional)</span></span>
+              <input type="text" placeholder="Brief description"
+                value={form.description} onChange={e => setF('description', e.target.value)} />
+            </label>
+            <label className="enp-field">
+              <span>Additional hrs/week</span>
+              <input type="number" min="0" step="0.5" placeholder="e.g. 2"
+                value={form.additional_hrs_per_week}
+                onChange={e => setF('additional_hrs_per_week', e.target.value)}
+                style={{ width: 80 }} />
+            </label>
+            <div className="enp-sc-cat-fields">
+              <div className="enp-sc-cat-heading">Additional hours by category (optional)</div>
+              {cats.map(cat => (
+                <label key={cat} className="enp-catgoals-field">
+                  <span>{cat}</span>
+                  <input type="number" min="0" step="0.25" placeholder="—"
+                    value={form.additional_by_category[cat] ?? ''}
+                    onChange={e => setForm(f => ({
+                      ...f, additional_by_category: { ...f.additional_by_category, [cat]: e.target.value }
+                    }))}
+                    style={{ width: 70 }} />
+                  <span className="enp-catgoals-unit">hrs/wk</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          {err && <p className="enp-form-error">{err}</p>}
+          <div className="enp-form-actions">
+            <button className="enp-save-btn" onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving…' : 'Add scenario'}
+            </button>
+            <button className="enp-cancel-btn" onClick={() => { setShowForm(false); setErr(null); }}>Cancel</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -618,7 +849,7 @@ function CategoryBarChart({ period, sessions }) {
 
 // ── Scholar detail view (mentor clicks into a scholar) ─────────────────────────
 
-function ScholarEnglishDetail({ sk, periods, sessions, onBack, onRefresh }) {
+function ScholarEnglishDetail({ sk, periods, sessions, forecast, scenarios, onBack, onRefresh }) {
   const { D } = useData();
   const name = D.scholars[sk]?.name || sk;
   const nc   = NAMECLASS[sk] || '';
@@ -637,12 +868,13 @@ function ScholarEnglishDetail({ sk, periods, sessions, onBack, onRefresh }) {
   const expectedByToday = goal ? goal * elapsed : null;
   const overallStatus   = getStatus(totalHours, expectedByToday ?? 0);
 
-  const [showPeriodForm,   setShowPeriodForm]   = useState(false);
-  const [editingPeriod,    setEditingPeriod]     = useState(null);
-  const [showCatGoals,     setShowCatGoals]      = useState(false);
-  const [showAddSession,   setShowAddSession]    = useState(false);
-  const [showIngest,       setShowIngest]        = useState(false);
-  const [collapsedCats,    setCollapsedCats]     = useState(new Set(cats));
+  const [showPeriodForm,    setShowPeriodForm]    = useState(false);
+  const [editingPeriod,     setEditingPeriod]     = useState(null);
+  const [showCatGoals,      setShowCatGoals]      = useState(false);
+  const [showWeeklyTargets, setShowWeeklyTargets] = useState(false);
+  const [showAddSession,    setShowAddSession]    = useState(false);
+  const [showIngest,        setShowIngest]        = useState(false);
+  const [collapsedCats,     setCollapsedCats]     = useState(new Set(cats));
 
   function toggleCat(cat) {
     setCollapsedCats(prev => {
@@ -689,8 +921,12 @@ function ScholarEnglishDetail({ sk, periods, sessions, onBack, onRefresh }) {
           </div>
           <div className="enp-session-actions">
             <button className="enp-catgoals-btn"
-              onClick={() => setShowCatGoals(v => !v)}>
+              onClick={() => { setShowCatGoals(v => !v); setShowWeeklyTargets(false); }}>
               {Object.keys(active.category_goals ?? {}).length ? 'Edit expected hours' : 'Add expected hours'}
+            </button>
+            <button className="enp-catgoals-btn"
+              onClick={() => { setShowWeeklyTargets(v => !v); setShowCatGoals(false); }}>
+              {active.weekly_target_hours ? 'Edit weekly targets' : 'Weekly targets'}
             </button>
             <button className="enp-period-edit-btn"
               onClick={() => { setEditingPeriod(active); setShowPeriodForm(true); }}>
@@ -727,6 +963,14 @@ function ScholarEnglishDetail({ sk, periods, sessions, onBack, onRefresh }) {
         />
       )}
 
+      {showWeeklyTargets && active && (
+        <WeeklyTargetsForm
+          period={active}
+          onSave={() => { setShowWeeklyTargets(false); onRefresh(); }}
+          onCancel={() => setShowWeeklyTargets(false)}
+        />
+      )}
+
       {/* Progress overview */}
       {goal != null && (
         <div className="enp-progress">
@@ -749,6 +993,17 @@ function ScholarEnglishDetail({ sk, periods, sessions, onBack, onRefresh }) {
       {/* Category bar chart */}
       {active && (
         <CategoryBarChart period={active} sessions={filtered} />
+      )}
+
+      {/* Scenario modeling */}
+      {active && (
+        <ScenariosPanel
+          scholar={sk}
+          period={active}
+          forecast={forecast}
+          scenarios={scenarios}
+          onScenariosChange={onRefresh}
+        />
       )}
 
       {/* AI ingest + add session controls */}
@@ -884,17 +1139,44 @@ export function EnglishSection({ id, collapsed, onToggle }) {
   const { D, scholarKeys } = useData();
   // TESDA-track scholars have no English-hours program — exclude them.
   const englishKeys = scholarKeys.filter(sk => D.scholars[sk]?.track !== 'TESDA');
-  const [periods,  setPeriods]  = useState([]);
-  const [sessions, setSessions] = useState([]);
-  const [selected, setSelected] = useState(null); // null = overview, else sk
+  const [periods,   setPeriods]   = useState([]);
+  const [sessions,  setSessions]  = useState([]);
+  const [scenarios, setScenarios] = useState([]);
+  const [forecasts, setForecasts] = useState([]);
+  const [selected,  setSelected]  = useState(null); // null = overview, else sk
 
   const load = useCallback(async () => {
-    const [{ data: p }, { data: s }] = await Promise.all([
+    const [{ data: p }, { data: s }, { data: sc }] = await Promise.all([
       supabase.from('english_periods').select('*').order('start_date', { ascending: false }),
       supabase.from('english_sessions').select('*').order('date', { ascending: false }),
+      supabase.from('english_scenarios').select('*').order('created_at', { ascending: false }),
     ]);
-    setPeriods(p || []);
-    setSessions(s || []);
+    const periods  = p  || [];
+    const sessions = s  || [];
+    const scenData = sc || [];
+    setPeriods(periods);
+    setSessions(sessions);
+    setScenarios(scenData);
+
+    // Upsert live forecasts for every active period
+    const scholarKeys = [...new Set(periods.map(x => x.scholar))];
+    const upserts = scholarKeys.flatMap(sk => {
+      const sp     = periods.filter(x => x.scholar === sk);
+      const ss     = sessions.filter(x => x.scholar === sk);
+      const active = activePeriod(sp);
+      if (!active) return [];
+      const filtered = ss.filter(x => x.date >= active.start_date && x.date <= active.end_date);
+      const fc       = calcForecast(active, filtered);
+      return fc ? [upsertEnglishForecast(fc)] : [];
+    });
+    const results = await Promise.allSettled(upserts);
+
+    // Re-fetch forecasts after upserts so UI reflects latest values
+    const { data: fData } = await supabase.from('english_forecasts').select('*');
+    setForecasts(fData || []);
+
+    // Suppress upsert errors silently (DB write is best-effort)
+    results.filter(r => r.status === 'rejected').forEach(r => console.error('forecast upsert:', r.reason));
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -933,6 +1215,16 @@ export function EnglishSection({ id, collapsed, onToggle }) {
               sk={selected}
               periods={periods.filter(p => p.scholar === selected)}
               sessions={sessions.filter(s => s.scholar === selected)}
+              forecast={(() => {
+                const sp     = periods.filter(p => p.scholar === selected);
+                const active = activePeriod(sp);
+                return active ? (forecasts.find(f => f.period_id === active.id) ?? null) : null;
+              })()}
+              scenarios={scenarios.filter(sc => {
+                const sp     = periods.filter(p => p.scholar === selected);
+                const active = activePeriod(sp);
+                return active ? sc.period_id === active.id : false;
+              })}
               onBack={() => setSelected(null)}
               onRefresh={load}
             />
