@@ -166,6 +166,54 @@ auth upgrade. Revisit before storing anything sensitive.
 
 ---
 
+## External English Tracking App — Integration Roadmap
+
+A standalone immersion-style English tracking app (Dreaming Spanish model —
+comprehensible-input focused, activity logging, viewing time) is being built
+separately. The goal is to have sessions logged there flow into the English
+tracking module here so scholars' immersion hours count toward their period
+goals alongside mentor-session hours.
+
+### Integration design (planned)
+
+The two apps share the same Supabase project (`jonncy18-NextGenDatabase`).
+The external app will write sessions directly to `english_sessions` using the
+anon key (same RLS already in place), with an agreed schema:
+
+| Field | Source |
+|---|---|
+| `scholar` | Scholar key (e.g. `claire`) supplied by the external app's auth |
+| `date` | Session date (ISO) |
+| `duration_minutes` | Logged immersion time |
+| `activity_type` | Mapped category (e.g. `Listening`, `Reading`, `Free Conversation`) |
+| `notes` | Episode/source title or brief description (optional) |
+| `period_id` | Resolved by the external app at write time (match date to active period) |
+| `sem` | Active period label (e.g. `OET Prep S1`) |
+| `source` | `'immersion_app'` — new column to distinguish origin (see below) |
+
+### Phases
+
+| Phase | Status | Detail |
+|---|---|---|
+| A — Schema: `source` column on `english_sessions` | 🔵 Pending | `alter table english_sessions add column if not exists source text default 'manual'` — allows the UI to badge immersion sessions differently |
+| B — External app writes to shared Supabase | 🔵 Pending | External app uses the same Supabase URL + anon key; inserts with `source = 'immersion_app'`; forecasts auto-update on next Navigator load |
+| C — UI: immersion badge in session history | 🔵 Pending | Session rows in `EnglishTracking.jsx` and `EnglishSection.jsx` show a small `Immersion` chip when `source === 'immersion_app'`; filtering by source in the history view |
+| D — Real-time sync | 🔵 Pending | Supabase realtime subscription in Navigator/EnglishTracking refreshes the session list when the external app inserts a row — no manual reload needed |
+| E — Scholar auth alignment | 🔵 Pending | Depends on Step 21 (PIN-gated scholar auth). Until then, the external app uses the same client-supplied `scholar` key convention |
+
+### Notes
+
+- The `english_forecasts` upsert already runs automatically after each
+  session load — immersion sessions from the external app will be included
+  in forecast calculations with no extra wiring needed once Phase B lands.
+- The weekly `weekly_target_by_category` breakdown can include immersion
+  categories (e.g. `Listening`, `Reading`) so comprehensible-input hours
+  count toward the same category targets set in the mentor dashboard.
+- No new Edge Functions are needed for Phase A–D; the existing anon RLS
+  policies already allow session inserts.
+
+---
+
 ## Nice-to-have (no priority)
 
 - **Accessibility pass** — keyboard flow and screen-reader audit across all pages.
