@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase.js';
 import { SESSION_CATEGORIES, SESSION_TYPES, classifyActivity } from '../constants.js';
 import { EnglishIngestPanel } from '../components/EnglishIngestPanel.jsx';
+import { calcForecast } from '../lib/english-forecast.js';
+import { upsertEnglishForecast } from '../supabase-writer.js';
 import '../styles/english-tracking.css';
 
 const FALLBACK = {
@@ -331,6 +333,13 @@ export function EnglishTracking({ scholarKey }) {
     }
     q.then(({ data }) => setSessions(data ?? []));
   }
+
+  // Keep the DB forecast in sync whenever sessions or period changes
+  useEffect(() => {
+    if (!period || sessions === null) return;
+    const fc = calcForecast(period, sessions);
+    if (fc) upsertEnglishForecast(fc).catch(console.error);
+  }, [period, sessions]);
 
   const cats         = sessionCategories(period);
   const totalMinutes = sessions ? sessions.reduce((s, r) => s + (r.duration_minutes || 0), 0) : 0;

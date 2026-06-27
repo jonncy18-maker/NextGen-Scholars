@@ -3107,6 +3107,75 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   margin-bottom: 8px;
 }
 
+/* ── English: weekly targets form ────────────────────────────────────────── */
+.enp-weekly-targets-form { margin: 12px 0; }
+.enp-catgoals-sep {
+  font-family: var(--ngs-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ngs-muted);
+  margin: 10px 0 4px;
+}
+
+/* ── English: scenarios panel ────────────────────────────────────────────── */
+.enp-scenarios {
+  margin: 18px 0 6px;
+  border: 1px solid var(--ngs-rule);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.enp-scenarios-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--ngs-paper-2);
+  border-bottom: 1px solid var(--ngs-rule);
+}
+.enp-scenarios-title {
+  font-family: var(--ngs-mono); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--ngs-navy);
+}
+.enp-add-scenario-btn {
+  font-family: var(--ngs-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 3px 10px; border: 1.5px solid var(--ngs-navy);
+  border-radius: 4px; background: transparent; color: var(--ngs-navy); cursor: pointer;
+}
+.enp-add-scenario-btn:hover { background: var(--ngs-navy); color: #fff; }
+
+.enp-scenario-card {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--ngs-rule);
+}
+.enp-scenario-card:last-child { border-bottom: none; }
+.enp-scenario-card--baseline { background: rgba(201,168,76,0.06); }
+
+.enp-sc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.enp-sc-name {
+  font-family: var(--ngs-sans); font-size: 13px; font-weight: 700; color: var(--ngs-navy);
+}
+.enp-sc-desc {
+  font-size: 12px; color: var(--ngs-muted); margin-bottom: 6px;
+}
+.enp-sc-stats {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  font-family: var(--ngs-mono); font-size: 11.5px; color: var(--ngs-text);
+}
+.enp-sc-stats span { white-space: nowrap; }
+.enp-sc-pos { color: #2f7d55; font-weight: 700; }
+.enp-sc-neg { color: var(--ngs-red); font-weight: 700; }
+.enp-sc-del {
+  background: none; border: none; cursor: pointer; font-size: 15px;
+  color: var(--ngs-muted); line-height: 1; padding: 0 2px;
+  transition: color 120ms;
+}
+.enp-sc-del:hover { color: var(--ngs-red); }
+
+.enp-scenario-form { padding: 12px 14px; border-top: 1px solid var(--ngs-rule); }
+.enp-sc-cat-fields { margin-top: 10px; }
+.enp-sc-cat-heading {
+  font-family: var(--ngs-mono); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ngs-muted);
+  margin-bottom: 6px;
+}
+
 /* ── Section 10 — Grades ─────────────────────────────────────────────────── */
 
 .gr-body { padding: 0 0 16px; }
