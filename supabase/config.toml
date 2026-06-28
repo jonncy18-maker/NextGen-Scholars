@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.ask-scholar]
 verify_jwt = false
+
+[functions.drive-proxy]
+verify_jwt = false
