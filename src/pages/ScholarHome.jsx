@@ -8,6 +8,7 @@ import {
 } from '../components/ScholarIcons.jsx';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
+import { ScholarLockGate } from '../components/ScholarLockGate.jsx';
 import { CAT_TO_BUCKET } from '../constants.js';
 
 const SEM_LABELS = {
@@ -60,6 +61,7 @@ function formatDate(iso) {
 
 export function ScholarHome({ scholarKey }) {
   const config = buildConfig(scholarKey);
+  const [authed, setAuthed]   = useState(false);
   const [liveData, setLiveData] = useState(null);
 
   // Janndilyne is a TESDA expenses-only dashboard: no English goals, and no
@@ -67,8 +69,9 @@ export function ScholarHome({ scholarKey }) {
   // investment card spans the full row on mobile.
   const isExpensesOnly = scholarKey === 'janndilyne';
 
+  // Auto-auth if already authenticated via session (e.g. navigating back from /docs or /entry).
   useEffect(() => {
-    sessionStorage.setItem('ngs_auth_scholar', scholarKey);
+    if (sessionStorage.getItem('ngs_auth_scholar') === scholarKey) setAuthed(true);
   }, [scholarKey]);
 
   useEffect(() => {
@@ -193,6 +196,10 @@ export function ScholarHome({ scholarKey }) {
     const display = h % 1 === 0 ? String(h) : h.toFixed(1);
     return liveData.liveEnglishTarget ? `${display} / ${liveData.liveEnglishTarget} hrs` : `${display} hrs`;
   })();
+
+  if (!authed) {
+    return <ScholarLockGate scholarKey={scholarKey} name={config.name} onUnlock={() => setAuthed(true)} />;
+  }
 
   return (
     <div className="sp-page">
