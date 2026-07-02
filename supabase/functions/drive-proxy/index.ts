@@ -1,7 +1,8 @@
 // drive-proxy — Google Drive storage backend for NGS Documents
 //
-// All file bytes live in Google Drive (mentor's account, NGS Documents folder).
-// Supabase stores only metadata (filename, scholar, doc_type, status, drive file ID).
+// All file bytes live in Google Drive (NGS Documents folder, shared with a
+// dedicated service account). Supabase stores only metadata (filename,
+// scholar, doc_type, status, drive file ID).
 //
 // Actions (POST with JSON body):
 //   upload     { filename, mimeType, base64 }  → { fileId, filename }
@@ -10,7 +11,9 @@
 //   delete     { fileId }                       → { ok: true }
 //
 // Requires Supabase secrets:
-//   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_DRIVE_REFRESH_TOKEN, GOOGLE_DRIVE_FOLDER_ID
+//   GOOGLE_SERVICE_ACCOUNT_EMAIL, GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY, GOOGLE_DRIVE_FOLDER_ID
+//
+// The service account must be shared as an Editor on the NGS Documents Drive folder.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -26,15 +29,55 @@ function json(data: unknown, status = 200) {
   })
 }
 
+function base64url(bytes: Uint8Array): string {
+  let binary = ''
+  for (const b of bytes) binary += String.fromCharCode(b)
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+async function importPrivateKey(pem: string): Promise<CryptoKey> {
+  const pemBody = pem
+    .replace('-----BEGIN PRIVATE KEY-----', '')
+    .replace('-----END PRIVATE KEY-----', '')
+    .replace(/\s/g, '')
+  const der = Uint8Array.from(atob(pemBody), c => c.charCodeAt(0))
+  return crypto.subtle.importKey(
+    'pkcs8',
+    der,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  )
+}
+
+// Server-to-server auth via a Google service account (JWT bearer grant) —
+// no user consent screen, no refresh-token expiry, no test-user allowlist.
 async function getAccessToken(): Promise<string> {
+  const email = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_EMAIL')!
+  const privateKeyPem = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY')!.replace(/\\n/g, '\n')
+
+  const enc = new TextEncoder()
+  const now = Math.floor(Date.now() / 1000)
+  const headerB64 = base64url(enc.encode(JSON.stringify({ alg: 'RS256', typ: 'JWT' })))
+  const claimB64 = base64url(enc.encode(JSON.stringify({
+    iss:   email,
+    scope: 'https://www.googleapis.com/auth/drive',
+    aud:   'https://oauth2.googleapis.com/token',
+    iat:   now,
+    exp:   now + 3600,
+  })))
+  const signingInput = `${headerB64}.${claimB64}`
+
+  const key = await importPrivateKey(privateKeyPem)
+  const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, enc.encode(signingInput))
+  const jwt = `${signingInput}.${base64url(new Uint8Array(signature))}`
+
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_id:     Deno.env.get('GOOGLE_CLIENT_ID')!,
-      client_secret: Deno.env.get('GOOGLE_CLIENT_SECRET')!,
-      refresh_token: Deno.env.get('GOOGLE_DRIVE_REFRESH_TOKEN')!,
-      grant_type:    'refresh_token',
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion:  jwt,
     }),
   })
   const data = await res.json()
