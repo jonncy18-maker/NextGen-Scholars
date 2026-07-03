@@ -5,8 +5,8 @@ import { json, withErrorHandling } from '../../../../lib/http.js';
 export const GET = withErrorHandling(async (request) => {
   const { role, scholarKey } = await requireScholarOwn(request);
   const rows = role === 'mentor'
-    ? await sql`select * from english_scenarios`
-    : await sql`select * from english_scenarios where scholar = ${scholarKey}`;
+    ? await sql`select * from english_scenarios order by created_at desc`
+    : await sql`select * from english_scenarios where scholar = ${scholarKey} order by created_at desc`;
   return json(rows);
 });
 

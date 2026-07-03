@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase, SUPABASE_URL } from '../lib/supabase.js';
+import { api } from '../lib/api.js';
 import { useData } from '../context/DataContext.jsx';
-import { writeExpense } from '../supabase-writer.js';
+import { writeExpense } from '../api-writer.js';
 import { EXPENSE_CATS, SEMESTER_OPTIONS } from '../constants.js';
 const DOC_TYPES = ['receipt', 'transcript', 'visa', 'oet', 'other'];
 const ACCEPTED_TYPES = 'image/jpeg,image/png,image/webp,image/gif,application/pdf';
@@ -49,7 +50,7 @@ function DocReviewCard({ items: initialItems, model, scholar, sem, docId, onDisc
         qty: Number(it.qty) || 1, cat: it.cat, date: it.date,
         vendor: it.vendor || '', avb: 'Actual', sent: 'No',
       })));
-      await supabase.from('documents').update({ status: 'linked' }).eq('id', docId);
+      await api.patch(`/documents/${docId}`, { status: 'linked' });
       onConfirmed(items.length);
     } catch (err) {
       setSaveError(err.message ?? 'Write failed.');
@@ -141,16 +142,19 @@ export function DocumentsSection({ id, collapsed, onToggle }) {
 
   async function loadDocs() {
     setLoadError(null);
-    const { data, error } = await supabase
-      .from('documents')
-      .select('*')
-      .order('uploaded_at', { ascending: false });
-    if (error) { setLoadError(error.message); return; }
-    setDocs(data || []);
+    try {
+      const data = await api.get('/documents');
+      setDocs(data || []);
+    } catch (err) {
+      setLoadError(err.message);
+    }
   }
 
   useEffect(() => { loadDocs(); }, []);
 
+  // Inert until Phase B3 (polling replaces realtime): writes now go to Neon,
+  // so this Supabase channel never fires — kept in place, harmless, until B3
+  // formally replaces it with the /api/changes poller.
   useEffect(() => {
     const ch = supabase.channel('ngs_documents')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'documents' },
@@ -192,16 +196,14 @@ export function DocumentsSection({ id, collapsed, onToggle }) {
       const driveData = await driveRes.json();
       if (!driveRes.ok) throw new Error(driveData.error || 'Drive upload failed.');
 
-      const { error: dbErr } = await supabase.from('documents').insert({
+      await api.post('/documents', {
         scholar: upScholar,
         filename: upFile.name,
         storage_path: driveData.fileId,
         doc_type: upType,
         sem: upSem || null,
         notes: upNotes || null,
-        status: 'pending_review',
       });
-      if (dbErr) throw new Error(`DB: ${dbErr.message}`);
 
       setUpFile(null);
       setUpNotes('');
@@ -236,8 +238,11 @@ export function DocumentsSection({ id, collapsed, onToggle }) {
 
   async function handleMarkReviewed(doc) {
     setDocs(prev => prev.map(d => d.id === doc.id ? { ...d, status: 'reviewed' } : d));
-    const { error } = await supabase.from('documents').update({ status: 'reviewed' }).eq('id', doc.id);
-    if (error) setDocs(prev => prev.map(d => d.id === doc.id ? { ...d, status: doc.status } : d));
+    try {
+      await api.patch(`/documents/${doc.id}`, { status: 'reviewed' });
+    } catch {
+      setDocs(prev => prev.map(d => d.id === doc.id ? { ...d, status: doc.status } : d));
+    }
   }
 
   async function handleDelete(doc) {
@@ -252,7 +257,7 @@ export function DocumentsSection({ id, collapsed, onToggle }) {
         });
       }
     } catch { /* best-effort Drive delete */ }
-    await supabase.from('documents').delete().eq('id', doc.id);
+    await api.del(`/documents/${doc.id}`);
   }
 
   async function handleExtract(doc) {

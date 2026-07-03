@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase.js';
+import { api } from '../lib/api.js';
 import { useData } from '../context/DataContext.jsx';
 import { NAMECLASS } from '../constants.js';
 
@@ -116,19 +117,14 @@ function ScholarTrack({ sk, steps }) {
     setSaving(true);
     setSaveError(null);
     try {
-      const payload = {
-        scholar:    sk,
+      await api.put('/career', {
+        scholar: sk,
         step,
         status:     form.status,
         exam_date:  form.exam_date || null,
         score:      form.score     || null,
         notes:      form.notes     || null,
-        updated_at: new Date().toISOString(),
-      };
-      const { error } = await supabase
-        .from('career_steps')
-        .upsert(payload, { onConflict: 'scholar,step' });
-      if (error) throw error;
+      });
       setActiveStep(null);
     } catch (err) {
       setSaveError(err.message ?? 'Save failed.');
@@ -187,17 +183,17 @@ export function CareerSection({ id, collapsed, onToggle }) {
 
   async function load() {
     setLoadError(null);
-    const { data, error } = await supabase
-      .from('career_steps')
-      .select('*')
-      .order('scholar')
-      .order('step');
-    if (error) { setLoadError(error.message); return; }
-    setRows(data || []);
+    try {
+      const data = await api.get('/career');
+      setRows(data || []);
+    } catch (err) {
+      setLoadError(err.message);
+    }
   }
 
   useEffect(() => { load(); }, []);
 
+  // Inert until Phase B3 — see DocumentsSection.jsx's identical note.
   useEffect(() => {
     const ch = supabase.channel('ngs_career')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'career_steps' }, () => load())

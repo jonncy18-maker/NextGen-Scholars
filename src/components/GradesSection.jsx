@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useData } from '../context/DataContext.jsx';
-import { supabase } from '../lib/supabase.js';
+import { api } from '../lib/api.js';
 import { NAMECLASS, SEMESTER_OPTIONS } from '../constants.js';
 import { uvToPct } from '../screens/GradeEntry.jsx';
 
@@ -64,15 +64,17 @@ function GradeRow({ row, onSaved, onDeleted }) {
       final_grade: form.final_grade !== '' ? parseFloat(form.final_grade) : null,
       period_avg, pct_equiv,
     };
-    const { error } = await supabase.from('grade_entries').update(payload).eq('id', row.id);
+    try {
+      await api.patch(`/grades/${row.id}`, payload);
+      setEditing(false); setForm(null); onSaved({ ...row, ...payload });
+    } catch { /* leave form open on failure */ }
     setSaving(false);
-    if (!error) { setEditing(false); setForm(null); onSaved({ ...row, ...payload }); }
   }
 
   async function handleDelete() {
     if (!confirm(`Delete "${row.subject}"?`)) return;
     setDeleting(true);
-    await supabase.from('grade_entries').delete().eq('id', row.id);
+    await api.del(`/grades/${row.id}`);
     onDeleted(row.id);
   }
 
@@ -152,7 +154,7 @@ function SemBlock({ sk, sem, rows, onRowSaved, onRowDeleted, onAdded, onSemDelet
   async function handleDeleteSem() {
     if (!confirm(`Delete all ${rows.length} subject${rows.length !== 1 ? 's' : ''} in "${sem}"?`)) return;
     setDelSem(true);
-    await supabase.from('grade_entries').delete().eq('scholar', sk).eq('sem', sem);
+    await api.del(`/grades?scholar=${encodeURIComponent(sk)}&sem=${encodeURIComponent(sem)}`);
     onSemDeleted(sem);
   }
 
@@ -170,9 +172,13 @@ function SemBlock({ sk, sem, rows, onRowSaved, onRowDeleted, onAdded, onSemDelet
       final_grade: form.final_grade !== '' ? parseFloat(form.final_grade) : null,
       ...preview,
     };
-    const { data, error } = await supabase.from('grade_entries').insert(entry).select().single();
+    let data;
+    try {
+      data = await api.post('/grades', entry);
+    } catch (e) {
+      setSaving(false); setErr(e.message ?? 'Save failed.'); return;
+    }
     setSaving(false);
-    if (error) { setErr(error.message); return; }
     onAdded(data);
     setAdding(false);
     setForm({ subject: '', units: '3', school: 'uv', prelim: '', midterm: '', final_grade: '' });
@@ -381,13 +387,10 @@ export function GradesSection({ id, collapsed, onToggle }) {
   const [allRows, setAllRows] = useState([]);
 
   const load = useCallback(async () => {
-    const { data } = await supabase
-      .from('grade_entries')
-      .select('*')
-      .order('scholar')
-      .order('sem')
-      .order('created_at');
-    setAllRows(data || []);
+    try {
+      const data = await api.get('/grades');
+      setAllRows(data || []);
+    } catch { setAllRows([]); }
   }, []);
 
   useEffect(() => { load(); }, [load]);

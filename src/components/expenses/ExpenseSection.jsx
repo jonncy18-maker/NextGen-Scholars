@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../../context/DataContext.jsx';
 import { useFmt } from '../../context/FxContext.jsx';
 import { allExpenses } from '../../utils.js';
-import { writeSent } from '../../supabase-writer.js';
+import { writeSent } from '../../api-writer.js';
 import { FilterPanel } from './FilterPanel.jsx';
 import { TotalsRow } from './ExpenseCharts.jsx';
 import { EMPTY_FILTERS, countActiveFilters, applyFilters, applySorting, groupExpenses, groupMultiLevel } from './filterHelpers.js';

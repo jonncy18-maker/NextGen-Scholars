@@ -1,7 +1,8 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase, SUPABASE_URL } from '../lib/supabase.js';
+import { api } from '../lib/api.js';
 import { useData } from '../context/DataContext.jsx';
-import { writeExpense } from '../supabase-writer.js';
+import { writeExpense } from '../api-writer.js';
 import { EXPENSE_CATS, SEMESTER_OPTIONS, SESSION_CATEGORIES } from '../constants.js';
 import { uvToPct } from '../screens/GradeEntry.jsx';
 import { EnglishIngestPanel } from './EnglishIngestPanel.jsx';
@@ -630,8 +631,7 @@ function GradeReviewCard({ grades: initialGrades, model, scholar, sem, onDiscard
           pct_equiv:   avg != null ? (g.school === 'k12' ? avg : uvToPct(avg)) : null,
         };
       });
-      const { error } = await supabase.from('grade_entries').insert(entries);
-      if (error) throw new Error(error.message);
+      await api.post('/grades', { entries });
       onConfirmed(grades.length);
     } catch (err) {
       setSaveError(err.message ?? 'Write failed.');
@@ -1101,11 +1101,9 @@ function EnglishHoursIngestPanel({ scholarKeys }) {
 
   useEffect(() => {
     setPeriod(undefined);
-    supabase.from('english_periods').select('*')
-      .eq('scholar', scholar)
-      .order('start_date', { ascending: false })
-      .limit(1)
-      .then(({ data }) => setPeriod(data?.[0] ?? null));
+    api.get(`/english/periods?scholar=${encodeURIComponent(scholar)}`)
+      .then(data => setPeriod(data?.[0] ?? null))
+      .catch(() => setPeriod(null));
   }, [scholar]);
 
   const cats = period

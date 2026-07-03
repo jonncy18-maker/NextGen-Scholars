@@ -2,11 +2,16 @@ import { sql } from '../../../../lib/db.js';
 import { requireMentor, requireScholarOwn } from '../../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../../lib/http.js';
 
+// GET ?scholar= — mentor: all rows if omitted, scoped if given (NavigatorAI's
+// english-hours ingest panel loads one scholar's latest period).
 export const GET = withErrorHandling(async (request) => {
   const { role, scholarKey } = await requireScholarOwn(request);
-  const rows = role === 'mentor'
-    ? await sql`select * from english_periods order by start_date desc`
-    : await sql`select * from english_periods where scholar = ${scholarKey} order by start_date desc`;
+  const { searchParams } = new URL(request.url);
+  const scholar = role === 'mentor' ? searchParams.get('scholar') : scholarKey;
+
+  const rows = scholar
+    ? await sql`select * from english_periods where scholar = ${scholar} order by start_date desc`
+    : await sql`select * from english_periods order by start_date desc`;
   return json(rows);
 });
 

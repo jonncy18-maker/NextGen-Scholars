@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { NGS_DATA } from '../../scholars-data.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
-import { loadFromSupabase, loadPendingSubmissions } from '../supabase-loader.js';
-import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead, approveSubmission, rejectSubmission, writeSent } from '../supabase-writer.js';
+import { loadFromSupabase, loadPendingSubmissions } from '../api-loader.js';
+import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead, approveSubmission, rejectSubmission, writeSent } from '../api-writer.js';
 import { supabase } from '../lib/supabase.js';
 import { CAT_TO_BUCKET } from '../constants.js';
 import { FxCtx, useFxState } from '../context/FxContext.jsx';
