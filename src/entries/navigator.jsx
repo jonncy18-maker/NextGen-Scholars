@@ -3,9 +3,9 @@ import { NGS_DATA } from '../../scholars-data.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
 import { loadFromSupabase, loadPendingSubmissions } from '../api-loader.js';
 import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead, approveSubmission, rejectSubmission, writeSent } from '../api-writer.js';
-import { supabase } from '../lib/supabase.js';
 import { authClient } from '../lib/auth-client.js';
 import { api } from '../lib/api.js';
+import { useChanges } from '../hooks/useChanges.js';
 import { CAT_TO_BUCKET } from '../constants.js';
 import { FxCtx, useFxState } from '../context/FxContext.jsx';
 import { DataCtx } from '../context/DataContext.jsx';
@@ -107,101 +107,91 @@ export function Navigator({ slug = [] }) {
     return () => clearTimeout(t);
   }, [writeError]);
 
-  // Load activity + pending submissions on unlock. The postgres_changes
-  // subscriptions below are now inert for every migrated table (alerts,
-  // activity_log, grade_entries, expenses, expense_submissions) -- writes go
-  // to Neon, not Supabase, so these Supabase tables never change anymore.
-  // Kept in place, harmless, until Phase B3 replaces them with polling.
-  useEffect(() => {
-    if (!unlocked) return;
-
+  // Load activity + pending submissions on unlock; useChanges (below) keeps
+  // them fresh afterwards via polling — replaces the 5 Supabase realtime
+  // channels that used to live in this effect (Phase B3).
+  function loadUnreadActivity() {
     api.get('/activity?unread=1')
       .then(data => setActivityFeed(data || []))
       .catch(() => setActivityFeed([]));
+  }
 
+  // bootstrap doesn't sort by severity like the old .order('severity') did,
+  // so sort client-side to match.
+  function sortBySeverity(rows) {
+    return [...(rows || [])].sort((a, b) => (a.severity || '').localeCompare(b.severity || ''));
+  }
+
+  function loadAlerts() {
+    api.get('/bootstrap?tables=alerts')
+      .then(({ alerts }) => setDbAlerts(sortBySeverity(alerts)))
+      .catch(() => setDbAlerts([]));
+  }
+
+  function loadLiveGpa() {
+    api.get('/grades')
+      .then(data => { if (data) setLiveGpa(computeLiveGpa(data)); })
+      .catch(() => {});
+  }
+
+  useEffect(() => {
+    if (!unlocked) return;
+    loadUnreadActivity();
     loadPendingSubmissions()
       .then(setPendingSubmissions)
       .catch(err => console.warn('loadPendingSubmissions failed:', err.message));
-
-    // DB system alerts (GPA risk, etc.) — bootstrap doesn't sort by severity
-    // like the old .order('severity') did, so sort client-side to match.
-    function sortBySeverity(rows) {
-      return [...(rows || [])].sort((a, b) => (a.severity || '').localeCompare(b.severity || ''));
-    }
-
-    function loadAlerts() {
-      api.get('/bootstrap?tables=alerts')
-        .then(({ alerts }) => setDbAlerts(sortBySeverity(alerts)))
-        .catch(() => setDbAlerts([]));
-    }
     loadAlerts();
-
-    function reloadAlerts() { loadAlerts(); }
-
-    const alertsChannel = supabase.channel('ngs_db_alerts')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'alerts' }, reloadAlerts)
-      .subscribe();
-
-    const actChannel = supabase.channel('ngs_activity')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_log' }, payload => {
-        setActivityFeed(prev => [payload.new, ...prev]);
-      })
-      .subscribe();
-
-    const subChannel = supabase.channel('ngs_submissions')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'expense_submissions' }, payload => {
-        if (payload.new.status === 'pending') setPendingSubmissions(prev => [payload.new, ...prev]);
-      })
-      .subscribe();
-
-    // Grade entries → live GPA for status cards
-    function reloadLiveGpa() {
-      api.get('/grades')
-        .then(data => { if (data) setLiveGpa(computeLiveGpa(data)); })
-        .catch(() => {});
-    }
-    reloadLiveGpa();
-
-    const gradesChannel = supabase.channel('ngs_grade_entries')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'grade_entries' }, reloadLiveGpa)
-      .subscribe();
-
-    const expChannel = supabase.channel('ngs_expenses')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'expenses' }, ({ new: e }) => {
-        if (!e?.scholar || !e?.sem) return;
-        const row = { id: e.id, item: e.item, amount: parseFloat(e.amount) || 0, qty: parseFloat(e.qty) || 1, cat: e.cat, bucket: bucketFor(e.cat, e.bucket), date: e.date, sent: e.sent, avb: e.avb, vendor: e.vendor || '', sem: e.sem, group_id: e.group_id || null };
-        setD(prev => {
-          const sd = prev.scholars[e.scholar];
-          if (!sd) return prev;
-          const semList = sd.expenses?.[e.sem] || [];
-          if (semList.some(ex => String(ex.id) === String(e.id))) return prev;
-          return { ...prev, scholars: { ...prev.scholars, [e.scholar]: { ...sd, expenses: { ...(sd.expenses || {}), [e.sem]: [...semList, row] } } } };
-        });
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'expenses' }, ({ new: e }) => {
-        if (!e?.scholar) return;
-        setD(prev => {
-          const sd = prev.scholars[e.scholar];
-          if (!sd) return prev;
-          const newExp = {};
-          Object.entries(sd.expenses || {}).forEach(([sem, list]) => {
-            newExp[sem] = list.map(ex => String(ex.id) === String(e.id)
-              ? { ...ex, item: e.item, amount: parseFloat(e.amount) || 0, qty: parseFloat(e.qty) || 1, cat: e.cat, bucket: bucketFor(e.cat, e.bucket), date: e.date, sent: e.sent, avb: e.avb, vendor: e.vendor || '', sem: e.sem, group_id: e.group_id || null }
-              : ex);
-          });
-          return { ...prev, scholars: { ...prev.scholars, [e.scholar]: { ...sd, expenses: newExp } } };
-        });
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(alertsChannel);
-      supabase.removeChannel(actChannel);
-      supabase.removeChannel(subChannel);
-      supabase.removeChannel(gradesChannel);
-      supabase.removeChannel(expChannel);
-    };
+    loadLiveGpa();
   }, [unlocked]);
+
+  // Polling (replaces realtime): alerts/activity/submissions/grades are small
+  // tables, cheapest to just refetch in full on any change. Expenses gets a
+  // targeted patch (same upsert/delete-by-id shape the old INSERT/UPDATE
+  // realtime handlers used) since D.scholars[*].expenses is a large nested
+  // structure not worth refetching whole on every poll tick.
+  useChanges(deltas => {
+    if (!unlocked) return;
+
+    if (deltas.alerts?.rows.length || deltas.alerts?.deletedIds.length) loadAlerts();
+    if (deltas.activity_log?.rows.length) loadUnreadActivity();
+    if (deltas.expense_submissions?.rows.length) {
+      loadPendingSubmissions().then(setPendingSubmissions).catch(() => {});
+    }
+    if (deltas.grade_entries?.rows.length || deltas.grade_entries?.deletedIds.length) loadLiveGpa();
+
+    const expDelta = deltas.expenses;
+    if (expDelta && (expDelta.rows.length || expDelta.deletedIds.length)) {
+      setD(prev => {
+        let scholars = prev.scholars;
+        expDelta.rows.forEach(e => {
+          if (!e?.scholar || !e?.sem) return;
+          const sd = scholars[e.scholar];
+          if (!sd) return;
+          const row = { id: e.id, item: e.item, amount: parseFloat(e.amount) || 0, qty: parseFloat(e.qty) || 1, cat: e.cat, bucket: bucketFor(e.cat, e.bucket), date: e.date, sent: e.sent, avb: e.avb, vendor: e.vendor || '', sem: e.sem, group_id: e.group_id || null };
+          const semList = sd.expenses?.[e.sem] || [];
+          const exists = semList.some(ex => String(ex.id) === String(e.id));
+          const newSemList = exists
+            ? semList.map(ex => String(ex.id) === String(e.id) ? row : ex)
+            : [...semList, row];
+          scholars = { ...scholars, [e.scholar]: { ...sd, expenses: { ...(sd.expenses || {}), [e.sem]: newSemList } } };
+        });
+        if (expDelta.deletedIds.length) {
+          const deleted = new Set(expDelta.deletedIds.map(String));
+          Object.entries(scholars).forEach(([key, sd]) => {
+            const newExp = {};
+            let changed = false;
+            Object.entries(sd.expenses || {}).forEach(([sem, list]) => {
+              const filtered = list.filter(ex => !deleted.has(String(ex.id)));
+              if (filtered.length !== list.length) changed = true;
+              newExp[sem] = filtered;
+            });
+            if (changed) scholars = { ...scholars, [key]: { ...sd, expenses: newExp } };
+          });
+        }
+        return scholars === prev.scholars ? prev : { ...prev, scholars };
+      });
+    }
+  });
 
   function removeExpenseFromD(scholarKey, expenseId) {
     setD(prev => {
@@ -274,7 +264,7 @@ export function Navigator({ slug = [] }) {
 
   async function handleDismissDbAlert(alertId) {
     try {
-      await supabase.from('alerts').delete().eq('id', alertId);
+      await api.del(`/alerts/${alertId}`);
       setDbAlerts(prev => prev.filter(a => a.id !== alertId));
     } catch (err) { console.error('dismissAlert failed:', err); }
   }

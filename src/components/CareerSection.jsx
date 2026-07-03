@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase.js';
 import { api } from '../lib/api.js';
+import { useChanges } from '../hooks/useChanges.js';
 import { useData } from '../context/DataContext.jsx';
 import { NAMECLASS } from '../constants.js';
 
@@ -193,13 +193,10 @@ export function CareerSection({ id, collapsed, onToggle }) {
 
   useEffect(() => { load(); }, []);
 
-  // Inert until Phase B3 — see DocumentsSection.jsx's identical note.
-  useEffect(() => {
-    const ch = supabase.channel('ngs_career')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'career_steps' }, () => load())
-      .subscribe();
-    return () => supabase.removeChannel(ch);
-  }, []);
+  useChanges(deltas => {
+    const d = deltas.career_steps;
+    if (d && (d.rows.length || d.deletedIds.length)) load();
+  });
 
   const byScholar = sk => rows.filter(r => r.scholar === sk);
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase, SUPABASE_URL } from '../lib/supabase.js';
 import { api } from '../lib/api.js';
+import { useChanges } from '../hooks/useChanges.js';
 import { useData } from '../context/DataContext.jsx';
 import { writeExpense } from '../api-writer.js';
 import { EXPENSE_CATS, SEMESTER_OPTIONS } from '../constants.js';
@@ -152,20 +153,21 @@ export function DocumentsSection({ id, collapsed, onToggle }) {
 
   useEffect(() => { loadDocs(); }, []);
 
-  // Inert until Phase B3 (polling replaces realtime): writes now go to Neon,
-  // so this Supabase channel never fires — kept in place, harmless, until B3
-  // formally replaces it with the /api/changes poller.
-  useEffect(() => {
-    const ch = supabase.channel('ngs_documents')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'documents' },
-        payload => setDocs(prev => [payload.new, ...prev]))
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'documents' },
-        payload => setDocs(prev => prev.map(d => d.id === payload.new.id ? payload.new : d)))
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'documents' },
-        payload => setDocs(prev => prev.filter(d => d.id !== payload.old.id)))
-      .subscribe();
-    return () => supabase.removeChannel(ch);
-  }, []);
+  useChanges(deltas => {
+    const d = deltas.documents;
+    if (!d) return;
+    if (d.rows.length) {
+      setDocs(prev => {
+        const byId = new Map(prev.map(x => [String(x.id), x]));
+        d.rows.forEach(row => byId.set(String(row.id), row));
+        return [...byId.values()].sort((a, b) => (b.uploaded_at || '').localeCompare(a.uploaded_at || ''));
+      });
+    }
+    if (d.deletedIds.length) {
+      const deleted = new Set(d.deletedIds.map(String));
+      setDocs(prev => prev.filter(x => !deleted.has(String(x.id))));
+    }
+  });
 
   function onFileInput(e) {
     const f = e.target.files?.[0];
