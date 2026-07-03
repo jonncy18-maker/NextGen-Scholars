@@ -4,6 +4,8 @@ import { useLocalStorage } from '../hooks/useLocalStorage.js';
 import { loadFromSupabase, loadPendingSubmissions } from '../api-loader.js';
 import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead, approveSubmission, rejectSubmission, writeSent } from '../api-writer.js';
 import { supabase } from '../lib/supabase.js';
+import { authClient } from '../lib/auth-client.js';
+import { api } from '../lib/api.js';
 import { CAT_TO_BUCKET } from '../constants.js';
 import { FxCtx, useFxState } from '../context/FxContext.jsx';
 import { DataCtx } from '../context/DataContext.jsx';
@@ -67,9 +69,14 @@ export function Navigator({ slug = [] }) {
 
   const [unlocked, setUnlocked] = useState(false);
 
+  // Every Navigator section is its own Next.js page (app/navigator/[[...slug]]),
+  // so this component remounts fresh on each section navigation. Check the
+  // persisted Neon Auth (Better Auth) session — not Supabase's, which is only
+  // a best-effort side session for the not-yet-ported Drive/ask Edge Functions
+  // (see LockScreen.jsx) and can't be relied on to reflect real sign-in state.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setUnlocked(true);
+    authClient.getSession().then(({ data }) => {
+      if (data?.session) setUnlocked(true);
     });
   }, []);
 
@@ -100,26 +107,36 @@ export function Navigator({ slug = [] }) {
     return () => clearTimeout(t);
   }, [writeError]);
 
-  // Load activity + pending submissions on unlock, subscribe to realtime.
+  // Load activity + pending submissions on unlock. The postgres_changes
+  // subscriptions below are now inert for every migrated table (alerts,
+  // activity_log, grade_entries, expenses, expense_submissions) -- writes go
+  // to Neon, not Supabase, so these Supabase tables never change anymore.
+  // Kept in place, harmless, until Phase B3 replaces them with polling.
   useEffect(() => {
     if (!unlocked) return;
 
-    supabase.from('activity_log').select('*').eq('read', false)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => setActivityFeed(data || []));
+    api.get('/activity?unread=1')
+      .then(data => setActivityFeed(data || []))
+      .catch(() => setActivityFeed([]));
 
     loadPendingSubmissions()
       .then(setPendingSubmissions)
       .catch(err => console.warn('loadPendingSubmissions failed:', err.message));
 
-    // DB system alerts (GPA risk, etc.)
-    supabase.from('alerts').select('*').order('severity')
-      .then(({ data }) => setDbAlerts(data || []));
-
-    function reloadAlerts() {
-      supabase.from('alerts').select('*').order('severity')
-        .then(({ data }) => setDbAlerts(data || []));
+    // DB system alerts (GPA risk, etc.) — bootstrap doesn't sort by severity
+    // like the old .order('severity') did, so sort client-side to match.
+    function sortBySeverity(rows) {
+      return [...(rows || [])].sort((a, b) => (a.severity || '').localeCompare(b.severity || ''));
     }
+
+    function loadAlerts() {
+      api.get('/bootstrap?tables=alerts')
+        .then(({ alerts }) => setDbAlerts(sortBySeverity(alerts)))
+        .catch(() => setDbAlerts([]));
+    }
+    loadAlerts();
+
+    function reloadAlerts() { loadAlerts(); }
 
     const alertsChannel = supabase.channel('ngs_db_alerts')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'alerts' }, reloadAlerts)
@@ -139,8 +156,9 @@ export function Navigator({ slug = [] }) {
 
     // Grade entries → live GPA for status cards
     function reloadLiveGpa() {
-      supabase.from('grade_entries').select('scholar,sem,units,pct_equiv')
-        .then(({ data }) => { if (data) setLiveGpa(computeLiveGpa(data)); });
+      api.get('/grades')
+        .then(data => { if (data) setLiveGpa(computeLiveGpa(data)); })
+        .catch(() => {});
     }
     reloadLiveGpa();
 

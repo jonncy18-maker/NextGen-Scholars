@@ -1,6 +1,15 @@
 import { sql } from '../../../lib/db.js';
-import { requireScholarOwn, AuthError } from '../../../lib/auth.js';
+import { requireMentor, requireScholarOwn, AuthError } from '../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../lib/http.js';
+
+// GET ?unread=1 — mirrors navigator.jsx's unread activity feed (mentor only).
+export const GET = withErrorHandling(async (request) => {
+  await requireMentor(request);
+  const rows = await sql`
+    select * from activity_log where read = false order by created_at desc
+  `;
+  return json(rows);
+});
 
 // Mirrors writeActivityLog({ scholar, type, expense_id, expense_data, changes }).
 // POST is scholar-initiated (edit/delete-request logging from entry.jsx);
