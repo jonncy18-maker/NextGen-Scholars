@@ -3,7 +3,7 @@ import { useData } from '../context/DataContext.jsx';
 import { useFmt } from '../context/FxContext.jsx';
 import { scholarTotals, nextMilestone, accentFor } from '../utils.js';
 import { SEMESTER_OPTIONS } from '../constants.js';
-import { supabase, SUPABASE_URL } from '../lib/supabase.js';
+import { api } from '../lib/api.js';
 
 const SEM_WEEKS = 16;
 
@@ -108,19 +108,7 @@ function ScholarCard({ sk, currency, liveGpa, onSemesterChange }) {
     setNoteError(null);
     setNoteText(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Session expired — please refresh and log in again.');
-      const res  = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
-        method:  'POST',
-        headers: {
-          'Content-Type':  'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ scholar: sk, type: 'coach' }),
-      });
-      const data = await res.json();
-      if (!res.ok || data.status === 'error') throw new Error(data.error || 'Failed to generate note.');
-      if (data.status === 'not_configured') throw new Error('AI key not configured — add GOOGLE_AI_KEY to Supabase secrets.');
+      const data = await api.post('/ask', { scholar: sk, type: 'coach' });
       setNoteText(data.note);
     } catch (err) {
       setNoteError(err.message);

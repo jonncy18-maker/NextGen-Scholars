@@ -1,8 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
 const QUICK_PROMPTS = [
   'What is NextGen Scholars?',
   'How do I apply?',
@@ -49,9 +46,9 @@ export function PublicAskWidget() {
       .map(m => ({ role: m.role === 'user' ? 'user' : 'model', text: m.text }));
 
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-public`, {
+      const res = await fetch('/api/ask-public', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: trimmed, messages: history }),
       });
       const data = await res.json();

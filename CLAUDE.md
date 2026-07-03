@@ -143,12 +143,49 @@ Current state as of this checkpoint:
   sign-up → sign-in → `getToken()` (JWT from the `set-auth-jwt` response header) →
   authenticated `GET /api/bootstrap` all confirmed working end-to-end via the
   `/sign-in` test harness, returning real migrated data (not empty arrays).
-- **Not started yet:** B2 (write endpoints + `supabase-writer.js`/`-loader.js`
-  port + ~25 call-site migrations, incl. transactional submission-approve), B3
-  (polling replaces realtime), B4 (delete cosmetic auth gates, real role gates),
-  B5 (port `ask`/`ask-scholar`/`ask-public`/`drive-proxy`).
+- **Phase B2 (write endpoints + mentor-side frontend port)** — ✅ done. All 24
+  write routes under `app/api/**` (expenses, submissions incl. a transactional
+  approve, actions, scholars, activity, English periods/sessions/forecasts/
+  scenarios, grades, documents, career, alerts). `src/api-writer.js` +
+  `src/api-loader.js` replace `supabase-writer.js`/`supabase-loader.js` with
+  identical exported names/signatures. Every **mentor-only** call site
+  (`navigator.jsx` and its section components) now reads/writes through Neon.
+  `LockScreen.jsx` does a real Better Auth sign-in (was Supabase Auth).
+- **Phase B3 (polling replaces realtime)** — ✅ done. `src/hooks/useChanges.js`
+  is one shared module-level poller per tab against `/api/changes`, replacing
+  every Supabase `postgres_changes` subscription on the mentor side. Live
+  two-browser tested and confirmed working (~25s convergence).
+- **Phase B5 (AI + Drive)** — ✅ done for the mentor side. Ported the Gemini
+  tiered AI layer (`lib/ai/{context,tier1,tier2,tier3,action}.js`) and Google
+  Drive proxy to `app/api/{ask,ask-scholar,ask-public,drive}/route.js`. `ask`
+  is mentor-only (`requireMentor`); `ask-scholar`/`ask-public` stay
+  unauthenticated by design, matching their pre-migration behavior (see "Known
+  issues" below). Every mentor AI/Drive call site (`NavigatorAI`,
+  `DocumentsSection`, `StatusSection`, `GcashCalculator`, `ExpenseWorkbench`,
+  `NavigatorAIDrawer`, `PublicAskWidget`) now calls these instead of the
+  Supabase Edge Functions — nothing in the mentor-facing app calls
+  `supabase.auth.*` anymore, so `LockScreen`'s old dual-sign-in
+  (Better Auth + a parallel Supabase Auth session) was removed.
+  **Requires new Vercel env vars** to actually answer instead of 503ing
+  "not configured": `GOOGLE_AI_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
+  `GOOGLE_DRIVE_REFRESH_TOKEN`, `GOOGLE_DRIVE_FOLDER_ID` — copy the same
+  values already in Supabase secrets into the Vercel project's env vars
+  (server-only, no `NEXT_PUBLIC_` prefix).
+- **Phase B4 (delete cosmetic auth gates everywhere)** — partially done: the
+  mentor gate landed as part of B2. What's left is scholar-facing: real
+  Neon Auth accounts + a sign-in gate for `entry.jsx`/`ScholarHome`/etc.
+  Claire's account exists (`role='scholar', scholar_key='claire'`) but her
+  pages aren't wired to it yet — still on Supabase, along with April's and
+  Janndilyne's (no accounts yet; need real emails from the owner). Also still
+  on Supabase and deliberately untouched: `EnglishIngestPanel.jsx` (shared
+  between mentor's `EnglishSection` and scholar's `EnglishTracking` —
+  can't safely split without scholar auth first), `ScholarIngestPanel.jsx`,
+  `ExpenseAskWidget.jsx`, `ScholarChatPanel.jsx`, `ScholarLockGate.jsx`,
+  `useScholarProfile.js`, and every public/scholar screen (`GradeEntry`,
+  `EnglishTracking`, `ScholarDocuments`, `VacationTracker`,
+  `MilestonesTracker`, `HomePage`, `claire`/`april`/`janndilyne` entries).
 - Supabase remains the live backend for `main`/production throughout — nothing
-  in Phase A′/B0/B1 touches Supabase destructively (data was only read out, not
+  in this branch touches Supabase destructively (data was only read out, not
   deleted or modified there).
 
 ## AI layer

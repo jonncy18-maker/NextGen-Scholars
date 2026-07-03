@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase, SUPABASE_URL } from '../lib/supabase.js';
 import { api } from '../lib/api.js';
+import { getToken } from '../lib/auth-client.js';
 import { useChanges } from '../hooks/useChanges.js';
 import { useData } from '../context/DataContext.jsx';
 import { writeExpense } from '../api-writer.js';
@@ -180,9 +180,6 @@ export function DocumentsSection({ id, collapsed, onToggle }) {
     setUploading(true);
     setUploadError(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Session expired — please log in again.');
-
       const base64 = await new Promise((res, rej) => {
         const reader = new FileReader();
         reader.onload  = () => res(reader.result.split(',')[1]);
@@ -190,13 +187,7 @@ export function DocumentsSection({ id, collapsed, onToggle }) {
         reader.readAsDataURL(upFile.blob);
       });
 
-      const driveRes = await fetch(`${SUPABASE_URL}/functions/v1/drive-proxy`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'upload', filename: upFile.name, mimeType: upFile.mime, base64 }),
-      });
-      const driveData = await driveRes.json();
-      if (!driveRes.ok) throw new Error(driveData.error || 'Drive upload failed.');
+      const driveData = await api.post('/drive', { action: 'upload', filename: upFile.name, mimeType: upFile.mime, base64 });
 
       await api.post('/documents', {
         scholar: upScholar,
@@ -220,11 +211,11 @@ export function DocumentsSection({ id, collapsed, onToggle }) {
 
   async function handleDownload(doc) {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { alert('Session expired — please log in again.'); return; }
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/drive-proxy`, {
+      // Binary response -- bypass api.js's JSON-only request() helper.
+      const token = await getToken();
+      const res = await fetch('/api/drive', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'download', fileId: doc.storage_path }),
       });
       if (!res.ok) { alert('Download failed.'); return; }
@@ -250,14 +241,7 @@ export function DocumentsSection({ id, collapsed, onToggle }) {
   async function handleDelete(doc) {
     if (!confirm(`Delete "${doc.filename}"?`)) return;
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        await fetch(`${SUPABASE_URL}/functions/v1/drive-proxy`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'delete', fileId: doc.storage_path }),
-        });
-      }
+      await api.post('/drive', { action: 'delete', fileId: doc.storage_path });
     } catch { /* best-effort Drive delete */ }
     await api.del(`/documents/${doc.id}`);
   }
@@ -266,32 +250,10 @@ export function DocumentsSection({ id, collapsed, onToggle }) {
     setExtracting(prev => ({ ...prev, [doc.id]: true }));
     setExtractError(prev => ({ ...prev, [doc.id]: null }));
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Session expired — please log in again.');
-
-      const driveRes = await fetch(`${SUPABASE_URL}/functions/v1/drive-proxy`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'get_base64', fileId: doc.storage_path }),
-      });
-      const driveData = await driveRes.json();
-      if (!driveRes.ok) throw new Error(driveData.error || 'Could not fetch file from Drive.');
+      const driveData = await api.post('/drive', { action: 'get_base64', fileId: doc.storage_path });
       const { base64, mimeType: mime } = driveData;
 
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          scholar: doc.scholar,
-          type: 'ingest',
-          file: { base64, mime },
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      const json = await api.post('/ask', { scholar: doc.scholar, type: 'ingest', file: { base64, mime } });
       if (!json.items || json.items.length === 0) throw new Error('No expenses found in this document.');
 
       setReviews(prev => ({
