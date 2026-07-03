@@ -133,15 +133,24 @@ secret lives only in Supabase secrets — never in the client.
   `node` + `/opt/node22/lib/node_modules/playwright` (CommonJS `require`) +
   executablePath `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 
-## Agentic Loop Framework
+## Agentic Loop
 
-This project follows the **Objective Loop** framework defined in:
-**https://github.com/jonncy18-maker/Agentic-Loop**
+Protocolo: https://raw.githubusercontent.com/jonncy18-maker/agentic-loop/main/AGENTIC_LOOP.md
+Orquestador: https://raw.githubusercontent.com/jonncy18-maker/agentic-loop/main/orchestrator.js
+Al inicio de cada sesión, leer el protocolo completo desde la URL de arriba.
 
-Before starting any multi-step task, consult that repo for the loop structure,
-objective-setting conventions, and iteration protocol. The framework governs how
-Claude agents should plan, execute, verify, and loop back on tasks within this
-project.
+Activate the loop when **any** of these apply: the change touches 3+ files,
+creates a new component/module, touches the data layer (queries, schema, AI
+context), has user-visible behavior, or is estimated at more than ~5 minutes
+of work. For anything smaller — a typo, a one-liner, a single-file config
+change — just do it directly, no loop.
+
+The loop runs 6 phases (Understand & Verify → Instructions → Build →
+Audit → Iterate → Document) with context isolation between the Build Agent
+and the Audit Agent, so the audit is real compliance against the Phase 2
+contract rather than a check on the builder's own reasoning. See the full
+protocol at the URL above for phase details, control tokens
+(`VERDICT: PASS|FAIL|ESCALATE`, `BLOCKER:`), and the Stuck Report format.
 
 ## Conventions
 
