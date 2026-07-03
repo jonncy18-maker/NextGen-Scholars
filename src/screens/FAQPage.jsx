@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
 
 // ── chevron icon ──────────────────────────────────────────────────────────────
@@ -54,11 +54,11 @@ export function FAQPage() {
       {/* ── sticky nav ── */}
       <header className="ngs-faq-nav">
         <div className="ngs-faq-nav-inner">
-          <Link to="/" className="ngs-faq-nav-brand">
+          <Link href="/" className="ngs-faq-nav-brand">
             <div className="ngs-mark ngs-mark-sm"><span>N</span><span>G</span><span>S</span></div>
             <span className="ngs-faq-nav-name">NextGen Scholars</span>
           </Link>
-          <Link to="/" className="ngs-faq-back">← Back to home</Link>
+          <Link href="/" className="ngs-faq-back">← Back to home</Link>
         </div>
       </header>
 
@@ -496,7 +496,7 @@ export function FAQPage() {
         <div className="ngs-faq-footer-inner">
           <p>© 2026 NextGen Scholars · Philippines · United States</p>
           <p>Privately funded · No public donations accepted</p>
-          <Link to="/" className="ngs-faq-back">← Back to home</Link>
+          <Link href="/" className="ngs-faq-back">← Back to home</Link>
         </div>
       </footer>
     </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { NGSIcons } from './icons.jsx';
 import { DEFAULT_RATE } from '../../fx.js';
 import { useFxState } from '../../context/FxContext.jsx';
@@ -93,7 +93,7 @@ function TopNav({ data, fx, isMobile }) {
   return (
     <header className="ngs-pnav">
       <div className="ngs-pnav-inner">
-        <Link to="/" className="ngs-pnav-brand">
+        <Link href="/" className="ngs-pnav-brand">
           <div className="ngs-mark ngs-mark-sm">
             <span>N</span><span>G</span><span>S</span>
           </div>
@@ -116,7 +116,7 @@ function TopNav({ data, fx, isMobile }) {
             <a href="/#tracks">Tracks</a>
             <JourneyDropdown baseHref="/" />
             <a href="/#scholars">Scholars</a>
-            <Link to="/navigator" className="ngs-pnav-mentor-link">Navigator</Link>
+            <Link href="/navigator" className="ngs-pnav-mentor-link">Navigator</Link>
             <a href="/#apply" className="ngs-pnav-cta-link">Apply</a>
           </nav>
         )}
@@ -149,7 +149,7 @@ function TopNav({ data, fx, isMobile }) {
             </div>
           )}
           <a href="/#scholars">Scholars</a>
-          <Link to="/navigator">Navigator</Link>
+          <Link href="/navigator">Navigator</Link>
           <a href="/#apply" className="ngs-pnav-menu-cta">Apply</a>
         </nav>
       )}
@@ -605,7 +605,7 @@ function ProfileFooter({ data, relatedProfiles }) {
       {relatedProfiles?.length > 0 && (
         <div className="ngs-pfooter-links">
           {relatedProfiles.map(p => (
-            <Link key={p.href} to={p.href} className="ngs-pfooter-link">
+            <Link key={p.href} href={p.href} className="ngs-pfooter-link">
               View {p.name}'s profile →
             </Link>
           ))}

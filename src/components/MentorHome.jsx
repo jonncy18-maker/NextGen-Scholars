@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { supabase } from '../lib/supabase.js';
 import { useData } from '../context/DataContext.jsx';
 import { SEMESTER_OPTIONS } from '../constants.js';
@@ -185,8 +185,8 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
 
               <div className="mh-actions">
                 <button className="mh-btn" onClick={() => onOpenDrawer('query', key)}>Ask →</button>
-                <Link className="mh-btn" to="/navigator/expenses">Log $</Link>
-                <Link className="mh-btn" to="/navigator/grades">Log Grades</Link>
+                <Link className="mh-btn" href="/navigator/expenses">Log $</Link>
+                <Link className="mh-btn" href="/navigator/grades">Log Grades</Link>
               </div>
             </div>
           );
@@ -201,7 +201,7 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
       <div className="mh-dash">
         <Link
           className={`mh-dash-stat${pendingCount > 0 ? ' is-alert' : ''}`}
-          to="/navigator/expenses"
+          href="/navigator/expenses"
         >
           <span className="mh-dash-val">{pendingCount}</span>
           <span className="mh-dash-lbl">Pending approvals</span>
@@ -209,7 +209,7 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
 
         <Link
           className={`mh-dash-stat${activityCount > 0 ? ' is-warn' : ''}`}
-          to="/navigator/expenses"
+          href="/navigator/expenses"
         >
           <span className="mh-dash-val">{activityCount}</span>
           <span className="mh-dash-lbl">Unread activity</span>
@@ -251,7 +251,7 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
 
       <div className="mh-modules">
 
-        <Link className="mm-card" to="/navigator/expenses">
+        <Link className="mm-card" href="/navigator/expenses">
           <div className="mm-card-tag">EXP</div>
           <div className="mm-card-label">Expenses</div>
           <div className="mm-card-blurb">
@@ -259,7 +259,7 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
           </div>
         </Link>
 
-        <Link className="mm-card" to="/navigator/grades">
+        <Link className="mm-card" href="/navigator/grades">
           <div className="mm-card-tag">GPA</div>
           <div className="mm-card-label">Grades</div>
           <div className="mm-card-blurb">
@@ -267,13 +267,13 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
           </div>
         </Link>
 
-        <Link className="mm-card" to="/navigator/english">
+        <Link className="mm-card" href="/navigator/english">
           <div className="mm-card-tag">ENG</div>
           <div className="mm-card-label">English</div>
           <div className="mm-card-blurb">OET / IELTS hours tracker</div>
         </Link>
 
-        <Link className="mm-card" to="/navigator/travel">
+        <Link className="mm-card" href="/navigator/travel">
           <div className="mm-card-tag">TRV</div>
           <div className="mm-card-label">Travel</div>
           <div className="mm-card-items">
@@ -293,7 +293,7 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
           </div>
         </Link>
 
-        <Link className="mm-card" to="/navigator/milestones">
+        <Link className="mm-card" href="/navigator/milestones">
           <div className="mm-card-tag">MLS</div>
           <div className="mm-card-label">Milestones</div>
           <div className="mm-card-items">
@@ -313,7 +313,7 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
           </div>
         </Link>
 
-        <Link className="mm-card" to="/navigator/docs">
+        <Link className="mm-card" href="/navigator/docs">
           <div className="mm-card-tag">DOC</div>
           <div className="mm-card-label">Documents</div>
           <div className="mm-card-blurb">Files, uploads & records</div>

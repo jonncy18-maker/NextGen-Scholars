@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 import '../styles/english-tracking.css';
 
-const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 function fmtDuration(minutes) {
   if (!minutes) return '—';

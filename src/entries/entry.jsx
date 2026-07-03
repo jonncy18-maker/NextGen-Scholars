@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { EXPENSE_CATS, AVB_OPTIONS } from '../constants.js';
 import { NGS_DATA } from '../../scholars-data.js';
 import { updateExpense, writeActivityLog, writeSubmission, resubmitExpense, markSubmissionReadByScholar } from '../supabase-writer.js';
@@ -52,7 +53,7 @@ function makeEmptyRow(defaultSem) {
 }
 
 export function EntryApp() {
-  const routerLocation = useLocation();
+  const searchParams = useSearchParams();
   const [scholarKey, setScholarKey] = useState('claire');
   const [password, setPassword] = useState('');
   const [authed, setAuthed] = useState(false);
@@ -62,15 +63,13 @@ export function EntryApp() {
   useEffect(() => { loadConfig().then(setConfig); }, []);
 
   // Auto-auth if arriving from the scholar portal (sessionStorage set by ScholarHome).
-  // Must use react-router's location.search — window.location.search is empty in HashRouter.
   useEffect(() => {
-    const params = new URLSearchParams(routerLocation.search);
-    const preauth = params.get('scholar');
+    const preauth = searchParams.get('scholar');
     if (preauth && sessionStorage.getItem('ngs_auth_scholar') === preauth) {
       const s = SCHOLARS.find(s => s.key === preauth);
       if (s) { setScholarKey(preauth); setAuthed(true); }
     }
-  }, [routerLocation.search]);
+  }, [searchParams]);
 
   function unlock(e) {
     e.preventDefault();
@@ -147,7 +146,7 @@ function LockGate({ scholarKey, setScholarKey, password, setPassword, onSubmit, 
             {ready ? `Continue as ${scholar.display} →` : 'Loading…'}
           </button>
         </form>
-        <Link to="/" className="el-back">← Back to NextGen Scholars</Link>
+        <Link href="/" className="el-back">← Back to NextGen Scholars</Link>
       </div>
     </div>
   );
@@ -609,7 +608,7 @@ function ExpenseForm({ scholar, onLogout }) {
           <span className="ef-header-title">Add Expense — <strong>{scholar.display}</strong></span>
         </div>
         <div className="ef-header-right">
-          <Link to={`/home/${scholar.key}`} className="ef-home-link">← Portal home</Link>
+          <Link href={`/home/${scholar.key}`} className="ef-home-link">← Portal home</Link>
           <button className="ef-logout" onClick={onLogout}>Switch scholar</button>
         </div>
       </header>

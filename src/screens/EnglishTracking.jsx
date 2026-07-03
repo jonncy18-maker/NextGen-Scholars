@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { supabase } from '../lib/supabase.js';
 import { SESSION_CATEGORIES, SESSION_TYPES, classifyActivity } from '../constants.js';
 import { EnglishIngestPanel } from '../components/EnglishIngestPanel.jsx';
@@ -438,7 +438,7 @@ export function EnglishTracking({ scholarKey }) {
           <div className="sp-head-rule" />
           <div className="sp-head-meta">
             <span className="sp-stage">{periodLabel}</span>
-            <Link to={fallback.homeHref} className="sp-tagline" style={{ textDecoration: 'none' }}>
+            <Link href={fallback.homeHref} className="sp-tagline" style={{ textDecoration: 'none' }}>
               ← Back to home
             </Link>
           </div>

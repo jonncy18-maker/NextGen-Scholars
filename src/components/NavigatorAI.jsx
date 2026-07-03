@@ -3,7 +3,7 @@ import { supabase, SUPABASE_URL } from '../lib/supabase.js';
 import { useData } from '../context/DataContext.jsx';
 import { writeExpense } from '../supabase-writer.js';
 import { EXPENSE_CATS, SEMESTER_OPTIONS, SESSION_CATEGORIES } from '../constants.js';
-import { uvToPct } from '../pages/GradeEntry.jsx';
+import { uvToPct } from '../screens/GradeEntry.jsx';
 import { EnglishIngestPanel } from './EnglishIngestPanel.jsx';
 
 function gradeAvg(prelim, midterm, finalGrade) {
@@ -11,7 +11,7 @@ function gradeAvg(prelim, midterm, finalGrade) {
   return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
 }
 
-const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export const QUICK_PROMPTS = [
   { label: 'Total spend',        tpl: s => `How much has ${s} spent overall?` },

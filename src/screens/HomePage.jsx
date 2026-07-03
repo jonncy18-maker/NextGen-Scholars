@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { NGS_DATA } from '../../scholars-data.js';
 import { JOURNEY_STAGES } from '../constants.js';
 import { JourneyDropdown } from '../components/JourneyDropdown.jsx';
@@ -58,7 +58,7 @@ const ROLES = [
 ];
 
 function LoginModal({ onClose }) {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [role, setRole] = useState('claire');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
@@ -93,7 +93,7 @@ function LoginModal({ onClose }) {
     const { configKey, dest } = ROLES.find(r => r.key === role);
     const expected = config[configKey];
     if (expected && password === expected) {
-      navigate(dest);
+      router.push(dest);
     } else {
       setError(true);
     }

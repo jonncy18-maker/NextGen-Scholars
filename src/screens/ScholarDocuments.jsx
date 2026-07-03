@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { supabase, SUPABASE_URL } from '../lib/supabase.js';
 import { SEMESTER_OPTIONS } from '../constants.js';
 import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
@@ -185,7 +185,7 @@ export function ScholarDocuments({ scholarKey }) {
           <div className="sp-head-rule" />
           <div className="sp-head-meta">
             <span className="sp-stage">Files &amp; records</span>
-            <Link to={fallback.homeHref} className="sp-tagline" style={{ textDecoration: 'none' }}>
+            <Link href={fallback.homeHref} className="sp-tagline" style={{ textDecoration: 'none' }}>
               ← Back to home
             </Link>
           </div>
@@ -252,7 +252,7 @@ export function ScholarDocuments({ scholarKey }) {
         <footer className="sp-footer">
           <div className="sp-mark">NGS</div>
           <div className="sp-footer-tag">One generation lifts another.</div>
-          <Link to="/" className="sp-home-link">← Home</Link>
+          <Link href="/" className="sp-home-link">← Home</Link>
         </footer>
       </div>
 

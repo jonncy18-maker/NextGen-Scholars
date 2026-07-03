@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { supabase } from '../lib/supabase.js';
 import { NGS_DATA } from '../../scholars-data.js';
 import {
@@ -275,7 +275,7 @@ export function ScholarHome({ scholarKey }) {
           </div>
           <div className="sp-primary-grid">
             {PRIMARY.map(card => (
-              <Link key={card.key} className="sp-card" to={card.href}>
+              <Link key={card.key} className="sp-card" href={card.href}>
                 <div className="sp-card-icon">{card.icon}</div>
                 <div className="sp-card-arrow"><IconArrow size={16} /></div>
                 <div className="sp-card-label">{card.label}</div>
@@ -303,7 +303,7 @@ export function ScholarHome({ scholarKey }) {
                 </>
               );
               return tile.href
-                ? <Link key={tile.key} className={`sp-tile${tile.reward ? ' is-reward' : ''}`} to={tile.href}>{inner}</Link>
+                ? <Link key={tile.key} className={`sp-tile${tile.reward ? ' is-reward' : ''}`} href={tile.href}>{inner}</Link>
                 : <div key={tile.key} className={`sp-tile sp-tile--inactive${tile.reward ? ' is-reward' : ''}`}>{inner}</div>;
             })}
           </div>
@@ -314,7 +314,7 @@ export function ScholarHome({ scholarKey }) {
         <footer className="sp-footer">
           <div className="sp-mark">NGS</div>
           <div className="sp-footer-tag">One generation lifts another.</div>
-          <Link to="/" className="sp-home-link">← Home</Link>
+          <Link href="/" className="sp-home-link">← Home</Link>
         </footer>
       </div>
     </div>

@@ -2,10 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { supabase } from '../lib/supabase.js';
 import { writeSubmission } from '../supabase-writer.js';
 import { EXPENSE_CATS, SEMESTER_OPTIONS } from '../constants.js';
-import { uvToPct } from '../pages/GradeEntry.jsx';
+import { uvToPct } from '../screens/GradeEntry.jsx';
 
-const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const ACCEPTED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
 
 function gradeAvg(prelim, midterm, finalGrade) {

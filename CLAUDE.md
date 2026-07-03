@@ -5,24 +5,32 @@ program supporting Filipino nursing students (NGN track) on a pathway toward
 licensure abroad (PH → OET → NCLEX → AHPRA Australia).
 
 - **Repo:** `jonncy18-maker/NextGen-Scholars` (renamed from `NexGen`)
-- **Live:** https://jonncy18-maker.github.io/NextGen-Scholars/ (GitHub Pages, `main`)
-- **Stack:** Vite + React 18 + React Router v6 (HashRouter) · Supabase (Postgres + Edge Functions)
+- **Live:** https://jonncy18-maker.github.io/NextGen-Scholars/ (GitHub Pages, `main`) —
+  **migrating to Vercel**; see `neon-migration` branch and the migration plan.
+- **Stack:** Next.js 14 (App Router) + React 18 · Supabase (Postgres + Edge Functions),
+  **migrating to Neon + Neon Auth**. (Previously Vite + React Router v6/HashRouter —
+  see git history for the pre-migration architecture.)
 
 ## Build system
 
-A single React SPA built with **Vite + React 18 + JSX** under `src/`. `index.html`
-is the only HTML entry point; it boots `src/entries/main.jsx` → `src/App.jsx`, which
-sets up a `HashRouter`. `public/404.html` redirects GitHub Pages deep links back to
-the SPA. Legacy `*.html` URLs (`claire.html`, `navigator.html`, etc.) are redirected
-to their SPA routes at runtime.
+A Next.js **App Router** app. `app/**/page.jsx` files are thin `'use client'`
+wrappers around the pre-existing screen/component code under `src/` — route params
+arrive as the page's `params` prop rather than via `useParams()`. `app/layout.jsx` is
+the document shell (global CSS, error boundary). `app/[...legacy]/page.jsx` reproduces
+the old legacy-URL redirect behavior (`claire.html`, `navigator.html`, `?scholar=`
+query forms, and any other unrecognised path) client-side. Note: full-page components
+live in **`src/screens/`**, not `src/pages/` — a directory literally named
+`src/pages/` collides with Next.js's (legacy) Pages Router auto-detection.
 
 ```bash
 npm install
-npm run dev      # Vite dev server — http://localhost:5173/NextGen-Scholars/
-npm run build    # Production build → dist/
-npm run preview  # Preview the build locally
-npm run format   # Prettier — src/**/*.{js,jsx,css} and scholars-data.js
+npm run dev      # Next dev server — http://localhost:3000/
+npm run build    # Production build (next build)
+npm run start    # Serve the production build locally
+npm run format   # Prettier — src/**/*.{js,jsx,css}, app/**/*.jsx, and scholars-data.js
 ```
+
+Env vars are `NEXT_PUBLIC_*` (not Vite's `VITE_*`) — see `.env.example`.
 
 ## Routes
 
@@ -41,12 +49,10 @@ npm run format   # Prettier — src/**/*.{js,jsx,css} and scholars-data.js
 
 | File/Path | Role |
 |---|---|
-| `index.html` | Sole HTML entry point — boots the SPA. |
-| `public/404.html` | GitHub Pages deep-link redirect into the SPA. |
-| `src/App.jsx` | Root — `HashRouter`, route table, top-level error boundary, legacy URL map. |
-| `src/entries/` | Vite/route entry components (`navigator.jsx`, `claire.jsx`, `april.jsx`, `janndilyne.jsx`, `entry.jsx`, `main.jsx`). |
-| `src/entries/navigator.jsx` | Root `Navigator` component — manages data state, FX state, realtime subscriptions, renders all sections. |
-| `src/pages/` | Full-page components (`HomePage`, `ScholarHome`, `EnglishTracking`, `GradeEntry`, `MilestonesTracker`, `VacationTracker`, `FAQPage`). |
+| `app/` | Next.js App Router — file-based routes, each a thin client wrapper. `app/layout.jsx` is the document shell; `app/[...legacy]/page.jsx` is the legacy-URL redirect catch-all; `app/navigator/[[...slug]]/page.jsx` drives Navigator's internal sections. |
+| `src/entries/` | Route-level entry components (`navigator.jsx`, `claire.jsx`, `april.jsx`, `janndilyne.jsx`, `entry.jsx`), imported by `app/**/page.jsx`. |
+| `src/entries/navigator.jsx` | Root `Navigator` component — manages data state, FX state, realtime subscriptions, renders the section matching its `slug` prop. |
+| `src/screens/` | Full-page components (`HomePage`, `ScholarHome`, `EnglishTracking`, `GradeEntry`, `MilestonesTracker`, `VacationTracker`, `FAQPage`, `ScholarDocuments`). Named `screens/`, not `pages/`, to avoid colliding with Next's Pages Router auto-detection. |
 | `src/components/` | Section-level components (alerts, status cards, nav bar, footer, AI panels, etc.). |
 | `src/components/expenses/` | Expense sub-components (charts, filter panel, add form, workbench, sort/filter helpers). |
 | `src/components/Profile/` | Scholar profile card components. |

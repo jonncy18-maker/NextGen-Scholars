@@ -1,8 +1,10 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export function NavBar({ sheetsStatus, onRefresh, aiDrawerOpen, onAiDrawerToggle }) {
-  const { pathname } = useLocation();
+  const pathname = usePathname();
   const isHome = pathname === '/navigator' || pathname === '/navigator/';
   const isExpenses = pathname === '/navigator/expenses';
   const isBudget = pathname === '/navigator/budget';
@@ -10,13 +12,13 @@ export function NavBar({ sheetsStatus, onRefresh, aiDrawerOpen, onAiDrawerToggle
   return (
     <header className="nav nav--slim">
       <div className="nav-inner">
-        <Link className="nav-brand" to="/navigator">
+        <Link className="nav-brand" href="/navigator">
           <span className="ngs-mark ngs-mark-sm"><span>N</span><span>G</span><span>S</span></span>
           <span className="nav-name">Pathway Navigator</span>
         </Link>
         <div className="nav-right">
           {isExpenses && (
-            <Link className="nav-budget-btn" to="/navigator/budget">Budget</Link>
+            <Link className="nav-budget-btn" href="/navigator/budget">Budget</Link>
           )}
           <button
             className={`nav-ai-btn${aiDrawerOpen ? ' is-active' : ''}`}
@@ -33,10 +35,10 @@ export function NavBar({ sheetsStatus, onRefresh, aiDrawerOpen, onAiDrawerToggle
             <span className="refresh-icon">↻</span><span className="refresh-label"> Refresh</span>
           </button>
           {isHome
-            ? <a className="nav-back" href="index.html">← Go home</a>
+            ? <Link className="nav-back" href="/">← Go home</Link>
             : isBudget
-              ? <Link className="nav-back" to="/navigator/expenses">← Expense</Link>
-              : <Link className="nav-back" to="/navigator">← Dashboard</Link>
+              ? <Link className="nav-back" href="/navigator/expenses">← Expense</Link>
+              : <Link className="nav-back" href="/navigator">← Dashboard</Link>
           }
         </div>
       </div>

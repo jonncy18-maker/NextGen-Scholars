@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
 import { NGS_DATA } from '../../scholars-data.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
 import { loadFromSupabase, loadPendingSubmissions } from '../supabase-loader.js';
@@ -61,7 +60,8 @@ function computeLiveGpa(rows) {
   return result;
 }
 
-export function Navigator() {
+export function Navigator({ slug = [] }) {
+  const section = slug[0] || '';
   const [D, setD] = useState(NGS_DATA);
   const scholarKeys = STATIC_SCHOLAR_KEYS.filter(k => D.scholars[k]);
 
@@ -391,109 +391,107 @@ export function Navigator() {
           defaultScholar={aiDrawerDefaultScholar}
         />
         <main className="wrap">
-          <Routes>
-            <Route index element={
-              <SectionErrorBoundary name="MentorHome">
-                <MentorHome
-                  liveGpa={liveGpa}
-                  onOpenDrawer={openDrawer}
-                  pendingCount={pendingSubmissions.length}
-                  activityCount={activityFeed.length}
-                  onSemesterChange={handleSemesterChange}
+          {section === '' && (
+            <SectionErrorBoundary name="MentorHome">
+              <MentorHome
+                liveGpa={liveGpa}
+                onOpenDrawer={openDrawer}
+                pendingCount={pendingSubmissions.length}
+                activityCount={activityFeed.length}
+                onSemesterChange={handleSemesterChange}
+              />
+            </SectionErrorBoundary>
+          )}
+          {section === 'expenses' && (
+            <>
+              <SubmissionBanner
+                submissions={pendingSubmissions}
+                feed={activityFeed}
+                dbAlerts={dbAlerts}
+                onApprove={handleApproveSubmission}
+                onReject={handleRejectSubmission}
+                onApproveDelete={handleApproveDelete}
+                onDenyDelete={handleDenyDelete}
+                onMarkRead={handleMarkFeedRead}
+                onDismissAlert={handleDismissDbAlert}
+              />
+              <SectionErrorBoundary name="Expenses">
+                <ExpenseSection
+                  currency={currency}
+                  onCurrencyChange={handleExpCurrencyChange}
+                  fxRate={fxRate}
+                  fxStatus={fxStatus}
+                  addedExpenses={addedExpenses}
+                  onAddExpense={handleAddExpense}
+                  onEditExpense={handleEditExpense}
+                  onDeleteExpense={handleDeleteExpenseFromTable}
+                  id="sec-expenses" collapsed={false} onToggle={() => {}}
+                  workbenchSlot={scholar => (
+                    <ExpenseWorkbench
+                      scholar={scholar}
+                      onAddExpense={handleAddExpense}
+                      onRecordSend={handleRecordSend}
+                    />
+                  )}
                 />
               </SectionErrorBoundary>
-            } />
-            <Route path="expenses" element={
-              <>
-                <SubmissionBanner
-                  submissions={pendingSubmissions}
-                  feed={activityFeed}
-                  dbAlerts={dbAlerts}
-                  onApprove={handleApproveSubmission}
-                  onReject={handleRejectSubmission}
-                  onApproveDelete={handleApproveDelete}
-                  onDenyDelete={handleDenyDelete}
-                  onMarkRead={handleMarkFeedRead}
-                  onDismissAlert={handleDismissDbAlert}
-                />
-                <SectionErrorBoundary name="Expenses">
-                  <ExpenseSection
-                    currency={currency}
-                    onCurrencyChange={handleExpCurrencyChange}
-                    fxRate={fxRate}
-                    fxStatus={fxStatus}
-                    addedExpenses={addedExpenses}
-                    onAddExpense={handleAddExpense}
-                    onEditExpense={handleEditExpense}
-                    onDeleteExpense={handleDeleteExpenseFromTable}
-                    id="sec-expenses" collapsed={false} onToggle={() => {}}
-                    workbenchSlot={scholar => (
-                      <ExpenseWorkbench
-                        scholar={scholar}
-                        onAddExpense={handleAddExpense}
-                        onRecordSend={handleRecordSend}
-                      />
-                    )}
-                  />
-                </SectionErrorBoundary>
-              </>
-            } />
-            <Route path="grades" element={
-              <SectionErrorBoundary name="Grades">
-                <GradesSection id="sec-grades" collapsed={false} onToggle={() => {}} />
+            </>
+          )}
+          {section === 'grades' && (
+            <SectionErrorBoundary name="Grades">
+              <GradesSection id="sec-grades" collapsed={false} onToggle={() => {}} />
+            </SectionErrorBoundary>
+          )}
+          {section === 'english' && (
+            <>
+              <SectionErrorBoundary name="English">
+                <EnglishSection id="sec-english" collapsed={false} onToggle={() => {}} />
               </SectionErrorBoundary>
-            } />
-            <Route path="english" element={
-              <>
-                <SectionErrorBoundary name="English">
-                  <EnglishSection id="sec-english" collapsed={false} onToggle={() => {}} />
-                </SectionErrorBoundary>
-                <SectionErrorBoundary name="Navigator AI">
-                  <NavigatorAI id="sec-navigator-ai" collapsed={false} onToggle={() => {}} englishOnly={true} />
-                </SectionErrorBoundary>
-              </>
-            } />
-            <Route path="deadlines" element={
-              <SectionErrorBoundary name="Deadlines">
-                <DeadlinesSection id="sec-deadlines" collapsed={false} onToggle={() => {}} />
+              <SectionErrorBoundary name="Navigator AI">
+                <NavigatorAI id="sec-navigator-ai" collapsed={false} onToggle={() => {}} englishOnly={true} />
               </SectionErrorBoundary>
-            } />
-            <Route path="progress" element={
-              <>
-                <SectionErrorBoundary name="Career">
-                  <CareerSection id="sec-career" collapsed={false} onToggle={() => {}} />
-                </SectionErrorBoundary>
-                <SectionErrorBoundary name="Risk">
-                  <RiskSection id="sec-risk" collapsed={false} onToggle={() => {}} />
-                </SectionErrorBoundary>
-              </>
-            } />
-            <Route path="docs" element={
-              <SectionErrorBoundary name="Documents">
-                <DocumentsSection id="sec-documents" collapsed={false} onToggle={() => {}} />
+            </>
+          )}
+          {section === 'deadlines' && (
+            <SectionErrorBoundary name="Deadlines">
+              <DeadlinesSection id="sec-deadlines" collapsed={false} onToggle={() => {}} />
+            </SectionErrorBoundary>
+          )}
+          {section === 'progress' && (
+            <>
+              <SectionErrorBoundary name="Career">
+                <CareerSection id="sec-career" collapsed={false} onToggle={() => {}} />
               </SectionErrorBoundary>
-            } />
-            <Route path="budget" element={
-              <SectionErrorBoundary name="Budget">
-                <BudgetSection />
+              <SectionErrorBoundary name="Risk">
+                <RiskSection id="sec-risk" collapsed={false} onToggle={() => {}} />
               </SectionErrorBoundary>
-            } />
-            <Route path="program-details" element={
-              <SectionErrorBoundary name="Program Details">
-                <ProgramDetailsSection id="sec-program-details" collapsed={false} onToggle={() => {}} />
-              </SectionErrorBoundary>
-            } />
-            <Route path="travel" element={
-              <SectionErrorBoundary name="Travel">
-                <TravelModule id="sec-travel" />
-              </SectionErrorBoundary>
-            } />
-            <Route path="milestones" element={
-              <SectionErrorBoundary name="Milestones">
-                <MilestonesModule id="sec-milestones" />
-              </SectionErrorBoundary>
-            } />
-          </Routes>
+            </>
+          )}
+          {section === 'docs' && (
+            <SectionErrorBoundary name="Documents">
+              <DocumentsSection id="sec-documents" collapsed={false} onToggle={() => {}} />
+            </SectionErrorBoundary>
+          )}
+          {section === 'budget' && (
+            <SectionErrorBoundary name="Budget">
+              <BudgetSection />
+            </SectionErrorBoundary>
+          )}
+          {section === 'program-details' && (
+            <SectionErrorBoundary name="Program Details">
+              <ProgramDetailsSection id="sec-program-details" collapsed={false} onToggle={() => {}} />
+            </SectionErrorBoundary>
+          )}
+          {section === 'travel' && (
+            <SectionErrorBoundary name="Travel">
+              <TravelModule id="sec-travel" />
+            </SectionErrorBoundary>
+          )}
+          {section === 'milestones' && (
+            <SectionErrorBoundary name="Milestones">
+              <MilestonesModule id="sec-milestones" />
+            </SectionErrorBoundary>
+          )}
         </main>
         {unlocked && !aiDrawerOpen && (
           <button

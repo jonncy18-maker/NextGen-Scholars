@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useData } from '../context/DataContext.jsx';
 import { supabase } from '../lib/supabase.js';
 import { NAMECLASS, SEMESTER_OPTIONS } from '../constants.js';
-import { uvToPct } from '../pages/GradeEntry.jsx';
+import { uvToPct } from '../screens/GradeEntry.jsx';
 
 const SCHOOLS = [
   { value: 'uv',  label: 'UV (1.0–5.0)' },

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 const QUICK_PROMPTS = [
   'What is NextGen Scholars?',

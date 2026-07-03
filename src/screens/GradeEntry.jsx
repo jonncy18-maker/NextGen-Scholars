@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { supabase, SUPABASE_URL } from '../lib/supabase.js';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { ScholarIngestPanel } from '../components/ScholarIngestPanel.jsx';
@@ -89,7 +89,7 @@ function ReviewPanel({ review, setReview, scholarKey, sem, loading, error, onCon
     setGeminiLoading(true);
     fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+      headers: { 'Content-Type': 'application/json', 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY },
       body: JSON.stringify({ scholar: scholarKey, sem, type: 'grade_analysis', grades: review }),
     })
       .then(r => r.json())
@@ -115,7 +115,7 @@ function ReviewPanel({ review, setReview, scholarKey, sem, loading, error, onCon
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+        headers: { 'Content-Type': 'application/json', 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY },
         body: JSON.stringify({ scholar: scholarKey, type: 'grade_edit', text: instruction, grades: review }),
       });
       const data = await res.json();
@@ -276,7 +276,7 @@ function AiGradeImport({ scholarKey, semKey, onSaved }) {
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY },
+        headers: { 'Content-Type': 'application/json', 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY },
         body: JSON.stringify({ scholar: scholarKey, type: 'grade_ingest', sem: semKey, file: { base64: file.base64, mime: file.mime } }),
       });
       const json = await res.json();
@@ -469,7 +469,7 @@ export function GradeEntry({ scholarKey }) {
           <div className="sp-head-rule" />
           <div className="sp-head-meta">
             <span className="sp-stage">{semLabel}</span>
-            <Link to={config.homeHref} className="sp-tagline" style={{ textDecoration: 'none' }}>
+            <Link href={config.homeHref} className="sp-tagline" style={{ textDecoration: 'none' }}>
               ← Back to home
             </Link>
           </div>

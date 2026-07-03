@@ -1,8 +1,12 @@
-name: Build and Deploy to GitHub Pages
+# Superseded by the Next.js + Vercel migration (see migration plan, Phase A′).
+# This workflow built a Vite `dist/` static bundle for GitHub Pages; the app
+# is now a Next.js app deployed via Vercel's own git integration. Left as
+# manual-dispatch-only (not auto-triggered on push) until GitHub Pages is
+# repurposed as a frozen redirect stub for old bookmarks, at which point this
+# file should be replaced or deleted.
+name: Build and Deploy to GitHub Pages (retired — see comment)
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
