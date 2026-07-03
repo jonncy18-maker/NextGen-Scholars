@@ -7,9 +7,14 @@ licensure abroad (PH → OET → NCLEX → AHPRA Australia).
 - **Repo:** `jonncy18-maker/NextGen-Scholars` (renamed from `NexGen`)
 - **Live:** https://jonncy18-maker.github.io/NextGen-Scholars/ (GitHub Pages, `main`) —
   **migrating to Vercel**; see `neon-migration` branch and the migration plan.
-- **Stack:** Next.js 14 (App Router) + React 18 · Supabase (Postgres + Edge Functions),
-  **migrating to Neon + Neon Auth**. (Previously Vite + React Router v6/HashRouter —
-  see git history for the pre-migration architecture.)
+- **Stack (on `main`, live):** Vite + React 18 + React Router v6 (`HashRouter`),
+  Supabase (Postgres + Edge Functions), GitHub Pages.
+- **Stack (on this branch, `neon-migration`, in progress):** Next.js 14 (App
+  Router) + React 18, backed by Neon (serverless Postgres) + Neon Auth (Better
+  Auth) + Next.js API routes on Vercel, replacing Supabase's
+  Postgres+PostgREST+GoTrue+Realtime+Edge Functions stack. This file (and the
+  rest of this branch) documents the **target** architecture — `main` has not
+  been migrated yet. See "Neon migration status" below.
 
 ## Build system
 
@@ -30,7 +35,9 @@ npm run start    # Serve the production build locally
 npm run format   # Prettier — src/**/*.{js,jsx,css}, app/**/*.jsx, and scholars-data.js
 ```
 
-Env vars are `NEXT_PUBLIC_*` (not Vite's `VITE_*`) — see `.env.example`.
+Env vars are `NEXT_PUBLIC_*` (not Vite's `VITE_*`) — see `.env.example`. On
+`neon-migration`, `DATABASE_URL` (server-only, Neon connection string) is also
+required — set in Vercel project env vars, never committed.
 
 ## Routes
 
@@ -69,6 +76,19 @@ Env vars are `NEXT_PUBLIC_*` (not Vite's `VITE_*`) — see `.env.example`.
 | `scholars-data.js` | Static fallback + narrative/profile/display copy + cosmetic lock password. |
 | `supabase/` | SQL schema files + Deno Edge Functions (`ask`, `ask-scholar`, `ask-public`, `scholar-summary`, `drive-proxy`). |
 
+### `neon-migration`-only files (not yet on `main`)
+
+| File/Path | Role |
+|---|---|
+| `lib/db.js` | Lazy Neon serverless client (`@neondatabase/serverless`, HTTP mode) + `selectWhere()` helper. Lazy on purpose — Next's build-time page-data-collection step evaluates route modules, so an eager `neon(...)` call at module scope throws when `DATABASE_URL` isn't set at build time. |
+| `lib/auth.js` | JWKS-verified JWT auth (`jose` + `createRemoteJWKSet`, cached) → role/`scholar_key` resolved from `public.user_profile` (never trusted from the token). `requireMentor`/`requireScholarOwn` helpers. |
+| `lib/http.js` | `json()` + `withErrorHandling()` response helpers for API routes. |
+| `app/api/bootstrap/route.js` | Replaces `supabase-loader.js`'s 10-way select; scoped by mentor/scholar role. |
+| `app/api/changes/route.js` | Replaces the 9 Supabase realtime channels with polling (`?since=` → `{ now, tables }`). |
+| `src/lib/auth-client.js` | Better Auth React client (`createAuthClient` + `jwtClient()` plugin) pointed at the Neon Auth base URL. `getToken()` reads the JWT off the `set-auth-jwt` response header — confirmed live against a real sign-in (see below). |
+| `src/lib/api.js` | Fetch wrapper for the new API routes — Bearer token per request via `getToken()`, one 401-retry, `afterWrite()` poke hook for the future polling hook. |
+| `app/sign-in/page.jsx`, `src/entries/sign-in.jsx` | **Temporary** Better Auth sign-up/sign-in/`getToken`/`/api/bootstrap` test harness at `/sign-in`. Not linked from app nav. Delete once Phase B4 lands real auth UI. |
+
 ## Data architecture
 
 Three layers, merged at runtime:
@@ -99,6 +119,37 @@ snapshot (nav shows an offline indicator).
 - **Security note:** the `password` in `scholars-data.js` is **cosmetic only**. The file
   is a public static asset — anyone can read it. Do not treat this as real access control
   (see ROADMAP "Accepted risks").
+
+## Neon migration status (branch `neon-migration`, PR #183, not merged to `main`)
+
+Full plan: `/root/.claude/plans/linear-launching-dragonfly.md` (Phases A′, B0–B5, C, D).
+Current state as of this checkpoint:
+
+- **Phase A′ (Vite → Next.js App Router)** — ✅ done on this branch, verified on
+  a live Vercel preview. `main` is **unaffected and still on Vite** — this PR
+  is intentionally not merged yet (see PR #183).
+- **Phase B0 (Neon provisioning + data migration)** — ✅ done. Neon project
+  `patient-flower-81986836` ("NGS"); schema ported 1:1 from Supabase (19 tables +
+  `updated_at`/touch-trigger on 7 polled tables + the `ngs_check_gpa_risk()`
+  trigger, ported verbatim) plus a new `public.user_profile` table
+  (`user_id → role, scholar_key`, since Better Auth's own `neon_auth.user` table
+  has no field for it). All operational data migrated from Supabase
+  (`rhoxpfuephkuaartuqou`) and row-count-verified per table (347 expenses, etc.).
+- **Neon Auth is Better Auth**, not Stack Auth — an earlier plan assumption was
+  corrected after inspecting the live `neon_auth.*` schema
+  (`user`/`session`/`account`/`jwks`/…). `src/lib/auth-client.js` uses
+  `better-auth/react` + the `jwtClient()` plugin.
+- **Phase B1 (server skeleton + read path)** — ✅ done and **live-verified**:
+  sign-up → sign-in → `getToken()` (JWT from the `set-auth-jwt` response header) →
+  authenticated `GET /api/bootstrap` all confirmed working end-to-end via the
+  `/sign-in` test harness, returning real migrated data (not empty arrays).
+- **Not started yet:** B2 (write endpoints + `supabase-writer.js`/`-loader.js`
+  port + ~25 call-site migrations, incl. transactional submission-approve), B3
+  (polling replaces realtime), B4 (delete cosmetic auth gates, real role gates),
+  B5 (port `ask`/`ask-scholar`/`ask-public`/`drive-proxy`).
+- Supabase remains the live backend for `main`/production throughout — nothing
+  in Phase A′/B0/B1 touches Supabase destructively (data was only read out, not
+  deleted or modified there).
 
 ## AI layer
 
@@ -139,6 +190,33 @@ secret lives only in Supabase secrets — never in the client.
   `node` + `/opt/node22/lib/node_modules/playwright` (CommonJS `require`) +
   executablePath `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`.
 
+### Working with Neon/Vercel (branch `neon-migration`)
+
+- **Neon project:** `patient-flower-81986836` ("NGS"). **Supabase project**
+  (source of truth for the migration copy): `rhoxpfuephkuaartuqou`.
+- **Vercel project:** `next-gen-scholars` (team `jonncy18`) — separate from the
+  owner's unrelated `next-gen-immersion` project; don't confuse the two.
+  Framework Preset must be "Next.js" (it defaults to "Vite" on first import from
+  a repo whose `main` is still Vite — check `mcp__Vercel__get_project` if a
+  deploy fails with "No Output Directory named 'dist' found").
+- **Vercel Deployment Protection** ("Vercel Authentication") must be disabled
+  for headless/automated testing of preview deployments — otherwise API routes
+  302-redirect to `vercel.com/sso-api` even via `web_fetch_vercel_url`. Only one
+  protection level exists on the free tier (no scoped bypass token available).
+- **Connection strings are never fetched into the transcript** — Claude Code's
+  safety classifier blocks `mcp__Neon__get_connection_string`. Guide the human
+  to copy it manually from the Neon console into Vercel's env var UI instead.
+- **`mcp__Neon__run_sql` is one-statement-per-call** (Postgres extended query
+  protocol restriction) — DDL/DML with multiple `;`-separated statements, or
+  dollar-quoted function bodies via `prepare_database_migration`, must be split
+  into individual calls.
+- **The sandbox cannot reach the Neon Auth domain directly** (network policy) —
+  Better Auth sign-in/JWT flows must be tested live in the human's own browser
+  via the `/sign-in` test harness, not headlessly.
+- Data-migration reads from Supabase are `SELECT`-only — nothing in this
+  migration deletes/modifies Supabase data; it remains the live production
+  backend until the Phase C cutover (see "Neon migration status" above).
+
 ## Agentic Loop
 
 Protocolo: https://raw.githubusercontent.com/jonncy18-maker/agentic-loop/main/AGENTIC_LOOP.md
@@ -162,5 +240,7 @@ protocol at the URL above for phase details, control tokens
 
 - Match the existing inline style of each file (token-based CSS vars `--ngs-*`,
   Newsreader/Manrope/IBM Plex Mono fonts, navy + gold palette).
-- Keep internal navigation within the SPA (React Router `<Link>` / routes).
+- Keep internal navigation within the app using Next.js `<Link>` (`next/link`)
+  and `next/navigation` (`useRouter`, `usePathname`, `useSearchParams`) — not
+  `react-router-dom`, which was removed in the Phase A′ migration.
 - Only commit/push when asked. Use `git -c commit.gpgsign=false`.
