@@ -85,6 +85,9 @@ required — set in Vercel project env vars, never committed.
 | `lib/http.js` | `json()` + `withErrorHandling()` response helpers for API routes. |
 | `app/api/bootstrap/route.js` | Replaces `supabase-loader.js`'s 10-way select; scoped by mentor/scholar role. |
 | `app/api/changes/route.js` | Replaces the 9 Supabase realtime channels with polling (`?since=` → `{ now, tables }`). |
+| `app/api/public/profile/[key]/route.js` | Public, unauthenticated curated whitelist backing the public profile pages — see "Public-profile dataset leak" below. |
+| `app/api/me/route.js` | Returns `{ role, scholarKey }` for the caller's own token — used by `ScholarAuthGate.jsx` to verify a sign-in matches the expected scholar. |
+| `src/components/ScholarAuthGate.jsx` | Real Better Auth sign-in gate for scholar-facing pages, replacing `ScholarLockGate.jsx`'s cosmetic shared password for migrated scholars. |
 | `src/lib/auth-client.js` | Better Auth React client (`createAuthClient` + `jwtClient()` plugin) pointed at the Neon Auth base URL. `getToken()` reads the JWT off the `set-auth-jwt` response header — confirmed live against a real sign-in (see below). |
 | `src/lib/api.js` | Fetch wrapper for the new API routes — Bearer token per request via `getToken()`, one 401-retry, `afterWrite()` poke hook for the future polling hook. |
 | `app/sign-in/page.jsx`, `src/entries/sign-in.jsx` | **Temporary** Better Auth sign-up/sign-in/`getToken`/`/api/bootstrap` test harness at `/sign-in`. Not linked from app nav. Delete once Phase B4 lands real auth UI. |
@@ -203,14 +206,27 @@ Current state as of this checkpoint:
   Supabase `ask-scholar` Edge Function instead of the ported
   `/api/ask-scholar` route. All four now go through Neon.
   **Still on Supabase, deliberately untouched:** `ScholarLockGate.jsx` (kept
-  as the fallback gate for any future non-migrated scholar),
-  `useScholarProfile.js`, `HomePage.jsx`, and the public profile entries
-  (`claire`/`april`/`janndilyne`) — these are public pages, not part
-  of the scholar-auth surface, and were out of scope for this phase.
+  as the fallback gate for any future non-migrated scholar) and
+  `HomePage.jsx` (its `config` table read is public site copy, not scholar
+  data — out of scope here).
   **Numeric-string gotcha, hit twice:** Neon's serverless driver stringifies
   `NUMERIC`/`DECIMAL` columns (`gpa`, grade fields) to avoid precision loss,
   unlike Supabase's PostgREST which returned JSON numbers — coerce with
   `Number(...)` before any `.toFixed()`/arithmetic on these fields.
+- **Public-profile dataset leak — ✅ fixed.** `useScholarProfile.js` (backing
+  the public `claire`/`april`/`janndilyne` profile pages) was still calling
+  the old `loadFromSupabase()`, which pulls the **entire** Supabase dataset —
+  every scholar's raw expenses, budgets, everything — through the anonymous
+  key for any anonymous visitor. This was the original motivating risk for
+  the whole migration (see the migration plan's Context section) and had
+  never actually been addressed until now. `GET /api/public/profile/[key]`
+  is a curated, unauthenticated whitelist: current semester, per-semester
+  GPA history, milestone/travel states, and an English-hours aggregate for
+  the active period — all computed server-side. Financial data is reduced
+  to per-bucket totals (mirroring `src/utils.js`'s `scholarTotals()` exactly);
+  raw expense rows, mentor notes, alerts, submissions, and activity never
+  leave the server. Rejects any key outside `{claire, april, janndilyne}`
+  with 404.
 - Supabase remains the live backend for `main`/production throughout — nothing
   in this branch touches Supabase destructively (data was only read out, not
   deleted or modified there).
