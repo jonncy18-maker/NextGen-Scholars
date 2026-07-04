@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { supabase } from '../lib/supabase.js';
+import { api } from '../lib/api.js';
 import { useData } from '../context/DataContext.jsx';
 import { SEMESTER_OPTIONS } from '../constants.js';
 
@@ -43,25 +43,18 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
   useEffect(() => {
     async function load() {
       const today = new Date().toISOString().slice(0, 10);
-      const { data: periods } = await supabase
-        .from('english_periods')
-        .select('*')
-        .lte('start_date', today)
-        .gte('end_date', today);
+      const periods = await api.get('/english/periods');
+      const activePeriods = periods.filter(p => p.start_date <= today && p.end_date >= today);
+      if (!activePeriods.length) return;
 
-      if (!periods?.length) return;
-
+      const sessions = await api.get('/english/sessions');
       const result = {};
-      await Promise.all(periods.map(async p => {
-        const { data: sessions } = await supabase
-          .from('english_sessions')
-          .select('duration_minutes')
-          .eq('scholar', p.scholar)
-          .gte('date', p.start_date)
-          .lte('date', p.end_date);
-        const mins = (sessions || []).reduce((s, r) => s + (r.duration_minutes || 0), 0);
+      activePeriods.forEach(p => {
+        const mins = sessions
+          .filter(s => s.scholar === p.scholar && s.date >= p.start_date && s.date <= p.end_date)
+          .reduce((sum, r) => sum + (r.duration_minutes || 0), 0);
         result[p.scholar] = { hours: Math.round((mins / 60) * 10) / 10, goal: Number(p.hour_goal) };
-      }));
+      });
       setEngData(result);
     }
     load().catch(() => {});

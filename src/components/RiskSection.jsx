@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../context/DataContext.jsx';
-import { supabase } from '../lib/supabase.js';
+import { api } from '../lib/api.js';
 import { NAMECLASS } from '../constants.js';
 
 const OET_TARGET_HOURS = 200;
@@ -165,19 +165,15 @@ export function RiskSection({ id, collapsed, onToggle }) {
   const [engHrs, setEngHrs] = useState({});
 
   useEffect(() => {
-    supabase
-      .from('english_sessions')
-      .select('scholar, duration_minutes')
-      .then(({ data }) => {
-        if (!data) return;
-        const totals = {};
-        data.forEach(r => {
-          totals[r.scholar] = (totals[r.scholar] || 0) + (r.duration_minutes || 0);
-        });
-        const hrs = {};
-        Object.entries(totals).forEach(([sk, mins]) => { hrs[sk] = mins / 60; });
-        setEngHrs(hrs);
+    api.get('/english/sessions').then(rows => {
+      const totals = {};
+      rows.forEach(r => {
+        totals[r.scholar] = (totals[r.scholar] || 0) + (r.duration_minutes || 0);
       });
+      const hrs = {};
+      Object.entries(totals).forEach(([sk, mins]) => { hrs[sk] = mins / 60; });
+      setEngHrs(hrs);
+    }).catch(() => {});
   }, []);
 
   return (
