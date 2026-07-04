@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase.js';
+import { api } from '../lib/api.js';
 
 const DEFAULT_DETAILS = `NEXTGEN SCHOLARS — PROGRAM DETAILS
 Nursing Generational Scholarship (NGS)
@@ -277,12 +277,8 @@ export function ProgramDetailsSection({ id, collapsed, onToggle }) {
   const [loaded,  setLoaded]    = useState(false);
 
   const load = useCallback(async () => {
-    const { data } = await supabase
-      .from('config')
-      .select('value')
-      .eq('key', CONFIG_KEY)
-      .maybeSingle();
-    setDetails(data?.value ?? DEFAULT_DETAILS);
+    const row = await api.get(`/config?key=${CONFIG_KEY}`).catch(() => null);
+    setDetails(row?.value ?? DEFAULT_DETAILS);
     setLoaded(true);
   }, []);
 
@@ -302,16 +298,18 @@ export function ProgramDetailsSection({ id, collapsed, onToggle }) {
 
   async function handleSave() {
     setSaving(true); setStatus(null);
-    const { error } = await supabase
-      .from('config')
-      .upsert({ key: CONFIG_KEY, value: draft }, { onConflict: 'key' });
-    setSaving(false);
-    if (error) { setStatus('error'); return; }
-    setDetails(draft);
-    setEditing(false);
-    setDraft('');
-    setStatus('saved');
-    setTimeout(() => setStatus(null), 3000);
+    try {
+      await api.put('/config', { key: CONFIG_KEY, value: draft });
+      setDetails(draft);
+      setEditing(false);
+      setDraft('');
+      setStatus('saved');
+      setTimeout(() => setStatus(null), 3000);
+    } catch {
+      setStatus('error');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
