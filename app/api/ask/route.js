@@ -8,7 +8,7 @@ import { tier3Ingest, tier3GradeIngest } from '../../../lib/ai/tier3.js';
 import { resolveSendAction } from '../../../lib/ai/action.js';
 
 // Port of supabase/functions/ask/index.ts — the mentor-facing AI orchestrator
-// (NavigatorAI, DocumentsSection extract, ExpenseWorkbench/GcashCalculator).
+// (NavigatorAI, ExpenseWorkbench/GcashCalculator).
 // Routing rules (evaluated in order), unchanged from the original:
 //   type=weekly_report           -> Tier 2, whole-cohort context
 //   type=action                  -> Tier 2, GCash send-matching (read-only)

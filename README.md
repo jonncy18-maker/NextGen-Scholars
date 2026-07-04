@@ -53,7 +53,7 @@ src/
     expenses/                 # Expense sub-components (charts, filter, add form, workbench)
     Profile/                  # Scholar profile card components
     AlertsSection, BudgetSection, CareerSection, DeadlinesSection,
-    DocumentsSection, EnglishSection, GradesSection, RiskSection,
+    EnglishSection, GradesSection, RiskSection,
     StatusSection, TravelModule, ActivityFeed, EnglishIngestPanel,
     ScholarIngestPanel, NavigatorAI, NavigatorAIDrawer,
     ScholarAIPanel, ScholarChatPanel, MentorHome, LockScreen, ...

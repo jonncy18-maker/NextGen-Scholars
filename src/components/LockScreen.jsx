@@ -10,8 +10,8 @@ import { signIn } from '../lib/auth-client.js';
 // loadFromSupabase().catch()).
 //
 // Used to also fire a best-effort parallel Supabase Auth sign-in for the
-// drive-proxy/ask Edge Functions -- removed now that Phase B5 ported those
-// to Neon-backed /api/ask, /api/ask-scholar, /api/ask-public, /api/drive.
+// ask Edge Functions -- removed now that Phase B5 ported those to
+// Neon-backed /api/ask, /api/ask-scholar, /api/ask-public.
 // Nothing in the mentor-facing app calls supabase.auth.* anymore.
 export function LockScreen({ isHiding, onUnlock }) {
   const [email, setEmail] = useState('');

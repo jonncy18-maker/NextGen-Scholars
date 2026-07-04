@@ -313,12 +313,6 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
           </div>
         </Link>
 
-        <Link className="mm-card" href="/navigator/docs">
-          <div className="mm-card-tag">DOC</div>
-          <div className="mm-card-label">Documents</div>
-          <div className="mm-card-blurb">Files, uploads & records</div>
-        </Link>
-
       </div>
     </section>
   );

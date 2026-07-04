@@ -143,10 +143,11 @@ Current state as of this checkpoint:
   sign-up → sign-in → `getToken()` (JWT from the `set-auth-jwt` response header) →
   authenticated `GET /api/bootstrap` all confirmed working end-to-end via the
   `/sign-in` test harness, returning real migrated data (not empty arrays).
-- **Phase B2 (write endpoints + mentor-side frontend port)** — ✅ done. All 24
+- **Phase B2 (write endpoints + mentor-side frontend port)** — ✅ done. All
   write routes under `app/api/**` (expenses, submissions incl. a transactional
   approve, actions, scholars, activity, English periods/sessions/forecasts/
-  scenarios, grades, documents, career, alerts). `src/api-writer.js` +
+  scenarios, grades, career, alerts — `documents`/`drive` were later removed,
+  see Phase B5). `src/api-writer.js` +
   `src/api-loader.js` replace `supabase-writer.js`/`supabase-loader.js` with
   identical exported names/signatures. Every **mentor-only** call site
   (`navigator.jsx` and its section components) now reads/writes through Neon.
@@ -155,22 +156,26 @@ Current state as of this checkpoint:
   is one shared module-level poller per tab against `/api/changes`, replacing
   every Supabase `postgres_changes` subscription on the mentor side. Live
   two-browser tested and confirmed working (~25s convergence).
-- **Phase B5 (AI + Drive)** — ✅ done for the mentor side. Ported the Gemini
-  tiered AI layer (`lib/ai/{context,tier1,tier2,tier3,action}.js`) and Google
-  Drive proxy to `app/api/{ask,ask-scholar,ask-public,drive}/route.js`. `ask`
-  is mentor-only (`requireMentor`); `ask-scholar`/`ask-public` stay
-  unauthenticated by design, matching their pre-migration behavior (see "Known
-  issues" below). Every mentor AI/Drive call site (`NavigatorAI`,
-  `DocumentsSection`, `StatusSection`, `GcashCalculator`, `ExpenseWorkbench`,
-  `NavigatorAIDrawer`, `PublicAskWidget`) now calls these instead of the
-  Supabase Edge Functions — nothing in the mentor-facing app calls
-  `supabase.auth.*` anymore, so `LockScreen`'s old dual-sign-in
+- **Phase B5 (AI)** — ✅ done for the mentor side. Ported the Gemini tiered AI
+  layer (`lib/ai/{context,tier1,tier2,tier3,action}.js`) to
+  `app/api/{ask,ask-scholar,ask-public}/route.js`. `ask` is mentor-only
+  (`requireMentor`); `ask-scholar`/`ask-public` stay unauthenticated by
+  design, matching their pre-migration behavior (see "Known issues" below).
+  Every mentor AI call site (`NavigatorAI`, `StatusSection`, `GcashCalculator`,
+  `ExpenseWorkbench`, `NavigatorAIDrawer`, `PublicAskWidget`) now calls these
+  instead of the Supabase Edge Functions — nothing in the mentor-facing app
+  calls `supabase.auth.*` anymore, so `LockScreen`'s old dual-sign-in
   (Better Auth + a parallel Supabase Auth session) was removed.
-  **Requires new Vercel env vars** to actually answer instead of 503ing
-  "not configured": `GOOGLE_AI_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`,
-  `GOOGLE_DRIVE_REFRESH_TOKEN`, `GOOGLE_DRIVE_FOLDER_ID` — copy the same
-  values already in Supabase secrets into the Vercel project's env vars
-  (server-only, no `NEXT_PUBLIC_` prefix).
+  **Requires one new Vercel env var** to actually answer instead of 503ing
+  "not configured": `GOOGLE_AI_KEY` — copy the same value already in Supabase
+  secrets into the Vercel project's env vars (server-only, no
+  `NEXT_PUBLIC_` prefix).
+  **Documents/Google Drive storage was dropped entirely** on this branch
+  (`DocumentsSection.jsx`, `app/api/documents/`, `app/api/drive/` all
+  deleted) — the Google OAuth credential-management overhead (client secrets
+  are view-once, 2-secret cap, refresh-token minting) wasn't worth it for
+  this program's scale. The `documents` table in Neon and the Supabase-side
+  scholar upload path (`ScholarDocuments.jsx`) were left untouched/unaffected.
 - **Phase B4 (delete cosmetic auth gates everywhere)** — partially done: the
   mentor gate landed as part of B2. What's left is scholar-facing: real
   Neon Auth accounts + a sign-in gate for `entry.jsx`/`ScholarHome`/etc.

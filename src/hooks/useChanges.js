@@ -1,7 +1,7 @@
 // One shared module-level poller per tab against /api/changes, replacing the
 // 9 Supabase realtime channels that went inert once writes moved to Neon
 // (they watched Supabase tables that stopped changing). Multiple components
-// (Navigator, DocumentsSection, CareerSection) can each call useChanges() —
+// (Navigator, CareerSection, GradesSection) can each call useChanges() —
 // they share a single interval/fetch cycle rather than one each.
 //
 // Design: ~25s interval, paused while the tab is hidden, an immediate poll on

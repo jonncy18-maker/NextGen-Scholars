@@ -21,7 +21,6 @@ import { NavigatorAI } from '../components/NavigatorAI.jsx';
 import { ExpenseWorkbench } from '../components/expenses/ExpenseWorkbench.jsx';
 import { NavigatorAIDrawer } from '../components/NavigatorAIDrawer.jsx';
 import { MentorHome } from '../components/MentorHome.jsx';
-import { DocumentsSection } from '../components/DocumentsSection.jsx';
 import { CareerSection } from '../components/CareerSection.jsx';
 import { RiskSection } from '../components/RiskSection.jsx';
 import { GradesSection } from '../components/GradesSection.jsx';
@@ -474,11 +473,6 @@ export function Navigator({ slug = [] }) {
                 <RiskSection id="sec-risk" collapsed={false} onToggle={() => {}} />
               </SectionErrorBoundary>
             </>
-          )}
-          {section === 'docs' && (
-            <SectionErrorBoundary name="Documents">
-              <DocumentsSection id="sec-documents" collapsed={false} onToggle={() => {}} />
-            </SectionErrorBoundary>
           )}
           {section === 'budget' && (
             <SectionErrorBoundary name="Budget">
