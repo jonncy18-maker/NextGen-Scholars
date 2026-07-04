@@ -230,6 +230,32 @@ input, select { font-family: inherit; }
   max-width: 700px; width: 100%; margin: 0 auto;
 }
 
+/* wide desktop: the single 700px reading column leaves most of a 1920px
+   monitor empty. Split into an "actions" rail (chat, add-expense form,
+   receipt upload) alongside a wider column for the pending list + expense
+   table, which are the parts that actually benefit from extra width. */
+@media (min-width: 1440px) {
+  .ef-main {
+    max-width: 1400px;
+    display: grid;
+    grid-template-columns: minmax(360px, 420px) 1fr;
+    grid-template-areas:
+      "pending pending"
+      "chat    stats"
+      "form    table"
+      "ingest  table";
+    column-gap: 28px;
+    align-items: start;
+  }
+  .ef-main > .scp-panel   { grid-area: chat; margin-top: 0; }
+  .ef-main > .ef-summary  { grid-area: stats; margin-bottom: 0; }
+  .ef-main > .ef-pending-section { grid-area: pending; }
+  .ef-main > .ef-mode-chooser,
+  .ef-main > .ef-entry-card { grid-area: form; margin-bottom: 0; }
+  .ef-main > .ef-entries  { grid-area: table; margin-top: 0; }
+  .ef-main > .sip-panel   { grid-area: ingest; margin-top: 0; }
+}
+
 .ef-toast {
   margin-bottom: 18px; padding: 10px 16px; border-radius: 6px;
   background: rgba(47,125,85,0.1); border: 1px solid rgba(47,125,85,0.3);

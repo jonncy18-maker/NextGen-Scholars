@@ -47,6 +47,40 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
   .sp { max-width: 1000px; width: 100%; }
 }
 
+/* wide desktop: stop just widening the single column (huge idle gutters on a
+   1920px monitor) and actually use the space — AI chat becomes a sticky
+   right rail alongside the action cards + trackers, instead of a full-width
+   block stacked above them. Header/footer stay full-width. */
+@media (min-width: 1440px) {
+  .sp {
+    max-width: 1400px;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    grid-template-areas:
+      "head     head"
+      "primary  chat"
+      "trackers chat"
+      "foot     foot";
+    column-gap: 32px;
+    align-items: start;
+  }
+  .sp-head { grid-area: head; }
+  .sp-footer { grid-area: foot; }
+  .sp > .scp-panel {
+    grid-area: chat;
+    margin: 28px 0 0;
+    position: sticky;
+    top: 24px;
+    max-height: calc(100vh - 48px);
+  }
+  .sp > .scp-panel .scp-thread { max-height: 44vh; }
+  .sp > .sp-section:not(.is-trackers) { grid-area: primary; }
+  .sp > .sp-section.is-trackers {
+    grid-area: trackers;
+    background: none; border-top: none;
+  }
+}
+
 /* ── greeting header ── */
 .sp-head {
   background: var(--ngs-navy);
