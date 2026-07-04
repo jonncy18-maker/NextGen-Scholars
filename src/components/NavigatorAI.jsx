@@ -305,7 +305,7 @@ export function ResultDisplay({ result }) {
           <div className="nai-result-meta">
             <span className="nai-tier-badge nai-tier-2">Tier 2 · Gemini</span>
           </div>
-          <p className="nai-escalate-msg">Gemini key not configured — add <code>GOOGLE_AI_KEY</code> to Supabase secrets.</p>
+          <p className="nai-escalate-msg">Gemini key not configured — add <code>GOOGLE_AI_KEY</code> to the Vercel project's env vars.</p>
         </div>
       );
     }

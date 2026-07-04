@@ -28,7 +28,7 @@ const SEM_LABELS = {
   TG12S1:'Grade 12 · Semester 1', TG12S2:'Grade 12 · Semester 2',
 };
 
-// tagline is portal copy — stage and englishTarget now come from live Supabase data
+// tagline is portal copy — stage and englishTarget now come from live Neon data
 const CONFIGS = {
   claire: { tagline: <>Four semesters to clear — <em>steady as you go.</em></> },
   april:  { tagline: <>Trial period in progress — <em>one step at a time.</em></> },

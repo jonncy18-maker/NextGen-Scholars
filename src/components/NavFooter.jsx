@@ -2,9 +2,9 @@ import React from 'react';
 import { useData } from '../context/DataContext.jsx';
 
 const SHEETS_LABEL = {
-  loading: { text: 'Supabase · syncing…', cls: 'sheets-loading' },
-  live:    { text: 'Supabase · live',     cls: 'sheets-live'    },
-  static:  { text: 'Supabase · offline',  cls: 'sheets-static'  },
+  loading: { text: 'Neon · syncing…', cls: 'sheets-loading' },
+  live:    { text: 'Neon · live',     cls: 'sheets-live'    },
+  static:  { text: 'Neon · offline',  cls: 'sheets-static'  },
 };
 
 export function NavFooter({ sheetsStatus, writeError }) {

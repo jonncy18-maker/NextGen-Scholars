@@ -30,7 +30,7 @@ export function NavBar({ sheetsStatus, onRefresh, aiDrawerOpen, onAiDrawerToggle
           <button
             className={`nav-refresh${sheetsStatus === 'loading' ? ' is-loading' : ''}`}
             onClick={onRefresh}
-            title="Reload data from Supabase"
+            title="Reload data from Neon"
           >
             <span className="refresh-icon">↻</span><span className="refresh-label"> Refresh</span>
           </button>
