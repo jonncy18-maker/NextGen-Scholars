@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { NGS_DATA } from '../../scholars-data.js';
 import { JOURNEY_STAGES } from '../constants.js';
 import { JourneyDropdown } from '../components/JourneyDropdown.jsx';
 import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
-import { supabase } from '../lib/supabase.js';
 
 const PALETTE = {
   navy: '#1B2A4A',
@@ -49,57 +48,28 @@ const IconArrow = ({ size = 14, color = 'currentColor' }) => (
 
 
 // ── login modal ───────────────────────────────────────────────────────────────
+// Destination picker only — no password here. Real authentication (Better
+// Auth email/password, verified server-side) happens at the destination via
+// ScholarAuthGate.jsx (scholar pages) or LockScreen.jsx (mentor Navigator).
+// This used to ALSO check a shared cosmetic password against Supabase config
+// before navigating, which meant scholars hit two different sign-in prompts
+// back to back — the fake one here, then the real one at the destination.
 
 const ROLES = [
-  { key: 'claire',     label: 'Claire',     configKey: 'claire_password',     dest: '/home/claire'     },
-  { key: 'april',      label: 'April',      configKey: 'april_password',      dest: '/home/april'      },
-  { key: 'janndilyne', label: 'Janndilyne', configKey: 'janndilyne_password', dest: '/home/janndilyne' },
-  { key: 'mentor',     label: 'Mentor',     configKey: 'password',            dest: '/navigator'       },
+  { key: 'claire',     label: 'Claire',     dest: '/home/claire'     },
+  { key: 'april',      label: 'April',      dest: '/home/april'      },
+  { key: 'janndilyne', label: 'Janndilyne', dest: '/home/janndilyne' },
+  { key: 'mentor',     label: 'Mentor',     dest: '/navigator'       },
 ];
 
 function LoginModal({ onClose }) {
-  const router = useRouter();
-  const [role, setRole] = useState('claire');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(false);
-  const [config, setConfig] = useState(null);
-  const inputRef = useRef();
   const overlayRef = useRef();
-
-  useEffect(() => {
-    supabase.from('config').select('key, value').then(({ data }) => {
-      const map = {};
-      (data || []).forEach(r => { map[r.key] = r.value; });
-      setConfig(map);
-    });
-    inputRef.current?.focus();
-  }, []);
-
-  useEffect(() => {
-    setPassword('');
-    setError(false);
-    setTimeout(() => inputRef.current?.focus(), 50);
-  }, [role]);
 
   useEffect(() => {
     const handler = e => { if (e.key === 'Escape') onClose(); };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, [onClose]);
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (!config) return;
-    const { configKey, dest } = ROLES.find(r => r.key === role);
-    const expected = config[configKey];
-    if (expected && password === expected) {
-      router.push(dest);
-    } else {
-      setError(true);
-    }
-  }
-
-  const selectedRole = ROLES.find(r => r.key === role);
 
   return (
     <div
@@ -108,52 +78,23 @@ function LoginModal({ onClose }) {
       onClick={e => { if (e.target === overlayRef.current) onClose(); }}
       role="dialog" aria-modal="true" aria-label="Sign in"
     >
-      <div className="ngs-modal" data-role={role}>
+      <div className="ngs-modal">
         <div className="ngs-modal-bg" />
         <div className="ngs-modal-inner">
           <div className="ngs-modal-brand">
             <div className="ngs-mark ngs-mark-sm"><span>N</span><span>G</span><span>S</span></div>
           </div>
 
+          <h2 className="ngs-modal-title">Who's signing in?</h2>
+          <p className="ngs-modal-sub">You'll sign in with your account on the next screen.</p>
+
           <div className="ngs-modal-role-grid">
             {ROLES.map(r => (
-              <button
-                key={r.key}
-                type="button"
-                className={`ngs-modal-role-btn${role === r.key ? ' is-active' : ''}`}
-                onClick={() => setRole(r.key)}
-              >
+              <Link key={r.key} href={r.dest} className="ngs-modal-role-btn ngs-modal-role-btn-nav">
                 {r.label}
-              </button>
+              </Link>
             ))}
           </div>
-
-          <h2 className="ngs-modal-title">
-            Welcome, <em>{selectedRole.label}</em>
-          </h2>
-
-          <form className={`ngs-modal-form${error ? ' is-error' : ''}`} onSubmit={handleSubmit}>
-            <label className="ngs-modal-label" htmlFor="ngs-modal-pw">Password</label>
-            <input
-              id="ngs-modal-pw"
-              ref={inputRef}
-              type="password"
-              className="ngs-modal-input"
-              placeholder="Enter your password"
-              value={password}
-              onChange={e => { setPassword(e.target.value); setError(false); }}
-              disabled={!config}
-              autoComplete="current-password"
-            />
-            {error && <p className="ngs-modal-error">Incorrect password — try again.</p>}
-            <button
-              type="submit"
-              disabled={!config || !password}
-              className="ngs-modal-btn"
-            >
-              {config ? `Continue as ${selectedRole.label} →` : 'Loading…'}
-            </button>
-          </form>
 
           <button className="ngs-modal-close" onClick={onClose} aria-label="Close">✕</button>
         </div>
