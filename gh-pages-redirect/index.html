@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>NextGen Scholars has moved</title>
+<script>
+(function () {
+  var NEW_ORIGIN = 'https://next-gen-scholars-jonncy18.vercel.app';
+  var l = window.location;
+
+  // Decode the GitHub-Pages-SPA-fallback query format (?/some/path) that
+  // 404.html sets for old bookmarked .html deep links (e.g. claire.html).
+  var decodedPath = null;
+  if (l.search && l.search.charAt(1) === '/') {
+    decodedPath = '/' + l.search.slice(2).split('&').map(function (s) {
+      return s.replace(/~and~/g, '&');
+    }).join('?');
+  }
+
+  // The live site's real navigation is HashRouter-based, so a bookmarked
+  // route (e.g. #/navigator/expenses) carries its path in the hash.
+  var hashPath = l.hash && l.hash.length > 1 ? l.hash.slice(1) : null;
+
+  var path = decodedPath || hashPath || '/';
+  if (path.charAt(0) !== '/') path = '/' + path;
+
+  l.replace(NEW_ORIGIN + path);
+})();
+</script>
+</head>
+<body>
+  <p style="font-family: sans-serif; padding: 2rem; text-align: center;">
+    NextGen Scholars has moved —
+    <a href="https://next-gen-scholars-jonncy18.vercel.app/">continue to the new site</a>.
+  </p>
+</body>
+</html>

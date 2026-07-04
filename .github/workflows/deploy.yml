@@ -1,12 +1,17 @@
-# Superseded by the Next.js + Vercel migration (see migration plan, Phase A′).
-# This workflow built a Vite `dist/` static bundle for GitHub Pages; the app
-# is now a Next.js app deployed via Vercel's own git integration. Left as
-# manual-dispatch-only (not auto-triggered on push) until GitHub Pages is
-# repurposed as a frozen redirect stub for old bookmarks, at which point this
-# file should be replaced or deleted.
-name: Build and Deploy to GitHub Pages (retired — see comment)
+# GitHub Pages now serves only a frozen redirect stub (gh-pages-redirect/) —
+# the app itself is deployed via Vercel's own git integration as a Next.js
+# app. This replaces the old Vite `npm run build` → dist/ workflow, which
+# would fail post-migration (no index.html/vite.config.js to build). Old
+# bookmarks and #/-style deep links land here and get forwarded to the new
+# Vercel domain — see gh-pages-redirect/index.html.
+name: Deploy GitHub Pages redirect stub
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'gh-pages-redirect/**'
+      - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
 permissions:
@@ -19,35 +24,19 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-        run: npm run build
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
   deploy:
-    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: gh-pages-redirect
+
       - uses: actions/deploy-pages@v4
         id: deployment
