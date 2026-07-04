@@ -215,11 +215,16 @@ Full plan: `/root/.claude/plans/linear-launching-dragonfly.md` (Phases A′, B0�
   `grade_entries.sql` and the shared `updated_at`-touch-trigger function,
   both of which had only ever existed live on Neon, never committed
   anywhere); relabeled stale "Supabase" UI copy in `NavBar`/`NavFooter`/
-  `NavigatorAI`. **Nothing in this repo depends on Supabase anymore** —
-  safe to pause the Supabase project (`rhoxpfuephkuaartuqou`) whenever
-  convenient. Still open: drop plaintext passwords from `scholars-data.js`'s
-  `config` (now unused dead weight, not a live risk); swap April/Janndilyne's
-  placeholder emails for real ones.
+  `NavigatorAI`. **Nothing in this repo depends on Supabase anymore.**
+  Decommission finished: a second fresh-context audit sweep (three parallel
+  agents — code-reference, plumbing, data-path trace) confirmed zero live
+  references; the three `VITE_/SUPABASE_*` GitHub Actions secrets
+  (`SUPABASE_ACCESS_TOKEN`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`)
+  were removed; the local `.env.local` Supabase placeholders were deleted; and
+  the Supabase project (`rhoxpfuephkuaartuqou`) was **paused** on 2026-07-04
+  (data retained, restorable anytime). Still open: drop plaintext passwords
+  from `scholars-data.js`'s `config` (now unused dead weight, not a live
+  risk); swap April/Janndilyne's placeholder emails for real ones.
 
 ## AI layer
 
@@ -268,8 +273,9 @@ secret lives only in Vercel's project env vars — never in the client.
 
 - **Neon project:** `patient-flower-81986836` ("NGS") — the live production
   database. The Supabase project (`rhoxpfuephkuaartuqou`) is fully
-  decommissioned code-side (Phase D) — safe to pause whenever convenient;
-  nothing in this repo reads or writes to it anymore.
+  decommissioned (Phase D) and was **paused on 2026-07-04** — nothing in this
+  repo reads or writes to it anymore. Data is retained and the project is
+  restorable from the Supabase dashboard if ever needed.
 - **Vercel project:** `next-gen-scholars` (team `jonncy18`) — separate from the
   owner's unrelated `next-gen-immersion` project; don't confuse the two.
 - **Vercel Deployment Protection** ("Vercel Authentication") must be disabled
