@@ -59,7 +59,7 @@ required — set in Vercel project env vars, never committed.
 | `app/` | Next.js App Router — file-based routes, each a thin client wrapper. `app/layout.jsx` is the document shell; `app/[...legacy]/page.jsx` is the legacy-URL redirect catch-all; `app/navigator/[[...slug]]/page.jsx` drives Navigator's internal sections. |
 | `src/entries/` | Route-level entry components (`navigator.jsx`, `claire.jsx`, `april.jsx`, `janndilyne.jsx`, `entry.jsx`), imported by `app/**/page.jsx`. |
 | `src/entries/navigator.jsx` | Root `Navigator` component — manages data state, FX state, realtime subscriptions, renders the section matching its `slug` prop. |
-| `src/screens/` | Full-page components (`HomePage`, `ScholarHome`, `EnglishTracking`, `GradeEntry`, `MilestonesTracker`, `VacationTracker`, `FAQPage`, `ScholarDocuments`). Named `screens/`, not `pages/`, to avoid colliding with Next's Pages Router auto-detection. |
+| `src/screens/` | Full-page components (`HomePage`, `ScholarHome`, `EnglishTracking`, `GradeEntry`, `MilestonesTracker`, `VacationTracker`, `FAQPage`). Named `screens/`, not `pages/`, to avoid colliding with Next's Pages Router auto-detection. |
 | `src/components/` | Section-level components (alerts, status cards, nav bar, footer, AI panels, etc.). |
 | `src/components/expenses/` | Expense sub-components (charts, filter panel, add form, workbench, sort/filter helpers). |
 | `src/components/Profile/` | Scholar profile card components. |
@@ -174,8 +174,11 @@ Current state as of this checkpoint:
   (`DocumentsSection.jsx`, `app/api/documents/`, `app/api/drive/` all
   deleted) — the Google OAuth credential-management overhead (client secrets
   are view-once, 2-secret cap, refresh-token minting) wasn't worth it for
-  this program's scale. The `documents` table in Neon and the Supabase-side
-  scholar upload path (`ScholarDocuments.jsx`) were left untouched/unaffected.
+  this program's scale. The scholar-side upload path (`ScholarDocuments.jsx`,
+  `app/docs/[scholar]/`, the "Documents" tracker tile on `ScholarHome`) was
+  initially left running on Supabase, then removed too once B4 revealed it
+  was the same abandoned feature. The `documents` table in Neon was left
+  as-is (unused, harmless).
 - **Phase B4 (delete cosmetic auth gates everywhere)** — mentor gate landed as
   part of B2. Scholar-facing side: ✅ mostly done. All three scholars have
   real Neon Auth accounts (`user_profile.role='scholar'`) — Claire with her
@@ -201,10 +204,8 @@ Current state as of this checkpoint:
   `/api/ask-scholar` route. All four now go through Neon.
   **Still on Supabase, deliberately untouched:** `ScholarLockGate.jsx` (kept
   as the fallback gate for any future non-migrated scholar),
-  `useScholarProfile.js`, `ScholarDocuments.jsx` (`/docs/:scholar` —
-  independent Drive upload path kept when the mentor-side Documents feature
-  was dropped, see Phase B5 above), `HomePage.jsx`, and the public profile
-  entries (`claire`/`april`/`janndilyne`) — these are public pages, not part
+  `useScholarProfile.js`, `HomePage.jsx`, and the public profile entries
+  (`claire`/`april`/`janndilyne`) — these are public pages, not part
   of the scholar-auth surface, and were out of scope for this phase.
   **Numeric-string gotcha, hit twice:** Neon's serverless driver stringifies
   `NUMERIC`/`DECIMAL` columns (`gpa`, grade fields) to avoid precision loss,

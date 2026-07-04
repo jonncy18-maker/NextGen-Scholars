@@ -5,7 +5,7 @@ import { api } from '../lib/api.js';
 import { NGS_DATA } from '../../scholars-data.js';
 import {
   IconExpenses, IconGrades, IconClock, IconIsland,
-  IconBriefcase, IconTrophy, IconMessage, IconDocument, IconArrow,
+  IconBriefcase, IconTrophy, IconMessage, IconArrow,
 } from '../components/ScholarIcons.jsx';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
@@ -244,7 +244,6 @@ export function ScholarHome({ scholarKey }) {
     { key: 'career',   icon: <IconBriefcase size={19} />, label: 'Career Tracker',   sub: 'Pathway steps', href: null },
     { key: 'rewards',  icon: <IconTrophy size={19} />,    label: 'Rewards Tracker',  sub: liveData?.nextMilestone ? `Next · ${liveData.nextMilestone.name}` : `${rewardsCount} unlocked`, reward: true, href: `/milestones/${scholarKey}` },
     { key: 'messages', icon: <IconMessage size={19} />,   label: 'Messages',         sub: 'No new messages', href: null },
-    { key: 'docs',     icon: <IconDocument size={19} />,  label: 'Documents',        sub: 'Files & records', href: `/docs/${scholarKey}` },
   ].filter(t => !(isExpensesOnly && ['english', 'vacation', 'career', 'rewards'].includes(t.key)));
 
   const inv = liveData?.investmentTotals ?? null;
