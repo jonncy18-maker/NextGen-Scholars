@@ -176,7 +176,34 @@ secret lives only in Vercel's project env vars — never in the client.
   `trusted_origins` before assuming the password is wrong; add the missing
   origin with `mcp__Neon__configure_neon_auth` (`add_trusted_origin`) — takes
   effect immediately, no redeploy needed. Hit and fixed 2026-07-04 for the
-  `-steel` and `git-main-jonncy18` aliases.
+  `-steel` and `git-main-jonncy18` aliases (and again for a PR preview alias
+  while debugging the bug below — preview URLs need this too, not just the
+  three long-lived production aliases).
+- **Every scholar screen's data-fetch effect must gate on `authed`, not just
+  the render.** `EnglishTracking`, `GradeEntry`, `VacationTracker`, and
+  `MilestonesTracker` all do `if (!authed) return; ...` inside their data
+  effects (with `authed` in the deps array) — `ScholarHome` was missing this
+  and it caused a real bug (2026-07-04, PR #187, six iterations to root-cause):
+  React fires effects on mount regardless of what the component *renders*, so
+  a fetch effect gated only by `if (!authed) return <ScholarAuthGate/>` in the
+  JSX still runs immediately, using whatever session cookie the browser
+  already has — i.e. the *previous* scholar's, if the user navigated straight
+  from one scholar's dashboard to another's login without signing out. That
+  fetch's (wrong) response gets cached in state; signing in then unlocks the
+  dashboard onto the stale data, and nothing re-fetches since `authed`
+  wasn't a dependency. Symptom: a scholar's dashboard shows a *different*
+  scholar's numbers until a manual refresh. The tell in DevTools is the
+  `bootstrap` request firing *before* the sign-in's own request. Any new
+  scholar-facing screen needs this same guard.
+- **API responses must set their own `Cache-Control`.** Found alongside the
+  bug above (a real issue, though not this bug's actual cause): Next.js App
+  Router route handlers default to a *shareable* `Cache-Control: public,
+  max-age=0, must-revalidate` with no `Vary: Authorization` when a response
+  doesn't set its own cache header — verified live via
+  `mcp__Vercel__web_fetch_vercel_url`. `lib/http.js`'s `json()` now sends
+  `Cache-Control: private, no-store` on every response for this reason; keep
+  using `json()` for all `app/api/**` responses rather than a raw
+  `new Response(...)` so this stays covered.
 
 ## Working in this environment
 
@@ -227,6 +254,19 @@ Protocol: https://raw.githubusercontent.com/jonncy18-maker/agentic-loop/main/AGE
 Activate for any change touching 3+ files, a new component/module, the data
 layer, or with user-visible behavior, or estimated at more than ~5 minutes of
 work — otherwise (typo, one-liner, single-file config change) just do it directly.
+
+## Wide-screen layout
+
+`ScholarHome` (`src/styles/scholar-home.css`) and the expense-entry page
+(`src/styles/entry.css`) switch to a two-column CSS grid layout at
+`min-width: 1200px` (`grid-template-areas`, no JSX changes needed) — below
+that they're the original single centered column. On `ScholarHome` the AI
+chat panel becomes a sticky right rail next to the action cards/trackers; on
+the entry page, chat/form/receipt-upload sit in a left rail next to the
+pending-review list and expense table. The breakpoint was originally 1440px
+but was lowered to 1200px (PR #186) since 1440px didn't reliably trigger on
+real laptop displays once OS display scaling / browser zoom reduces the
+effective CSS viewport width below the physical resolution.
 
 ## Conventions
 
