@@ -1,17 +1,15 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { supabase, SUPABASE_URL } from '../lib/supabase.js';
+import { api } from '../lib/api.js';
 import { useData } from '../context/DataContext.jsx';
-import { writeExpense } from '../supabase-writer.js';
+import { writeExpense } from '../api-writer.js';
 import { EXPENSE_CATS, SEMESTER_OPTIONS, SESSION_CATEGORIES } from '../constants.js';
-import { uvToPct } from '../pages/GradeEntry.jsx';
+import { uvToPct } from '../screens/GradeEntry.jsx';
 import { EnglishIngestPanel } from './EnglishIngestPanel.jsx';
 
 function gradeAvg(prelim, midterm, finalGrade) {
   const vals = [prelim, midterm, finalGrade].map(v => parseFloat(v)).filter(v => !isNaN(v));
   return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
 }
-
-const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 export const QUICK_PROMPTS = [
   { label: 'Total spend',        tpl: s => `How much has ${s} spent overall?` },
@@ -349,12 +347,7 @@ function ReviewCard({ items: initialItems, model, scholar, sem, onDiscard, onCon
     setChatInput('');
     setChatBusy(true);
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
-        body: JSON.stringify({ scholar, type: 'expense_edit', items, text: instruction }),
-      });
-      const data = await res.json();
+      const data = await api.post('/ask-scholar', { scholar, type: 'expense_edit', items, text: instruction }).catch(err => err.body ?? { error: err.message });
       if (data.items) {
         setItems(data.items.map(it => ({ ...it })));
         setChatLog(prev => [...prev, { role: 'ai', text: 'Done — expenses updated. Review the table above.' }]);
@@ -564,12 +557,7 @@ function GradeReviewCard({ grades: initialGrades, model, scholar, sem, onDiscard
   useEffect(() => {
     if (!initialGrades.length) return;
     setGeminiLoading(true);
-    fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
-      body: JSON.stringify({ scholar, sem, type: 'grade_analysis', grades: initialGrades }),
-    })
-      .then(r => r.json())
+    api.post('/ask-scholar', { scholar, sem, type: 'grade_analysis', grades: initialGrades })
       .then(data => { if (data.analysis) setGeminiAnalysis(data.analysis); })
       .catch(() => {})
       .finally(() => setGeminiLoading(false));
@@ -589,12 +577,7 @@ function GradeReviewCard({ grades: initialGrades, model, scholar, sem, onDiscard
     setChatInput('');
     setChatBusy(true);
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
-        body: JSON.stringify({ scholar, type: 'grade_edit', grades, text: instruction }),
-      });
-      const data = await res.json();
+      const data = await api.post('/ask-scholar', { scholar, type: 'grade_edit', grades, text: instruction }).catch(err => err.body ?? { error: err.message });
       if (data.grades) {
         setGrades(data.grades.map(g => ({ ...g })));
         setChatLog(prev => [...prev, { role: 'ai', text: 'Done — grades updated. Review the table above.' }]);
@@ -630,8 +613,7 @@ function GradeReviewCard({ grades: initialGrades, model, scholar, sem, onDiscard
           pct_equiv:   avg != null ? (g.school === 'k12' ? avg : uvToPct(avg)) : null,
         };
       });
-      const { error } = await supabase.from('grade_entries').insert(entries);
-      if (error) throw new Error(error.message);
+      await api.post('/grades', { entries });
       onConfirmed(grades.length);
     } catch (err) {
       setSaveError(err.message ?? 'Write failed.');
@@ -800,17 +782,7 @@ export function GradeIngestPanel({ scholar, scholarKeys }) {
     if (loading || !file) return;
     setLoading(true); setError(null); setReview(null); setSuccess(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Session expired — please refresh and log in again.');
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scholar: gradeScholar, type: 'grade_ingest', sem, file: { base64: file.base64, mime: file.mime } }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
-      if (json.status === 'not_configured') throw new Error('GOOGLE_AI_KEY not configured — add it to Supabase secrets.');
-      if (json.status === 'error') throw new Error(json.error || 'Extraction failed.');
+      const json = await api.post('/ask', { scholar: gradeScholar, type: 'grade_ingest', sem, file: { base64: file.base64, mime: file.mime } });
       if (!Array.isArray(json.grades)) throw new Error('Unexpected response from Gemini.');
       if (json.grades.length === 0) { setError('Gemini found no grade entries in this document.'); return; }
       setReview({ grades: json.grades, model: json.model });
@@ -945,25 +917,13 @@ export function IngestPanel({ scholar, scholarKeys }) {
     if (loading || (files.length === 0 && !pasteText.trim())) return;
     setLoading(true); setError(null); setReview(null); setSuccess(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Session expired — please refresh and log in again.');
-
       const allItems = [];
       let usedModel = 'gemini-2.5-flash';
       const modelLabel = 'Gemini';
-      const notConfiguredHint = 'GOOGLE_AI_KEY not configured — add it to Supabase secrets.';
 
       if (pasteText.trim()) {
         setProgress('Processing pasted text…');
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scholar: ingestScholar, type: 'ingest', sem, text: pasteText.trim() }),
-        });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
-        if (json.status === 'not_configured') throw new Error(notConfiguredHint);
-        if (json.status === 'error') throw new Error(json.error || 'Extraction failed.');
+        const json = await api.post('/ask', { scholar: ingestScholar, type: 'ingest', sem, text: pasteText.trim() });
         if (json.model) usedModel = json.model;
         if (Array.isArray(json.items)) allItems.push(...json.items);
       }
@@ -971,15 +931,7 @@ export function IngestPanel({ scholar, scholarKeys }) {
       for (let i = 0; i < files.length; i++) {
         const f = files[i];
         setProgress(files.length > 1 ? `Processing file ${i + 1} of ${files.length}…` : `${modelLabel} is reading the document…`);
-        const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scholar: ingestScholar, type: 'ingest', sem, file: { base64: f.base64, mime: f.mime } }),
-        });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
-        if (json.status === 'not_configured') throw new Error(notConfiguredHint);
-        if (json.status === 'error') throw new Error(json.error || `Extraction failed for ${f.name}.`);
+        const json = await api.post('/ask', { scholar: ingestScholar, type: 'ingest', sem, file: { base64: f.base64, mime: f.mime } });
         if (json.model) usedModel = json.model;
         if (Array.isArray(json.items)) allItems.push(...json.items);
       }
@@ -1101,11 +1053,9 @@ function EnglishHoursIngestPanel({ scholarKeys }) {
 
   useEffect(() => {
     setPeriod(undefined);
-    supabase.from('english_periods').select('*')
-      .eq('scholar', scholar)
-      .order('start_date', { ascending: false })
-      .limit(1)
-      .then(({ data }) => setPeriod(data?.[0] ?? null));
+    api.get(`/english/periods?scholar=${encodeURIComponent(scholar)}`)
+      .then(data => setPeriod(data?.[0] ?? null))
+      .catch(() => setPeriod(null));
   }, [scholar]);
 
   const cats = period
@@ -1160,17 +1110,8 @@ export function WeeklyReportPanel({ scholarKeys }) {
     if (loading) return;
     setLoading(true); setError(null); setReport(null); setCopied(false);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Session expired — please refresh and log in again.');
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scholar: 'all', scholars: scholarKeys, type: 'weekly_report' }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
-      if (json.status === 'not_configured') throw new Error('GOOGLE_AI_KEY not configured — add it to Supabase secrets.');
-      if (json.status === 'error' || !json.report) throw new Error(json.error || 'Gemini returned an empty report.');
+      const json = await api.post('/ask', { scholar: 'all', scholars: scholarKeys, type: 'weekly_report' });
+      if (!json.report) throw new Error(json.error || 'Gemini returned an empty report.');
       setReport(json.report);
       setModel(json.model);
     } catch (err) {
@@ -1252,18 +1193,7 @@ export function NavigatorAI({ id, collapsed, onToggle, englishOnly = false }) {
     setError(null);
     setResult(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Session expired — please refresh and log in again.');
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ scholar, type: 'query', text }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      const json = await api.post('/ask', { scholar, type: 'query', text });
       setResult(json);
       setHistory(h => [{ q: text, scholar, result: json, ts: Date.now() }, ...h].slice(0, 8));
       setQuery('');

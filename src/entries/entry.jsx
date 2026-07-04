@@ -1,26 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { EXPENSE_CATS, AVB_OPTIONS } from '../constants.js';
 import { NGS_DATA } from '../../scholars-data.js';
-import { updateExpense, writeActivityLog, writeSubmission, resubmitExpense, markSubmissionReadByScholar } from '../supabase-writer.js';
-import { loadFromSupabase, loadScholarSubmissions } from '../supabase-loader.js';
-import { supabase } from '../lib/supabase.js';
+import { updateExpense, writeActivityLog, writeSubmission, resubmitExpense, markSubmissionReadByScholar } from '../api-writer.js';
+import { loadFromSupabase, loadScholarSubmissions } from '../api-loader.js';
+import { useChanges } from '../hooks/useChanges.js';
+import { authClient } from '../lib/auth-client.js';
+import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { groupExpenses } from '../components/expenses/filterHelpers.js';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { ScholarIngestPanel } from '../components/ScholarIngestPanel.jsx';
 import { ExpenseAskWidget } from '../components/ExpenseAskWidget.jsx';
 import '../styles/entry.css';
-
-async function loadConfig() {
-  try {
-    const { data } = await supabase.from('config').select('key, value');
-    const map = {};
-    (data || []).forEach(r => { map[r.key] = r.value; });
-    return map;
-  } catch {
-    return {};
-  }
-}
 
 const SCHOLARS = Object.entries(NGS_DATA.scholars)
   .filter(([, s]) => s.status === 'active' || s.status === 'trial')
@@ -51,106 +43,30 @@ function makeEmptyRow(defaultSem) {
   };
 }
 
+// Same ScholarAuthGate every other scholar page uses (ScholarHome, GradeEntry,
+// EnglishTracking, VacationTracker, MilestonesTracker) — one sign-in
+// implementation, one persisted-session check, instead of a hand-rolled
+// duplicate that could (and did) drift out of sync with it. The portal's
+// "Enter Expenses" link passes `?scholar=`; direct/bare navigation to /entry
+// falls back to the first migrated scholar.
 export function EntryApp() {
-  const routerLocation = useLocation();
-  const [scholarKey, setScholarKey] = useState('claire');
-  const [password, setPassword] = useState('');
+  const searchParams = useSearchParams();
+  const requested = searchParams.get('scholar');
+  const scholarKey = SCHOLARS.some(s => s.key === requested) ? requested : SCHOLARS[0].key;
+  const scholar = SCHOLARS.find(s => s.key === scholarKey);
+
   const [authed, setAuthed] = useState(false);
-  const [error, setError] = useState(false);
-  const [config, setConfig] = useState(null);
-
-  useEffect(() => { loadConfig().then(setConfig); }, []);
-
-  // Auto-auth if arriving from the scholar portal (sessionStorage set by ScholarHome).
-  // Must use react-router's location.search — window.location.search is empty in HashRouter.
-  useEffect(() => {
-    const params = new URLSearchParams(routerLocation.search);
-    const preauth = params.get('scholar');
-    if (preauth && sessionStorage.getItem('ngs_auth_scholar') === preauth) {
-      const s = SCHOLARS.find(s => s.key === preauth);
-      if (s) { setScholarKey(preauth); setAuthed(true); }
-    }
-  }, [routerLocation.search]);
-
-  function unlock(e) {
-    e.preventDefault();
-    if (!config) return;
-    const expected = config[`${scholarKey}_password`];
-    if (expected && password === expected) {
-      setAuthed(true);
-      setError(false);
-    } else {
-      setError(true);
-    }
-  }
 
   function logout() {
+    authClient.signOut();
     setAuthed(false);
-    setPassword('');
-    setError(false);
   }
 
-  const scholar = SCHOLARS.find(s => s.key === scholarKey);
+  if (!authed) {
+    return <ScholarAuthGate scholarKey={scholarKey} name={scholar.display} onUnlock={() => setAuthed(true)} />;
+  }
 
-  return authed
-    ? <ExpenseForm scholar={scholar} onLogout={logout} />
-    : (
-      <LockGate
-        scholarKey={scholarKey}
-        setScholarKey={k => { setScholarKey(k); setError(false); setPassword(''); }}
-        password={password}
-        setPassword={v => { setPassword(v); setError(false); }}
-        onSubmit={unlock}
-        error={error}
-        ready={!!config}
-      />
-    );
-}
-
-function LockGate({ scholarKey, setScholarKey, password, setPassword, onSubmit, error, ready }) {
-  const inputRef = useRef();
-  useEffect(() => { if (ready) inputRef.current?.focus(); }, [ready, scholarKey]);
-
-  const scholar = SCHOLARS.find(s => s.key === scholarKey);
-
-  return (
-    <div className="el-lock" data-scholar={scholarKey}>
-      <div className="el-lock-bg" />
-      <div className="el-lock-inner">
-        <div className="el-badge"><span>N</span><span>G</span><span>S</span></div>
-
-        <div className="el-scholar-pick">
-          {SCHOLARS.map(s => (
-            <button key={s.key} type="button"
-              className={`el-scholar-btn${scholarKey === s.key ? ' is-active' : ''}`}
-              onClick={() => setScholarKey(s.key)}
-            >
-              <span className="el-scholar-initial">{s.display[0]}</span>
-              <span className="el-scholar-name">{s.display}</span>
-            </button>
-          ))}
-        </div>
-
-        <h1 className="el-title">Welcome, <em>{scholar.display}</em></h1>
-        <p className="el-sub">Enter your password to continue</p>
-
-        <form className={`el-form${error ? ' is-error' : ''}`} onSubmit={onSubmit} autoComplete="off">
-          <div className="el-field">
-            <label className="el-label" htmlFor="el-pw">Password</label>
-            <input id="el-pw" ref={inputRef} className="el-input" type="password"
-              placeholder="Your password" value={password}
-              onChange={e => setPassword(e.target.value)} disabled={!ready}
-              autoComplete="current-password" />
-          </div>
-          <div className={`el-err${error ? ' show' : ''}`}>Incorrect password — try again.</div>
-          <button type="submit" disabled={!ready || !password} className="el-btn">
-            {ready ? `Continue as ${scholar.display} →` : 'Loading…'}
-          </button>
-        </form>
-        <Link to="/" className="el-back">← Back to NextGen Scholars</Link>
-      </div>
-    </div>
-  );
+  return <ExpenseForm scholar={scholar} onLogout={logout} />;
 }
 
 // ── Pending submissions awaiting mentor approval ──────────────────────────────
@@ -419,31 +335,21 @@ function ExpenseForm({ scholar, onLogout }) {
     loadScholarSubmissions(scholar.key)
       .then(setPendingSubmissions)
       .catch(() => {});
-
-    const channel = supabase.channel(`scholar_${scholar.key}_submissions`)
-      .on('postgres_changes', {
-        event: 'UPDATE', schema: 'public', table: 'expense_submissions',
-        filter: `scholar_key=eq.${scholar.key}`,
-      }, payload => {
-        const updated = payload.new;
-        setPendingSubmissions(prev => {
-          const exists = prev.find(s => s.id === updated.id);
-          if (updated.status === 'approved' || updated.status === 'resubmitted') {
-            return prev.filter(s => s.id !== updated.id);
-          }
-          if (exists) return prev.map(s => s.id === updated.id ? updated : s);
-          return prev;
-        });
-        if (updated.status === 'approved') {
-          loadFromSupabase()
-            .then(data => setExpensesBySem(data.scholars?.[scholar.key]?.expenses || {}))
-            .catch(() => {});
-        }
-      })
-      .subscribe();
-
-    return () => supabase.removeChannel(channel);
   }, [scholar.key]);
+
+  // Polling (replaces the old Supabase realtime channel): submissions and
+  // expenses are small per-scholar tables, cheapest to just refetch in full
+  // on any change (an approval touches both).
+  useChanges(deltas => {
+    if (deltas.expense_submissions?.rows.length) {
+      loadScholarSubmissions(scholar.key).then(setPendingSubmissions).catch(() => {});
+    }
+    if (deltas.expenses?.rows.length || deltas.expenses?.deletedIds.length) {
+      loadFromSupabase()
+        .then(data => setExpensesBySem(data.scholars?.[scholar.key]?.expenses || {}))
+        .catch(() => {});
+    }
+  });
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const singleValid = form.item.trim() && form.amount &&
@@ -609,7 +515,7 @@ function ExpenseForm({ scholar, onLogout }) {
           <span className="ef-header-title">Add Expense — <strong>{scholar.display}</strong></span>
         </div>
         <div className="ef-header-right">
-          <Link to={`/home/${scholar.key}`} className="ef-home-link">← Portal home</Link>
+          <Link href={`/home/${scholar.key}`} className="ef-home-link">← Portal home</Link>
           <button className="ef-logout" onClick={onLogout}>Switch scholar</button>
         </div>
       </header>

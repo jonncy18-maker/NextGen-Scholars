@@ -497,13 +497,26 @@ body { margin: 0; }
   border-color: rgba(201,168,76,0.6); background: rgba(201,168,76,0.08); color: var(--ngs-gold);
 }
 
+/* Destination-picker variant — plain links to /home/:key or /navigator, no
+   password step here (that happens for real at the destination). */
+.ngs-modal-role-btn-nav {
+  text-decoration: none; display: flex; align-items: center; justify-content: center;
+}
+.ngs-modal-role-btn-nav:hover {
+  border-color: var(--ngs-gold); background: rgba(201,168,76,0.1); color: var(--ngs-gold-soft);
+}
+
 /* ── title ── */
 .ngs-modal-title {
   font-family: var(--ngs-display); font-size: 34px; font-weight: 400;
-  line-height: 1.05; color: var(--ngs-paper); margin: 0 0 24px;
+  line-height: 1.05; color: var(--ngs-paper); margin: 0 0 8px;
 }
 .ngs-modal-title em { color: var(--ngs-gold); font-style: italic; }
 [data-role="april"] .ngs-modal-title em { color: #8FBAEF; }
+
+.ngs-modal-sub {
+  font-size: 13px; color: rgba(250,247,240,0.55); margin: 0 0 22px;
+}
 
 /* ── form ── */
 .ngs-modal-form { display: flex; flex-direction: column; gap: 10px; }

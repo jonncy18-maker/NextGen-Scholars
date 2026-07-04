@@ -1,6 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { supabase } from '../lib/supabase.js';
+import { signIn } from '../lib/auth-client.js';
 
+// Real Neon Auth (Better Auth) sign-in — was Supabase Auth's
+// signInWithPassword() before the neon-migration branch. Role (mentor vs.
+// scholar) is never checked client-side; every API route re-verifies it
+// server-side from user_profile, so a non-mentor account that signs in here
+// simply gets 401/403s on data calls (Navigator falls back to its existing
+// "static data" offline state rather than crashing — see navigator.jsx's
+// loadFromSupabase().catch()).
+//
+// Used to also fire a best-effort parallel Supabase Auth sign-in for the
+// ask Edge Functions -- removed now that Phase B5 ported those to
+// Neon-backed /api/ask, /api/ask-scholar, /api/ask-public.
+// Nothing in the mentor-facing app calls supabase.auth.* anymore.
 export function LockScreen({ isHiding, onUnlock }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,13 +33,13 @@ export function LockScreen({ isHiding, onUnlock }) {
     e.preventDefault();
     setLoading(true);
     setError(false);
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { error: authError } = await signIn.email({ email, password });
     setLoading(false);
     if (authError) {
       setError(true);
-    } else {
-      onUnlock();
+      return;
     }
+    onUnlock();
   }
 
   return (

@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useData } from '../context/DataContext.jsx';
-import { supabase } from '../lib/supabase.js';
+import { api } from '../lib/api.js';
 import { NAMECLASS, SESSION_TYPES, SESSION_CATEGORIES, classifyActivity } from '../constants.js';
 import { EnglishIngestPanel } from './EnglishIngestPanel.jsx';
 import { calcForecast, calcScenarioOutcomes } from '../lib/english-forecast.js';
-import { upsertEnglishForecast, saveEnglishScenario, deleteEnglishScenario, updatePeriodWeeklyTargets } from '../supabase-writer.js';
+import { upsertEnglishForecast, saveEnglishScenario, deleteEnglishScenario, updatePeriodWeeklyTargets } from '../api-writer.js';
 
 function todayStr() { return new Date().toISOString().slice(0, 10); }
 
@@ -104,10 +104,11 @@ function PeriodForm({ scholar, initial, onSave, onCancel }) {
         end_date:     form.end_date,
         hour_goal:    totalHours,
       };
-      const { error } = initial?.id
-        ? await supabase.from('english_periods').update(payload).eq('id', initial.id)
-        : await supabase.from('english_periods').insert(payload);
-      if (error) throw error;
+      if (initial?.id) {
+        await api.patch(`/english/periods/${initial.id}`, payload);
+      } else {
+        await api.post('/english/periods', payload);
+      }
       onSave();
     } catch (e) { setErr(e.message ?? 'Save failed.'); }
     finally { setSaving(false); }
@@ -182,10 +183,12 @@ function CategoryGoalsForm({ period, onSave, onCancel }) {
     const cleaned = Object.fromEntries(
       Object.entries(goals).map(([k, v]) => [k, v === '' ? null : Number(v)])
     );
-    const { error } = await supabase.from('english_periods')
-      .update({ category_goals: cleaned }).eq('id', period.id);
+    try {
+      await api.patch(`/english/periods/${period.id}`, { category_goals: cleaned });
+    } catch (e) {
+      setSaving(false); setErr(e.message ?? 'Save failed.'); return;
+    }
     setSaving(false);
-    if (error) { setErr(error.message); return; }
     onSave();
   }
 
@@ -484,7 +487,7 @@ function AddSessionForm({ scholar, period, onSave, onCancel }) {
     if (!totalMins || totalMins < 1)        { setErr('Enter a valid daily hours amount.'); return; }
     setSaving(true); setErr(null);
     try {
-      const { error } = await supabase.from('english_sessions').insert({
+      await api.post('/english/sessions', {
         scholar,
         date:             form.start_date,
         duration_minutes: totalMins,
@@ -494,7 +497,6 @@ function AddSessionForm({ scholar, period, onSave, onCancel }) {
         sem:              period?.label ?? null,
         period_id:        period?.id ?? null,
       });
-      if (error) throw error;
       onSave();
     } catch (e) { setErr(e.message ?? 'Save failed.'); }
     finally { setSaving(false); }
@@ -573,14 +575,17 @@ function SessionRow({ sess, period, onSaved, onDeleted }) {
     const mins = parseInt(form.duration, 10);
     if (!mins || mins < 1) { setErr('Enter a valid duration.'); return; }
     setSaving(true); setErr(null);
-    const { error } = await supabase.from('english_sessions').update({
-      date:             form.date,
-      duration_minutes: mins,
-      activity_type:    form.activity_type,
-      notes:            form.notes || null,
-    }).eq('id', sess.id);
+    try {
+      await api.patch(`/english/sessions/${sess.id}`, {
+        date:             form.date,
+        duration_minutes: mins,
+        activity_type:    form.activity_type,
+        notes:            form.notes || null,
+      });
+    } catch (e) {
+      setSaving(false); setErr(e.message ?? 'Save failed.'); return;
+    }
     setSaving(false);
-    if (error) { setErr(error.message); return; }
     setEditing(false);
     onSaved();
   }
@@ -588,7 +593,7 @@ function SessionRow({ sess, period, onSaved, onDeleted }) {
   async function handleDelete() {
     if (!confirm('Delete this session?')) return;
     setDeleting(true);
-    await supabase.from('english_sessions').delete().eq('id', sess.id);
+    await api.del(`/english/sessions/${sess.id}`);
     onDeleted(sess.id);
   }
 
@@ -886,7 +891,7 @@ function ScholarEnglishDetail({ sk, periods, sessions, forecast, scenarios, onBa
 
   async function deletePeriod(p) {
     if (!confirm(`Delete session "${p.label}"?`)) return;
-    await supabase.from('english_periods').delete().eq('id', p.id);
+    await api.del(`/english/periods/${p.id}`);
     onRefresh();
   }
 
@@ -1146,10 +1151,10 @@ export function EnglishSection({ id, collapsed, onToggle }) {
   const [selected,  setSelected]  = useState(null); // null = overview, else sk
 
   const load = useCallback(async () => {
-    const [{ data: p }, { data: s }, { data: sc }] = await Promise.all([
-      supabase.from('english_periods').select('*').order('start_date', { ascending: false }),
-      supabase.from('english_sessions').select('*').order('date', { ascending: false }),
-      supabase.from('english_scenarios').select('*').order('created_at', { ascending: false }),
+    const [p, s, sc] = await Promise.all([
+      api.get('/english/periods'),
+      api.get('/english/sessions'),
+      api.get('/english/scenarios'),
     ]);
     const periods  = p  || [];
     const sessions = s  || [];
@@ -1172,7 +1177,7 @@ export function EnglishSection({ id, collapsed, onToggle }) {
     const results = await Promise.allSettled(upserts);
 
     // Re-fetch forecasts after upserts so UI reflects latest values
-    const { data: fData } = await supabase.from('english_forecasts').select('*');
+    const fData = await api.get('/english/forecasts');
     setForecasts(fData || []);
 
     // Suppress upsert errors silently (DB write is best-effort)

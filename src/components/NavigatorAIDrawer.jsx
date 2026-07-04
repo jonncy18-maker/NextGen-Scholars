@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase, SUPABASE_URL } from '../lib/supabase.js';
+import { api } from '../lib/api.js';
 import { useData } from '../context/DataContext.jsx';
 import { ResultDisplay, QUICK_PROMPTS, IngestPanel, GradeIngestPanel, WeeklyReportPanel } from './NavigatorAI.jsx';
 
@@ -20,15 +20,7 @@ export function NavigatorAIDrawer({ open, onClose, tab = 'query', onTabChange, d
     setError(null);
     setResult(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Session expired — please refresh and log in again.');
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scholar, type: 'query', text }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      const json = await api.post('/ask', { scholar, type: 'query', text });
       setResult(json);
       setHistory(h => [{ q: text, scholar, result: json, ts: Date.now() }, ...h].slice(0, 8));
       setQuery('');

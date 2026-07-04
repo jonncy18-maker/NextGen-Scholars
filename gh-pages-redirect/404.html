@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>NextGen Scholars</title>
+<script>
+  // SPA fallback for GitHub Pages — redirect 404s back to index.html
+  // preserving the path as a query param, which index.html decodes and
+  // forwards to the new Vercel site. Same rafgraph/spa-github-pages trick
+  // the old Vite build used, kept only so pre-migration bookmarked .html
+  // deep links (claire.html, navigator.html, etc.) still resolve.
+  var l = window.location;
+  l.replace(
+    l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+    l.pathname.split('/').slice(0, 2).join('/') + '/?/' +
+    l.pathname.slice(1).split('/').slice(1).join('/').replace(/&/g, '~and~') +
+    (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+    l.hash
+  );
+</script>
+</head>
+<body></body>
+</html>

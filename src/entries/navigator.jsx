@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
 import { NGS_DATA } from '../../scholars-data.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
-import { loadFromSupabase, loadPendingSubmissions } from '../supabase-loader.js';
-import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead, approveSubmission, rejectSubmission, writeSent } from '../supabase-writer.js';
-import { supabase } from '../lib/supabase.js';
+import { loadFromSupabase, loadPendingSubmissions } from '../api-loader.js';
+import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead, approveSubmission, rejectSubmission, writeSent } from '../api-writer.js';
+import { authClient } from '../lib/auth-client.js';
+import { api } from '../lib/api.js';
+import { useChanges } from '../hooks/useChanges.js';
 import { CAT_TO_BUCKET } from '../constants.js';
 import { FxCtx, useFxState } from '../context/FxContext.jsx';
 import { DataCtx } from '../context/DataContext.jsx';
@@ -20,7 +21,6 @@ import { NavigatorAI } from '../components/NavigatorAI.jsx';
 import { ExpenseWorkbench } from '../components/expenses/ExpenseWorkbench.jsx';
 import { NavigatorAIDrawer } from '../components/NavigatorAIDrawer.jsx';
 import { MentorHome } from '../components/MentorHome.jsx';
-import { DocumentsSection } from '../components/DocumentsSection.jsx';
 import { CareerSection } from '../components/CareerSection.jsx';
 import { RiskSection } from '../components/RiskSection.jsx';
 import { GradesSection } from '../components/GradesSection.jsx';
@@ -61,15 +61,31 @@ function computeLiveGpa(rows) {
   return result;
 }
 
-export function Navigator() {
+export function Navigator({ slug = [] }) {
+  const section = slug[0] || '';
   const [D, setD] = useState(NGS_DATA);
   const scholarKeys = STATIC_SCHOLAR_KEYS.filter(k => D.scholars[k]);
 
   const [unlocked, setUnlocked] = useState(false);
 
+  // Every Navigator section is its own Next.js page (app/navigator/[[...slug]]),
+  // so this component remounts fresh on each section navigation. Check the
+  // persisted Neon Auth (Better Auth) session — not Supabase's, which is only
+  // a best-effort side session for the not-yet-ported Drive/ask Edge Functions
+  // (see LockScreen.jsx) and can't be relied on to reflect real sign-in state.
+  // A session alone isn't enough: the same browser may have a leftover
+  // scholar session (e.g. from testing /home/claire) — verify via /api/me
+  // that it's actually the mentor before skipping LockScreen, otherwise
+  // Navigator silently renders scoped to whichever scholar signed in last.
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setUnlocked(true);
+    authClient.getSession().then(async ({ data }) => {
+      if (!data?.session) return;
+      try {
+        const me = await api.get('/me');
+        if (me.role === 'mentor') setUnlocked(true);
+      } catch {
+        // not a mentor session — leave locked, LockScreen will prompt
+      }
     });
   }, []);
 
@@ -100,90 +116,91 @@ export function Navigator() {
     return () => clearTimeout(t);
   }, [writeError]);
 
-  // Load activity + pending submissions on unlock, subscribe to realtime.
+  // Load activity + pending submissions on unlock; useChanges (below) keeps
+  // them fresh afterwards via polling — replaces the 5 Supabase realtime
+  // channels that used to live in this effect (Phase B3).
+  function loadUnreadActivity() {
+    api.get('/activity?unread=1')
+      .then(data => setActivityFeed(data || []))
+      .catch(() => setActivityFeed([]));
+  }
+
+  // bootstrap doesn't sort by severity like the old .order('severity') did,
+  // so sort client-side to match.
+  function sortBySeverity(rows) {
+    return [...(rows || [])].sort((a, b) => (a.severity || '').localeCompare(b.severity || ''));
+  }
+
+  function loadAlerts() {
+    api.get('/bootstrap?tables=alerts')
+      .then(({ alerts }) => setDbAlerts(sortBySeverity(alerts)))
+      .catch(() => setDbAlerts([]));
+  }
+
+  function loadLiveGpa() {
+    api.get('/grades')
+      .then(data => { if (data) setLiveGpa(computeLiveGpa(data)); })
+      .catch(() => {});
+  }
+
   useEffect(() => {
     if (!unlocked) return;
-
-    supabase.from('activity_log').select('*').eq('read', false)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => setActivityFeed(data || []));
-
+    loadUnreadActivity();
     loadPendingSubmissions()
       .then(setPendingSubmissions)
       .catch(err => console.warn('loadPendingSubmissions failed:', err.message));
-
-    // DB system alerts (GPA risk, etc.)
-    supabase.from('alerts').select('*').order('severity')
-      .then(({ data }) => setDbAlerts(data || []));
-
-    function reloadAlerts() {
-      supabase.from('alerts').select('*').order('severity')
-        .then(({ data }) => setDbAlerts(data || []));
-    }
-
-    const alertsChannel = supabase.channel('ngs_db_alerts')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'alerts' }, reloadAlerts)
-      .subscribe();
-
-    const actChannel = supabase.channel('ngs_activity')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activity_log' }, payload => {
-        setActivityFeed(prev => [payload.new, ...prev]);
-      })
-      .subscribe();
-
-    const subChannel = supabase.channel('ngs_submissions')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'expense_submissions' }, payload => {
-        if (payload.new.status === 'pending') setPendingSubmissions(prev => [payload.new, ...prev]);
-      })
-      .subscribe();
-
-    // Grade entries → live GPA for status cards
-    function reloadLiveGpa() {
-      supabase.from('grade_entries').select('scholar,sem,units,pct_equiv')
-        .then(({ data }) => { if (data) setLiveGpa(computeLiveGpa(data)); });
-    }
-    reloadLiveGpa();
-
-    const gradesChannel = supabase.channel('ngs_grade_entries')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'grade_entries' }, reloadLiveGpa)
-      .subscribe();
-
-    const expChannel = supabase.channel('ngs_expenses')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'expenses' }, ({ new: e }) => {
-        if (!e?.scholar || !e?.sem) return;
-        const row = { id: e.id, item: e.item, amount: parseFloat(e.amount) || 0, qty: parseFloat(e.qty) || 1, cat: e.cat, bucket: bucketFor(e.cat, e.bucket), date: e.date, sent: e.sent, avb: e.avb, vendor: e.vendor || '', sem: e.sem, group_id: e.group_id || null };
-        setD(prev => {
-          const sd = prev.scholars[e.scholar];
-          if (!sd) return prev;
-          const semList = sd.expenses?.[e.sem] || [];
-          if (semList.some(ex => String(ex.id) === String(e.id))) return prev;
-          return { ...prev, scholars: { ...prev.scholars, [e.scholar]: { ...sd, expenses: { ...(sd.expenses || {}), [e.sem]: [...semList, row] } } } };
-        });
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'expenses' }, ({ new: e }) => {
-        if (!e?.scholar) return;
-        setD(prev => {
-          const sd = prev.scholars[e.scholar];
-          if (!sd) return prev;
-          const newExp = {};
-          Object.entries(sd.expenses || {}).forEach(([sem, list]) => {
-            newExp[sem] = list.map(ex => String(ex.id) === String(e.id)
-              ? { ...ex, item: e.item, amount: parseFloat(e.amount) || 0, qty: parseFloat(e.qty) || 1, cat: e.cat, bucket: bucketFor(e.cat, e.bucket), date: e.date, sent: e.sent, avb: e.avb, vendor: e.vendor || '', sem: e.sem, group_id: e.group_id || null }
-              : ex);
-          });
-          return { ...prev, scholars: { ...prev.scholars, [e.scholar]: { ...sd, expenses: newExp } } };
-        });
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(alertsChannel);
-      supabase.removeChannel(actChannel);
-      supabase.removeChannel(subChannel);
-      supabase.removeChannel(gradesChannel);
-      supabase.removeChannel(expChannel);
-    };
+    loadAlerts();
+    loadLiveGpa();
   }, [unlocked]);
+
+  // Polling (replaces realtime): alerts/activity/submissions/grades are small
+  // tables, cheapest to just refetch in full on any change. Expenses gets a
+  // targeted patch (same upsert/delete-by-id shape the old INSERT/UPDATE
+  // realtime handlers used) since D.scholars[*].expenses is a large nested
+  // structure not worth refetching whole on every poll tick.
+  useChanges(deltas => {
+    if (!unlocked) return;
+
+    if (deltas.alerts?.rows.length || deltas.alerts?.deletedIds.length) loadAlerts();
+    if (deltas.activity_log?.rows.length) loadUnreadActivity();
+    if (deltas.expense_submissions?.rows.length) {
+      loadPendingSubmissions().then(setPendingSubmissions).catch(() => {});
+    }
+    if (deltas.grade_entries?.rows.length || deltas.grade_entries?.deletedIds.length) loadLiveGpa();
+
+    const expDelta = deltas.expenses;
+    if (expDelta && (expDelta.rows.length || expDelta.deletedIds.length)) {
+      setD(prev => {
+        let scholars = prev.scholars;
+        expDelta.rows.forEach(e => {
+          if (!e?.scholar || !e?.sem) return;
+          const sd = scholars[e.scholar];
+          if (!sd) return;
+          const row = { id: e.id, item: e.item, amount: parseFloat(e.amount) || 0, qty: parseFloat(e.qty) || 1, cat: e.cat, bucket: bucketFor(e.cat, e.bucket), date: e.date, sent: e.sent, avb: e.avb, vendor: e.vendor || '', sem: e.sem, group_id: e.group_id || null };
+          const semList = sd.expenses?.[e.sem] || [];
+          const exists = semList.some(ex => String(ex.id) === String(e.id));
+          const newSemList = exists
+            ? semList.map(ex => String(ex.id) === String(e.id) ? row : ex)
+            : [...semList, row];
+          scholars = { ...scholars, [e.scholar]: { ...sd, expenses: { ...(sd.expenses || {}), [e.sem]: newSemList } } };
+        });
+        if (expDelta.deletedIds.length) {
+          const deleted = new Set(expDelta.deletedIds.map(String));
+          Object.entries(scholars).forEach(([key, sd]) => {
+            const newExp = {};
+            let changed = false;
+            Object.entries(sd.expenses || {}).forEach(([sem, list]) => {
+              const filtered = list.filter(ex => !deleted.has(String(ex.id)));
+              if (filtered.length !== list.length) changed = true;
+              newExp[sem] = filtered;
+            });
+            if (changed) scholars = { ...scholars, [key]: { ...sd, expenses: newExp } };
+          });
+        }
+        return scholars === prev.scholars ? prev : { ...prev, scholars };
+      });
+    }
+  });
 
   function removeExpenseFromD(scholarKey, expenseId) {
     setD(prev => {
@@ -256,7 +273,7 @@ export function Navigator() {
 
   async function handleDismissDbAlert(alertId) {
     try {
-      await supabase.from('alerts').delete().eq('id', alertId);
+      await api.del(`/alerts/${alertId}`);
       setDbAlerts(prev => prev.filter(a => a.id !== alertId));
     } catch (err) { console.error('dismissAlert failed:', err); }
   }
@@ -295,9 +312,19 @@ export function Navigator() {
   }
 
   useEffect(() => {
+    if (!unlocked) return;
     setSheetsStatus('loading');
     loadFromSupabase()
       .then(data => {
+        // The browser's Better Auth session is shared across tabs/origins —
+        // if another tab signed in as a scholar after this one unlocked as
+        // mentor, this fetch would silently come back scoped to that
+        // scholar. Re-lock rather than rendering a scoped-down dashboard.
+        if (data.role !== 'mentor') {
+          console.warn(`/api/bootstrap returned role="${data.role}", not mentor — re-locking`);
+          setUnlocked(false);
+          return;
+        }
         const hasScholars = data.scholars && Object.keys(data.scholars).length > 0;
         if (!hasScholars) {
           console.warn('Sheets returned no scholar data — using static fallback');
@@ -324,7 +351,7 @@ export function Navigator() {
         console.warn('Supabase unavailable, using static data:', err.message);
         setSheetsStatus('static');
       });
-  }, [refreshKey]);
+  }, [refreshKey, unlocked]);
 
   function handleAddExpense(scholar, exp) {
     addExpenseToD(scholar, { ...exp, status: exp.avb });
@@ -391,109 +418,102 @@ export function Navigator() {
           defaultScholar={aiDrawerDefaultScholar}
         />
         <main className="wrap">
-          <Routes>
-            <Route index element={
-              <SectionErrorBoundary name="MentorHome">
-                <MentorHome
-                  liveGpa={liveGpa}
-                  onOpenDrawer={openDrawer}
-                  pendingCount={pendingSubmissions.length}
-                  activityCount={activityFeed.length}
-                  onSemesterChange={handleSemesterChange}
+          {section === '' && (
+            <SectionErrorBoundary name="MentorHome">
+              <MentorHome
+                liveGpa={liveGpa}
+                onOpenDrawer={openDrawer}
+                pendingCount={pendingSubmissions.length}
+                activityCount={activityFeed.length}
+                onSemesterChange={handleSemesterChange}
+              />
+            </SectionErrorBoundary>
+          )}
+          {section === 'expenses' && (
+            <>
+              <SubmissionBanner
+                submissions={pendingSubmissions}
+                feed={activityFeed}
+                dbAlerts={dbAlerts}
+                onApprove={handleApproveSubmission}
+                onReject={handleRejectSubmission}
+                onApproveDelete={handleApproveDelete}
+                onDenyDelete={handleDenyDelete}
+                onMarkRead={handleMarkFeedRead}
+                onDismissAlert={handleDismissDbAlert}
+              />
+              <SectionErrorBoundary name="Expenses">
+                <ExpenseSection
+                  currency={currency}
+                  onCurrencyChange={handleExpCurrencyChange}
+                  fxRate={fxRate}
+                  fxStatus={fxStatus}
+                  addedExpenses={addedExpenses}
+                  onAddExpense={handleAddExpense}
+                  onEditExpense={handleEditExpense}
+                  onDeleteExpense={handleDeleteExpenseFromTable}
+                  id="sec-expenses" collapsed={false} onToggle={() => {}}
+                  workbenchSlot={scholar => (
+                    <ExpenseWorkbench
+                      scholar={scholar}
+                      onAddExpense={handleAddExpense}
+                      onRecordSend={handleRecordSend}
+                    />
+                  )}
                 />
               </SectionErrorBoundary>
-            } />
-            <Route path="expenses" element={
-              <>
-                <SubmissionBanner
-                  submissions={pendingSubmissions}
-                  feed={activityFeed}
-                  dbAlerts={dbAlerts}
-                  onApprove={handleApproveSubmission}
-                  onReject={handleRejectSubmission}
-                  onApproveDelete={handleApproveDelete}
-                  onDenyDelete={handleDenyDelete}
-                  onMarkRead={handleMarkFeedRead}
-                  onDismissAlert={handleDismissDbAlert}
-                />
-                <SectionErrorBoundary name="Expenses">
-                  <ExpenseSection
-                    currency={currency}
-                    onCurrencyChange={handleExpCurrencyChange}
-                    fxRate={fxRate}
-                    fxStatus={fxStatus}
-                    addedExpenses={addedExpenses}
-                    onAddExpense={handleAddExpense}
-                    onEditExpense={handleEditExpense}
-                    onDeleteExpense={handleDeleteExpenseFromTable}
-                    id="sec-expenses" collapsed={false} onToggle={() => {}}
-                    workbenchSlot={scholar => (
-                      <ExpenseWorkbench
-                        scholar={scholar}
-                        onAddExpense={handleAddExpense}
-                        onRecordSend={handleRecordSend}
-                      />
-                    )}
-                  />
-                </SectionErrorBoundary>
-              </>
-            } />
-            <Route path="grades" element={
-              <SectionErrorBoundary name="Grades">
-                <GradesSection id="sec-grades" collapsed={false} onToggle={() => {}} />
+            </>
+          )}
+          {section === 'grades' && (
+            <SectionErrorBoundary name="Grades">
+              <GradesSection id="sec-grades" collapsed={false} onToggle={() => {}} />
+            </SectionErrorBoundary>
+          )}
+          {section === 'english' && (
+            <>
+              <SectionErrorBoundary name="English">
+                <EnglishSection id="sec-english" collapsed={false} onToggle={() => {}} />
               </SectionErrorBoundary>
-            } />
-            <Route path="english" element={
-              <>
-                <SectionErrorBoundary name="English">
-                  <EnglishSection id="sec-english" collapsed={false} onToggle={() => {}} />
-                </SectionErrorBoundary>
-                <SectionErrorBoundary name="Navigator AI">
-                  <NavigatorAI id="sec-navigator-ai" collapsed={false} onToggle={() => {}} englishOnly={true} />
-                </SectionErrorBoundary>
-              </>
-            } />
-            <Route path="deadlines" element={
-              <SectionErrorBoundary name="Deadlines">
-                <DeadlinesSection id="sec-deadlines" collapsed={false} onToggle={() => {}} />
+              <SectionErrorBoundary name="Navigator AI">
+                <NavigatorAI id="sec-navigator-ai" collapsed={false} onToggle={() => {}} englishOnly={true} />
               </SectionErrorBoundary>
-            } />
-            <Route path="progress" element={
-              <>
-                <SectionErrorBoundary name="Career">
-                  <CareerSection id="sec-career" collapsed={false} onToggle={() => {}} />
-                </SectionErrorBoundary>
-                <SectionErrorBoundary name="Risk">
-                  <RiskSection id="sec-risk" collapsed={false} onToggle={() => {}} />
-                </SectionErrorBoundary>
-              </>
-            } />
-            <Route path="docs" element={
-              <SectionErrorBoundary name="Documents">
-                <DocumentsSection id="sec-documents" collapsed={false} onToggle={() => {}} />
+            </>
+          )}
+          {section === 'deadlines' && (
+            <SectionErrorBoundary name="Deadlines">
+              <DeadlinesSection id="sec-deadlines" collapsed={false} onToggle={() => {}} />
+            </SectionErrorBoundary>
+          )}
+          {section === 'progress' && (
+            <>
+              <SectionErrorBoundary name="Career">
+                <CareerSection id="sec-career" collapsed={false} onToggle={() => {}} />
               </SectionErrorBoundary>
-            } />
-            <Route path="budget" element={
-              <SectionErrorBoundary name="Budget">
-                <BudgetSection />
+              <SectionErrorBoundary name="Risk">
+                <RiskSection id="sec-risk" collapsed={false} onToggle={() => {}} />
               </SectionErrorBoundary>
-            } />
-            <Route path="program-details" element={
-              <SectionErrorBoundary name="Program Details">
-                <ProgramDetailsSection id="sec-program-details" collapsed={false} onToggle={() => {}} />
-              </SectionErrorBoundary>
-            } />
-            <Route path="travel" element={
-              <SectionErrorBoundary name="Travel">
-                <TravelModule id="sec-travel" />
-              </SectionErrorBoundary>
-            } />
-            <Route path="milestones" element={
-              <SectionErrorBoundary name="Milestones">
-                <MilestonesModule id="sec-milestones" />
-              </SectionErrorBoundary>
-            } />
-          </Routes>
+            </>
+          )}
+          {section === 'budget' && (
+            <SectionErrorBoundary name="Budget">
+              <BudgetSection />
+            </SectionErrorBoundary>
+          )}
+          {section === 'program-details' && (
+            <SectionErrorBoundary name="Program Details">
+              <ProgramDetailsSection id="sec-program-details" collapsed={false} onToggle={() => {}} />
+            </SectionErrorBoundary>
+          )}
+          {section === 'travel' && (
+            <SectionErrorBoundary name="Travel">
+              <TravelModule id="sec-travel" />
+            </SectionErrorBoundary>
+          )}
+          {section === 'milestones' && (
+            <SectionErrorBoundary name="Milestones">
+              <MilestonesModule id="sec-milestones" />
+            </SectionErrorBoundary>
+          )}
         </main>
         {unlocked && !aiDrawerOpen && (
           <button

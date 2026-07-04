@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase, SUPABASE_URL } from '../../lib/supabase.js';
+import { api } from '../../lib/api.js';
 import { useData } from '../../context/DataContext.jsx';
 import { ResultDisplay, QUICK_PROMPTS, IngestPanel } from '../NavigatorAI.jsx';
 import { AddExpenseForm } from './AddExpenseForm.jsx';
@@ -36,15 +36,7 @@ export function ExpenseWorkbench({ scholar, onAddExpense, onRecordSend }) {
     setError(null);
     setResult(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Session expired — please refresh and log in again.');
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scholar: activeScholar, type: 'query', text }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      const json = await api.post('/ask', { scholar: activeScholar, type: 'query', text });
       setResult(json);
       setHistory(h => [{ q: text, scholar: activeScholar, result: json, ts: Date.now() }, ...h].slice(0, 6));
       setQuery('');

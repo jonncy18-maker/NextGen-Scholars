@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase.js';
+import { api } from '../lib/api.js';
 
 // Mentor-only inline expense drawer. Logs itemized actual spend against a single
 // reward (a completed trip or milestone), keyed by the reward's semester. Writes
@@ -33,14 +33,9 @@ export function MentorExpenseDrawer({ scholarKey, sem, bucket, cats, onAdded }) 
 
   const load = useCallback(() => {
     if (!sem) return;
-    supabase
-      .from('expenses')
-      .select('id, item, cat, amount, date')
-      .eq('scholar', scholarKey)
-      .eq('sem', sem)
-      .eq('bucket', bucket)
-      .order('date', { ascending: true })
-      .then(({ data }) => setExpenses(data ?? []));
+    api.get(`/expenses?scholar=${encodeURIComponent(scholarKey)}&sem=${encodeURIComponent(sem)}&bucket=${encodeURIComponent(bucket)}`)
+      .then(data => setExpenses(data ?? []))
+      .catch(() => setExpenses([]));
   }, [scholarKey, sem, bucket]);
 
   useEffect(() => { if (open) load(); }, [open, load]);
@@ -55,12 +50,10 @@ export function MentorExpenseDrawer({ scholarKey, sem, bucket, cats, onAdded }) 
     setSaving(true); setErr('');
     try {
       const id = `${scholarKey}_${sem}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      const { error } = await supabase.from('expenses').insert({
-        id, scholar: scholarKey, sem, item: item.trim(),
-        cat, bucket, amount: amt, qty: 1,
-        date, avb: 'Actual', sent: 'Yes', vendor: '',
+      await api.post('/expenses', {
+        scholar: scholarKey,
+        exp: { id, sem, item: item.trim(), cat, bucket, amount: amt, qty: 1, date, avb: 'Actual', sent: 'Yes', vendor: '' },
       });
-      if (error) throw error;
       setItem(''); setAmount(''); setDate(todayStr());
       load();
       if (onAdded) onAdded();

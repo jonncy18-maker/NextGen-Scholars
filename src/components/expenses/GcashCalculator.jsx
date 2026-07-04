@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useData } from '../../context/DataContext.jsx';
 import { useFmt, FxCtx } from '../../context/FxContext.jsx';
 import { allExpenses } from '../../utils.js';
-import { supabase, SUPABASE_URL } from '../../lib/supabase.js';
+import { api } from '../../lib/api.js';
 
 // GCash cash-out fee: ₱15 per ₱500 block (or any fraction of one).
 // Matches the fee model from the original Jann TESDA tracker.
@@ -87,15 +87,7 @@ export function GcashCalculator({ scholar, onRecordSend }) {
     setAiBusy(true);
     setToast(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Session expired — refresh and log in again.');
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scholar, type: 'action', text }),
-      });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      const json = await api.post('/ask', { scholar, type: 'action', text });
 
       if (json.action === 'record_send' && Array.isArray(json.items) && json.items.length > 0) {
         const items = json.items;

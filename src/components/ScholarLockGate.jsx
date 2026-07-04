@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { supabase } from '../lib/supabase.js';
 
 async function loadConfig() {
@@ -63,7 +63,7 @@ export function ScholarLockGate({ scholarKey, name, onUnlock }) {
             {config ? `Continue as ${name} →` : 'Loading…'}
           </button>
         </form>
-        <Link to="/" className="el-back">← Back to NextGen Scholars</Link>
+        <Link href="/" className="el-back">← Back to NextGen Scholars</Link>
       </div>
     </div>
   );

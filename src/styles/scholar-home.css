@@ -213,13 +213,16 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
 }
 .sp-card:hover .sp-card-arrow { color: var(--ngs-gold); transform: translateX(2px); }
 
-/* ── tracker tiles ── */
+/* ── tracker tiles ──
+   auto-fit + minmax so tiles always stretch to fill the row width, however
+   many there are (e.g. Janndilyne's expenses-only view, or a tracker being
+   removed) instead of leaving a gap from a fixed column count. */
 .sp-tracker-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 @media (min-width: 640px) {
-  .sp-tracker-grid { grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .sp-tracker-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
 }
 @media (min-width: 1024px) {
-  .sp-tracker-grid { grid-template-columns: repeat(6, 1fr); gap: 14px; }
+  .sp-tracker-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
 }
 .sp-tile {
   position: relative; display: flex; align-items: flex-start; gap: 11px;
