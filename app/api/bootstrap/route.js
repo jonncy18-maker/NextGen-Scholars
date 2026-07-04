@@ -51,7 +51,7 @@ export const GET = withErrorHandling(async (request) => {
     tables.map(t => fetchTable(t, { scholarKey: scopeKey }))
   );
 
-  const payload = {};
+  const payload = { role };
   tables.forEach((t, i) => { payload[t] = results[i]; });
   return json(payload);
 });

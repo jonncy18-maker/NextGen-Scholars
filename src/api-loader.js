@@ -21,6 +21,7 @@ function maybeNum(v) {
 
 export async function loadFromSupabase() {
   const {
+    role,
     config: configRows,
     scholars: scholarRows,
     academics: academicRows,
@@ -125,6 +126,7 @@ export async function loadFromSupabase() {
   });
 
   return {
+    role,
     config: {
       exchangeRate: num(configMap.exchangeRate) || 56,
       lastUpdated:  configMap.lastUpdated || '',

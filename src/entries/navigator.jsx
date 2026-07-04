@@ -312,9 +312,19 @@ export function Navigator({ slug = [] }) {
   }
 
   useEffect(() => {
+    if (!unlocked) return;
     setSheetsStatus('loading');
     loadFromSupabase()
       .then(data => {
+        // The browser's Better Auth session is shared across tabs/origins —
+        // if another tab signed in as a scholar after this one unlocked as
+        // mentor, this fetch would silently come back scoped to that
+        // scholar. Re-lock rather than rendering a scoped-down dashboard.
+        if (data.role !== 'mentor') {
+          console.warn(`/api/bootstrap returned role="${data.role}", not mentor — re-locking`);
+          setUnlocked(false);
+          return;
+        }
         const hasScholars = data.scholars && Object.keys(data.scholars).length > 0;
         if (!hasScholars) {
           console.warn('Sheets returned no scholar data — using static fallback');
@@ -341,7 +351,7 @@ export function Navigator({ slug = [] }) {
         console.warn('Supabase unavailable, using static data:', err.message);
         setSheetsStatus('static');
       });
-  }, [refreshKey]);
+  }, [refreshKey, unlocked]);
 
   function handleAddExpense(scholar, exp) {
     addExpenseToD(scholar, { ...exp, status: exp.avb });
