@@ -23,22 +23,6 @@ export function ScholarAuthGate({ scholarKey, name, onUnlock }) {
   // dashboard load with the last-logged-in scholar's data until a refresh.
   const mountCheckAbortRef = useRef(null);
 
-  // The browser can restore this entire page — including whatever scholar's
-  // data was already sitting in React state — from its back/forward cache
-  // (bfcache) with *zero* network activity, e.g. after navigating away and
-  // back. That's how a different scholar's already-fetched numbers could
-  // still be showing: no bootstrap/session call ever re-ran, because the
-  // page was never actually reloaded. Force a real reload on a bfcache
-  // restore so every visit re-verifies the session and re-fetches fresh
-  // data instead of replaying a stale in-memory snapshot.
-  useEffect(() => {
-    function handlePageShow(e) {
-      if (e.persisted) window.location.reload();
-    }
-    window.addEventListener('pageshow', handlePageShow);
-    return () => window.removeEventListener('pageshow', handlePageShow);
-  }, []);
-
   useEffect(() => {
     let cancelled = false;
     const controller = new AbortController();

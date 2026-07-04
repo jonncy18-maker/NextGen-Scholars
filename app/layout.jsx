@@ -8,6 +8,7 @@ import '../src/styles/english-tracking.css';
 import '../src/styles/grade-entry.css';
 
 import { ErrorBoundary } from '../src/components/ErrorBoundary.jsx';
+import { BfcacheReload } from '../src/components/BfcacheReload.jsx';
 
 export const metadata = {
   title: 'NextGen Scholars',
@@ -25,6 +26,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
+        <BfcacheReload />
         <ErrorBoundary>{children}</ErrorBoundary>
       </body>
     </html>
