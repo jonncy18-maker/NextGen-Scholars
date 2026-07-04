@@ -129,7 +129,7 @@ export function ScholarHome({ scholarKey }) {
 
       return {
         latestExpenseDate: latestExpense?.date ?? null,
-        latestGpa: gradedAcad?.gpa ?? null,
+        latestGpa: gradedAcad?.gpa != null ? Number(gradedAcad.gpa) : null,
         latestGpaSem: gradedAcad?.sem ?? null,
         gpaStatus: gradedAcad?.status ?? null,
         rewardsCount: doneMilestones.length,
