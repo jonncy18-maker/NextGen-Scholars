@@ -51,7 +51,7 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
    1920px monitor) and actually use the space — AI chat becomes a sticky
    right rail alongside the action cards + trackers, instead of a full-width
    block stacked above them. Header/footer stay full-width. */
-@media (min-width: 1440px) {
+@media (min-width: 1200px) {
   .sp {
     max-width: 1400px;
     display: grid;

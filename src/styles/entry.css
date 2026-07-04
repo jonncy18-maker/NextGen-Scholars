@@ -234,11 +234,11 @@ input, select { font-family: inherit; }
    monitor empty. Split into an "actions" rail (chat, add-expense form,
    receipt upload) alongside a wider column for the pending list + expense
    table, which are the parts that actually benefit from extra width. */
-@media (min-width: 1440px) {
+@media (min-width: 1200px) {
   .ef-main {
     max-width: 1400px;
     display: grid;
-    grid-template-columns: minmax(360px, 420px) 1fr;
+    grid-template-columns: minmax(340px, 420px) 1fr;
     grid-template-areas:
       "pending pending"
       "chat    stats"
