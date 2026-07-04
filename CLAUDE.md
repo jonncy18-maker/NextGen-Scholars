@@ -253,6 +253,18 @@ secret lives only in Vercel's project env vars — never in the client.
   `docs/SPA-MIGRATION-ROADMAP.md` still describe the Supabase-era architecture
   in places (historical changelogs, diagrams). Not code, no functional impact
   — a documentation-refresh pass is a nice-to-have, not urgent.
+- **Neon Auth `trusted_origins` must list every production alias.** Vercel
+  generates multiple hostnames for one production deployment (e.g. the
+  `jonncy18` domain, a random `-steel`-style alias, and the `git-main-jonncy18`
+  branch alias) — Better Auth rejects sign-in from any origin not on the
+  allowlist, and `LockScreen.jsx`/`ScholarAuthGate.jsx` show a generic
+  "Incorrect credentials" for that rejection, indistinguishable from a real
+  wrong password. If login fails on a URL that otherwise resolves to the
+  correct production deployment, check `mcp__Neon__get_neon_auth_config`'s
+  `trusted_origins` before assuming the password is wrong; add the missing
+  origin with `mcp__Neon__configure_neon_auth` (`add_trusted_origin`) — takes
+  effect immediately, no redeploy needed. Hit and fixed 2026-07-04 for the
+  `-steel` and `git-main-jonncy18` aliases.
 
 ## Working in this environment
 
