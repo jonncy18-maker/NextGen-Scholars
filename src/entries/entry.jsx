@@ -1,27 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { EXPENSE_CATS, AVB_OPTIONS } from '../constants.js';
 import { NGS_DATA } from '../../scholars-data.js';
-import { updateExpense, writeActivityLog, writeSubmission, resubmitExpense, markSubmissionReadByScholar } from '../supabase-writer.js';
-import { loadFromSupabase, loadScholarSubmissions } from '../supabase-loader.js';
-import { supabase } from '../lib/supabase.js';
+import { updateExpense, writeActivityLog, writeSubmission, resubmitExpense, markSubmissionReadByScholar } from '../api-writer.js';
+import { loadFromSupabase, loadScholarSubmissions } from '../api-loader.js';
+import { useChanges } from '../hooks/useChanges.js';
+import { authClient, signIn } from '../lib/auth-client.js';
+import { api } from '../lib/api.js';
 import { groupExpenses } from '../components/expenses/filterHelpers.js';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { ScholarIngestPanel } from '../components/ScholarIngestPanel.jsx';
 import { ExpenseAskWidget } from '../components/ExpenseAskWidget.jsx';
 import '../styles/entry.css';
-
-async function loadConfig() {
-  try {
-    const { data } = await supabase.from('config').select('key, value');
-    const map = {};
-    (data || []).forEach(r => { map[r.key] = r.value; });
-    return map;
-  } catch {
-    return {};
-  }
-}
 
 const SCHOLARS = Object.entries(NGS_DATA.scholars)
   .filter(([, s]) => s.status === 'active' || s.status === 'trial')
@@ -53,97 +43,115 @@ function makeEmptyRow(defaultSem) {
 }
 
 export function EntryApp() {
-  const searchParams = useSearchParams();
-  const [scholarKey, setScholarKey] = useState('claire');
-  const [password, setPassword] = useState('');
-  const [authed, setAuthed] = useState(false);
-  const [error, setError] = useState(false);
-  const [config, setConfig] = useState(null);
+  const [scholarKey, setScholarKey] = useState(null);
+  const [checkingSession, setCheckingSession] = useState(true);
 
-  useEffect(() => { loadConfig().then(setConfig); }, []);
-
-  // Auto-auth if arriving from the scholar portal (sessionStorage set by ScholarHome).
   useEffect(() => {
-    const preauth = searchParams.get('scholar');
-    if (preauth && sessionStorage.getItem('ngs_auth_scholar') === preauth) {
-      const s = SCHOLARS.find(s => s.key === preauth);
-      if (s) { setScholarKey(preauth); setAuthed(true); }
-    }
-  }, [searchParams]);
-
-  function unlock(e) {
-    e.preventDefault();
-    if (!config) return;
-    const expected = config[`${scholarKey}_password`];
-    if (expected && password === expected) {
-      setAuthed(true);
-      setError(false);
-    } else {
-      setError(true);
-    }
-  }
+    let cancelled = false;
+    authClient.getSession().then(async ({ data }) => {
+      if (cancelled) return;
+      if (!data?.session) { setCheckingSession(false); return; }
+      try {
+        const me = await api.get('/me');
+        if (!cancelled && SCHOLARS.some(s => s.key === me.scholarKey)) setScholarKey(me.scholarKey);
+      } catch {
+        // fall through to the sign-in form
+      } finally {
+        if (!cancelled) setCheckingSession(false);
+      }
+    }).catch(() => { if (!cancelled) setCheckingSession(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   function logout() {
-    setAuthed(false);
-    setPassword('');
-    setError(false);
+    authClient.signOut();
+    setScholarKey(null);
   }
 
-  const scholar = SCHOLARS.find(s => s.key === scholarKey);
+  if (checkingSession) return null;
 
-  return authed
-    ? <ExpenseForm scholar={scholar} onLogout={logout} />
-    : (
-      <LockGate
-        scholarKey={scholarKey}
-        setScholarKey={k => { setScholarKey(k); setError(false); setPassword(''); }}
-        password={password}
-        setPassword={v => { setPassword(v); setError(false); }}
-        onSubmit={unlock}
-        error={error}
-        ready={!!config}
-      />
-    );
+  if (!scholarKey) return <EntrySignIn onSignedIn={setScholarKey} />;
+
+  const scholar = SCHOLARS.find(s => s.key === scholarKey);
+  return <ExpenseForm scholar={scholar} onLogout={logout} />;
 }
 
-function LockGate({ scholarKey, setScholarKey, password, setPassword, onSubmit, error, ready }) {
+// Real Neon Auth (Better Auth) sign-in — replaces the old scholar-picker +
+// shared cosmetic password. The account itself identifies the scholar (via
+// GET /api/me, resolved server-side from user_profile), so there's no picker.
+function EntrySignIn({ onSignedIn }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const inputRef = useRef();
-  useEffect(() => { if (ready) inputRef.current?.focus(); }, [ready, scholarKey]);
 
-  const scholar = SCHOLARS.find(s => s.key === scholarKey);
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const { error: authError } = await signIn.email({ email, password });
+    if (authError) {
+      setLoading(false);
+      setError('Incorrect credentials — try again.');
+      return;
+    }
+
+    try {
+      const me = await api.get('/me');
+      if (!SCHOLARS.some(s => s.key === me.scholarKey)) {
+        await authClient.signOut();
+        setError("This account isn't set up for expense entry yet.");
+        setLoading(false);
+        return;
+      }
+      onSignedIn(me.scholarKey);
+    } catch {
+      await authClient.signOut();
+      setError('Could not verify your account — try again.');
+      setLoading(false);
+    }
+  }
 
   return (
-    <div className="el-lock" data-scholar={scholarKey}>
+    <div className="el-lock">
       <div className="el-lock-bg" />
       <div className="el-lock-inner">
         <div className="el-badge"><span>N</span><span>G</span><span>S</span></div>
-
-        <div className="el-scholar-pick">
-          {SCHOLARS.map(s => (
-            <button key={s.key} type="button"
-              className={`el-scholar-btn${scholarKey === s.key ? ' is-active' : ''}`}
-              onClick={() => setScholarKey(s.key)}
-            >
-              <span className="el-scholar-initial">{s.display[0]}</span>
-              <span className="el-scholar-name">{s.display}</span>
-            </button>
-          ))}
-        </div>
-
-        <h1 className="el-title">Welcome, <em>{scholar.display}</em></h1>
-        <p className="el-sub">Enter your password to continue</p>
-
-        <form className={`el-form${error ? ' is-error' : ''}`} onSubmit={onSubmit} autoComplete="off">
+        <h1 className="el-title">Add Expenses</h1>
+        <p className="el-sub">Sign in to continue</p>
+        <form className={`el-form${error ? ' is-error' : ''}`} onSubmit={handleSubmit} autoComplete="off">
           <div className="el-field">
-            <label className="el-label" htmlFor="el-pw">Password</label>
-            <input id="el-pw" ref={inputRef} className="el-input" type="password"
-              placeholder="Your password" value={password}
-              onChange={e => setPassword(e.target.value)} disabled={!ready}
-              autoComplete="current-password" />
+            <label className="el-label" htmlFor="ea-email">Email</label>
+            <input
+              id="ea-email"
+              ref={inputRef}
+              className="el-input"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={e => { setEmail(e.target.value); setError(null); }}
+              autoComplete="email"
+            />
           </div>
-          <div className={`el-err${error ? ' show' : ''}`}>Incorrect password — try again.</div>
-          <button type="submit" disabled={!ready || !password} className="el-btn">
-            {ready ? `Continue as ${scholar.display} →` : 'Loading…'}
+          <div className="el-field">
+            <label className="el-label" htmlFor="ea-pw">Password</label>
+            <input
+              id="ea-pw"
+              className="el-input"
+              type="password"
+              placeholder="Your password"
+              value={password}
+              onChange={e => { setPassword(e.target.value); setError(null); }}
+              autoComplete="current-password"
+            />
+          </div>
+          <div className={`el-err${error ? ' show' : ''}`}>{error}</div>
+          <button type="submit" disabled={!email || !password || loading} className="el-btn">
+            {loading ? 'Signing in…' : 'Continue →'}
           </button>
         </form>
         <Link href="/" className="el-back">← Back to NextGen Scholars</Link>
@@ -418,31 +426,21 @@ function ExpenseForm({ scholar, onLogout }) {
     loadScholarSubmissions(scholar.key)
       .then(setPendingSubmissions)
       .catch(() => {});
-
-    const channel = supabase.channel(`scholar_${scholar.key}_submissions`)
-      .on('postgres_changes', {
-        event: 'UPDATE', schema: 'public', table: 'expense_submissions',
-        filter: `scholar_key=eq.${scholar.key}`,
-      }, payload => {
-        const updated = payload.new;
-        setPendingSubmissions(prev => {
-          const exists = prev.find(s => s.id === updated.id);
-          if (updated.status === 'approved' || updated.status === 'resubmitted') {
-            return prev.filter(s => s.id !== updated.id);
-          }
-          if (exists) return prev.map(s => s.id === updated.id ? updated : s);
-          return prev;
-        });
-        if (updated.status === 'approved') {
-          loadFromSupabase()
-            .then(data => setExpensesBySem(data.scholars?.[scholar.key]?.expenses || {}))
-            .catch(() => {});
-        }
-      })
-      .subscribe();
-
-    return () => supabase.removeChannel(channel);
   }, [scholar.key]);
+
+  // Polling (replaces the old Supabase realtime channel): submissions and
+  // expenses are small per-scholar tables, cheapest to just refetch in full
+  // on any change (an approval touches both).
+  useChanges(deltas => {
+    if (deltas.expense_submissions?.rows.length) {
+      loadScholarSubmissions(scholar.key).then(setPendingSubmissions).catch(() => {});
+    }
+    if (deltas.expenses?.rows.length || deltas.expenses?.deletedIds.length) {
+      loadFromSupabase()
+        .then(data => setExpensesBySem(data.scholars?.[scholar.key]?.expenses || {}))
+        .catch(() => {});
+    }
+  });
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const singleValid = form.item.trim() && form.amount &&

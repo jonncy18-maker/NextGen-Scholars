@@ -16,7 +16,7 @@ import { CAT_TO_BUCKET } from '../constants.js';
 // Scholars with a real Neon Auth account, migrated off the cosmetic shared
 // password. Everyone else (no account yet) keeps the unchanged ScholarLockGate
 // + Supabase read path until their account is provisioned (see CLAUDE.md B4).
-const MIGRATED_SCHOLARS = new Set(['claire']);
+const MIGRATED_SCHOLARS = new Set(['claire', 'april', 'janndilyne']);
 
 const SEM_LABELS = {
   Y1S1:'Year 1 · Semester 1', Y1S2:'Year 1 · Semester 2',

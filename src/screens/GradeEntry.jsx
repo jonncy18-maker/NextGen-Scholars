@@ -1,9 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { supabase, SUPABASE_URL } from '../lib/supabase.js';
+import { api } from '../lib/api.js';
+import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { ScholarIngestPanel } from '../components/ScholarIngestPanel.jsx';
 const ACCEPTED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
+
+// grade_entries' numeric columns (units, prelim, midterm, final_grade,
+// period_avg, pct_equiv) come back as strings from Neon's serverless driver
+// (NUMERIC is stringified to avoid precision loss, unlike Supabase's
+// PostgREST which returned JSON numbers) — coerce before any .toFixed()/math.
+function normalizeGradeRow(r) {
+  return {
+    ...r,
+    units: r.units != null ? Number(r.units) : null,
+    prelim: r.prelim != null ? Number(r.prelim) : null,
+    midterm: r.midterm != null ? Number(r.midterm) : null,
+    final_grade: r.final_grade != null ? Number(r.final_grade) : null,
+    period_avg: r.period_avg != null ? Number(r.period_avg) : null,
+    pct_equiv: r.pct_equiv != null ? Number(r.pct_equiv) : null,
+  };
+}
 
 const SEM_LABELS = {
   Y1S1:'Year 1 · Semester 1', Y1S2:'Year 1 · Semester 2',
@@ -87,9 +104,9 @@ function ReviewPanel({ review, setReview, scholarKey, sem, loading, error, onCon
   useEffect(() => {
     if (!review.length) return;
     setGeminiLoading(true);
-    fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
+    fetch('/api/ask-scholar', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ scholar: scholarKey, sem, type: 'grade_analysis', grades: review }),
     })
       .then(r => r.json())
@@ -113,9 +130,9 @@ function ReviewPanel({ review, setReview, scholarKey, sem, loading, error, onCon
     setChatInput('');
     setChatBusy(true); setChatError(null);
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
+      const res = await fetch('/api/ask-scholar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scholar: scholarKey, type: 'grade_edit', text: instruction, grades: review }),
       });
       const data = await res.json();
@@ -274,9 +291,9 @@ function AiGradeImport({ scholarKey, semKey, onSaved }) {
     if (!file || loading) return;
     setLoading(true); setError(null);
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
+      const res = await fetch('/api/ask-scholar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scholar: scholarKey, type: 'grade_ingest', sem: semKey, file: { base64: file.base64, mime: file.mime } }),
       });
       const json = await res.json();
@@ -307,8 +324,7 @@ function AiGradeImport({ scholarKey, semKey, onSaved }) {
           period_avg: avg, pct_equiv: avg != null ? (g.school === 'k12' ? avg : uvToPct(avg)) : null,
         };
       });
-      const { error: err } = await supabase.from('grade_entries').insert(entries);
-      if (err) throw new Error(err.message);
+      await api.post('/grades', { entries });
       setSuccess(entries.length);
       setReview(null); setFile(null); setOpen(false);
       onSaved();
@@ -369,6 +385,7 @@ function AiGradeImport({ scholarKey, semKey, onSaved }) {
 
 export function GradeEntry({ scholarKey }) {
   const config = CONFIGS[scholarKey] || CONFIGS.claire;
+  const [authed, setAuthed] = useState(false);
   const [semKey, setSemKey] = useState(config.semKey);
   const [rows, setRows] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -378,19 +395,22 @@ export function GradeEntry({ scholarKey }) {
 
   // Keep semKey in sync with whatever the mentor last set
   useEffect(() => {
-    supabase.from('scholars').select('current_sem').eq('scholar_key', scholarKey).limit(1)
-      .then(({ data }) => { if (data?.[0]?.current_sem) setSemKey(data[0].current_sem); });
-  }, [scholarKey]);
+    if (!authed) return;
+    api.get('/bootstrap?tables=scholars')
+      .then(data => { if (data.scholars?.[0]?.current_sem) setSemKey(data.scholars[0].current_sem); })
+      .catch(() => {});
+  }, [scholarKey, authed]);
 
   useEffect(() => {
-    supabase
-      .from('grade_entries')
-      .select('*')
-      .eq('scholar', scholarKey)
-      .order('sem')
-      .order('created_at')
-      .then(({ data }) => setRows(data ?? []));
-  }, [scholarKey]);
+    if (!authed) return;
+    api.get('/grades')
+      .then(data => setRows((data ?? []).map(normalizeGradeRow)))
+      .catch(() => setRows([]));
+  }, [scholarKey, authed]);
+
+  if (!authed) {
+    return <ScholarAuthGate scholarKey={scholarKey} name={config.name} onUnlock={() => setAuthed(true)} />;
+  }
 
   // live preview — ranges differ per school
   const isK12 = form.school === 'k12';
@@ -439,14 +459,13 @@ export function GradeEntry({ scholarKey }) {
     setShowForm(false);
     setForm(emptyForm(form.school));
 
-    const { data, error: err } = await supabase
-      .from('grade_entries').insert(entry).select().single();
-    if (err) {
+    try {
+      const data = await api.post('/grades', entry);
+      setRows(prev => prev.map(r => r.id === tempId ? normalizeGradeRow(data) : r));
+    } catch {
       setRows(prev => prev.filter(r => r.id !== tempId));
       setError('Could not save. Please try again.');
       setShowForm(true);
-    } else {
-      setRows(prev => prev.map(r => r.id === tempId ? data : r));
     }
     setSubmitting(false);
   }
@@ -519,9 +538,9 @@ export function GradeEntry({ scholarKey }) {
               scholarKey={scholarKey}
               semKey={semKey}
               onSaved={() => {
-                supabase.from('grade_entries').select('*').eq('scholar', scholarKey)
-                  .order('sem').order('created_at')
-                  .then(({ data }) => setRows(data ?? []));
+                api.get('/grades')
+                  .then(data => setRows((data ?? []).map(normalizeGradeRow)))
+                  .catch(() => {});
               }}
             />
 
