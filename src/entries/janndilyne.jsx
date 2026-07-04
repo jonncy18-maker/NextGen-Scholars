@@ -2,19 +2,24 @@ import React from 'react';
 import { NGS_DATA } from '../../scholars-data.js';
 import { ScholarProfile } from '../components/Profile/ScholarProfile.jsx';
 import { useScholarProfile } from '../hooks/useScholarProfile.js';
-import { scholarTotals } from '../utils.js';
 
 const STATIC = NGS_DATA.scholars.janndilyne.publicProfile;
 const STATIC_SCHOLAR = NGS_DATA.scholars.janndilyne;
 
+const EMPTY_TOTALS = { total: 0, college: 0, milestone: 0, life: 0, travel: 0, exam: 0, professional: 0, admin: 0 };
+
 // TESDA track — no English hours and no travel/vacation program, so this merge
-// deliberately omits the english-hours fetch and the travels handling that the
-// NGN scholar pages (claire.jsx / april.jsx) carry.
+// deliberately omits the travels handling that the NGN scholar pages
+// (claire.jsx / april.jsx) carry. `s` is the curated payload from
+// GET /api/public/profile/janndilyne — already aggregated server-side.
 function mergeSheetData(base, s) {
   if (!s) return base;
-  const tots = scholarTotals(s);
-  const academics = [...(s.academics || [])];
+  const academics = s.academics || [];
   const latestGpa = [...academics].reverse().find(a => a.gpa != null);
+  // The initial render calls this with the static NGS_DATA scholar object
+  // instead of a live payload (no investmentTotals field yet) — default to
+  // zero, not a crash.
+  const investmentTotals = s.investmentTotals || EMPTY_TOTALS;
   const nextMil = (s.milestones || []).find(m => m.state !== 'done') || null;
   const floor = s.gpaFloor ?? base.academics?.current?.floor ?? null;
 
@@ -22,20 +27,14 @@ function mergeSheetData(base, s) {
     ...base,
     currentSem: s.currentSem || STATIC_SCHOLAR.currentSem || null,
     gpaFloor:   floor,
-    investmentTotals: {
-      total: tots.total,
-      college: tots.college,
-      life: tots.life,
-      milestone: tots.milestone,
-      travel: tots.travel,
-    },
+    investmentTotals,
     nextMilestoneAward: nextMil ? { name: nextMil.name, sem: nextMil.sem } : null,
     latestGpa: latestGpa ? { value: latestGpa.gpa, sem: latestGpa.sem, floor } : null,
     support: {
       ...base.support,
       total: {
         ...base.support.total,
-        rawPhp: tots.total > 0 ? tots.total : base.support.total.rawPhp,
+        rawPhp: investmentTotals.total > 0 ? investmentTotals.total : base.support.total.rawPhp,
         detail: base.support.total.detail,
       },
     },
