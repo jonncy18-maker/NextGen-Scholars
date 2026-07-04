@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
-import { supabase } from '../lib/supabase.js';
+import { api } from '../lib/api.js';
 import '../styles/english-tracking.css';
-
-const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 function fmtDuration(minutes) {
   if (!minutes) return '—';
@@ -29,8 +26,8 @@ function ReviewTable({ sessions: initial, categories, onDiscard, onConfirm }) {
     if (saving || !sessions.length) return;
     setSaving(true); setErr(null);
     try {
-      const { error } = await supabase.from('english_sessions').insert(
-        sessions.map(s => ({
+      await api.post('/english/sessions', {
+        sessions: sessions.map(s => ({
           scholar:          s.scholar,
           date:             s.date || today,
           duration_minutes: Number(s.duration_minutes),
@@ -39,9 +36,8 @@ function ReviewTable({ sessions: initial, categories, onDiscard, onConfirm }) {
           notes:            s.notes || null,
           sem:              s.sem || null,
           period_id:        s.period_id || null,
-        }))
-      );
-      if (error) throw new Error(error.message);
+        })),
+      });
       onConfirm(sessions.length);
     } catch (e) {
       setErr(e.message ?? 'Save failed.');
@@ -113,9 +109,9 @@ export function EnglishIngestPanel({ scholarKey, categories, periodId, sem, onSa
     if (!text.trim() || loading) return;
     setLoading(true); setError(null); setReview(null); setSuccess(null);
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
+      const res = await fetch('/api/ask-scholar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scholar: scholarKey, type: 'english_ingest', text, categories }),
       });
       const data = await res.json();

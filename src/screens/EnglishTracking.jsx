@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { supabase } from '../lib/supabase.js';
+import { api } from '../lib/api.js';
+import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { SESSION_CATEGORIES, SESSION_TYPES, classifyActivity } from '../constants.js';
 import { EnglishIngestPanel } from '../components/EnglishIngestPanel.jsx';
 import { calcForecast } from '../lib/english-forecast.js';
-import { upsertEnglishForecast } from '../supabase-writer.js';
+import { upsertEnglishForecast } from '../api-writer.js';
 import '../styles/english-tracking.css';
 
 const FALLBACK = {
@@ -215,20 +216,25 @@ function SessionRow({ sess, cats, onSaved, onDeleted }) {
     const mins = parseInt(form.duration, 10);
     if (!mins || mins < 1) return;
     setSaving(true);
-    const { error } = await supabase.from('english_sessions').update({
-      date:             form.date,
-      duration_minutes: mins,
-      activity_type:    form.activity_type,
-      notes:            form.notes || null,
-    }).eq('id', sess.id);
+    try {
+      await api.patch(`/english/sessions/${sess.id}`, {
+        date:             form.date,
+        duration_minutes: mins,
+        activity_type:    form.activity_type,
+        notes:            form.notes || null,
+      });
+      setEditing(false);
+      onSaved();
+    } catch {
+      // leave the row in edit mode so the scholar can retry
+    }
     setSaving(false);
-    if (!error) { setEditing(false); onSaved(); }
   }
 
   async function handleDelete() {
     if (!confirm('Delete this session?')) return;
     setDeleting(true);
-    await supabase.from('english_sessions').delete().eq('id', sess.id);
+    await api.del(`/english/sessions/${sess.id}`).catch(() => {});
     onDeleted(sess.id);
   }
 
@@ -277,6 +283,7 @@ function SessionRow({ sess, cats, onSaved, onDeleted }) {
 
 export function EnglishTracking({ scholarKey }) {
   const fallback = FALLBACK[scholarKey] || FALLBACK.claire;
+  const [authed, setAuthed] = useState(false);
 
   const [period,      setPeriod]      = useState(undefined);
   const [sessions,    setSessions]    = useState(null);
@@ -287,59 +294,47 @@ export function EnglishTracking({ scholarKey }) {
   const [error, setError]             = useState(null);
   const [collapsedCats, setCollapsedCats] = useState(null); // initialized after period loads
 
-  useEffect(() => {
-    supabase
-      .from('english_periods')
-      .select('*')
-      .eq('scholar', scholarKey)
-      .order('start_date', { ascending: false })
-      .then(({ data }) => setPeriod(findActivePeriod(data || [])));
-  }, [scholarKey]);
+  function sessionsQuery() {
+    return period
+      ? `/english/sessions?from=${period.start_date}&to=${period.end_date}`
+      : `/english/sessions?sem=${fallback.semKey}`;
+  }
 
   useEffect(() => {
-    if (period === undefined) return;
-    let q = supabase
-      .from('english_sessions')
-      .select('*')
-      .eq('scholar', scholarKey)
-      .order('date', { ascending: false });
+    if (!authed) return;
+    api.get('/english/periods')
+      .then(rows => setPeriod(findActivePeriod(rows || [])))
+      .catch(() => setPeriod(null));
+  }, [scholarKey, authed]);
 
-    if (period) {
-      q = q.gte('date', period.start_date).lte('date', period.end_date);
-    } else {
-      q = q.eq('sem', fallback.semKey);
-    }
-    q.then(({ data }) => {
-      const rows = data ?? [];
-      setSessions(rows);
-      if (collapsedCats === null) {
-        const cats = period ? (SESSION_CATEGORIES[period.session_type] ?? SESSION_CATEGORIES.default) : SESSION_CATEGORIES.default;
-        setCollapsedCats(new Set(cats));
-      }
-    });
-  }, [scholarKey, period, fallback.semKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!authed || period === undefined) return;
+    api.get(sessionsQuery())
+      .then(rows => {
+        setSessions(rows ?? []);
+        if (collapsedCats === null) {
+          const cats = period ? (SESSION_CATEGORIES[period.session_type] ?? SESSION_CATEGORIES.default) : SESSION_CATEGORIES.default;
+          setCollapsedCats(new Set(cats));
+        }
+      })
+      .catch(() => setSessions([]));
+  }, [scholarKey, period, authed]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function reloadSessions() {
     if (period === undefined) return;
-    let q = supabase
-      .from('english_sessions')
-      .select('*')
-      .eq('scholar', scholarKey)
-      .order('date', { ascending: false });
-    if (period) {
-      q = q.gte('date', period.start_date).lte('date', period.end_date);
-    } else {
-      q = q.eq('sem', fallback.semKey);
-    }
-    q.then(({ data }) => setSessions(data ?? []));
+    api.get(sessionsQuery()).then(rows => setSessions(rows ?? [])).catch(() => {});
   }
 
   // Keep the DB forecast in sync whenever sessions or period changes
   useEffect(() => {
-    if (!period || sessions === null) return;
+    if (!authed || !period || sessions === null) return;
     const fc = calcForecast(period, sessions);
     if (fc) upsertEnglishForecast(fc).catch(console.error);
-  }, [period, sessions]);
+  }, [period, sessions, authed]);
+
+  if (!authed) {
+    return <ScholarAuthGate scholarKey={scholarKey} name={fallback.name} onUnlock={() => setAuthed(true)} />;
+  }
 
   const cats         = sessionCategories(period);
   const totalMinutes = sessions ? sessions.reduce((s, r) => s + (r.duration_minutes || 0), 0) : 0;
@@ -394,15 +389,13 @@ export function EnglishTracking({ scholarKey }) {
       period_id:        period?.id ?? null,
     };
 
-    const { data, error: err } = await supabase
-      .from('english_sessions').insert(newSession).select().single();
-
-    if (err) {
-      setError('Could not save. Please try again.');
-    } else {
+    try {
+      const data = await api.post('/english/sessions', newSession);
       setSessions(prev => [data, ...(prev ?? [])].sort((a, b) => b.date.localeCompare(a.date)));
       setShowForm(false);
       setForm(null);
+    } catch {
+      setError('Could not save. Please try again.');
     }
     setSubmitting(false);
   }
