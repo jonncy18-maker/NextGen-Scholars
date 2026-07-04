@@ -11,9 +11,10 @@ licensure abroad (PH → OET → NCLEX → AHPRA Australia).
   bookmarks/hash routes to the Vercel domain — it no longer serves the app.
 - **Stack:** Next.js 14 (App Router) + React 18, backed by Neon (serverless
   Postgres) + Neon Auth (Better Auth) + Next.js API routes, deployed on
-  Vercel. Cut over from Vite/HashRouter/Supabase on **2026-07-04** (PR #183).
+  Vercel. Cut over from Vite/HashRouter/Supabase on **2026-07-04** (PR #183);
   Supabase decommission (Phase D) completed the same week — no code in this
-  repo depends on Supabase anymore. See "Migration history" below.
+  repo depends on Supabase anymore. Full migration history:
+  `ROADMAP.md` → "Phase 5 — Migration: Supabase → Neon + Vercel".
 
 ## Build system
 
@@ -35,8 +36,18 @@ npm run format   # Prettier — src/**/*.{js,jsx,css}, app/**/*.jsx, and scholar
 ```
 
 Env vars are `NEXT_PUBLIC_*` (not Vite's `VITE_*`) — see `.env.example`.
-`DATABASE_URL` (server-only, Neon connection string) is required — set in
-Vercel project env vars, never committed.
+
+## API Key / Security Rules
+
+| Key | Prefix | Lives | Why |
+|---|---|---|---|
+| `DATABASE_URL` | none | Server only (`lib/db.js`) | Neon connection string — full DB access if leaked. |
+| `GOOGLE_AI_KEY` | none | Server only (`lib/ai/*`, `app/api/{ask,ask-scholar,ask-public}/*`) | Gemini API key — quota abuse risk if exposed client-side. |
+
+**Rule:** anything that touches the Neon database directly or calls Gemini
+runs only in `app/api/**` route handlers; the browser calls those routes,
+never Neon or Gemini directly. Never commit a value for either key — set both
+in Vercel's project env vars only.
 
 ## Routes
 
@@ -83,7 +94,7 @@ Vercel project env vars, never committed.
 | `app/api/config/route.js` | GET/PUT for the `config` table (mentor-only) — currently backs `ProgramDetailsSection.jsx`'s program-details editor, whose text `app/api/ask-public/route.js` reads for the public AI chat's context. |
 | `app/api/public/profile/[key]/route.js` | Public, unauthenticated curated whitelist backing the public profile pages — see "Public-profile dataset leak" below. |
 | `app/api/me/route.js` | Returns `{ role, scholarKey }` for the caller's own token — used by `ScholarAuthGate.jsx` (scholar pages) and `navigator.jsx` (mentor gate) to verify a session actually matches the expected role/scholar before trusting it. |
-| `app/api/{ask,ask-scholar,ask-public}/route.js` | Gemini AI orchestrators. `ask` is mentor-only; `ask-scholar`/`ask-public` unauthenticated by design (see "Known issues"). |
+| `app/api/{ask,ask-scholar,ask-public}/route.js` | Gemini AI orchestrators. `ask` is mentor-only; `ask-scholar`/`ask-public` unauthenticated by design (see "Key Rules for Claude Code"). |
 | `src/components/ScholarAuthGate.jsx` | Real Better Auth sign-in gate for all three scholar-facing pages (Claire, April, Janndilyne). |
 | `src/lib/auth-client.js` | Better Auth React client (`createAuthClient` + `jwtClient()` plugin) pointed at the Neon Auth base URL. `getToken()` reads the JWT off the `set-auth-jwt` response header. |
 | `src/lib/api.js` | Fetch wrapper for `app/api/**` — Bearer token per request via `getToken()`, one 401-retry, `afterWrite()` poke hook consumed by `useChanges.js`. |
@@ -101,7 +112,8 @@ Three layers, merged at runtime:
 - **Neon (Postgres)** — operational data: expenses, GPA history, milestone and
   travel states, budgets, alerts, deadlines, action items, English periods,
   career steps. Source of truth for anything the mentor edits week-to-week.
-  (Supabase held this data pre-cutover; see "Migration history" below. The
+  (Supabase held this data pre-cutover; see `ROADMAP.md` → "Phase 5" for the
+  migration history. The
   `documents` table exists in Neon's schema but is unused — the Documents
   feature was dropped rather than ported.)
 - **Frontend merge layer** — `src/api-loader.js`'s `loadFromSupabase()` (name
@@ -126,106 +138,6 @@ snapshot (nav shows an offline indicator).
   is a public static asset — anyone can read it. Do not treat this as real access control
   (see ROADMAP "Accepted risks").
 
-## Migration history (Supabase → Neon, complete as of 2026-07-04)
-
-Full plan: `/root/.claude/plans/linear-launching-dragonfly.md` (Phases A′, B0–B5, C, D).
-**All phases done**, including Phase D (Supabase decommission) — see below.
-
-- **Framework + data layer.** Vite/HashRouter → Next.js App Router (Phase A′).
-  Neon project `patient-flower-81986836` ("NGS"); schema ported 1:1 from
-  Supabase (19 tables + `updated_at`/touch-trigger on 7 polled tables + the
-  `ngs_check_gpa_risk()` trigger, ported verbatim) plus a new
-  `public.user_profile` table (`user_id → role, scholar_key`, since Better
-  Auth's own `neon_auth.user` table has no field for it). `app/api/**`
-  replaces every Supabase table read/write, including a transactional
-  submission-approve. `src/hooks/useChanges.js` polls `/api/changes` (~25s)
-  in place of the 9 Supabase realtime channels.
-- **Auth is Better Auth**, not Stack Auth — an earlier plan assumption was
-  corrected after inspecting the live `neon_auth.*` schema. `src/lib/
-  auth-client.js` uses `better-auth/react` + the `jwtClient()` plugin.
-  Real sign-in for the mentor (`LockScreen.jsx`) and all three scholars
-  (`ScholarAuthGate.jsx`) — Claire on her real email, April and Janndilyne on
-  placeholder emails (`april@placeholder.nextgenscholars.dev` /
-  `janndilyne@placeholder.nextgenscholars.dev`, swappable anytime since
-  `user_profile` links by `user_id`, not email).
-- **Real pre-existing gaps closed along the way**, not just cosmetic-to-real
-  swaps: `GradeEntry`, `EnglishTracking`, `VacationTracker`, and
-  `MilestonesTracker` had **no gate at all** before (reachable directly by
-  URL); the homepage's login modal and a duplicate sign-in form in
-  `entry.jsx` were fake/redundant gates layered in front of the real one
-  (removed); Navigator was trusting *any* valid Better Auth session instead
-  of verifying it belonged to the mentor — a shared-browser-cookie edge case
-  (testing a scholar account in one tab silently downgraded the mentor's own
-  dashboard in another) that took two passes to fully fix (see `GET /api/me`
-  role-check in both `navigator.jsx` and `app/api/bootstrap/route.js`).
-- **AI (Gemini tiered layer)** ported to `app/api/{ask,ask-scholar,
-  ask-public}/route.js`. `ask` is mentor-only; `ask-scholar`/`ask-public`
-  unauthenticated by design (see "Known issues"). Along the way, found and
-  fixed several call sites still silently writing to (or reading stale data
-  from) the orphaned Supabase tables post-cutover-prep: `EnglishIngestPanel.jsx`,
-  `ScholarIngestPanel.jsx`, `ExpenseAskWidget.jsx`, `ScholarChatPanel.jsx`.
-- **Google Drive document storage was dropped entirely** (mentor and scholar
-  sides) — OAuth credential-management overhead (client secrets are
-  view-once, 2-secret cap, refresh-token minting) wasn't worth it at this
-  program's scale. The `documents` table in Neon is unused but harmless.
-- **Public-profile dataset leak — fixed.** The public `claire`/`april`/
-  `janndilyne` profile pages were pulling the **entire** Supabase dataset —
-  every scholar's raw expenses, everything — through the anonymous key for
-  any visitor. This was the original motivating risk for the whole migration
-  (see the plan's Context section) and had never actually been fixed until
-  partway through this effort. `GET /api/public/profile/[key]` is a curated,
-  unauthenticated whitelist: current semester, per-semester GPA history,
-  milestone/travel states, an English-hours aggregate — all computed
-  server-side. Financial data is reduced to per-bucket totals (mirroring
-  `src/utils.js`'s `scholarTotals()` exactly); raw expense rows, mentor
-  notes, alerts, submissions, and activity never leave the server. Rejects
-  any key outside `{claire, april, janndilyne}` with 404.
-- **Numeric-string gotcha, hit repeatedly:** Neon's serverless driver
-  stringifies `NUMERIC`/`DECIMAL` columns (`gpa`, grade fields, `amount_php`,
-  etc.) to avoid precision loss, unlike Supabase's PostgREST which returned
-  JSON numbers — coerce with `Number(...)` before any `.toFixed()`/
-  arithmetic on these fields. Watch for this in any code not yet audited.
-- **Cutover (Phase C, 2026-07-04):** verified Supabase vs. Neon row-count
-  parity across all 17 operational tables immediately before merging;
-  found and copied over 2 real expense rows added to production during the
-  migration window (Supabase remained `main`'s live backend the entire time).
-  GitHub Pages repurposed as a frozen redirect stub (`gh-pages-redirect/`,
-  published by `.github/workflows/deploy.yml`) — the old `deploy.yml` built
-  a Vite `dist/` that no longer exists post-merge.
-- **Phase D (Supabase decommission) — done.** A full-repo audit (run as a
-  fresh-context subagent specifically so it wasn't biased by the migration
-  session's own assumptions) found the "known remaining touchpoints" list
-  above was wrong and incomplete — it caught **three live components the
-  original migration missed entirely**: `ProgramDetailsSection.jsx` (a live
-  **write** path — the mentor's program-details editor was upserting to
-  Supabase's `config` table while `app/api/ask-public/route.js` had been
-  reading `program_details` from Neon's `config` table since Phase B5, so
-  every edit was invisible to the public AI chat; fixed via new
-  `app/api/config/route.js` — turned out neither DB ever actually had a
-  `program_details` row, so no data was lost), `MentorHome.jsx` and
-  `RiskSection.jsx` (both English-hours reads, ported to the existing
-  `/api/english/*` routes). Also found `app/home/[scholar]/page.jsx` had no
-  scholar-key whitelist, so any unrecognized URL fell through to a
-  "dead code" Supabase legacy path in `ScholarHome.jsx` + the cosmetic
-  `ScholarLockGate.jsx` — both deleted; unknown scholar keys now redirect
-  home. After those fixes: deleted `src/lib/supabase.js`,
-  `src/supabase-loader.js`, `src/supabase-writer.js`,
-  `.github/workflows/deploy-functions.yml`, and the `@supabase/supabase-js`
-  dependency; moved the SQL schema from `supabase/` to `db/` (recovering
-  `grade_entries.sql` and the shared `updated_at`-touch-trigger function,
-  both of which had only ever existed live on Neon, never committed
-  anywhere); relabeled stale "Supabase" UI copy in `NavBar`/`NavFooter`/
-  `NavigatorAI`. **Nothing in this repo depends on Supabase anymore.**
-  Decommission finished: a second fresh-context audit sweep (three parallel
-  agents — code-reference, plumbing, data-path trace) confirmed zero live
-  references; the three `VITE_/SUPABASE_*` GitHub Actions secrets
-  (`SUPABASE_ACCESS_TOKEN`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`)
-  were removed; the local `.env.local` Supabase placeholders were deleted; and
-  the Supabase project (`rhoxpfuephkuaartuqou`) was **paused** on 2026-07-04
-  (data retained, restorable anytime). Still open: drop plaintext passwords
-  from `scholars-data.js`'s `config` (now unused dead weight, not a live
-  risk); swap April/Janndilyne's placeholder emails for real ones.
-
 ## AI layer
 
 A tiered intelligence system behind the `/api/ask*` routes (`lib/ai/{context,tier1,
@@ -235,7 +147,7 @@ is Gemini advisory; Tier 3 is Gemini 2.5 Flash ingestion (receipts, grade report
 See `ROADMAP-AI.md` for full status. The AI layer is Gemini-only; the `GOOGLE_AI_KEY`
 secret lives only in Vercel's project env vars — never in the client.
 
-## Known issues / drift watch
+## Key Rules for Claude Code
 
 - **`scholars-data.js` narrative drift** — it is the source of truth for narrative/profile
   fields. Profile pages merge Neon operational data on top at runtime. Keep
@@ -310,22 +222,11 @@ secret lives only in Vercel's project env vars — never in the client.
 
 ## Agentic Loop
 
-Protocolo: https://raw.githubusercontent.com/jonncy18-maker/agentic-loop/main/AGENTIC_LOOP.md
-Orquestador: https://raw.githubusercontent.com/jonncy18-maker/agentic-loop/main/orchestrator.js
-Al inicio de cada sesión, leer el protocolo completo desde la URL de arriba.
-
-Activate the loop when **any** of these apply: the change touches 3+ files,
-creates a new component/module, touches the data layer (queries, schema, AI
-context), has user-visible behavior, or is estimated at more than ~5 minutes
-of work. For anything smaller — a typo, a one-liner, a single-file config
-change — just do it directly, no loop.
-
-The loop runs 6 phases (Understand & Verify → Instructions → Build →
-Audit → Iterate → Document) with context isolation between the Build Agent
-and the Audit Agent, so the audit is real compliance against the Phase 2
-contract rather than a check on the builder's own reasoning. See the full
-protocol at the URL above for phase details, control tokens
-(`VERDICT: PASS|FAIL|ESCALATE`, `BLOCKER:`), and the Stuck Report format.
+Protocol: https://raw.githubusercontent.com/jonncy18-maker/agentic-loop/main/AGENTIC_LOOP.md
+(read in full at the start of each session; orchestrator: `orchestrator.js` in the same repo).
+Activate for any change touching 3+ files, a new component/module, the data
+layer, or with user-visible behavior, or estimated at more than ~5 minutes of
+work — otherwise (typo, one-liner, single-file config change) just do it directly.
 
 ## Conventions
 
