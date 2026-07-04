@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { authClient, signIn } from '../lib/auth-client.js';
+import { authClient, signIn, invalidateToken } from '../lib/auth-client.js';
 import { api } from '../lib/api.js';
 
 // Real Neon Auth (Better Auth) sign-in gate for scholar-facing pages —
@@ -15,10 +15,19 @@ export function ScholarAuthGate({ scholarKey, name, onUnlock }) {
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const inputRef = useRef(null);
+  // Aborts the mount-time session check below if the user submits the
+  // sign-in form while it's still in flight — otherwise a slow, stale
+  // response (still carrying the *previous* scholar's session cookie from
+  // before this sign-in) can resolve after the fresh sign-in completes and
+  // clobber the just-established session, which is what let a scholar's
+  // dashboard load with the last-logged-in scholar's data until a refresh.
+  const mountCheckAbortRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
-    authClient.getSession({ fetchOptions: { cache: 'no-store' } }).then(async ({ data }) => {
+    const controller = new AbortController();
+    mountCheckAbortRef.current = controller;
+    authClient.getSession({ fetchOptions: { cache: 'no-store', signal: controller.signal } }).then(async ({ data }) => {
       if (cancelled) return;
       if (!data?.session) { setCheckingSession(false); return; }
       try {
@@ -30,7 +39,7 @@ export function ScholarAuthGate({ scholarKey, name, onUnlock }) {
         if (!cancelled) setCheckingSession(false);
       }
     }).catch(() => { if (!cancelled) setCheckingSession(false); });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; controller.abort(); };
   }, [scholarKey, onUnlock]);
 
   useEffect(() => {
@@ -42,6 +51,14 @@ export function ScholarAuthGate({ scholarKey, name, onUnlock }) {
     setLoading(true);
     setError(null);
 
+    // Cancel the mount-time session check (see the effect above) so its
+    // response — if it's still in flight and carrying the previous
+    // scholar's session cookie — can't land after this sign-in and
+    // overwrite it. Also drop any cached token from before this sign-in so
+    // the verification below is guaranteed to hit the network fresh.
+    mountCheckAbortRef.current?.abort();
+    invalidateToken();
+
     const { error: authError } = await signIn.email({ email, password });
     if (authError) {
       setLoading(false);
@@ -52,6 +69,7 @@ export function ScholarAuthGate({ scholarKey, name, onUnlock }) {
     try {
       const me = await api.get('/me');
       if (me.scholarKey !== scholarKey) {
+        invalidateToken();
         await authClient.signOut();
         setError("This account isn't set up for this portal yet.");
         setLoading(false);
@@ -59,6 +77,7 @@ export function ScholarAuthGate({ scholarKey, name, onUnlock }) {
       }
       onUnlock();
     } catch {
+      invalidateToken();
       await authClient.signOut();
       setError('Could not verify your account — try again.');
       setLoading(false);
