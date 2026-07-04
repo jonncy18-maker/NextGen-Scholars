@@ -88,10 +88,24 @@ export function ScholarHome({ scholarKey }) {
     if (!isKnownScholar) return;
     async function loadFromNeon() {
       const todayStr = new Date().toISOString().slice(0, 10);
-      const [bootstrap, periods] = await Promise.all([
-        api.get('/bootstrap?tables=scholars,academics,milestones,travels,expenses'),
-        api.get('/english/periods'),
-      ]);
+
+      // Defensive guard against a session/auth propagation race right after
+      // switching accounts: the very first bootstrap fetch after signing in
+      // as a different scholar can come back scoped to the *previous*
+      // scholar for a brief window (the auth backend hasn't caught up to
+      // the new session yet), even though the sign-in itself already
+      // verified correctly. Rather than trust a single fetch, confirm the
+      // response actually belongs to this scholarKey and retry a few times
+      // (with backoff) before giving up and using whatever came back.
+      let bootstrap;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        bootstrap = await api.get('/bootstrap?tables=scholars,academics,milestones,travels,expenses');
+        const returnedKey = bootstrap.scholars?.[0]?.scholar_key;
+        if (!returnedKey || returnedKey === scholarKey) break;
+        await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
+      }
+
+      const periods = await api.get('/english/periods');
 
       const liveSem = bootstrap.scholars?.[0]?.current_sem || config.staticSemKey;
       const activePeriod = periods.find(p => p.start_date <= todayStr && p.end_date >= todayStr) ?? periods[0] ?? null;
