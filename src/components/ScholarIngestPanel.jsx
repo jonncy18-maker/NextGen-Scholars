@@ -1,11 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { supabase } from '../lib/supabase.js';
-import { writeSubmission } from '../supabase-writer.js';
+import { api } from '../lib/api.js';
+import { writeSubmission } from '../api-writer.js';
 import { EXPENSE_CATS, SEMESTER_OPTIONS } from '../constants.js';
 import { uvToPct } from '../screens/GradeEntry.jsx';
 
-const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const ACCEPTED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
 
 function gradeAvg(prelim, midterm, finalGrade) {
@@ -37,9 +35,9 @@ export function StudentReviewCard({ items: initialItems, model, scholarKey, sem,
     setChatInput('');
     setChatBusy(true);
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
+      const res = await fetch('/api/ask-scholar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scholar: scholarKey, type: 'expense_edit', items, text: instruction }),
       });
       const data = await res.json();
@@ -186,9 +184,9 @@ function StudentGradeReviewCard({ grades: initialGrades, model, scholarKey, sem,
   useEffect(() => {
     if (!initialGrades.length) return;
     setGeminiLoading(true);
-    fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
+    fetch('/api/ask-scholar', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ scholar: scholarKey, sem, type: 'grade_analysis', grades: initialGrades }),
     })
       .then(r => r.json())
@@ -211,9 +209,9 @@ function StudentGradeReviewCard({ grades: initialGrades, model, scholarKey, sem,
     setChatInput('');
     setChatBusy(true);
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
+      const res = await fetch('/api/ask-scholar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scholar: scholarKey, type: 'grade_edit', grades, text: instruction }),
       });
       const data = await res.json();
@@ -252,8 +250,7 @@ function StudentGradeReviewCard({ grades: initialGrades, model, scholarKey, sem,
           pct_equiv:   avg != null ? (g.school === 'k12' ? avg : uvToPct(avg)) : null,
         };
       });
-      const { error } = await supabase.from('grade_entries').insert(entries);
-      if (error) throw new Error(error.message);
+      await api.post('/grades', { entries });
       onConfirmed(grades.length);
     } catch (err) {
       setSaveError(err.message ?? 'Save failed.');
@@ -421,9 +418,9 @@ export function ScholarIngestPanel({ id, type, scholarKey, sem }) {
     setLoading(true); setError(null); setReview(null); setSuccess(null);
     try {
       const ingestType = isExpense ? 'ingest' : 'grade_ingest';
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/ask-scholar`, {
+      const res = await fetch('/api/ask-scholar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scholar: scholarKey, type: ingestType, sem, file }),
       });
       const data = await res.json();
