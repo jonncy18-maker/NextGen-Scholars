@@ -26,6 +26,10 @@ async function request(path, { method = 'GET', body, retry = true } = {}) {
   const token = await getToken();
   const res = await fetch(`${API_BASE}/api${path}`, {
     method,
+    // Every route here is scoped by the caller's token (mentor vs. a
+    // specific scholar) — never let the browser serve back a cached
+    // response from a different signed-in user for the same URL.
+    cache: 'no-store',
     headers: {
       'content-type': 'application/json',
       ...(token ? { authorization: `Bearer ${token}` } : {}),

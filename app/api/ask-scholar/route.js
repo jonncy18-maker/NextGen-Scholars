@@ -4,6 +4,9 @@ import { buildContext } from '../../../lib/ai/context.js';
 import { tier2Ask } from '../../../lib/ai/tier2.js';
 import { tier3Ingest, tier3GradeIngest, tier3EnglishIngest } from '../../../lib/ai/tier3.js';
 
+// Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
+export const dynamic = 'force-dynamic';
+
 // Port of supabase/functions/ask-scholar/index.ts — scholar-scoped AI
 // endpoint for student-facing pages. Unauthenticated by design (accepted
 // risk, see CLAUDE.md "Known issues" -- trusts a client-supplied scholar

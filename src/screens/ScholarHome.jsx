@@ -84,8 +84,19 @@ export function ScholarHome({ scholarKey }) {
     if (!isKnownScholar) router.replace('/');
   }, [isKnownScholar, router]);
 
+  // Gated on `authed` — same as every other scholar screen (EnglishTracking,
+  // GradeEntry, VacationTracker, MilestonesTracker). Effects run on mount
+  // regardless of what the render returns, so without this guard the fetch
+  // fired while the sign-in form was still showing, authenticated with
+  // whatever session cookie the browser already carried (i.e. the previously
+  // signed-in scholar's), and parked *that* scholar's data in state. Signing
+  // in then unlocked the dashboard onto the stale data, and nothing re-ran
+  // the effect — which is exactly the "wrong scholar's numbers until a
+  // refresh" bug. Fetching only after ScholarAuthGate has verified via
+  // /api/me that the session matches this scholarKey guarantees the token
+  // used here belongs to the scholar being viewed.
   useEffect(() => {
-    if (!isKnownScholar) return;
+    if (!isKnownScholar || !authed) return;
     async function loadFromNeon() {
       const todayStr = new Date().toISOString().slice(0, 10);
       const [bootstrap, periods] = await Promise.all([
@@ -145,7 +156,7 @@ export function ScholarHome({ scholarKey }) {
     loadFromNeon()
       .then(setLiveData)
       .catch(() => setLiveData({}));
-  }, [scholarKey, isKnownScholar]);
+  }, [scholarKey, isKnownScholar, authed]);
 
   const lastEntry = liveData?.latestExpenseDate
     ? `Last entry · ${formatDate(liveData.latestExpenseDate)}`

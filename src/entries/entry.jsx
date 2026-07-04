@@ -6,7 +6,7 @@ import { NGS_DATA } from '../../scholars-data.js';
 import { updateExpense, writeActivityLog, writeSubmission, resubmitExpense, markSubmissionReadByScholar } from '../api-writer.js';
 import { loadFromSupabase, loadScholarSubmissions } from '../api-loader.js';
 import { useChanges } from '../hooks/useChanges.js';
-import { authClient } from '../lib/auth-client.js';
+import { authClient, invalidateToken } from '../lib/auth-client.js';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { groupExpenses } from '../components/expenses/filterHelpers.js';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
@@ -58,6 +58,7 @@ export function EntryApp() {
   const [authed, setAuthed] = useState(false);
 
   function logout() {
+    invalidateToken();
     authClient.signOut();
     setAuthed(false);
   }

@@ -2,6 +2,9 @@ import { sql } from '../../../../lib/db.js';
 import { requireScholarOwn } from '../../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../../lib/http.js';
 
+// Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
+export const dynamic = 'force-dynamic';
+
 const ALLOWED_FIELDS = ['subject', 'units', 'school', 'prelim', 'midterm', 'final_grade', 'period_avg', 'pct_equiv'];
 
 // Mirrors GradesSection.jsx's inline row-edit update (field subset).

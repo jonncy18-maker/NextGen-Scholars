@@ -2,6 +2,9 @@ import { sql } from '../../../../lib/db.js';
 import { requireScholarOwn, AuthError } from '../../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../../lib/http.js';
 
+// Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
+export const dynamic = 'force-dynamic';
+
 // GET ?scholar=&from=&to=&sem= — mirrors the various direct selects across
 // EnglishSection.jsx (mentor, unscoped) and EnglishTracking.jsx (scholar,
 // scoped by date range when a period is active, else by sem).

@@ -3,6 +3,9 @@ import { requireMentor } from '../../../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../../../lib/http.js';
 import { CAT_TO_BUCKET } from '../../../../../src/constants.js';
 
+// Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
+export const dynamic = 'force-dynamic';
+
 // Old approveSubmission() ran writeExpense() then the status update as two
 // separate Supabase calls (non-atomic — a failure between them left an
 // orphaned submission). Here both run in one Neon transaction() batch.

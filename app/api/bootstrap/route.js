@@ -2,6 +2,9 @@ import { sql } from '../../../lib/db.js';
 import { requireScholarOwn } from '../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../lib/http.js';
 
+// Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
+export const dynamic = 'force-dynamic';
+
 // Replaces supabase-loader.js's 10-way Promise.all of select('*') — one
 // query batch, one JSON payload keyed by table name with raw rows. The
 // frontend's existing NGS_DATA merge logic (num/maybeNum coercion, per-

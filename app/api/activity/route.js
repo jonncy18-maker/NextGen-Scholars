@@ -2,6 +2,9 @@ import { sql } from '../../../lib/db.js';
 import { requireMentor, requireScholarOwn, AuthError } from '../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../lib/http.js';
 
+// Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
+export const dynamic = 'force-dynamic';
+
 // GET ?unread=1 — mirrors navigator.jsx's unread activity feed (mentor only).
 export const GET = withErrorHandling(async (request) => {
   await requireMentor(request);

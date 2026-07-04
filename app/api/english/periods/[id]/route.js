@@ -2,6 +2,9 @@ import { sql } from '../../../../../lib/db.js';
 import { requireMentor } from '../../../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../../../lib/http.js';
 
+// Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
+export const dynamic = 'force-dynamic';
+
 const ALLOWED_FIELDS = [
   'scholar', 'label', 'session_type', 'start_date', 'end_date', 'hour_goal',
   'category_goals', 'weekly_target_hours', 'weekly_target_by_category',
