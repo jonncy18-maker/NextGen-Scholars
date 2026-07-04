@@ -12,8 +12,8 @@ licensure abroad (PH → OET → NCLEX → AHPRA Australia).
 - **Stack:** Next.js 14 (App Router) + React 18, backed by Neon (serverless
   Postgres) + Neon Auth (Better Auth) + Next.js API routes, deployed on
   Vercel. Cut over from Vite/HashRouter/Supabase on **2026-07-04** (PR #183).
-  See "Migration history" below for how it got here and what's still
-  pending (Phase D: Supabase decommission).
+  Supabase decommission (Phase D) completed the same week — no code in this
+  repo depends on Supabase anymore. See "Migration history" below.
 
 ## Build system
 
@@ -67,29 +67,27 @@ Vercel project env vars, never committed.
 | `src/context/FxContext.jsx` | FX rate context + `useFmt()` formatting hook + `useFxState()`. |
 | `src/context/DataContext.jsx` | Data context (`DataCtx`) holding the live merged NGS_DATA snapshot. |
 | `src/hooks/` | `useLocalStorage`, `useMediaQuery`, `useScholarProfile`. |
-| `src/lib/supabase.js` | Supabase client singleton + `SUPABASE_URL` export. **Legacy** — only `ScholarLockGate.jsx` and `HomePage.jsx` still import it (see "Known issues"); Phase D decommission candidate. |
 | `src/constants.js` | Shared UI constants (`EXPENSE_CATS`, `NAMECLASS`, `CAT_TO_BUCKET`). |
 | `src/styles/` | CSS (token-based `--ngs-*` vars, Newsreader/Manrope/IBM Plex Mono, navy + gold). |
-| `src/supabase-loader.js`, `src/supabase-writer.js` | **Legacy**, superseded by `src/api-loader.js`/`src/api-writer.js` below. Not imported anywhere as of the cutover — confirm with the Phase D audit before deleting. |
 | `src/utils.js` | Pure computation helpers (`scholarTotals`, `allExpenses`, `nextMilestone`, `accentFor`, etc.). |
 | `src/fx.js` | FX rate helpers — market fetch, localStorage persistence. |
 | `scholars-data.js` | Static fallback + narrative/profile/display copy + cosmetic lock password. |
-| `supabase/` | **Legacy** SQL schema files + Deno Edge Functions (`ask`, `ask-scholar`, `ask-public`, `scholar-summary`, `drive-proxy`) — ported to `app/api/**` below. Phase D decommission candidate; recovered `grade_entries` DDL here should be preserved into `db/` first (see migration plan Phase D). |
+| `db/` | Reference SQL schema (moved from the old `supabase/` in Phase D) — not applied automatically by anything; see `db/README.md`. |
 | `lib/db.js` | Lazy Neon serverless client (`@neondatabase/serverless`, HTTP mode) + `selectWhere()` helper. Lazy on purpose — Next's build-time page-data-collection step evaluates route modules, so an eager `neon(...)` call at module scope throws when `DATABASE_URL` isn't set at build time. |
 | `lib/auth.js` | JWKS-verified JWT auth (`jose` + `createRemoteJWKSet`, cached) → role/`scholar_key` resolved from `public.user_profile` (never trusted from the token). `requireMentor`/`requireScholarOwn` helpers. |
 | `lib/http.js` | `json()` + `withErrorHandling()` response helpers for API routes. |
-| `lib/ai/{context,tier1,tier2,tier3,action}.js` | Ported Gemini tiered AI layer (context builder, deterministic tier1 SQL resolver, tier2 advisory, tier3 ingestion, GCash action matching). |
-| `src/api-loader.js`, `src/api-writer.js` | Neon-backed replacements for `supabase-loader.js`/`supabase-writer.js` — identical exported names/signatures, so call sites only needed an import-path swap. |
-| `app/api/bootstrap/route.js` | Replaces the old 10-way Supabase select; scoped by mentor/scholar role (mentor unscoped, scholar filtered to own `scholar_key`). |
-| `app/api/changes/route.js` | Replaces the 9 Supabase realtime channels with polling (`?since=` → `{ now, tables }`), consumed by `src/hooks/useChanges.js`. |
+| `lib/ai/{context,tier1,tier2,tier3,action}.js` | Gemini tiered AI layer (context builder, deterministic tier1 SQL resolver, tier2 advisory, tier3 ingestion, GCash action matching). |
+| `src/api-loader.js`, `src/api-writer.js` | Neon-backed data loader/writer, one function per operation, imported by every mentor/scholar screen. |
+| `app/api/bootstrap/route.js` | One-call data fetch scoped by mentor/scholar role (mentor unscoped, scholar filtered to own `scholar_key`). |
+| `app/api/changes/route.js` | Polling endpoint (`?since=` → `{ now, tables }`) consumed by `src/hooks/useChanges.js`. |
+| `app/api/config/route.js` | GET/PUT for the `config` table (mentor-only) — currently backs `ProgramDetailsSection.jsx`'s program-details editor, whose text `app/api/ask-public/route.js` reads for the public AI chat's context. |
 | `app/api/public/profile/[key]/route.js` | Public, unauthenticated curated whitelist backing the public profile pages — see "Public-profile dataset leak" below. |
 | `app/api/me/route.js` | Returns `{ role, scholarKey }` for the caller's own token — used by `ScholarAuthGate.jsx` (scholar pages) and `navigator.jsx` (mentor gate) to verify a session actually matches the expected role/scholar before trusting it. |
-| `app/api/{ask,ask-scholar,ask-public}/route.js` | Ported Gemini AI orchestrators. `ask` is mentor-only; `ask-scholar`/`ask-public` unauthenticated by design (see "Known issues"). |
-| `src/components/ScholarAuthGate.jsx` | Real Better Auth sign-in gate for scholar-facing pages, replacing `ScholarLockGate.jsx`'s cosmetic shared password for migrated scholars (currently all three: Claire, April, Janndilyne). |
-| `src/components/ScholarLockGate.jsx` | **Legacy** cosmetic password gate — kept only as a fallback for any future non-migrated scholar; no live call sites currently use it. |
+| `app/api/{ask,ask-scholar,ask-public}/route.js` | Gemini AI orchestrators. `ask` is mentor-only; `ask-scholar`/`ask-public` unauthenticated by design (see "Known issues"). |
+| `src/components/ScholarAuthGate.jsx` | Real Better Auth sign-in gate for all three scholar-facing pages (Claire, April, Janndilyne). |
 | `src/lib/auth-client.js` | Better Auth React client (`createAuthClient` + `jwtClient()` plugin) pointed at the Neon Auth base URL. `getToken()` reads the JWT off the `set-auth-jwt` response header. |
 | `src/lib/api.js` | Fetch wrapper for `app/api/**` — Bearer token per request via `getToken()`, one 401-retry, `afterWrite()` poke hook consumed by `useChanges.js`. |
-| `app/sign-in/page.jsx`, `src/entries/sign-in.jsx` | **Temporary** Better Auth test harness at `/sign-in`, not linked from app nav. Was used to live-verify the auth flow during migration; Phase D cleanup candidate. |
+| `app/sign-in/page.jsx`, `src/entries/sign-in.jsx` | **Temporary** Better Auth test harness at `/sign-in`, not linked from app nav. Was used to live-verify the auth flow during migration; cleanup candidate. |
 | `gh-pages-redirect/` | Static redirect stub (`index.html` + `404.html`, rafgraph/spa-github-pages trick) published to GitHub Pages by `.github/workflows/deploy.yml` — forwards old bookmarks/hash routes to the Vercel domain. No build step; not part of the Next.js app. |
 
 ## Data architecture
@@ -131,8 +129,7 @@ snapshot (nav shows an offline indicator).
 ## Migration history (Supabase → Neon, complete as of 2026-07-04)
 
 Full plan: `/root/.claude/plans/linear-launching-dragonfly.md` (Phases A′, B0–B5, C, D).
-Phases A′ through C are done and merged (PR #183, 2026-07-04). **Phase D
-(Supabase decommission) is the only phase left** — see below.
+**All phases done**, including Phase D (Supabase decommission) — see below.
 
 - **Framework + data layer.** Vite/HashRouter → Next.js App Router (Phase A′).
   Neon project `patient-flower-81986836` ("NGS"); schema ported 1:1 from
@@ -195,16 +192,34 @@ Phases A′ through C are done and merged (PR #183, 2026-07-04). **Phase D
   GitHub Pages repurposed as a frozen redirect stub (`gh-pages-redirect/`,
   published by `.github/workflows/deploy.yml`) — the old `deploy.yml` built
   a Vite `dist/` that no longer exists post-merge.
-- **Phase D (not started):** delete `supabase/functions/`, `deploy-functions.yml`,
-  `@supabase/supabase-js`, and any now-dead Supabase call sites/files (a full
-  audit of remaining Supabase references is the planned first step — don't
-  assume `src/lib/supabase.js`, `supabase-loader.js`, `supabase-writer.js`,
-  `ScholarLockGate.jsx`, or `HomePage.jsx`'s config read are the complete
-  list); move SQL files to `db/` as canonical schema (preserve the
-  recovered `grade_entries.sql`, which exists only in the live Supabase DB,
-  not in the original repo history); drop plaintext passwords from
-  `scholars-data.js`'s `config`; pause the Supabase project after a comfort
-  window; swap April/Janndilyne's placeholder emails for real ones.
+- **Phase D (Supabase decommission) — done.** A full-repo audit (run as a
+  fresh-context subagent specifically so it wasn't biased by the migration
+  session's own assumptions) found the "known remaining touchpoints" list
+  above was wrong and incomplete — it caught **three live components the
+  original migration missed entirely**: `ProgramDetailsSection.jsx` (a live
+  **write** path — the mentor's program-details editor was upserting to
+  Supabase's `config` table while `app/api/ask-public/route.js` had been
+  reading `program_details` from Neon's `config` table since Phase B5, so
+  every edit was invisible to the public AI chat; fixed via new
+  `app/api/config/route.js` — turned out neither DB ever actually had a
+  `program_details` row, so no data was lost), `MentorHome.jsx` and
+  `RiskSection.jsx` (both English-hours reads, ported to the existing
+  `/api/english/*` routes). Also found `app/home/[scholar]/page.jsx` had no
+  scholar-key whitelist, so any unrecognized URL fell through to a
+  "dead code" Supabase legacy path in `ScholarHome.jsx` + the cosmetic
+  `ScholarLockGate.jsx` — both deleted; unknown scholar keys now redirect
+  home. After those fixes: deleted `src/lib/supabase.js`,
+  `src/supabase-loader.js`, `src/supabase-writer.js`,
+  `.github/workflows/deploy-functions.yml`, and the `@supabase/supabase-js`
+  dependency; moved the SQL schema from `supabase/` to `db/` (recovering
+  `grade_entries.sql` and the shared `updated_at`-touch-trigger function,
+  both of which had only ever existed live on Neon, never committed
+  anywhere); relabeled stale "Supabase" UI copy in `NavBar`/`NavFooter`/
+  `NavigatorAI`. **Nothing in this repo depends on Supabase anymore** —
+  safe to pause the Supabase project (`rhoxpfuephkuaartuqou`) whenever
+  convenient. Still open: drop plaintext passwords from `scholars-data.js`'s
+  `config` (now unused dead weight, not a live risk); swap April/Janndilyne's
+  placeholder emails for real ones.
 
 ## AI layer
 
@@ -229,12 +244,10 @@ secret lives only in Vercel's project env vars — never in the client.
 - **Stale "Sheets" vocabulary** — some state/props/CSS still use `sheets*` naming left
   over from the pre-Supabase Google Sheets backend (predates even the Supabase era).
   Functional, but the names no longer reflect the backend.
-- **Phase D Supabase-reference audit not yet run** — `src/lib/supabase.js`,
-  `src/supabase-loader.js`, `src/supabase-writer.js`, `ScholarLockGate.jsx`, and
-  `HomePage.jsx`'s config read are the *known* remaining Supabase touchpoints,
-  but this list hasn't been verified exhaustively against the full codebase yet.
-  Don't delete `supabase/` or `@supabase/supabase-js` until that audit confirms
-  nothing else depends on them.
+- **Stale pre-migration docs** — `README.md`, `ROADMAP.md`, `ROADMAP-AI.md`, and
+  `docs/SPA-MIGRATION-ROADMAP.md` still describe the Supabase-era architecture
+  in places (historical changelogs, diagrams). Not code, no functional impact
+  — a documentation-refresh pass is a nice-to-have, not urgent.
 
 ## Working in this environment
 
@@ -242,10 +255,6 @@ secret lives only in Vercel's project env vars — never in the client.
   `git -c commit.gpgsign=false commit -m "..."`.
 - **Push:** uses the owner's fine-grained PAT (Contents: write). The token is
   NOT stored in the repo — never commit secrets.
-- **Edge Functions (legacy, pre-Phase-D):** code changes under `supabase/functions/`
-  only take effect after the owner runs `supabase functions deploy <name>` — they
-  are not deployed from this repo, and are no longer live-called by anything in
-  `main` (ported to `app/api/**`). Slated for deletion in Phase D.
 - **GitHub Pages:** now a frozen redirect stub (`gh-pages-redirect/`), not the
   live app. After changes to it, the Fastly CDN can lag — hard-refresh
   (Cmd/Ctrl+Shift+R) before assuming a redirect fix didn't work.
@@ -258,8 +267,9 @@ secret lives only in Vercel's project env vars — never in the client.
 ### Working with Neon/Vercel
 
 - **Neon project:** `patient-flower-81986836` ("NGS") — the live production
-  database. **Supabase project** (legacy, pending Phase D decommission):
-  `rhoxpfuephkuaartuqou`.
+  database. The Supabase project (`rhoxpfuephkuaartuqou`) is fully
+  decommissioned code-side (Phase D) — safe to pause whenever convenient;
+  nothing in this repo reads or writes to it anymore.
 - **Vercel project:** `next-gen-scholars` (team `jonncy18`) — separate from the
   owner's unrelated `next-gen-immersion` project; don't confuse the two.
 - **Vercel Deployment Protection** ("Vercel Authentication") must be disabled
