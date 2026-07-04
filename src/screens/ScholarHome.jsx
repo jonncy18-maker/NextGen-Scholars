@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { supabase } from '../lib/supabase.js';
+import { useRouter } from 'next/navigation';
 import { api } from '../lib/api.js';
 import { NGS_DATA } from '../../scholars-data.js';
 import {
@@ -9,14 +9,15 @@ import {
 } from '../components/ScholarIcons.jsx';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
-import { ScholarLockGate } from '../components/ScholarLockGate.jsx';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { CAT_TO_BUCKET } from '../constants.js';
 
-// Scholars with a real Neon Auth account, migrated off the cosmetic shared
-// password. Everyone else (no account yet) keeps the unchanged ScholarLockGate
-// + Supabase read path until their account is provisioned (see CLAUDE.md B4).
-const MIGRATED_SCHOLARS = new Set(['claire', 'april', 'janndilyne']);
+// All three scholars now have real Neon Auth accounts (see CLAUDE.md).
+// app/home/[scholar]/page.jsx passes scholarKey straight from the URL with
+// no server-side whitelist, so anything outside this set redirects home
+// instead of falling through to a scholar dashboard for a key that doesn't
+// exist (used to fall through to a cosmetic Supabase-backed gate here).
+const KNOWN_SCHOLARS = new Set(['claire', 'april', 'janndilyne']);
 
 const SEM_LABELS = {
   Y1S1:'Year 1 · Semester 1', Y1S2:'Year 1 · Semester 2',
@@ -67,6 +68,7 @@ function formatDate(iso) {
 }
 
 export function ScholarHome({ scholarKey }) {
+  const router = useRouter();
   const config = buildConfig(scholarKey);
   const [authed, setAuthed]   = useState(false);
   const [liveData, setLiveData] = useState(null);
@@ -76,16 +78,14 @@ export function ScholarHome({ scholarKey }) {
   // investment card spans the full row on mobile.
   const isExpensesOnly = scholarKey === 'janndilyne';
 
-  const isMigrated = MIGRATED_SCHOLARS.has(scholarKey);
-
-  // Auto-auth if already authenticated via session (e.g. navigating back from /docs or /entry).
-  // Migrated scholars skip this — ScholarAuthGate checks its own Better Auth session instead.
-  useEffect(() => {
-    if (isMigrated) return;
-    if (sessionStorage.getItem('ngs_auth_scholar') === scholarKey) setAuthed(true);
-  }, [scholarKey, isMigrated]);
+  const isKnownScholar = KNOWN_SCHOLARS.has(scholarKey);
 
   useEffect(() => {
+    if (!isKnownScholar) router.replace('/');
+  }, [isKnownScholar, router]);
+
+  useEffect(() => {
+    if (!isKnownScholar) return;
     async function loadFromNeon() {
       const todayStr = new Date().toISOString().slice(0, 10);
       const [bootstrap, periods] = await Promise.all([
@@ -142,61 +142,10 @@ export function ScholarHome({ scholarKey }) {
       };
     }
 
-    async function loadFromSupabaseLegacy() {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      const [expRes, acadRes, scholarsRes, periodsRes, milestonesRes, allExpRes, nextMilRes, nextTravelRes] = await Promise.all([
-        supabase.from('expenses').select('date').eq('scholar', scholarKey).order('date', { ascending: false }).limit(1),
-        supabase.from('academics').select('gpa, status, sem').eq('scholar', scholarKey).order('id', { ascending: false }),
-        supabase.from('scholars').select('current_sem').eq('scholar_key', scholarKey).limit(1),
-        supabase.from('english_periods').select('*').eq('scholar', scholarKey).order('start_date', { ascending: false }),
-        supabase.from('milestones').select('state').eq('scholar', scholarKey).eq('state', 'done'),
-        supabase.from('expenses').select('amount, qty, bucket, cat, avb').eq('scholar', scholarKey).eq('avb', 'Actual'),
-        supabase.from('milestones').select('name, sem').eq('scholar', scholarKey).neq('state', 'done').order('id', { ascending: true }).limit(1),
-        supabase.from('travels').select('dest, sem').eq('scholar', scholarKey).neq('state', 'done').order('id', { ascending: true }).limit(1),
-      ]);
-
-      const liveSem = scholarsRes.data?.[0]?.current_sem || config.staticSemKey;
-      const periods = periodsRes.data || [];
-      const activePeriod = periods.find(p => p.start_date <= todayStr && p.end_date >= todayStr) ?? periods[0] ?? null;
-      const liveEnglishTarget = activePeriod?.hour_goal ? Number(activePeriod.hour_goal) : null;
-
-      const engQ = activePeriod
-        ? supabase.from('english_sessions').select('duration_minutes').eq('scholar', scholarKey)
-            .gte('date', activePeriod.start_date).lte('date', activePeriod.end_date)
-        : supabase.from('english_sessions').select('duration_minutes').eq('scholar', scholarKey).eq('sem', liveSem);
-      const { data: englishData } = await engQ;
-
-      const latestExpenseDate = expRes.data?.[0]?.date ?? null;
-      const latestGpa = acadRes.data?.find(a => a.gpa != null)?.gpa ?? null;
-      const latestGpaSem = acadRes.data?.find(a => a.gpa != null)?.sem ?? null;
-      const gpaStatus = acadRes.data?.find(a => a.gpa != null)?.status ?? null;
-      const rewardsCount = milestonesRes.data?.length ?? 0;
-      const englishMinutes = englishData?.reduce((s, r) => s + (r.duration_minutes || 0), 0) ?? null;
-
-      const byBucket = {};
-      (allExpRes.data || []).forEach(e => {
-        const b = CAT_TO_BUCKET[e.cat] ?? e.bucket ?? 'college';
-        byBucket[b] = (byBucket[b] || 0) + (e.amount || 0) * (e.qty || 1);
-      });
-      const invTotal = Object.values(byBucket).reduce((t, v) => t + v, 0);
-      const investmentTotals = invTotal > 0 ? {
-        total: invTotal,
-        college: byBucket.college || 0,
-        life: byBucket.life || 0,
-        milestone: byBucket.milestone || 0,
-        travel: byBucket.travel || 0,
-      } : null;
-
-      const nextMilestone = nextMilRes.data?.[0] || null;
-      const nextTravel = nextTravelRes.data?.[0] || null;
-
-      return { latestExpenseDate, latestGpa, latestGpaSem, gpaStatus, rewardsCount, englishMinutes, liveSem, liveEnglishTarget, investmentTotals, nextMilestone, nextTravel };
-    }
-
-    (isMigrated ? loadFromNeon() : loadFromSupabaseLegacy())
+    loadFromNeon()
       .then(setLiveData)
       .catch(() => setLiveData({}));
-  }, [scholarKey, isMigrated]);
+  }, [scholarKey, isKnownScholar]);
 
   const lastEntry = liveData?.latestExpenseDate
     ? `Last entry · ${formatDate(liveData.latestExpenseDate)}`
@@ -262,10 +211,10 @@ export function ScholarHome({ scholarKey }) {
     return liveData.liveEnglishTarget ? `${display} / ${liveData.liveEnglishTarget} hrs` : `${display} hrs`;
   })();
 
+  if (!isKnownScholar) return null; // redirecting home, see effect above
+
   if (!authed) {
-    return isMigrated
-      ? <ScholarAuthGate scholarKey={scholarKey} name={config.name} onUnlock={() => setAuthed(true)} />
-      : <ScholarLockGate scholarKey={scholarKey} name={config.name} onUnlock={() => setAuthed(true)} />;
+    return <ScholarAuthGate scholarKey={scholarKey} name={config.name} onUnlock={() => setAuthed(true)} />;
   }
 
   return (
