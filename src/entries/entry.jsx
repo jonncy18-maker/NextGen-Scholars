@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { EXPENSE_CATS, AVB_OPTIONS } from '../constants.js';
 import { NGS_DATA } from '../../scholars-data.js';
 import { updateExpense, writeActivityLog, writeSubmission, resubmitExpense, markSubmissionReadByScholar } from '../api-writer.js';
 import { loadFromSupabase, loadScholarSubmissions } from '../api-loader.js';
 import { useChanges } from '../hooks/useChanges.js';
-import { authClient, signIn } from '../lib/auth-client.js';
-import { api } from '../lib/api.js';
+import { authClient } from '../lib/auth-client.js';
+import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { groupExpenses } from '../components/expenses/filterHelpers.js';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { ScholarIngestPanel } from '../components/ScholarIngestPanel.jsx';
@@ -42,122 +43,30 @@ function makeEmptyRow(defaultSem) {
   };
 }
 
+// Same ScholarAuthGate every other scholar page uses (ScholarHome, GradeEntry,
+// EnglishTracking, VacationTracker, MilestonesTracker) — one sign-in
+// implementation, one persisted-session check, instead of a hand-rolled
+// duplicate that could (and did) drift out of sync with it. The portal's
+// "Enter Expenses" link passes `?scholar=`; direct/bare navigation to /entry
+// falls back to the first migrated scholar.
 export function EntryApp() {
-  const [scholarKey, setScholarKey] = useState(null);
-  const [checkingSession, setCheckingSession] = useState(true);
+  const searchParams = useSearchParams();
+  const requested = searchParams.get('scholar');
+  const scholarKey = SCHOLARS.some(s => s.key === requested) ? requested : SCHOLARS[0].key;
+  const scholar = SCHOLARS.find(s => s.key === scholarKey);
 
-  useEffect(() => {
-    let cancelled = false;
-    authClient.getSession().then(async ({ data }) => {
-      if (cancelled) return;
-      if (!data?.session) { setCheckingSession(false); return; }
-      try {
-        const me = await api.get('/me');
-        if (!cancelled && SCHOLARS.some(s => s.key === me.scholarKey)) setScholarKey(me.scholarKey);
-      } catch {
-        // fall through to the sign-in form
-      } finally {
-        if (!cancelled) setCheckingSession(false);
-      }
-    }).catch(() => { if (!cancelled) setCheckingSession(false); });
-    return () => { cancelled = true; };
-  }, []);
+  const [authed, setAuthed] = useState(false);
 
   function logout() {
     authClient.signOut();
-    setScholarKey(null);
+    setAuthed(false);
   }
 
-  if (checkingSession) return null;
+  if (!authed) {
+    return <ScholarAuthGate scholarKey={scholarKey} name={scholar.display} onUnlock={() => setAuthed(true)} />;
+  }
 
-  if (!scholarKey) return <EntrySignIn onSignedIn={setScholarKey} />;
-
-  const scholar = SCHOLARS.find(s => s.key === scholarKey);
   return <ExpenseForm scholar={scholar} onLogout={logout} />;
-}
-
-// Real Neon Auth (Better Auth) sign-in — replaces the old scholar-picker +
-// shared cosmetic password. The account itself identifies the scholar (via
-// GET /api/me, resolved server-side from user_profile), so there's no picker.
-function EntrySignIn({ onSignedIn }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const inputRef = useRef();
-
-  useEffect(() => { inputRef.current?.focus(); }, []);
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    const { error: authError } = await signIn.email({ email, password });
-    if (authError) {
-      setLoading(false);
-      setError('Incorrect credentials — try again.');
-      return;
-    }
-
-    try {
-      const me = await api.get('/me');
-      if (!SCHOLARS.some(s => s.key === me.scholarKey)) {
-        await authClient.signOut();
-        setError("This account isn't set up for expense entry yet.");
-        setLoading(false);
-        return;
-      }
-      onSignedIn(me.scholarKey);
-    } catch {
-      await authClient.signOut();
-      setError('Could not verify your account — try again.');
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="el-lock">
-      <div className="el-lock-bg" />
-      <div className="el-lock-inner">
-        <div className="el-badge"><span>N</span><span>G</span><span>S</span></div>
-        <h1 className="el-title">Add Expenses</h1>
-        <p className="el-sub">Sign in to continue</p>
-        <form className={`el-form${error ? ' is-error' : ''}`} onSubmit={handleSubmit} autoComplete="off">
-          <div className="el-field">
-            <label className="el-label" htmlFor="ea-email">Email</label>
-            <input
-              id="ea-email"
-              ref={inputRef}
-              className="el-input"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={e => { setEmail(e.target.value); setError(null); }}
-              autoComplete="email"
-            />
-          </div>
-          <div className="el-field">
-            <label className="el-label" htmlFor="ea-pw">Password</label>
-            <input
-              id="ea-pw"
-              className="el-input"
-              type="password"
-              placeholder="Your password"
-              value={password}
-              onChange={e => { setPassword(e.target.value); setError(null); }}
-              autoComplete="current-password"
-            />
-          </div>
-          <div className={`el-err${error ? ' show' : ''}`}>{error}</div>
-          <button type="submit" disabled={!email || !password || loading} className="el-btn">
-            {loading ? 'Signing in…' : 'Continue →'}
-          </button>
-        </form>
-        <Link href="/" className="el-back">← Back to NextGen Scholars</Link>
-      </div>
-    </div>
-  );
 }
 
 // ── Pending submissions awaiting mentor approval ──────────────────────────────
