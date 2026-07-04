@@ -84,28 +84,25 @@ export function ScholarHome({ scholarKey }) {
     if (!isKnownScholar) router.replace('/');
   }, [isKnownScholar, router]);
 
+  // Gated on `authed` — same as every other scholar screen (EnglishTracking,
+  // GradeEntry, VacationTracker, MilestonesTracker). Effects run on mount
+  // regardless of what the render returns, so without this guard the fetch
+  // fired while the sign-in form was still showing, authenticated with
+  // whatever session cookie the browser already carried (i.e. the previously
+  // signed-in scholar's), and parked *that* scholar's data in state. Signing
+  // in then unlocked the dashboard onto the stale data, and nothing re-ran
+  // the effect — which is exactly the "wrong scholar's numbers until a
+  // refresh" bug. Fetching only after ScholarAuthGate has verified via
+  // /api/me that the session matches this scholarKey guarantees the token
+  // used here belongs to the scholar being viewed.
   useEffect(() => {
-    if (!isKnownScholar) return;
+    if (!isKnownScholar || !authed) return;
     async function loadFromNeon() {
       const todayStr = new Date().toISOString().slice(0, 10);
-
-      // Defensive guard against a session/auth propagation race right after
-      // switching accounts: the very first bootstrap fetch after signing in
-      // as a different scholar can come back scoped to the *previous*
-      // scholar for a brief window (the auth backend hasn't caught up to
-      // the new session yet), even though the sign-in itself already
-      // verified correctly. Rather than trust a single fetch, confirm the
-      // response actually belongs to this scholarKey and retry a few times
-      // (with backoff) before giving up and using whatever came back.
-      let bootstrap;
-      for (let attempt = 0; attempt < 5; attempt++) {
-        bootstrap = await api.get('/bootstrap?tables=scholars,academics,milestones,travels,expenses');
-        const returnedKey = bootstrap.scholars?.[0]?.scholar_key;
-        if (!returnedKey || returnedKey === scholarKey) break;
-        await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
-      }
-
-      const periods = await api.get('/english/periods');
+      const [bootstrap, periods] = await Promise.all([
+        api.get('/bootstrap?tables=scholars,academics,milestones,travels,expenses'),
+        api.get('/english/periods'),
+      ]);
 
       const liveSem = bootstrap.scholars?.[0]?.current_sem || config.staticSemKey;
       const activePeriod = periods.find(p => p.start_date <= todayStr && p.end_date >= todayStr) ?? periods[0] ?? null;
@@ -159,7 +156,7 @@ export function ScholarHome({ scholarKey }) {
     loadFromNeon()
       .then(setLiveData)
       .catch(() => setLiveData({}));
-  }, [scholarKey, isKnownScholar]);
+  }, [scholarKey, isKnownScholar, authed]);
 
   const lastEntry = liveData?.latestExpenseDate
     ? `Last entry · ${formatDate(liveData.latestExpenseDate)}`
