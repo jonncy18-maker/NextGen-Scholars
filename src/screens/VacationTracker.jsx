@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { supabase } from '../lib/supabase.js';
+import { api } from '../lib/api.js';
+import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
 import '../styles/vacation-tracker.css';
 
@@ -40,26 +41,25 @@ function fmtPhp(n) {
 
 export function VacationTracker({ scholarKey }) {
   const fallback = FALLBACK[scholarKey] || FALLBACK.claire;
+  const [authed,  setAuthed]  = useState(false);
   const [name,    setName]    = useState(fallback.name);
   const [travels, setTravels] = useState(null);
 
   useEffect(() => {
-    sessionStorage.setItem('ngs_auth_scholar', scholarKey);
-  }, [scholarKey]);
-
-  useEffect(() => {
+    if (!authed) return;
     let cancelled = false;
-    Promise.all([
-      supabase.from('scholars').select('first_name').eq('scholar_key', scholarKey).limit(1),
-      supabase.from('travels').select('*').eq('scholar', scholarKey).order('id', { ascending: true }),
-    ]).then(([scholarRes, travelRes]) => {
+    api.get('/bootstrap?tables=scholars,travels').then(data => {
       if (cancelled) return;
-      const fn = scholarRes.data?.[0]?.first_name;
+      const fn = data.scholars?.[0]?.first_name;
       if (fn) setName(fn);
-      setTravels(travelRes.data ?? []);
+      setTravels((data.travels ?? []).slice().sort((a, b) => a.id - b.id));
     }).catch(() => { if (!cancelled) setTravels([]); });
     return () => { cancelled = true; };
-  }, [scholarKey]);
+  }, [scholarKey, authed]);
+
+  if (!authed) {
+    return <ScholarAuthGate scholarKey={scholarKey} name={fallback.name} onUnlock={() => setAuthed(true)} />;
+  }
 
   const trips        = travels ?? [];
   const completed    = trips.filter(t => t.state === 'done');
