@@ -215,11 +215,16 @@ Full plan: `/root/.claude/plans/linear-launching-dragonfly.md` (Phases A′, B0�
   `grade_entries.sql` and the shared `updated_at`-touch-trigger function,
   both of which had only ever existed live on Neon, never committed
   anywhere); relabeled stale "Supabase" UI copy in `NavBar`/`NavFooter`/
-  `NavigatorAI`. **Nothing in this repo depends on Supabase anymore** —
-  safe to pause the Supabase project (`rhoxpfuephkuaartuqou`) whenever
-  convenient. Still open: drop plaintext passwords from `scholars-data.js`'s
-  `config` (now unused dead weight, not a live risk); swap April/Janndilyne's
-  placeholder emails for real ones.
+  `NavigatorAI`. **Nothing in this repo depends on Supabase anymore.**
+  Decommission finished: a second fresh-context audit sweep (three parallel
+  agents — code-reference, plumbing, data-path trace) confirmed zero live
+  references; the three `VITE_/SUPABASE_*` GitHub Actions secrets
+  (`SUPABASE_ACCESS_TOKEN`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`)
+  were removed; the local `.env.local` Supabase placeholders were deleted; and
+  the Supabase project (`rhoxpfuephkuaartuqou`) was **paused** on 2026-07-04
+  (data retained, restorable anytime). Still open: drop plaintext passwords
+  from `scholars-data.js`'s `config` (now unused dead weight, not a live
+  risk); swap April/Janndilyne's placeholder emails for real ones.
 
 ## AI layer
 
@@ -248,6 +253,18 @@ secret lives only in Vercel's project env vars — never in the client.
   `docs/SPA-MIGRATION-ROADMAP.md` still describe the Supabase-era architecture
   in places (historical changelogs, diagrams). Not code, no functional impact
   — a documentation-refresh pass is a nice-to-have, not urgent.
+- **Neon Auth `trusted_origins` must list every production alias.** Vercel
+  generates multiple hostnames for one production deployment (e.g. the
+  `jonncy18` domain, a random `-steel`-style alias, and the `git-main-jonncy18`
+  branch alias) — Better Auth rejects sign-in from any origin not on the
+  allowlist, and `LockScreen.jsx`/`ScholarAuthGate.jsx` show a generic
+  "Incorrect credentials" for that rejection, indistinguishable from a real
+  wrong password. If login fails on a URL that otherwise resolves to the
+  correct production deployment, check `mcp__Neon__get_neon_auth_config`'s
+  `trusted_origins` before assuming the password is wrong; add the missing
+  origin with `mcp__Neon__configure_neon_auth` (`add_trusted_origin`) — takes
+  effect immediately, no redeploy needed. Hit and fixed 2026-07-04 for the
+  `-steel` and `git-main-jonncy18` aliases.
 
 ## Working in this environment
 
@@ -268,8 +285,9 @@ secret lives only in Vercel's project env vars — never in the client.
 
 - **Neon project:** `patient-flower-81986836` ("NGS") — the live production
   database. The Supabase project (`rhoxpfuephkuaartuqou`) is fully
-  decommissioned code-side (Phase D) — safe to pause whenever convenient;
-  nothing in this repo reads or writes to it anymore.
+  decommissioned (Phase D) and was **paused on 2026-07-04** — nothing in this
+  repo reads or writes to it anymore. Data is retained and the project is
+  restorable from the Supabase dashboard if ever needed.
 - **Vercel project:** `next-gen-scholars` (team `jonncy18`) — separate from the
   owner's unrelated `next-gen-immersion` project; don't confuse the two.
 - **Vercel Deployment Protection** ("Vercel Authentication") must be disabled
