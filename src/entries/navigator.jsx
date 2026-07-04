@@ -67,26 +67,33 @@ export function Navigator({ slug = [] }) {
   const scholarKeys = STATIC_SCHOLAR_KEYS.filter(k => D.scholars[k]);
 
   const [unlocked, setUnlocked] = useState(false);
-
   // Every Navigator section is its own Next.js page (app/navigator/[[...slug]]),
-  // so this component remounts fresh on each section navigation. Check the
-  // persisted Neon Auth (Better Auth) session — not Supabase's, which is only
-  // a best-effort side session for the not-yet-ported Drive/ask Edge Functions
-  // (see LockScreen.jsx) and can't be relied on to reflect real sign-in state.
-  // A session alone isn't enough: the same browser may have a leftover
-  // scholar session (e.g. from testing /home/claire) — verify via /api/me
-  // that it's actually the mentor before skipping LockScreen, otherwise
-  // Navigator silently renders scoped to whichever scholar signed in last.
+  // so this component remounts fresh on each section navigation, and the
+  // session check below is async — without this, LockScreen would flash
+  // fully opaque on every nav click before the check resolves. Mirrors
+  // ScholarAuthGate's checkingSession guard.
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Check the persisted Neon Auth (Better Auth) session — not Supabase's,
+  // which is only a best-effort side session for the not-yet-ported
+  // Drive/ask Edge Functions (see LockScreen.jsx) and can't be relied on to
+  // reflect real sign-in state. A session alone isn't enough: the same
+  // browser may have a leftover scholar session (e.g. from testing
+  // /home/claire) — verify via /api/me that it's actually the mentor before
+  // skipping LockScreen, otherwise Navigator silently renders scoped to
+  // whichever scholar signed in last.
   useEffect(() => {
     authClient.getSession().then(async ({ data }) => {
-      if (!data?.session) return;
+      if (!data?.session) { setAuthChecked(true); return; }
       try {
         const me = await api.get('/me');
         if (me.role === 'mentor') setUnlocked(true);
       } catch {
         // not a mentor session — leave locked, LockScreen will prompt
+      } finally {
+        setAuthChecked(true);
       }
-    });
+    }).catch(() => setAuthChecked(true));
   }, []);
 
   // Reactive FX rate (auto-refreshes in market mode), shared with profile pages
@@ -403,7 +410,7 @@ export function Navigator({ slug = [] }) {
   return (
     <DataCtx.Provider value={{ D, scholarKeys }}>
       <FxCtx.Provider value={fxRate}>
-        <LockScreen isHiding={unlocked} onUnlock={() => setUnlocked(true)} />
+        <LockScreen isHiding={unlocked || !authChecked} onUnlock={() => setUnlocked(true)} />
         <NavBar
           sheetsStatus={sheetsStatus}
           onRefresh={() => setRefreshKey(k => k + 1)}
