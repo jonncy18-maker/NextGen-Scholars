@@ -18,7 +18,7 @@ export function ScholarAuthGate({ scholarKey, name, onUnlock }) {
 
   useEffect(() => {
     let cancelled = false;
-    authClient.getSession().then(async ({ data }) => {
+    authClient.getSession({ fetchOptions: { cache: 'no-store' } }).then(async ({ data }) => {
       if (cancelled) return;
       if (!data?.session) { setCheckingSession(false); return; }
       try {

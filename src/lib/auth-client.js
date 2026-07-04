@@ -22,6 +22,12 @@ export async function getToken() {
   let token = null;
   await authClient.getSession({
     fetchOptions: {
+      // Without this, the browser HTTP cache can serve back a previous
+      // sign-in's cached /get-session response (same URL, no Vary on the
+      // session cookie) — surfacing the last-logged-in scholar's data on
+      // first load after switching accounts, until a hard refresh bypasses
+      // the cache.
+      cache: 'no-store',
       onResponse: (ctx) => {
         token = ctx.response.headers.get('set-auth-jwt');
       },
