@@ -73,9 +73,19 @@ export function Navigator({ slug = [] }) {
   // persisted Neon Auth (Better Auth) session — not Supabase's, which is only
   // a best-effort side session for the not-yet-ported Drive/ask Edge Functions
   // (see LockScreen.jsx) and can't be relied on to reflect real sign-in state.
+  // A session alone isn't enough: the same browser may have a leftover
+  // scholar session (e.g. from testing /home/claire) — verify via /api/me
+  // that it's actually the mentor before skipping LockScreen, otherwise
+  // Navigator silently renders scoped to whichever scholar signed in last.
   useEffect(() => {
-    authClient.getSession().then(({ data }) => {
-      if (data?.session) setUnlocked(true);
+    authClient.getSession().then(async ({ data }) => {
+      if (!data?.session) return;
+      try {
+        const me = await api.get('/me');
+        if (me.role === 'mentor') setUnlocked(true);
+      } catch {
+        // not a mentor session — leave locked, LockScreen will prompt
+      }
     });
   }, []);
 
