@@ -176,19 +176,40 @@ Current state as of this checkpoint:
   are view-once, 2-secret cap, refresh-token minting) wasn't worth it for
   this program's scale. The `documents` table in Neon and the Supabase-side
   scholar upload path (`ScholarDocuments.jsx`) were left untouched/unaffected.
-- **Phase B4 (delete cosmetic auth gates everywhere)** — partially done: the
-  mentor gate landed as part of B2. What's left is scholar-facing: real
-  Neon Auth accounts + a sign-in gate for `entry.jsx`/`ScholarHome`/etc.
-  Claire's account exists (`role='scholar', scholar_key='claire'`) but her
-  pages aren't wired to it yet — still on Supabase, along with April's and
-  Janndilyne's (no accounts yet; need real emails from the owner). Also still
-  on Supabase and deliberately untouched: `EnglishIngestPanel.jsx` (shared
-  between mentor's `EnglishSection` and scholar's `EnglishTracking` —
-  can't safely split without scholar auth first), `ScholarIngestPanel.jsx`,
-  `ExpenseAskWidget.jsx`, `ScholarChatPanel.jsx`, `ScholarLockGate.jsx`,
-  `useScholarProfile.js`, and every public/scholar screen (`GradeEntry`,
-  `EnglishTracking`, `ScholarDocuments`, `VacationTracker`,
-  `MilestonesTracker`, `HomePage`, `claire`/`april`/`janndilyne` entries).
+- **Phase B4 (delete cosmetic auth gates everywhere)** — mentor gate landed as
+  part of B2. Scholar-facing side: ✅ mostly done. All three scholars have
+  real Neon Auth accounts (`user_profile.role='scholar'`) — Claire with her
+  real email, April and Janndilyne with placeholder emails
+  (`april@placeholder.nextgenscholars.dev` /
+  `janndilyne@placeholder.nextgenscholars.dev`, swappable later since
+  `user_profile` links by `user_id`, not email). `ScholarAuthGate.jsx` (real
+  Better Auth sign-in, verified server-side via `GET /api/me`) now gates
+  `ScholarHome`, `entry.jsx` (dropped its old scholar-picker — the account
+  itself identifies the scholar), `GradeEntry`, `EnglishTracking`,
+  `VacationTracker`, and `MilestonesTracker` — all migrated to read/write
+  through Neon (`/api/bootstrap`, `/api/grades`, `/api/english/*`). Three of
+  these (`GradeEntry`, `EnglishTracking`, `VacationTracker`,
+  `MilestonesTracker`) had **no gate at all** before this — reachable
+  directly by URL — so this closes a real pre-existing gap, not just a
+  cosmetic-to-real swap. Along the way, fixed several call sites that were
+  silently writing to (or reading stale data from) the now-orphaned Supabase
+  tables since Phase B2: `EnglishIngestPanel.jsx` and
+  `ScholarIngestPanel.jsx` (both shared with the mentor side) were inserting
+  AI-extracted sessions/grades straight into Supabase, invisible to anyone;
+  `ExpenseAskWidget.jsx` and `ScholarChatPanel.jsx` were querying the old
+  Supabase `ask-scholar` Edge Function instead of the ported
+  `/api/ask-scholar` route. All four now go through Neon.
+  **Still on Supabase, deliberately untouched:** `ScholarLockGate.jsx` (kept
+  as the fallback gate for any future non-migrated scholar),
+  `useScholarProfile.js`, `ScholarDocuments.jsx` (`/docs/:scholar` —
+  independent Drive upload path kept when the mentor-side Documents feature
+  was dropped, see Phase B5 above), `HomePage.jsx`, and the public profile
+  entries (`claire`/`april`/`janndilyne`) — these are public pages, not part
+  of the scholar-auth surface, and were out of scope for this phase.
+  **Numeric-string gotcha, hit twice:** Neon's serverless driver stringifies
+  `NUMERIC`/`DECIMAL` columns (`gpa`, grade fields) to avoid precision loss,
+  unlike Supabase's PostgREST which returned JSON numbers — coerce with
+  `Number(...)` before any `.toFixed()`/arithmetic on these fields.
 - Supabase remains the live backend for `main`/production throughout — nothing
   in this branch touches Supabase destructively (data was only read out, not
   deleted or modified there).
