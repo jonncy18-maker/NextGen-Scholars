@@ -2,6 +2,9 @@ import { sql } from '../../../lib/db.js';
 import { requireScholarOwn } from '../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../lib/http.js';
 
+// Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
+export const dynamic = 'force-dynamic';
+
 // Replaces the 9 Supabase realtime channels. Client polls this on an
 // interval + on focus + after its own writes, passing back the `now` this
 // endpoint returned last time as `since`. `ids` (all current ids, not just

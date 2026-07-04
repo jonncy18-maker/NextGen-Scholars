@@ -2,6 +2,9 @@ import { sql } from '../../../../../lib/db.js';
 import { requireScholarOwn } from '../../../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../../../lib/http.js';
 
+// Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
+export const dynamic = 'force-dynamic';
+
 // Mirrors the inline row-edit update in EnglishSection.jsx / EnglishTracking.jsx
 // (date, duration_minutes, activity_type, notes — same field set both places).
 export const PATCH = withErrorHandling(async (request, { params }) => {

@@ -2,6 +2,9 @@ import { sql } from '../../../../lib/db.js';
 import { requireMentor, requireScholarOwn } from '../../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../../lib/http.js';
 
+// Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
+export const dynamic = 'force-dynamic';
+
 // GET ?scholar= — mentor: all rows if omitted, scoped if given (NavigatorAI's
 // english-hours ingest panel loads one scholar's latest period).
 export const GET = withErrorHandling(async (request) => {

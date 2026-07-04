@@ -7,6 +7,9 @@ import { tier2Ask, tier2WeeklyReport } from '../../../lib/ai/tier2.js';
 import { tier3Ingest, tier3GradeIngest } from '../../../lib/ai/tier3.js';
 import { resolveSendAction } from '../../../lib/ai/action.js';
 
+// Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
+export const dynamic = 'force-dynamic';
+
 // Port of supabase/functions/ask/index.ts — the mentor-facing AI orchestrator
 // (NavigatorAI, ExpenseWorkbench/GcashCalculator).
 // Routing rules (evaluated in order), unchanged from the original:

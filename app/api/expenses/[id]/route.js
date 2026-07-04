@@ -2,6 +2,9 @@ import { sql } from '../../../../lib/db.js';
 import { requireMentor } from '../../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../../lib/http.js';
 
+// Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
+export const dynamic = 'force-dynamic';
+
 const ALLOWED_FIELDS = ['scholar', 'sem', 'item', 'cat', 'bucket', 'amount', 'qty', 'date', 'avb', 'sent', 'vendor', 'group_id'];
 
 // Mirrors updateExpense(id, fields) / writeSent(id) — arbitrary field-subset

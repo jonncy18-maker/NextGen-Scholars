@@ -1,6 +1,9 @@
 import { sql } from '../../../lib/db.js';
 import { json, withErrorHandling } from '../../../lib/http.js';
 
+// Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
+export const dynamic = 'force-dynamic';
+
 // Port of supabase/functions/ask-public/index.ts — public program-info
 // endpoint, no auth, no scholar data exposed. Answers visitor questions using
 // program details stored in config (key: 'program_details'), falling back to

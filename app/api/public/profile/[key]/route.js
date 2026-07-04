@@ -1,6 +1,9 @@
 import { sql } from '../../../../../lib/db.js';
 import { json, withErrorHandling } from '../../../../../lib/http.js';
 
+// Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
+export const dynamic = 'force-dynamic';
+
 // Public, unauthenticated — backs the public profile pages (claire.jsx,
 // april.jsx, janndilyne.jsx via useScholarProfile.js) and the homepage
 // scholar cards. This is a curated whitelist, NOT a passthrough: it must

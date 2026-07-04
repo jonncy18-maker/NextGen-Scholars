@@ -2,6 +2,9 @@ import { sql } from '../../../lib/db.js';
 import { requireMentor } from '../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../lib/http.js';
 
+// Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
+export const dynamic = 'force-dynamic';
+
 // Mirrors ProgramDetailsSection.jsx's supabase.from('config') read/upsert.
 // GET ?key= returns { key, value } for one row (mentor-only — the public
 // program-details copy the "Ask AI" widget uses is read directly from this
