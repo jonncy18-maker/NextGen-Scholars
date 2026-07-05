@@ -3,6 +3,28 @@
 /* navigator-specific ink-soft override */
 :root { --ngs-ink-soft: #4A4E5E; }
 
+/* ════════════════ NAV-APP SURFACE (redesign) ════════════════
+   Navigator is a private mentor tool, not public-facing brand copy, so it
+   gets its own cool-neutral canvas instead of the site's warm cream paper —
+   scoped to .nav-app (wraps the whole Navigator render tree in
+   navigator.jsx) so the public site and scholar dashboards are untouched.
+   Navy/gold identity colors are unchanged; only the canvas, card surfaces,
+   borders, and resting elevation change. */
+.nav-app {
+  --ngs-paper: #F0F2F5;
+  --ngs-paper-2: #F7F8FA;
+  --ngs-rule: #E1E4EA;
+  --ngs-ink: #10182B;
+  --ngs-ink-soft: #3A3F4C;
+  --ngs-muted: #667085;
+  --ngs-card-shadow: 0 1px 2px rgba(16,24,43,0.06);
+  --ngs-card-shadow-hover: 0 6px 20px -4px rgba(16,24,43,0.12), 0 2px 6px rgba(16,24,43,0.06);
+
+  min-height: 100vh;
+  background: var(--ngs-paper);
+  color: var(--ngs-ink);
+}
+
 /* ─── monogram ─── */
 .ngs-mark {
   display: inline-flex; padding: 6px 9px;
@@ -93,7 +115,7 @@
 /* ════════════════ NAV ════════════════ */
 .nav {
   position: sticky; top: 0; z-index: 100;
-  background: rgba(250,247,240,0.88);
+  background: rgba(240,242,245,0.88);
   backdrop-filter: blur(14px) saturate(180%);
   -webkit-backdrop-filter: blur(14px) saturate(180%);
   border-bottom: 1px solid var(--ngs-rule);
@@ -212,7 +234,7 @@
 /* ── FX panel row (row 3 of sticky header) ── */
 .nav-fx-row {
   border-top: 1px solid var(--ngs-rule);
-  background: rgba(250,247,240,0.7);
+  background: rgba(240,242,245,0.7);
 }
 .nav-fx-inner {
   max-width: 1200px; margin: 0 auto;
@@ -398,6 +420,7 @@
   background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px;
   border-top: 3px solid var(--ngs-gold); overflow: hidden;
   display: flex; flex-direction: column;
+  box-shadow: var(--ngs-card-shadow, none);
 }
 .scard.accent-gold  { border-top-color: var(--ngs-gold); }
 .scard.accent-navy  { border-top-color: var(--ngs-navy); }
@@ -460,6 +483,7 @@
 .log-card {
   background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px;
   padding: 24px;
+  box-shadow: var(--ngs-card-shadow, none);
 }
 .log-form {
   display: grid; grid-template-columns: 1fr 1fr 2fr auto; gap: 14px; align-items: end;
@@ -527,6 +551,7 @@
   background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px;
   padding: 20px 22px 16px; margin-bottom: 20px;
   animation: filterIn 0.2s ease both;
+  box-shadow: var(--ngs-card-shadow, none);
 }
 @keyframes filterIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 .filter-grid {
@@ -680,14 +705,14 @@ table.exp thead th.sort-active { color: var(--ngs-navy); }
 .viewtoggle button.active { background: var(--ngs-navy); color: var(--ngs-gold); }
 
 .totals-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 26px; }
-.total-card { background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px; padding: 18px 20px; }
+.total-card { background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px; padding: 18px 20px; box-shadow: var(--ngs-card-shadow, none); }
 .total-card.lead { background: var(--ngs-navy); border-color: var(--ngs-navy); }
 .total-val { font-family: var(--ngs-display); font-size: 30px; font-weight: 500; color: var(--ngs-navy); line-height: 1; margin-bottom: 7px; letter-spacing: -0.02em; }
 .total-card.lead .total-val { color: var(--ngs-gold); }
 .total-lbl { font-family: var(--ngs-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ngs-muted); }
 .total-card.lead .total-lbl { color: rgba(250,247,240,0.7); }
 
-.chart-card { background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px; padding: 26px 26px 20px; margin-bottom: 22px; }
+.chart-card { background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px; padding: 26px 26px 20px; margin-bottom: 22px; box-shadow: var(--ngs-card-shadow, none); }
 .bars { display: flex; align-items: flex-end; gap: 28px; height: 160px; padding: 0 4px; }
 .bar-group { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 0; height: 100%; }
 .bar-pair { display: flex; align-items: flex-end; justify-content: center; gap: 7px; width: 100%; height: 100%; }
@@ -800,7 +825,7 @@ table.exp thead th.sort-active { color: var(--ngs-navy); }
   color: var(--ngs-navy); white-space: nowrap; text-align: right;
 }
 
-.exp-table-card { background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px; overflow: hidden; }
+.exp-table-card { background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px; overflow: hidden; box-shadow: var(--ngs-card-shadow, none); }
 .exp-toolbar { display: flex; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--ngs-rule); background: var(--ngs-paper-2); }
 .exp-toolbar input, .exp-toolbar select {
   padding: 9px 12px; font-size: 13px; background: #fff;
@@ -1163,6 +1188,7 @@ table.exp tbody tr:hover { background: var(--ngs-paper-2); }
   background: #fff; border: 1px solid var(--ngs-gold);
   border-radius: 8px; padding: 24px; margin-bottom: 22px;
   animation: filterIn 0.2s ease both;
+  box-shadow: var(--ngs-card-shadow, none);
 }
 .add-exp-title {
   font-family: var(--ngs-display); font-size: 20px; color: var(--ngs-navy);
@@ -1278,7 +1304,7 @@ table.exp tbody tr:hover { background: var(--ngs-paper-2); }
 .add-exp-multi-add-row:hover { border-color: var(--ngs-navy); color: var(--ngs-navy); }
 
 /* ════════════════ 5. DEADLINES ════════════════ */
-.dl-card { background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px; overflow: hidden; }
+.dl-card { background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px; overflow: hidden; box-shadow: var(--ngs-card-shadow, none); }
 table.dl { width: 100%; border-collapse: collapse; }
 table.dl thead th {
   text-align: left; font-family: var(--ngs-mono); font-size: 10px;
@@ -1317,6 +1343,7 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
 .dl-add-card {
   background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px;
   padding: 20px 24px; margin-bottom: 16px;
+  box-shadow: var(--ngs-card-shadow, none);
 }
 .dl-add-title { font-family: var(--ngs-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ngs-gold); margin-bottom: 14px; }
 .dl-add-form { display: flex; flex-wrap: wrap; gap: 10px 16px; }
@@ -1343,7 +1370,7 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
 
 /* ════════════════ 7. ENGLISH PULSE ════════════════ */
 .eng-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-.eng-card { background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px; padding: 24px; }
+.eng-card { background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px; padding: 24px; box-shadow: var(--ngs-card-shadow, none); }
 .eng-scholar { font-family: var(--ngs-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--ngs-gold); margin-bottom: 10px; }
 .eng-stage { font-family: var(--ngs-display); font-size: 24px; font-weight: 400; color: var(--ngs-navy); margin-bottom: 8px; }
 .oet-progress { margin-bottom: 16px; }
@@ -2338,6 +2365,7 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   border: 1px solid var(--ngs-rule);
   border-radius: 8px;
   padding: 16px 20px 18px;
+  box-shadow: var(--ngs-card-shadow, none);
 }
 
 .cs-scholar-header {
@@ -2560,6 +2588,7 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   border: 1px solid var(--ngs-rule);
   border-radius: 8px;
   overflow: hidden;
+  box-shadow: var(--ngs-card-shadow, none);
 }
 .risk-card-risk  { border-left: 3px solid var(--ngs-red); }
 .risk-card-watch { border-left: 3px solid var(--ngs-warn); }
@@ -2877,6 +2906,7 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   border: 1px solid var(--ngs-rule); border-radius: 8px;
   padding: 18px 16px 14px; background: #fff; cursor: pointer;
   transition: border-color 180ms, box-shadow 180ms;
+  box-shadow: var(--ngs-card-shadow, none);
 }
 .enp-overview-card:hover { border-color: var(--ngs-gold); box-shadow: 0 4px 14px rgba(201,168,76,0.14); }
 .enp-overview-card--good    { border-left: 3px solid #2f7d55; }
@@ -3347,6 +3377,7 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   border-left: 4px solid transparent;
   padding: 18px 20px 16px;
   display: flex; flex-direction: column; gap: 14px;
+  box-shadow: var(--ngs-card-shadow, none);
 }
 
 .mh-card--active { border-left-color: var(--ngs-gold); }
@@ -3455,10 +3486,11 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 18px 22px; gap: 4px;
   border: 1.5px solid var(--ngs-rule); border-radius: 8px;
-  background: var(--ngs-paper-2);
+  background: #fff;
   text-decoration: none; color: inherit;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
   min-width: 96px;
+  box-shadow: var(--ngs-card-shadow, none);
 }
 .mh-dash-stat:hover { border-color: var(--ngs-navy); background: rgba(27,42,74,0.03); }
 .mh-dash-stat.is-alert { border-color: #c0392b; background: rgba(192,57,43,0.04); }
@@ -3476,8 +3508,9 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 
 .mh-dash-panel {
   border: 1.5px solid var(--ngs-rule); border-radius: 8px;
-  background: var(--ngs-paper-2);
+  background: #fff;
   padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;
+  box-shadow: var(--ngs-card-shadow, none);
 }
 .mh-dash-panel-head {
   font-family: var(--ngs-mono); font-size: 9.5px; letter-spacing: 0.1em;
@@ -3527,15 +3560,15 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   display: flex; flex-direction: column; gap: 8px;
   padding: 20px 18px;
   border: 1.5px solid var(--ngs-rule); border-radius: 10px;
-  background: var(--ngs-paper-2);
+  background: #fff;
   text-decoration: none; color: inherit;
   transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
   min-height: 120px;
+  box-shadow: var(--ngs-card-shadow, none);
 }
 .mm-card[href]:hover, a.mm-card:hover {
   border-color: var(--ngs-navy);
-  box-shadow: 0 2px 12px rgba(14,26,51,0.09);
-  background: #fff;
+  box-shadow: var(--ngs-card-shadow-hover, 0 2px 12px rgba(14,26,51,0.09));
 }
 .mm-card--info { cursor: default; }
 
@@ -3646,6 +3679,7 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   background: #fff; border: 1px solid var(--ngs-gold);
   border-radius: 8px; padding: 24px; margin-bottom: 22px;
   animation: filterIn 0.2s ease both;
+  box-shadow: var(--ngs-card-shadow, none);
 }
 .gcc-title {
   font-family: var(--ngs-display); font-size: 19px; color: var(--ngs-navy);

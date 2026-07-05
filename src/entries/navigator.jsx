@@ -410,6 +410,7 @@ export function Navigator({ slug = [] }) {
   return (
     <DataCtx.Provider value={{ D, scholarKeys }}>
       <FxCtx.Provider value={fxRate}>
+      <div className="nav-app">
         <LockScreen isHiding={unlocked || !authChecked} onUnlock={() => setUnlocked(true)} />
         <NavBar
           sheetsStatus={sheetsStatus}
@@ -534,6 +535,7 @@ export function Navigator({ slug = [] }) {
           </button>
         )}
         <NavFooter sheetsStatus={sheetsStatus} writeError={writeError} />
+      </div>
       </FxCtx.Provider>
     </DataCtx.Provider>
   );
