@@ -1,5 +1,17 @@
 # NextGen Scholars — AI Intelligence Layer Roadmap
 
+**Note on terminology:** this doc's step-by-step history was originally
+written against the pre-migration Supabase Edge Function backend. As of
+Phase 5 (2026-07-04, PR #183), every "Edge Function" mentioned below has been
+ported verbatim to a Next.js API route under `app/api/{ask,ask-scholar,
+ask-public}/route.js`, backed by `lib/ai/{context,tier1,tier2,tier3,
+action}.js`. There is no separate function-deploy step anymore — these ship
+on every push like the rest of the app, and `GOOGLE_AI_KEY` lives in
+Vercel's project env vars instead of Supabase secrets. Historical step
+descriptions below still say "Edge Function" / "Supabase secrets" / "RLS"
+where that was true *at the time the step shipped* — read those as history,
+not current architecture. See `CLAUDE.md` → "AI layer" for the current state.
+
 ## Vision
 
 A tiered intelligence system where most answers come directly from structured data, and LLM calls are reserved for tasks only a language model can do.
@@ -66,7 +78,7 @@ Called for unstructured input → structured DB write.
 
 **Model:** `gemini-2.5-flash` (free tier — multimodal, structured extraction)
 
-### Orchestrator (`/ask` Edge Function)
+### Orchestrator (`app/api/ask/route.js`, formerly the `/ask` Edge Function)
 
 ```
 POST /ask
@@ -120,11 +132,10 @@ A function that takes a scholar key and returns a compact JSON context block —
 ### P1 · Tier 1 query resolver
 The rule-based function that pattern-matches question types to SQL queries and returns answers without an LLM. Must be solid before wiring any LLM — this is what keeps costs low and responses fast.
 
-### P2 · Tighten Row Level Security
-Current RLS policies are overly permissive for anon users. Before exposing the AI layer publicly:
-- Restrict anon to `config` table read only
-- All scholar data reads require authenticated session
-- Add service-role key for Edge Functions (never exposed to client)
+### P2 · Tighten Row Level Security — ❌ moot post-migration
+Was a pre-migration Supabase RLS concern; there is no RLS layer today. See
+Step 18 above and `ROADMAP.md` "Accepted risks" for the equivalent
+still-open item (`ask-scholar`'s unauthenticated-by-design client-supplied key).
 
 ### P2 · Human-in-the-loop review UI
 Before any AI-generated write hits the database, the mentor or scholar reviews a diff card:
@@ -135,13 +146,15 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 
 ## Are we ready to start?
 
-**Steps 1–16, 19–20 complete. Step 16 (weekly report) awaits an `ask` edge function deploy. Now on Step 17. See Build Status table below.**
+**All of P0–P1 plus most of P2 are done. Steps 13 and 22 (Documents tracker /
+Google Drive storage) were dropped rather than built out; Step 18 (RLS
+hardening) is moot post-Neon-migration. See Build Status table below.**
 
 | Layer | Priority | Status | Gap |
 |---|---|---|---|
 | Schema & data | P0 | ✅ Done | — |
-| Edge Functions | P0 | ✅ Done | — |
-| Auth / RLS | P0 (service key) · P2 (hardening) | ✅ / Pending | Service-role key auto-injected in Edge Functions; RLS hardening deferred to Step 18 |
+| API routes (`app/api/**`) | P0 | ✅ Done | Ported from Supabase Edge Functions during Phase 5 |
+| Auth | P0 (server auth) · P2 (per-route hardening) | ✅ / Partial | JWT-verified role/`scholar_key` resolution in `lib/auth.js`; `ask-scholar` remains unauthenticated by design (accepted risk, see `ROADMAP.md`) |
 | Context builder | P1 | ✅ Done | — |
 | Tier 1 resolver | P1 | ✅ Done | — |
 | Tier 2 (Gemini) | P1 | ✅ Done | — |
@@ -151,13 +164,13 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 | Academic risk alerts | P1 | ✅ Done | Step 10 |
 | OET readiness assessment | P1 | ✅ Done | Step 11 |
 | Budget trajectory | P1 | ✅ Done | Step 12 |
-| Documents tracker | P2 | ✅ Done | Step 13 |
-| Career tracker | P2 | ✅ Done | Step 14 — `career_steps` table deployed |
+| Documents tracker | P2 | ❌ Dropped | Step 13 — Google Drive/Supabase Storage integration removed; `documents` table in Neon is unused |
+| Career tracker | P2 | ✅ Done | Step 14 — `career_steps` table live on Neon |
 | Risk/cohort dashboard | P2 | ✅ Done | Step 15 — RiskSection (Navigator `/progress`) |
-| Weekly report draft | P2 | ✅ Built · ⏳ deploy | Step 16 — needs `ask` edge function redeploy |
-| Scholar pathway chatbot | P2 | **Next** | Step 17 |
+| Weekly report draft | P2 | ✅ Done | Step 16 — live in `app/api/ask/route.js` |
+| Scholar pathway chatbot | P2 | ✅ Done | Step 17 — `PublicAskWidget.jsx` + `app/api/ask-public/route.js` |
 
-**Recommended build order:**
+**Recommended build order (historical):**
 
 | Step | Priority | Task |
 |---|---|---|
@@ -173,76 +186,78 @@ Before any AI-generated write hits the database, the mentor or scholar reviews a
 | ✅ 10 | P1 | Academic risk alerts — DB trigger on `academics`; surfaces in AlertsSection |
 | ✅ 11 | P1 | OET readiness assessment — `oet_readiness` Tier 1 intent + Tier 2 narrative; live progress bar in EnglishSection |
 | ✅ 12 | P1 | Budget trajectory projection — client-side burn-rate in StatusSection (green/amber/red) |
-| ✅ 13 | P2 | Documents tracker page + Supabase Storage integration |
-| ✅ 14 | P2 | Career tracker — PNLE → OET → NCLEX → OSCE → AHPRA checklist (`career_steps` table deployed) |
+| ❌ 13 | P2 | ~~Documents tracker page + Supabase Storage integration~~ — dropped during Phase 5 |
+| ✅ 14 | P2 | Career tracker — PNLE → OET → NCLEX → OSCE → AHPRA checklist (`career_steps` table live on Neon) |
 | ✅ 15 | P2 | Risk/cohort dashboard — RiskSection on Navigator `/progress` |
-| ✅ 16 | P2 | Mentor weekly report draft (Tier 2) — built; needs `ask` edge function redeploy to go live |
-| **→ 17** | **P2** | Scholar pathway chatbot — scoped public widget on profile pages |
-| 18 | P2 | Tighten RLS; audit anon access |
+| ✅ 16 | P2 | Mentor weekly report draft (Tier 2) — live in `app/api/ask/route.js`, ships on every push |
+| ✅ 17 | P2 | Scholar pathway chatbot — `PublicAskWidget.jsx` scoped public widget on profile pages |
+| 18 | P2 | ❌ Moot post-migration — no RLS layer; see `ROADMAP.md` "Accepted risks" for the `ask-scholar` auth gap this was meant to cover |
 
 ---
 
 ## API Keys
 
-Both keys stored in Supabase secrets — never exposed to the client.
+`GOOGLE_AI_KEY` lives in Vercel's project env vars — never exposed to the
+client (was Supabase secrets pre-migration).
 
 | Secret | Used by |
 |---|---|
-| `GOOGLE_AI_KEY` | `/ask` — Tier 2 (Gemini advisory) + Tier 3 (Gemini ingestion) |
+| `GOOGLE_AI_KEY` | `app/api/{ask,ask-scholar,ask-public}/route.js` — Tier 2 (Gemini advisory) + Tier 3 (Gemini ingestion) |
 
 ---
 
 ## Build Status
 
-Steps 1–16, 19–20 complete (Step 16 awaits an `ask` edge function deploy). Now on Step 17. Tier 3 migrated from Claude to Gemini 2.5 Flash.
+Steps 1–12, 14–17, 19–21 complete. Steps 13 and 22 dropped. Step 18 moot.
+Tier 3 migrated from Claude to Gemini 2.5 Flash; the whole AI layer migrated
+from Supabase Edge Functions to Next.js API routes during Phase 5.
 
 | Step | Priority | Status | Description |
 |---|---|---|---|
-| 1 | P0 | ✅ | `expense_submissions` schema + Supabase migration |
-| 2 | P0 | ✅ | `scholar-summary` Edge Function |
-| 3 | P1 | ✅ | Tier 1 query resolver (12 intents) |
+| 1 | P0 | ✅ | `expense_submissions` schema, now on Neon |
+| 2 | P0 | ✅ | Scholar context bundle — `app/api/bootstrap/route.js` + `lib/ai/context.js` (was the `scholar-summary` Edge Function) |
+| 3 | P1 | ✅ | Tier 1 query resolver (12 intents) — `lib/ai/tier1.js` |
 | 4 | P1 | ✅ | Tier 1 end-to-end testing + tuning |
-| 5 | P1 | ✅ | Scholar context builder (`context.ts`) with `SCHEMA_REGISTRY` |
-| 6 | P1 | ✅ | Tier 2 — Gemini advisory wired (`GOOGLE_AI_KEY`) |
-| 7 | P1 | ✅ | Tier 3 — Gemini 2.5 Flash ingestion (migrated from Claude; uses `GOOGLE_AI_KEY`) |
+| 5 | P1 | ✅ | Scholar context builder (`lib/ai/context.js`) with `SCHEMA_REGISTRY` |
+| 6 | P1 | ✅ | Tier 2 — Gemini advisory wired (`GOOGLE_AI_KEY`) — `lib/ai/tier2.js` |
+| 7 | P1 | ✅ | Tier 3 — Gemini 2.5 Flash ingestion (migrated from Claude) — `lib/ai/tier3.js` |
 | 8 | P1 | ✅ | Human-in-the-loop review UI (ReviewCard in NavigatorAI) |
 | 9 | P1 | ✅ | Coaching note generator — "Draft coaching note" on each ScholarCard |
-| 10 | P1 | ✅ | Academic risk alerts — DB trigger on `academics` → `alerts` table; shown in AlertsSection |
+| 10 | P1 | ✅ | Academic risk alerts — DB trigger on `academics` → `alerts` table (`db/gpa_risk_trigger.sql`, live on Neon); shown in AlertsSection |
 | 11 | P1 | ✅ | OET readiness — `oet_readiness` Tier 1 intent + Tier 2 narrative; live progress bar in EnglishSection |
 | 12 | P1 | ✅ | Budget trajectory — client-side burn-rate projection on ScholarCard (green/amber/red) |
-| 13 | P2 | ✅ | Documents tracker (section 07) + Supabase Storage integration |
-| 14 | P2 | ✅ | Career tracker — PNLE → OET → NCLEX → OSCE → AHPRA checklist; `career_steps` table deployed to Supabase |
+| 13 | P2 | ❌ Dropped | Documents tracker + storage integration — removed during Phase 5; `documents` table in Neon is unused |
+| 14 | P2 | ✅ | Career tracker — PNLE → OET → NCLEX → OSCE → AHPRA checklist; `career_steps` table live on Neon |
 | 15 | P2 | ✅ | Risk/cohort dashboard — RiskSection (GPA · English · Budget · Milestones) on Navigator `/progress` |
-| 16 | P2 | ✅ built · auto-deploys on merge | Mentor weekly report draft (Tier 2) — `weekly_report` route in `ask` + Weekly Report tab in Navigator AI; `ask` redeploys via deploy-functions.yml on merge to main |
-| **→ 17** | P2 | — | Scholar pathway chatbot — scoped public widget on profile pages |
-| 18 | P2 | — | Tighten RLS; audit anon access |
+| 16 | P2 | ✅ | Mentor weekly report draft (Tier 2) — `weekly_report` route in `app/api/ask/route.js` + Weekly Report tab in Navigator AI |
+| 17 | P2 | ✅ | Scholar pathway chatbot — `PublicAskWidget.jsx` + `app/api/ask-public/route.js` |
+| 18 | P2 | ❌ Moot | RLS hardening — no RLS layer post-migration |
 | 19 | P2 | ✅ | Multi-file ingest — receipt ingest panel accepts multiple files in one go; items merged into one ReviewCard |
-| 20 | P2 | ✅ | Grade screenshot ingestion — new "Ingest grades" tab in Navigator AI (Tier 3); AI import widget on student grade pages (session-gated) |
-| 21 | P2 | — | Navigator AI widget in student expense-entry module (requires scholar auth upgrade) |
-| 22 | P2 | — | Google Drive storage backend for Documents section (replaces Supabase Storage; 15 GB free vs 500 MB) |
+| 20 | P2 | ✅ | Grade screenshot ingestion — "Ingest grades" tab in Navigator AI (Tier 3); AI import widget on student grade pages (session-gated) |
+| 21 | P2 | ✅ | Navigator AI (ingest + ask widget) in the expense-entry module — `ScholarIngestPanel`/`ExpenseAskWidget` in `entry.jsx` |
+| 22 | P2 | ❌ Dropped | Google Drive storage backend — see Step 13 |
 
 ---
 
 ## Pending manual step
 
-> **Step 16 — `ask` edge function deploy.** The `weekly_report` route was added to
-> `supabase/functions/ask/` (index.ts + tier2.ts). This deploys **automatically on
-> merge to `main`** via `.github/workflows/deploy-functions.yml` (triggers on pushes
-> touching `supabase/functions/**`). No manual step needed — just merge the PR. To
-> deploy out-of-band, run the "Deploy Supabase Edge Functions" workflow via
-> `workflow_dispatch`.
+None currently. Both items that used to require a manual deploy step are
+live on Neon/Vercel and ship automatically on every push:
 
-> **Step 10 trigger not yet deployed.** Run `supabase/gpa_risk_trigger.sql` in the
-> [Supabase SQL editor](https://supabase.com/dashboard/project/rhoxpfuephkuaartuqou/sql/new)
-> to activate auto-generated GPA risk alerts.
+- The `weekly_report` route (Step 16) lives in `app/api/ask/route.js`.
+- The GPA risk trigger (Step 10) lives in `db/gpa_risk_trigger.sql`, ported
+  to Neon verbatim during Phase 5.
 
 ---
 
 ## Upcoming: P2 Steps
 
-### Step 13 · Documents tracker ✅
+### Step 13 · Documents tracker ❌ Dropped
 
-Section 07 in Navigator. Mentor uploads receipts, transcripts, visa docs to Supabase Storage. Per-document status tracking (pending / reviewed / linked). Tier 3 receipt extraction → inline ReviewCard → status becomes `linked` on save.
+Was: Section 07 in Navigator, mentor uploads to Supabase Storage with
+per-document status tracking. Dropped during Phase 5 — OAuth
+credential-management overhead wasn't worth it at this program's scale. The
+`documents` table exists in Neon's schema but is unused.
 
 ### Step 14 · Career tracker
 
@@ -252,17 +267,17 @@ New page (`/career/:scholar`). Step-by-step PNLE → OET → NCLEX → OSCE → 
 
 New collapsible Navigator section (07). Side-by-side scholar risk view — GPA vs floor, English hours vs target, budget used %, next milestone + days until due, risk flag (On Track / Watch / At Risk). Pure Tier 1 — no LLM.
 
-### Step 16 · Mentor weekly report draft ✅ (built; awaiting deploy)
+### Step 16 · Mentor weekly report draft ✅
 
-"Weekly Report" tab in Navigator AI (section + drawer). A `weekly_report` route in the `ask` edge function builds every scholar's context bundle and asks Tier 2 (Gemini, `tier2WeeklyReport`) to draft a single shareable cohort update — cohort overview, per-scholar bullets (GPA vs floor, spend vs budget, OET hours vs target, next milestone, deadlines, open actions, alerts), and a "Needs attention this week" list. Output is read-only with a copy-to-clipboard button. **Redeploy `ask` to activate** (see Pending manual step).
+"Weekly Report" tab in Navigator AI (section + drawer). A `weekly_report` route in `app/api/ask/route.js` builds every scholar's context bundle and asks Tier 2 (Gemini, `tier2WeeklyReport`) to draft a single shareable cohort update — cohort overview, per-scholar bullets (GPA vs floor, spend vs budget, OET hours vs target, next milestone, deadlines, open actions, alerts), and a "Needs attention this week" list. Output is read-only with a copy-to-clipboard button. Live — ships on every push, no manual deploy step.
 
-### Step 17 · Scholar pathway chatbot
+### Step 17 · Scholar pathway chatbot ✅
 
-Lightweight public chat widget on `claire.html` / `april.html`. Scoped to public pathway data only — financials blocked at the server level via a restricted `/ask-public` Edge Function.
+`PublicAskWidget.jsx` — public chat widget on the Claire/April/Janndilyne profile pages and the homepage. Scoped to public pathway data only — financials blocked at the server level by `app/api/ask-public/route.js`.
 
-### Step 18 · RLS hardening
+### Step 18 · RLS hardening ❌ Moot
 
-Restrict anon to `config` read-only. All scholar data reads require authenticated session. Rotate any exposed keys.
+Was: restrict anon to `config` read-only, require authenticated session for all scholar data reads. Moot post-Neon-migration — there is no RLS layer; Postgres access goes through `lib/auth.js`'s JWT-verified role/`scholar_key` resolution instead. The one risk this was meant to cover — `ask-scholar` trusting a client-supplied `scholar` key with no auth check — is still open and tracked as an accepted risk in `ROADMAP.md`.
 
 ### Step 19 · Multi-file ingest ✅
 
@@ -272,13 +287,13 @@ Navigator AI "Ingest receipts" tab now accepts multiple files at once. Files are
 
 New "Ingest grades" tab in Navigator AI. Upload a grade report screenshot → Tier 3 Gemini extracts all subjects (UV or K-12 scale) → GradeReviewCard with editable fields → saves to `grade_entries`. Also available as an auth-gated "AI import grade report" widget on the student grade pages (visible only when the mentor is logged in).
 
-### Step 21 · Navigator AI in student expense-entry module
+### Step 21 · Navigator AI in student expense-entry module ✅
 
-Add an inline AI receipt ingest option to the scholar expense-entry flow (`entry.html`). Requires a scholar-auth upgrade (PIN-based `/ask-public` Edge Function) since the entry form uses anon access.
+`ScholarIngestPanel` (receipt ingest) and `ExpenseAskWidget` (ask widget) are both live in `src/entries/entry.jsx`, gated by the same real Better Auth sign-in (`ScholarAuthGate.jsx`) as the rest of the expense-entry portal.
 
-### Step 22 · Google Drive storage backend
+### Step 22 · Google Drive storage backend ❌ Dropped
 
-Swap Supabase Storage (500 MB free) for Google Drive (15 GB). Service account stores credentials in Supabase secrets; a proxy Edge Function handles uploads from the browser. `documents.storage_path` stores a Drive file ID instead of a Storage path. Download links become signed Drive URLs.
+Was: swap Supabase Storage for Google Drive. Dropped along with Step 13 (Documents tracker) during Phase 5 — see that step for why.
 
 ---
 

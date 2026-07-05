@@ -1,4 +1,16 @@
-# SPA Migration Roadmap
+# SPA Migration Roadmap — superseded, kept for history
+
+**This entire plan was superseded by the Neon + Vercel migration (Phase 5,
+2026-07-04, PR #183 — see `ROADMAP.md`).** None of the phases below
+happened as written: instead of adopting React Router + HashRouter on top of
+Vite, the app was rebuilt as a Next.js 14 App Router project, which gets
+file-based routing, code-splitting, and a single shell for free without a
+client router. GitHub Pages is no longer the live app (frozen redirect stub
+only); Supabase is fully decommissioned; the PWA/React-Native plan below was
+never picked up. Kept for historical context on why an SPA was considered at
+all — not an active plan.
+
+---
 
 NextGen Scholars is being converted from a multi-page app (9 separate HTML entry
 points) to a Single Page Application, with PWA support as the first step toward
