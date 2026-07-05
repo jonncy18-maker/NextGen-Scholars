@@ -162,10 +162,16 @@ secret lives only in Vercel's project env vars — never in the client.
 - **Stale "Sheets" vocabulary** — some state/props/CSS still use `sheets*` naming left
   over from the pre-Supabase Google Sheets backend (predates even the Supabase era).
   Functional, but the names no longer reflect the backend.
-- **Stale pre-migration docs** — `README.md`, `ROADMAP.md`, `ROADMAP-AI.md`, and
-  `docs/SPA-MIGRATION-ROADMAP.md` still describe the Supabase-era architecture
-  in places (historical changelogs, diagrams). Not code, no functional impact
-  — a documentation-refresh pass is a nice-to-have, not urgent.
+- **Doc cleanup pass (2026-07-05) done.** `README.md` was rewritten for the
+  current Next.js/Neon architecture (routes, source layout, data flow all
+  updated). `ROADMAP.md` and `ROADMAP-AI.md` had their still-"pending"-looking
+  sections (Security audit follow-ups, Accepted risks, RLS hardening,
+  Documents/Drive steps, the `ask` edge-function-deploy notes) corrected to
+  reflect what Phase 5 actually resolved, dropped, or made moot — the
+  chronological Phase 1–5 history itself was left intact as accurate record.
+  `docs/SPA-MIGRATION-ROADMAP.md` got a superseded banner (its plan was
+  replaced wholesale by the Next.js App Router cutover, never executed as
+  written) but the file is kept for historical context.
 - **Neon Auth `trusted_origins` must list every production alias.** Vercel
   generates multiple hostnames for one production deployment (e.g. the
   `jonncy18` domain, a random `-steel`-style alias, and the `git-main-jonncy18`

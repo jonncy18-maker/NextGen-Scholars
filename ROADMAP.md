@@ -70,7 +70,7 @@ Decisions: track code `TESDA` ("NextGen TESDA"); a **single rolling term**
 | A — Static profile data | ✅ Done | `janndilyne` block in `scholars-data.js`; `publicProfile` omits `travels`/`english`; no `card` (keeps her off the homepage). Placeholder copy pending owner confirmation. |
 | B — Public dashboard page | ✅ Done | `src/entries/janndilyne.jsx` (no English fetch, no travels, `englishHours={null}`); route `/janndilyne` + `/janndilyne.html` legacy redirect in `App.jsx`. |
 | C — Navigator integration | ✅ Done | `'janndilyne'` added to `STATIC_SCHOLAR_KEYS`; English stat hidden for TESDA in `MentorHome`; English overview grid excludes TESDA; `NAMECLASS`/`SEM_DISPLAY` entries. Travel module already NGN-only. |
-| D — Supabase data row | 🔵 Pending | Insert her `scholars` row (see manual step) so she appears in **live** navigator data. The public page already works from static data alone. |
+| D — Live data row | ✅ Done | Her `scholars` row was carried over during the Neon migration (Phase 5) and she has a real Better Auth account like Claire and April — see Phase 5 below. |
 | E — Roadmap | ✅ Done | This section. |
 
 Sections that needed **no change** — Expenses, Grades, Deadlines, Career, Risk,
@@ -189,47 +189,55 @@ Postgres) + Neon Auth (Better Auth). **All phases done**, including Phase D
 Tiered system — Tier 1 (smart query, no LLM) handles ~80%, escalates to
 Tier 2 (Gemini advisory) or Tier 3 (Gemini ingestion).
 
-See `ROADMAP-AI.md` for full step-by-step status.
+See `ROADMAP-AI.md` for full step-by-step status. All tiers now run as
+`app/api/{ask,ask-scholar,ask-public}/route.js` Next.js routes (ported
+verbatim from the pre-migration Supabase Edge Functions) — no separate
+function-deploy step, they ship on every push like the rest of the app.
 
-**Current position:** Steps 1–16, 19–20 complete. Step 16 (weekly report) awaits an
-`ask` edge function redeploy. Step 17 next (Scholar pathway chatbot).
+**Current position:** Steps 1–17, 19–21 complete. Step 13 (documents tracker)
+and Step 22 (Google Drive storage) were dropped rather than ported — see
+CLAUDE.md. Step 18 (RLS hardening) is moot post-migration; the
+`ask-scholar` unauthenticated-by-design risk it was meant to mitigate is
+tracked instead under "Accepted risks" above.
 
 | Step | Area | Status |
 |---|---|---|
-| 1–13 | Schema, edge functions, Tier 1–3, review UI, coaching, risk alerts, OET readiness, budget trajectory, documents tracker | ✅ Done |
-| 19–20 | Multi-file ingest, grade screenshot ingestion | ✅ Done |
-| 14 | Career tracker — PNLE → OET → NCLEX → OSCE → AHPRA checklist (`career_steps` table deployed) | ✅ Done |
+| 1–12 | Schema, Tier 1–3, review UI, coaching, risk alerts, OET readiness, budget trajectory | ✅ Done |
+| 13 | Documents tracker | ❌ Dropped — Google Drive/Supabase Storage integration removed during Phase 5; `documents` table in Neon is unused |
+| 14 | Career tracker — PNLE → OET → NCLEX → OSCE → AHPRA checklist (`career_steps` table) | ✅ Done |
 | 15 | Risk/cohort dashboard — RiskSection on Navigator `/progress` | ✅ Done |
-| 16 | Mentor weekly report draft (Tier 2) | ✅ Built · ⏳ redeploy `ask` |
-| **17** | **Scholar pathway chatbot** | **Next** |
-| 18 | RLS hardening | 🔵 Pending |
-| 21–22 | Navigator AI in entry module · Google Drive storage backend | 🔵 Pending |
+| 16 | Mentor weekly report draft (Tier 2) | ✅ Done — live in `app/api/ask/route.js`, no pending deploy |
+| 17 | Scholar pathway chatbot | ✅ Done — `PublicAskWidget.jsx` + `app/api/ask-public/route.js` |
+| 18 | RLS hardening | ❌ Moot — no RLS layer post-migration; see "Accepted risks" |
+| 19–20 | Multi-file ingest, grade screenshot ingestion | ✅ Done |
+| 21 | Navigator AI (ingest + ask widget) in the expense-entry module | ✅ Done — `ScholarIngestPanel`/`ExpenseAskWidget` in `entry.jsx` |
+| 22 | Google Drive storage backend | ❌ Dropped — see Step 13 |
 
 ### Pending manual step
 
-> Run `supabase/gpa_risk_trigger.sql` in the Supabase SQL editor to activate
-> auto-generated GPA risk alerts (Step 10 trigger not yet deployed).
-
-> Insert Janndilyne's `scholars` row (Phase 4D): `scholar_key='janndilyne'`,
-> `track='TESDA'`, `first_name='Janndilyne'`, `status='active'`,
-> `current_sem='TESDA'`, plus school/city/program/cohort, so she appears in
-> live navigator data. No schema change needed.
+None currently — the GPA risk trigger (`db/gpa_risk_trigger.sql`) and
+Janndilyne's `scholars` row both live on Neon already (ported verbatim during
+Phase 5).
 
 ---
 
-## Security audit follow-ups (2026-06)
+## Security audit follow-ups (2026-06) — historical, pre-Neon-migration
 
-A full-repo audit pass produced these. Frontend/contained fixes are done; the
-items below the line need deployment or larger work.
+A full-repo audit pass against the old Supabase Edge Function backend
+produced these. **Superseded by Phase 5** (the Neon + Vercel migration):
+`drive-proxy`, `scholar-summary`, and the Supabase `ask`/`ask-scholar` Edge
+Functions no longer exist — everything now runs as `app/api/**` Next.js
+route handlers, deployed automatically on every push (no separate function
+deploy step). Kept here for audit history only.
 
 | Item | Status |
 |---|---|
-| `drive-proxy` IDOR — download/get_base64/delete now require the `fileId` to be registered in the `documents` table (was: any authenticated caller could read/delete any file in the mentor's Drive by ID) | ✅ Code done — **needs `supabase functions deploy drive-proxy`** |
-| `scholar-summary` `qty=0` inflated totals to 1 (inconsistent with tier1/context) | ✅ Code done — **needs deploy** |
-| `.env` was tracked in git; now untracked + gitignored, `.env.example` added | ✅ Done |
-| **`ask-scholar` is unauthenticated** — trusts a client-supplied `scholar` key with the service-role key; anyone who knows `claire`/`april` can read that scholar's data | 🟡 **Accepted risk** (owner decision, 2026-06) — data is minimally private for this phase. Real fix is Step 21 (PIN auth) + Step 18 (RLS). See note below. |
-| **GPA risk trigger scale-awareness** — trigger is now scale-aware via a `scholars.gpa_scale` column (`percent` default / `uv`), with a defensive guard that skips raw-UV values (≤5) mis-entered under the percent scale. `academics.gpa`/`gpa_floor` remain percentages by default (UV converted via `uvToPct` at entry). | ✅ Code done — **needs re-running `supabase/gpa_risk_trigger.sql`** in the SQL editor |
-| **Tier 3 standardised on Gemini** — removed all reachable Claude code paths in `ask`/`ask-scholar`/`tier3.ts` and the mentor model toggle; added a Gemini English-ingest path so English ingest no longer needs `ANTHROPIC_KEY`. `ANTHROPIC_KEY` is now unused. | ✅ Code done — **needs `supabase functions deploy ask ask-scholar`** |
+| `drive-proxy` IDOR (Google Drive document proxy) | Moot — Google Drive document storage was dropped entirely during Phase 5; no proxy exists anymore. |
+| `scholar-summary` `qty=0` inflated totals to 1 | ✅ Carried forward correctly — `lib/ai/context.js` (the Neon-era replacement) does not have this bug. |
+| `.env` was tracked in git; now untracked + gitignored, `.env.example` added | ✅ Done, still true today. |
+| **`ask-scholar` is unauthenticated** — trusts a client-supplied `scholar` key | 🟡 **Still an accepted risk today**, carried into `app/api/ask-scholar/route.js` by design (see CLAUDE.md "Key Rules for Claude Code"). Not fixed by the migration; a real scholar-scoped-auth upgrade is still open work. |
+| GPA risk trigger scale-awareness (`scholars.gpa_scale`, `uvToPct` guard) | ✅ Ported to Neon verbatim during Phase 5 (`db/gpa_risk_trigger.sql`) — live today, no pending deploy. |
+| Tier 3 standardised on Gemini (Claude code paths removed) | ✅ Carried into the Neon-era `lib/ai/tier3.js` — `ANTHROPIC_KEY` remains unused. |
 
 ---
 
@@ -237,41 +245,51 @@ items below the line need deployment or larger work.
 
 ### Navigator data is publicly accessible
 
-`scholars-data.js` is a public static asset. The lock password is cosmetic —
-anyone can read the file directly. Current decision: acceptable because the
-owner considers the data minimally private for the current phase.
+`scholars-data.js` is a public static asset. The lock password on it is
+cosmetic — anyone can read the file directly. Current decision: acceptable
+because the owner considers the narrative data minimally private for the
+current phase.
 
 **Revisit immediately** before adding bank details, full addresses, medical
 records, IDs, or anything the scholars would not want publicly indexed.
 
-The Supabase Row Level Security (RLS) hardening (Step 18) is the planned
-mitigation for the operational data layer. The static narrative copy in
-`scholars-data.js` will always be public while the site is on GitHub Pages.
+### `ask-scholar` is unauthenticated by design
 
-### RLS policies are permissive for anon users
+`app/api/ask-scholar/route.js` trusts a client-supplied `scholar` key with no
+auth check — matches the pre-migration Supabase Edge Function's behavior
+exactly (see CLAUDE.md "Key Rules for Claude Code"), not a regression from
+the Neon cutover. Accepted risk for now; do not store sensitive PII before
+this route gets real scholar-scoped auth.
 
-Current anon access allows reading scholar operational data via the Edge
-Functions. Step 18 will restrict anon reads to the `config` table only.
-Non-blocking for current phase; **do not store sensitive PII before Step 18.**
+### Resolved by Phase 5 (Neon + Better Auth migration) — kept for history
 
-Because anon RLS is `using (true)` on every scholar table, the public anon key
-can read all scholar data **directly** — so gating `ask-scholar` alone would not
-provide confidentiality. Real protection requires the Step 18 RLS hardening, not
-just an endpoint check.
+The two risks below described the pre-migration architecture and **no longer
+apply**. Every scholar-facing route (`ScholarHome`, `EnglishTracking`,
+`GradeEntry`, `VacationTracker`, `MilestonesTracker`, the expense-entry
+portal) now sits behind a real Better Auth sign-in (`ScholarAuthGate.jsx`),
+verified server-side via `GET /api/me` — not a cosmetic password or a
+sessionStorage flag, and there is no Supabase RLS layer to reason about
+anymore (Postgres access goes through `lib/auth.js`'s JWT-verified
+role/`scholar_key` resolution instead).
 
-### ScholarHome is public and grants the entry-portal auto-auth
-
-`/home/:scholar` (`ScholarHome.jsx`) has no password gate and sets
-`sessionStorage['ngs_auth_scholar'] = scholarKey` on mount. The expense-entry
-portal (`entry.jsx`) trusts that flag for auto-auth, so visiting `/home/april`
-and then opening `/entry?scholar=april` admits the visitor into April's
-expense-entry portal without the per-scholar password. Accepted risk for the
-current phase (data is minimally private); the real fix is the Step 21 scholar
-auth upgrade. Revisit before storing anything sensitive.
+- ~~RLS policies are permissive for anon users~~ — moot; there is no RLS
+  layer post-migration. Server-side role checks in `app/api/**` are the
+  access-control boundary now.
+- ~~ScholarHome is public and grants the entry-portal auto-auth~~ — fixed;
+  `ScholarHome` now requires real sign-in, and there's no `sessionStorage`
+  auto-auth flag for the expense-entry portal to trust.
 
 ---
 
 ## External English Tracking App — Integration Roadmap
+
+**⚠️ Stale — written against the pre-migration Supabase backend, never
+implemented (all phases below are still 🔵 Pending).** The Supabase project
+this plan assumed (`jonncy18-NextGenDatabase` / `rhoxpfuephkuaartuqou`) is
+paused post-Phase-5; this design needs to be redrafted against Neon
+(`app/api/english/sessions/route.js` + a real auth token for the external
+app, replacing the anon-key + RLS approach) before any phase here can start.
+Kept for the integration *intent* and field mapping, not as an actionable plan.
 
 A standalone immersion-style English tracking app (Dreaming Spanish model —
 comprehensible-input focused, activity logging, viewing time) is being built
@@ -279,11 +297,11 @@ separately. The goal is to have sessions logged there flow into the English
 tracking module here so scholars' immersion hours count toward their period
 goals alongside mentor-session hours.
 
-### Integration design (planned)
+### Integration design (original — needs a Neon-era rewrite)
 
-The two apps share the same Supabase project (`jonncy18-NextGenDatabase`).
-The external app will write sessions directly to `english_sessions` using the
-anon key (same RLS already in place), with an agreed schema:
+The two apps shared the same Supabase project. The external app would write
+sessions directly to `english_sessions` using the anon key (same RLS already
+in place), with an agreed schema:
 
 | Field | Source |
 |---|---|
@@ -324,8 +342,8 @@ anon key (same RLS already in place), with an agreed schema:
 - **Accessibility pass** — keyboard flow and screen-reader audit across all pages.
 - **publicProfile drift** — `currentSemester` block in `scholars-data.js`
   (intro text, subjects list, period label) is hand-authored and can drift when
-  the active semester changes. Derive from Supabase data or replace with a
+  the active semester changes. Derive from Neon data or replace with a
   simpler generated label.
 - **TypeScript** — frontend is pure JS/JSX; no type checking on component props
-  or Supabase query results.
+  or Neon query results.
 - **Test harness** — no unit or integration tests exist.
