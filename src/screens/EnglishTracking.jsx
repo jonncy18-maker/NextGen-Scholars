@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '../lib/api.js';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
+import { SignOutButton } from '../components/SignOutButton.jsx';
 import { SESSION_CATEGORIES, SESSION_TYPES, classifyActivity } from '../constants.js';
 import { EnglishIngestPanel } from '../components/EnglishIngestPanel.jsx';
 import { calcForecast } from '../lib/english-forecast.js';
@@ -420,6 +421,7 @@ export function EnglishTracking({ scholarKey }) {
     <div className="sp-page">
       <div className="sp">
         <header className="sp-head">
+          <SignOutButton onSignOut={() => setAuthed(false)} />
           <div className="sp-track">
             <span className="sp-track-dot" />
             NextGen Nurses

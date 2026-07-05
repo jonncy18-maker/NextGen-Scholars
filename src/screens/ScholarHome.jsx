@@ -10,6 +10,7 @@ import {
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
+import { SignOutButton } from '../components/SignOutButton.jsx';
 import { CAT_TO_BUCKET } from '../constants.js';
 
 // All three scholars now have real Neon Auth accounts (see CLAUDE.md).
@@ -232,6 +233,7 @@ export function ScholarHome({ scholarKey }) {
     <div className="sp-page">
       <div className="sp">
         <header className="sp-head">
+          <SignOutButton onSignOut={() => setAuthed(false)} />
           <div className="sp-track">
             <span className="sp-track-dot" />
             {config.track}

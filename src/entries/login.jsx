@@ -57,7 +57,10 @@ export function LoginPage() {
     mountCheckAbortRef.current?.abort();
     invalidateToken();
 
-    const { error: authError } = await signIn.email({ email, password });
+    // rememberMe: false makes Better Auth issue a browser-session cookie (no
+    // Max-Age) instead of its default persistent one, so the login survives
+    // page refreshes/navigation but clears when the browser is fully closed.
+    const { error: authError } = await signIn.email({ email, password, rememberMe: false });
     if (authError) {
       setLoading(false);
       setError('Incorrect credentials — try again.');

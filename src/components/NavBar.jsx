@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export function NavBar({ sheetsStatus, onRefresh, aiDrawerOpen, onAiDrawerToggle }) {
+export function NavBar({ sheetsStatus, onRefresh, aiDrawerOpen, onAiDrawerToggle, onSignOut }) {
   const pathname = usePathname();
   const isHome = pathname === '/navigator' || pathname === '/navigator/';
   const isExpenses = pathname === '/navigator/expenses';
@@ -40,6 +40,7 @@ export function NavBar({ sheetsStatus, onRefresh, aiDrawerOpen, onAiDrawerToggle
               ? <Link className="nav-back" href="/navigator/expenses">← Expense</Link>
               : <Link className="nav-back" href="/navigator">← Dashboard</Link>
           }
+          <button className="nav-signout" onClick={onSignOut} title="Sign out">Sign out</button>
         </div>
       </div>
     </header>

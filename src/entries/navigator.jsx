@@ -3,7 +3,7 @@ import { NGS_DATA } from '../../scholars-data.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
 import { loadFromSupabase, loadPendingSubmissions } from '../api-loader.js';
 import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead, approveSubmission, rejectSubmission, writeSent } from '../api-writer.js';
-import { authClient } from '../lib/auth-client.js';
+import { authClient, invalidateToken } from '../lib/auth-client.js';
 import { api } from '../lib/api.js';
 import { useChanges } from '../hooks/useChanges.js';
 import { CAT_TO_BUCKET } from '../constants.js';
@@ -416,6 +416,7 @@ export function Navigator({ slug = [] }) {
           onRefresh={() => setRefreshKey(k => k + 1)}
           aiDrawerOpen={aiDrawerOpen}
           onAiDrawerToggle={() => setAiDrawerOpen(v => !v)}
+          onSignOut={() => { invalidateToken(); authClient.signOut(); setUnlocked(false); }}
         />
         <NavigatorAIDrawer
           open={aiDrawerOpen}

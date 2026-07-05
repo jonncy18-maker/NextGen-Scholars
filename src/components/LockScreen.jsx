@@ -33,7 +33,9 @@ export function LockScreen({ isHiding, onUnlock }) {
     e.preventDefault();
     setLoading(true);
     setError(false);
-    const { error: authError } = await signIn.email({ email, password });
+    // rememberMe: false issues a browser-session cookie instead of Better
+    // Auth's default persistent one, so it clears when the browser closes.
+    const { error: authError } = await signIn.email({ email, password, rememberMe: false });
     setLoading(false);
     if (authError) {
       setError(true);
