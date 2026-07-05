@@ -125,6 +125,15 @@
 }
 .nav-back:hover { border-color: var(--ngs-navy); }
 
+.nav-signout {
+  font-family: var(--ngs-mono); font-size: 11px; letter-spacing: 0.06em;
+  padding: 7px 12px; border-radius: 5px;
+  border: 1px solid var(--ngs-rule); color: var(--ngs-muted);
+  background: var(--ngs-paper-2); white-space: nowrap; cursor: pointer;
+  transition: all 0.15s ease;
+}
+.nav-signout:hover { border-color: var(--ngs-red); color: var(--ngs-red); }
+
 /* Refresh button */
 .nav-refresh {
   display: inline-flex; align-items: center; gap: 5px;

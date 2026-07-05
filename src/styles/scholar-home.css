@@ -156,6 +156,17 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
   font-family: var(--ngs-display); font-style: italic; color: var(--ngs-gold-soft);
 }
 
+.sp-signout {
+  position: absolute; top: 20px; right: 24px; z-index: 2;
+  font-family: var(--ngs-mono); font-size: 11px; letter-spacing: 0.06em;
+  color: rgba(250,247,240,0.5); background: none;
+  border: 1px solid rgba(255,255,255,0.16); border-radius: 4px;
+  padding: 6px 10px; cursor: pointer; transition: color 0.15s, border-color 0.15s;
+}
+.sp-signout:hover { color: rgba(250,247,240,0.85); border-color: rgba(255,255,255,0.32); }
+@media (min-width: 640px) { .sp-signout { top: 28px; right: 40px; } }
+@media (min-width: 1024px) { .sp-signout { top: 32px; right: 64px; } }
+
 /* ── section scaffold ── */
 .sp-section { padding: 26px 24px 4px; }
 .sp-section.is-trackers {

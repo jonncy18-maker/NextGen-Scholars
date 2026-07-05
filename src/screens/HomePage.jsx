@@ -596,7 +596,7 @@ function TopNav({ isDesktop }) {
           <a href="#apply" className="ngs-nav-menu-cta">Apply</a>
           <div className="ngs-nav-menu-divider"></div>
           <Link href="/login" className="ngs-nav-menu-login" onClick={() => setOpen(false)}>
-            Login →
+            Login
           </Link>
         </nav>
       )}

@@ -59,7 +59,10 @@ export function ScholarAuthGate({ scholarKey, name, onUnlock }) {
     mountCheckAbortRef.current?.abort();
     invalidateToken();
 
-    const { error: authError } = await signIn.email({ email, password });
+    // rememberMe: false issues a browser-session cookie (no Max-Age) rather
+    // than Better Auth's default persistent one, so signing in doesn't
+    // silently carry over the next time the browser is reopened.
+    const { error: authError } = await signIn.email({ email, password, rememberMe: false });
     if (authError) {
       setLoading(false);
       setError('Incorrect credentials — try again.');

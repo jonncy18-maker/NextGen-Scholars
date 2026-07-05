@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '../lib/api.js';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
+import { SignOutButton } from '../components/SignOutButton.jsx';
 import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
 import '../styles/vacation-tracker.css';
 
@@ -71,6 +72,7 @@ export function VacationTracker({ scholarKey }) {
     <div className="sp-page">
       <div className="sp">
         <header className="sp-head">
+          <SignOutButton onSignOut={() => setAuthed(false)} />
           <div className="sp-track">
             <span className="sp-track-dot" />
             NextGen Nurses
