@@ -54,6 +54,7 @@ in Vercel's project env vars only.
 | Route | Component | Role |
 |---|---|---|
 | `/` | `HomePage` | Public homepage (hero, tracks, journey, "Meet the Scholars", apply form). |
+| `/login` | `LoginPage` (`src/entries/login.jsx`) | Generic sign-in for the nav "Login" button — no person/name is picked up front. Signs in, then `GET /api/me` (role + `scholarKey` resolved server-side) decides the destination: `/navigator` for mentors, `/home/:scholar` for scholars. Replaces the old `HomePage.jsx` "Who's signing in?" destination-picker modal. |
 | `/claire`, `/april` | Profile pages | Public scholar dashboards (Claire active BSN; April trial Grade 11). |
 | `/janndilyne` | Profile page | Public TESDA scholar dashboard (unadvertised — not linked from homepage). |
 | `/navigator/*` | `Navigator` | **Private** mentor ops dashboard. Real Better Auth sign-in (`LockScreen.jsx`). |

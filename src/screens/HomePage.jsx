@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { NGS_DATA } from '../../scholars-data.js';
 import { JOURNEY_STAGES } from '../constants.js';
@@ -46,62 +46,6 @@ const IconArrow = ({ size = 14, color = 'currentColor' }) => (
   </svg>
 );
 
-
-// ── login modal ───────────────────────────────────────────────────────────────
-// Destination picker only — no password here. Real authentication (Better
-// Auth email/password, verified server-side) happens at the destination via
-// ScholarAuthGate.jsx (scholar pages) or LockScreen.jsx (mentor Navigator).
-// This used to ALSO check a shared cosmetic password against Supabase config
-// before navigating, which meant scholars hit two different sign-in prompts
-// back to back — the fake one here, then the real one at the destination.
-
-const ROLES = [
-  { key: 'claire',     label: 'Claire',     dest: '/home/claire'     },
-  { key: 'april',      label: 'April',      dest: '/home/april'      },
-  { key: 'janndilyne', label: 'Janndilyne', dest: '/home/janndilyne' },
-  { key: 'mentor',     label: 'Mentor',     dest: '/navigator'       },
-];
-
-function LoginModal({ onClose }) {
-  const overlayRef = useRef();
-
-  useEffect(() => {
-    const handler = e => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [onClose]);
-
-  return (
-    <div
-      className="ngs-modal-overlay"
-      ref={overlayRef}
-      onClick={e => { if (e.target === overlayRef.current) onClose(); }}
-      role="dialog" aria-modal="true" aria-label="Sign in"
-    >
-      <div className="ngs-modal">
-        <div className="ngs-modal-bg" />
-        <div className="ngs-modal-inner">
-          <div className="ngs-modal-brand">
-            <div className="ngs-mark ngs-mark-sm"><span>N</span><span>G</span><span>S</span></div>
-          </div>
-
-          <h2 className="ngs-modal-title">Who's signing in?</h2>
-          <p className="ngs-modal-sub">You'll sign in with your account on the next screen.</p>
-
-          <div className="ngs-modal-role-grid">
-            {ROLES.map(r => (
-              <Link key={r.key} href={r.dest} className="ngs-modal-role-btn ngs-modal-role-btn-nav">
-                {r.label}
-              </Link>
-            ))}
-          </div>
-
-          <button className="ngs-modal-close" onClick={onClose} aria-label="Close">✕</button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ── hero ──────────────────────────────────────────────────────────────────────
 
@@ -590,7 +534,7 @@ function Footer() {
   );
 }
 
-function TopNav({ isDesktop, onLoginOpen }) {
+function TopNav({ isDesktop }) {
   const [open, setOpen] = useState(false);
   const [journeyOpen, setJourneyOpen] = useState(false);
   return (
@@ -610,7 +554,7 @@ function TopNav({ isDesktop, onLoginOpen }) {
             <a href="#scholars">Scholars</a>
             <a href="#/faq">FAQ</a>
             <a href="#apply" className="ngs-nav-cta-link">Apply</a>
-            <button className="ngs-nav-login-btn" onClick={onLoginOpen}>Login</button>
+            <Link href="/login" className="ngs-nav-login-btn">Login</Link>
           </nav>
         ) : (
           <button className="ngs-nav-btn" onClick={() => setOpen(!open)}
@@ -651,9 +595,9 @@ function TopNav({ isDesktop, onLoginOpen }) {
           <a href="#/faq">FAQ</a>
           <a href="#apply" className="ngs-nav-menu-cta">Apply</a>
           <div className="ngs-nav-menu-divider"></div>
-          <button className="ngs-nav-menu-login" onClick={() => { setOpen(false); onLoginOpen(); }}>
+          <Link href="/login" className="ngs-nav-menu-login" onClick={() => setOpen(false)}>
             Login →
-          </button>
+          </Link>
         </nav>
       )}
     </header>
@@ -662,11 +606,10 @@ function TopNav({ isDesktop, onLoginOpen }) {
 
 export function NGSSite({ isDesktop }) {
   const [defaultTrack, setDefaultTrack] = useState('');
-  const [loginOpen, setLoginOpen] = useState(false);
 
   return (
     <div className={`ngs-site ${isDesktop ? 'is-desktop' : ''}`} id="top">
-      <TopNav isDesktop={isDesktop} onLoginOpen={() => setLoginOpen(true)}/>
+      <TopNav isDesktop={isDesktop}/>
       <Hero/>
       <About/>
       <Tracks onSelectTrack={setDefaultTrack}/>
@@ -674,7 +617,6 @@ export function NGSSite({ isDesktop }) {
       <Scholars/>
       <Apply defaultTrack={defaultTrack}/>
       <Footer/>
-      {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
       <PublicAskWidget />
     </div>
   );

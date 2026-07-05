@@ -404,9 +404,10 @@ body { margin: 0; }
 
 /* ════════════════ LOGIN BUTTON (nav) ════════════════ */
 .ngs-nav-login-btn {
-  padding: 8px 18px; border-radius: 5px; font-size: 13.5px; font-weight: 600;
+  display: inline-block; padding: 8px 18px; border-radius: 5px; font-size: 13.5px; font-weight: 600;
   background: var(--ngs-navy); color: var(--ngs-gold);
   border: none; cursor: pointer; font-family: var(--ngs-sans);
+  text-decoration: none;
   transition: background 0.15s, transform 0.1s;
   margin-left: 6px;
 }
@@ -417,157 +418,8 @@ body { margin: 0; }
   padding: 14px 24px; font-size: 15px; font-weight: 600;
   color: var(--ngs-gold); background: none; border: none; cursor: pointer;
   font-family: var(--ngs-sans);
+  text-decoration: none;
 }
-
-/* ════════════════ LOGIN MODAL ════════════════ */
-.ngs-modal-overlay {
-  position: fixed; inset: 0; z-index: 1000;
-  background: rgba(14,26,51,0.72);
-  backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px;
-  animation: ngsModalFadeIn 0.18s ease both;
-}
-@keyframes ngsModalFadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-.ngs-modal {
-  position: relative; width: 100%; max-width: 400px;
-  background: var(--ngs-navy-ink);
-  border-radius: 10px;
-  overflow: hidden;
-  animation: ngsModalSlideIn 0.2s ease both;
-}
-@keyframes ngsModalSlideIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.ngs-modal-bg {
-  position: absolute; inset: 0; pointer-events: none;
-  background:
-    radial-gradient(60% 45% at 50% 0%, rgba(201,168,76,0.1), transparent 60%),
-    radial-gradient(40% 40% at 100% 100%, rgba(177,27,42,0.04), transparent 60%);
-  transition: background 0.35s;
-}
-[data-role="april"] .ngs-modal-bg {
-  background:
-    radial-gradient(60% 45% at 50% 0%, rgba(0,56,168,0.14), transparent 60%),
-    radial-gradient(40% 40% at 100% 100%, rgba(0,56,168,0.04), transparent 60%);
-}
-[data-role="mentor"] .ngs-modal-bg {
-  background:
-    radial-gradient(60% 45% at 50% 0%, rgba(201,168,76,0.06), transparent 60%);
-}
-
-.ngs-modal-inner {
-  position: relative; z-index: 1;
-  padding: 36px 32px 32px;
-  display: flex; flex-direction: column;
-}
-
-.ngs-modal-brand { margin-bottom: 24px; }
-
-/* ── role picker ── */
-.ngs-modal-role-grid {
-  display: flex; gap: 8px; margin-bottom: 24px;
-}
-.ngs-modal-role-btn {
-  flex: 1; padding: 10px 8px; border-radius: 6px; font-size: 13px; font-weight: 600;
-  border: 1.5px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.03);
-  color: rgba(255,255,255,0.45);
-  cursor: pointer; font-family: var(--ngs-sans);
-  transition: all 0.18s;
-}
-.ngs-modal-role-btn:hover {
-  border-color: rgba(255,255,255,0.28); color: rgba(255,255,255,0.75);
-}
-.ngs-modal-role-btn.is-active {
-  border-color: var(--ngs-gold);
-  background: rgba(201,168,76,0.1);
-  color: var(--ngs-gold-soft);
-}
-[data-role="april"] .ngs-modal-role-btn.is-active {
-  border-color: #6B9FE8; background: rgba(0,56,168,0.13); color: #8FBAEF;
-}
-[data-role="mentor"] .ngs-modal-role-btn.is-active {
-  border-color: rgba(201,168,76,0.6); background: rgba(201,168,76,0.08); color: var(--ngs-gold);
-}
-
-/* Destination-picker variant — plain links to /home/:key or /navigator, no
-   password step here (that happens for real at the destination). */
-.ngs-modal-role-btn-nav {
-  text-decoration: none; display: flex; align-items: center; justify-content: center;
-}
-.ngs-modal-role-btn-nav:hover {
-  border-color: var(--ngs-gold); background: rgba(201,168,76,0.1); color: var(--ngs-gold-soft);
-}
-
-/* ── title ── */
-.ngs-modal-title {
-  font-family: var(--ngs-display); font-size: 34px; font-weight: 400;
-  line-height: 1.05; color: var(--ngs-paper); margin: 0 0 8px;
-}
-.ngs-modal-title em { color: var(--ngs-gold); font-style: italic; }
-[data-role="april"] .ngs-modal-title em { color: #8FBAEF; }
-
-.ngs-modal-sub {
-  font-size: 13px; color: rgba(250,247,240,0.55); margin: 0 0 22px;
-}
-
-/* ── form ── */
-.ngs-modal-form { display: flex; flex-direction: column; gap: 10px; }
-.ngs-modal-label {
-  font-size: 11px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.1em; color: rgba(228,201,122,0.65);
-}
-[data-role="april"] .ngs-modal-label { color: rgba(107,159,232,0.65); }
-
-.ngs-modal-input {
-  width: 100%; padding: 11px 14px; border-radius: 6px; font-size: 15px;
-  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
-  color: var(--ngs-paper); outline: none; font-family: var(--ngs-sans);
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-.ngs-modal-input:focus {
-  border-color: var(--ngs-gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12);
-}
-[data-role="april"] .ngs-modal-input:focus {
-  border-color: #6B9FE8; box-shadow: 0 0 0 3px rgba(0,56,168,0.14);
-}
-.ngs-modal-form.is-error .ngs-modal-input { border-color: var(--ngs-red); }
-
-.ngs-modal-error {
-  margin: 0; font-size: 12.5px; color: #E07070;
-  background: rgba(177,27,42,0.1); border: 1px solid rgba(177,27,42,0.22);
-  border-radius: 5px; padding: 8px 12px;
-}
-
-.ngs-modal-btn {
-  margin-top: 4px; padding: 13px; border-radius: 6px;
-  font-size: 15px; font-weight: 600; cursor: pointer;
-  background: var(--ngs-gold); color: var(--ngs-navy-ink);
-  border: none; font-family: var(--ngs-sans);
-  transition: opacity 0.15s, transform 0.1s;
-}
-.ngs-modal-btn:not(:disabled):hover { opacity: 0.9; transform: translateY(-1px); }
-[data-role="april"] .ngs-modal-btn:not(:disabled) { background: #4A7DC8; color: #fff; }
-[data-role="mentor"] .ngs-modal-btn:not(:disabled) { background: var(--ngs-gold); color: var(--ngs-navy-ink); }
-.ngs-modal-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-/* ── close button ── */
-.ngs-modal-close {
-  position: absolute; top: 16px; right: 16px;
-  width: 32px; height: 32px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; color: rgba(255,255,255,0.35);
-  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-  cursor: pointer; transition: all 0.15s;
-}
-.ngs-modal-close:hover { color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.12); }
 
 /* ════════════════ PUBLIC ASK WIDGET (.paw-*) ════════════════ */
 
