@@ -400,11 +400,11 @@ export function MentorHome({ liveGpa, prevGpa, onOpenDrawer, pendingSubmissions 
           </div>
         </Link>
 
-        <a className="mm-card" href="https://next-gen-immersion.vercel.app/" target="_blank" rel="noopener noreferrer">
+        <Link className="mm-card" href="/navigator/english">
           <div className="mm-card-tag">ENG</div>
-          <div className="mm-card-label">English ↗</div>
-          <div className="mm-card-blurb">Open the Immersion tracker</div>
-        </a>
+          <div className="mm-card-label">English</div>
+          <div className="mm-card-blurb">Hours by scholar · opens Immersion</div>
+        </Link>
 
         <Link className="mm-card" href="/navigator/travel">
           <div className="mm-card-tag">TRV</div>

@@ -17,7 +17,6 @@ import { StatusSection } from '../components/StatusSection.jsx';
 import { ExpenseSection } from '../components/expenses/ExpenseSection.jsx';
 import { DeadlinesSection } from '../components/DeadlinesSection.jsx';
 import { EnglishSection } from '../components/EnglishSection.jsx';
-import { NavigatorAI } from '../components/NavigatorAI.jsx';
 import { ExpenseWorkbench } from '../components/expenses/ExpenseWorkbench.jsx';
 import { NavigatorAIDrawer } from '../components/NavigatorAIDrawer.jsx';
 import { MentorHome } from '../components/MentorHome.jsx';
@@ -492,14 +491,9 @@ export function Navigator({ slug = [] }) {
             </SectionErrorBoundary>
           )}
           {section === 'english' && (
-            <>
-              <SectionErrorBoundary name="English">
-                <EnglishSection id="sec-english" collapsed={false} onToggle={() => {}} />
-              </SectionErrorBoundary>
-              <SectionErrorBoundary name="Navigator AI">
-                <NavigatorAI id="sec-navigator-ai" collapsed={false} onToggle={() => {}} englishOnly={true} />
-              </SectionErrorBoundary>
-            </>
+            <SectionErrorBoundary name="English">
+              <EnglishSection id="sec-english" collapsed={false} onToggle={() => {}} />
+            </SectionErrorBoundary>
           )}
           {section === 'deadlines' && (
             <SectionErrorBoundary name="Deadlines">
