@@ -2903,6 +2903,7 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 }
 
 .enp-overview-card {
+  display: block;
   border: 1px solid var(--ngs-rule); border-radius: 8px;
   padding: 18px 16px 14px; background: #fff; cursor: pointer;
   transition: border-color 180ms, box-shadow 180ms;
