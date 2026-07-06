@@ -70,3 +70,31 @@ export function nextMilestone(s) {
 export function accentFor(s) {
   return s.status === 'active' ? 'gold' : s.status === 'trial' ? 'navy' : 'muted';
 }
+
+// Days since the most recent "Actual" expense entry across all semesters, or
+// null if the scholar has never logged one. Used to flag stale/disengaged
+// scholars on the Navigator dashboard.
+export function daysSinceLastExpense(s) {
+  const dates = allExpenses(s).filter(e => e.avb === 'Actual' && e.date).map(e => e.date);
+  if (!dates.length) return null;
+  const latest = dates.reduce((a, b) => (a > b ? a : b));
+  return Math.floor((Date.now() - new Date(latest).getTime()) / 86400000);
+}
+
+// Month-over-month "Actual" spend for a scholar, bucketed by calendar month
+// (YYYY-MM) so it lines up with how mentors think about a monthly budget.
+export function monthlySpendTrend(s) {
+  const now = new Date();
+  const thisKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevKey = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
+  let thisMonth = 0, lastMonth = 0;
+  allExpenses(s).forEach(e => {
+    if (e.avb !== 'Actual' || !e.date) return;
+    const amt = (e.amount || 0) * (e.qty || 1);
+    const key = e.date.slice(0, 7);
+    if (key === thisKey) thisMonth += amt;
+    else if (key === prevKey) lastMonth += amt;
+  });
+  return { thisMonth, lastMonth };
+}

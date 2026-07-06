@@ -43,22 +43,27 @@ function bucketFor(cat, fallback) {
   return raw === 'trial' ? 'college' : raw;
 }
 
-// Compute per-scholar GPA (as %) from the most recent sem in grade_entries
+// Compute per-scholar GPA (as %) from the most recent sem in grade_entries,
+// plus the sem before it (prev) so the dashboard can show a trend arrow.
 function computeLiveGpa(rows) {
   const byScholar = {};
   rows.forEach(r => { (byScholar[r.scholar] ??= []).push(r); });
   const result = {};
+  const prevResult = {};
   Object.entries(byScholar).forEach(([sk, list]) => {
     const sems = [...new Set(list.map(r => r.sem))].sort((a, b) => b.localeCompare(a));
+    const found = [];
     for (const sem of sems) {
       const semRows = list.filter(r => r.sem === sem && r.pct_equiv != null && r.units);
       if (!semRows.length) continue;
       const totalUnits = semRows.reduce((s, r) => s + r.units, 0);
-      if (totalUnits) { result[sk] = semRows.reduce((s, r) => s + r.pct_equiv * r.units, 0) / totalUnits; }
-      break;
+      if (totalUnits) found.push(semRows.reduce((s, r) => s + r.pct_equiv * r.units, 0) / totalUnits);
+      if (found.length === 2) break;
     }
+    if (found.length > 0) result[sk] = found[0];
+    if (found.length > 1) prevResult[sk] = found[1];
   });
-  return result;
+  return { result, prevResult };
 }
 
 export function Navigator({ slug = [] }) {
@@ -105,6 +110,7 @@ export function Navigator({ slug = [] }) {
     if (c === 'USD') handleModeChange('market');
   }
   const [liveGpa, setLiveGpa]   = useState({});
+  const [prevGpa, setPrevGpa]   = useState({});
   const [sheetsStatus, setSheetsStatus] = useState('loading');
   const [refreshKey, setRefreshKey]     = useState(0);
 
@@ -146,7 +152,12 @@ export function Navigator({ slug = [] }) {
 
   function loadLiveGpa() {
     api.get('/grades')
-      .then(data => { if (data) setLiveGpa(computeLiveGpa(data)); })
+      .then(data => {
+        if (!data) return;
+        const { result, prevResult } = computeLiveGpa(data);
+        setLiveGpa(result);
+        setPrevGpa(prevResult);
+      })
       .catch(() => {});
   }
 
@@ -431,9 +442,11 @@ export function Navigator({ slug = [] }) {
             <SectionErrorBoundary name="MentorHome">
               <MentorHome
                 liveGpa={liveGpa}
+                prevGpa={prevGpa}
                 onOpenDrawer={openDrawer}
-                pendingCount={pendingSubmissions.length}
+                pendingSubmissions={pendingSubmissions}
                 activityCount={activityFeed.length}
+                dbAlerts={dbAlerts}
                 onSemesterChange={handleSemesterChange}
               />
             </SectionErrorBoundary>
