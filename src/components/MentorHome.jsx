@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { api } from '../lib/api.js';
 import { useData } from '../context/DataContext.jsx';
 import { SEMESTER_OPTIONS } from '../constants.js';
+import { daysSinceLastExpense, monthlySpendTrend } from '../utils.js';
 
 const SEM_DISPLAY = {
   TG11S1:'G11·S1', TG11S2:'G11·S2', TG12S1:'G12·S1', TG12S2:'G12·S2',
@@ -11,6 +12,10 @@ const SEM_DISPLAY = {
   PostY1:'Post·Y1', PostY2:'Post·Y2', PostY3:'Post·Y3', PostY4:'Post·Y4',
   TESDA:'TESDA',
 };
+
+// Mirrors CareerSection.jsx's pipeline — nursing-track only, so TESDA
+// scholars (no career_steps rows) simply get no pathway bar.
+const CAREER_STEPS = ['PNLE', 'OET', 'NCLEX', 'OSCE', 'AHPRA'];
 
 function semBudgetPct(scholar, sem) {
   if (!sem) return null;
@@ -28,26 +33,64 @@ function riskLevel(scholar, budgetPct) {
   return 'green';
 }
 
-function daysUntil(dateStr) {
-  const diff = Math.ceil((new Date(dateStr) - new Date()) / 86400000);
-  if (diff === 0) return 'today';
-  if (diff === 1) return 'tomorrow';
-  if (diff < 0) return `${Math.abs(diff)}d ago`;
-  return `${diff}d`;
+function pathwayStage(careerRows, key) {
+  const rows = careerRows.filter(r => r.scholar === key);
+  if (!rows.length) return null;
+  const byStep = Object.fromEntries(rows.map(r => [r.step, r.status]));
+  const passedCount = CAREER_STEPS.filter(s => byStep[s] === 'passed').length;
+  const currentStep = CAREER_STEPS.find(s => byStep[s] && byStep[s] !== 'passed');
+  const label = passedCount === CAREER_STEPS.length
+    ? 'Pathway complete'
+    : currentStep ? `${currentStep} · ${byStep[currentStep].replace('_', ' ')}` : 'Not started';
+  return { passedCount, total: CAREER_STEPS.length, label };
 }
 
-export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCount = 0, onSemesterChange }) {
+// Sums english_sessions minutes into this-calendar-month / last-calendar-month
+// buckets for whichever sessions pass `filterFn` — used both for a single
+// scholar's trend and (with an always-true filter) the cohort trend.
+function monthlyMinutes(sessions, filterFn) {
+  const now = new Date();
+  const thisKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevKey = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
+  let thisMonth = 0, lastMonth = 0;
+  sessions.forEach(s => {
+    if (!s.date || !filterFn(s)) return;
+    const key = s.date.slice(0, 7);
+    if (key === thisKey) thisMonth += (s.duration_minutes || 0);
+    else if (key === prevKey) lastMonth += (s.duration_minutes || 0);
+  });
+  return { thisMonth, lastMonth };
+}
+
+function TrendArrow({ current, previous, higherIsBetter = true, fmt = v => v }) {
+  if (current == null || previous == null) return <span className="mh-trend mh-trend--flat">—</span>;
+  const diff = current - previous;
+  if (Math.abs(diff) < 0.05) return <span className="mh-trend mh-trend--flat">—</span>;
+  const isUp = diff > 0;
+  const isGood = isUp === higherIsBetter;
+  return (
+    <span className={`mh-trend mh-trend--${isGood ? 'good' : 'bad'}`}>
+      {isUp ? '▴' : '▾'} {fmt(Math.abs(diff))}
+    </span>
+  );
+}
+
+export function MentorHome({ liveGpa, prevGpa, onOpenDrawer, pendingSubmissions = [], activityCount = 0, dbAlerts = [], onSemesterChange }) {
   const { D, scholarKeys } = useData();
   const [engData, setEngData] = useState({});
+  const [engSessions, setEngSessions] = useState([]);
+  const [career, setCareer] = useState([]);
 
   useEffect(() => {
     async function load() {
       const today = new Date().toISOString().slice(0, 10);
-      const periods = await api.get('/english/periods');
+      const [periods, sessions] = await Promise.all([
+        api.get('/english/periods'),
+        api.get('/english/sessions'),
+      ]);
+      setEngSessions(sessions || []);
       const activePeriods = periods.filter(p => p.start_date <= today && p.end_date >= today);
-      if (!activePeriods.length) return;
-
-      const sessions = await api.get('/english/sessions');
       const result = {};
       activePeriods.forEach(p => {
         const mins = sessions
@@ -60,20 +103,12 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
     load().catch(() => {});
   }, []);
 
+  useEffect(() => {
+    api.get('/career').then(rows => setCareer(rows || [])).catch(() => setCareer([]));
+  }, []);
+
   const today = new Date().toISOString().slice(0, 10);
   const month = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
-  const upcomingDeadlines = (D.deadlines || [])
-    .filter(d => d.sort_date >= today)
-    .sort((a, b) => a.sort_date.localeCompare(b.sort_date))
-    .slice(0, 4);
-
-  const budgetHealth = scholarKeys.map(key => {
-    const s = D.scholars[key];
-    const sem = s?.currentSem;
-    const pct = semBudgetPct(s, sem);
-    return { key, name: s?.firstName || key, pct, sem };
-  });
 
   const nextTravels = scholarKeys.map(key => {
     const s = D.scholars[key];
@@ -87,13 +122,134 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
     return { key, name: s?.firstName || key, milestone: next };
   });
 
+  // ── "Needs attention" — DB alerts (GPA risk, etc.) + pending approvals,
+  // each with a direct link to where the mentor fixes it. Empty → all clear.
+  const attentionItems = dbAlerts.map(a => ({
+    severity: a.severity === 'critical' ? 'critical' : 'warning',
+    title: a.title,
+    sub: a.sub,
+    href: '/navigator/progress',
+    actionLabel: 'Review →',
+  }));
+  if (pendingSubmissions.length > 0) {
+    const oldest = pendingSubmissions.reduce((old, s) => (!old || s.created_at < old.created_at ? s : old), null);
+    const oldestDays = oldest ? Math.floor((Date.now() - new Date(oldest.created_at).getTime()) / 86400000) : null;
+    attentionItems.push({
+      severity: 'warning',
+      title: `${pendingSubmissions.length} expense submission${pendingSubmissions.length !== 1 ? 's' : ''} waiting for approval`,
+      sub: oldestDays != null ? `Oldest is ${oldestDays === 0 ? 'today' : `${oldestDays}d old`}` : null,
+      href: '/navigator/expenses',
+      actionLabel: 'Approve →',
+    });
+  }
+  attentionItems.sort((a, b) => (a.severity === 'critical' ? 0 : 1) - (b.severity === 'critical' ? 0 : 1));
+
+  // ── Cohort pulse — one horizontal scan instead of a tile grid.
+  const needsAttentionCount = scholarKeys.filter(key => {
+    const s = D.scholars[key];
+    return riskLevel(s, semBudgetPct(s, s.currentSem)) !== 'green';
+  }).length;
+
+  const deadlinesNext14 = (D.deadlines || []).filter(d => {
+    if (d.sort_date < today) return false;
+    const diff = Math.ceil((new Date(d.sort_date) - new Date()) / 86400000);
+    return diff <= 14;
+  }).length;
+
+  const cohortSpend = scholarKeys.reduce((acc, key) => {
+    const { thisMonth, lastMonth } = monthlySpendTrend(D.scholars[key]);
+    acc.thisMonth += thisMonth;
+    acc.lastMonth += lastMonth;
+    return acc;
+  }, { thisMonth: 0, lastMonth: 0 });
+  const spendDeltaPct = cohortSpend.lastMonth > 0
+    ? Math.round(((cohortSpend.thisMonth - cohortSpend.lastMonth) / cohortSpend.lastMonth) * 100)
+    : null;
+
+  const cohortEnglish = monthlyMinutes(engSessions, () => true);
+  const cohortEngHrs = Math.round((cohortEnglish.thisMonth / 60) * 10) / 10;
+  const cohortEngDeltaHrs = Math.round(((cohortEnglish.thisMonth - cohortEnglish.lastMonth) / 60) * 10) / 10;
+
   return (
     <section className="mh-section">
 
-      {/* ── Scholar Overview ── */}
+      {/* ── Needs Attention ── */}
       <div className="mh-eyebrow">
-        <span className="mh-eyebrow-label">Scholar Overview</span>
+        <span className="mh-eyebrow-label">Needs Attention</span>
+      </div>
+      {attentionItems.length === 0 ? (
+        <div className="mh-attn-clear">All clear — nothing needs your review right now.</div>
+      ) : (
+        <div className="mh-attn-list">
+          {attentionItems.slice(0, 3).map((item, i) => (
+            <div key={i} className={`mh-attn-row mh-attn-row--${item.severity}`}>
+              <span className="mh-attn-stripe" />
+              <span className="mh-attn-sev">{item.severity === 'critical' ? 'Critical' : 'Watch'}</span>
+              <span className="mh-attn-text">
+                {item.title}
+                {item.sub && <span className="mh-attn-sub"> — {item.sub}</span>}
+              </span>
+              <Link className="mh-attn-act" href={item.href}>{item.actionLabel}</Link>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── This Week (cohort pulse) ── */}
+      <div className="mh-eyebrow mh-eyebrow--mt">
+        <span className="mh-eyebrow-label">This Week</span>
         <span className="mh-eyebrow-date">{month}</span>
+      </div>
+      <div className="mh-pulse">
+        <div className="mh-pulse-cell">
+          <span className="mh-pulse-num">{scholarKeys.length}</span>
+          <span className="mh-pulse-lbl">Scholars</span>
+        </div>
+        <div className={`mh-pulse-cell${needsAttentionCount > 0 ? ' is-flag' : ''}`}>
+          <span className="mh-pulse-num">{needsAttentionCount}</span>
+          <span className="mh-pulse-lbl">Needs attention</span>
+        </div>
+        <div className="mh-pulse-cell">
+          <span className="mh-pulse-num">
+            {activityCount}
+          </span>
+          <span className="mh-pulse-lbl">Unread activity</span>
+        </div>
+        <div className="mh-pulse-cell">
+          <span className="mh-pulse-num">
+            {'₱' + Math.round(cohortSpend.thisMonth).toLocaleString('en-US')}
+            {spendDeltaPct != null && (
+              <span className={`mh-pulse-trend ${spendDeltaPct <= 0 ? 'is-good' : 'is-bad'}`}>
+                {spendDeltaPct > 0 ? '▴' : '▾'} {Math.abs(spendDeltaPct)}%
+              </span>
+            )}
+          </span>
+          <span className="mh-pulse-lbl">Spent this month</span>
+        </div>
+        <div className="mh-pulse-cell">
+          <span className="mh-pulse-num">{deadlinesNext14}</span>
+          <span className="mh-pulse-lbl">Deadlines · 14 days</span>
+        </div>
+        <div className="mh-pulse-cell">
+          <span className="mh-pulse-num">{pendingSubmissions.length}</span>
+          <span className="mh-pulse-lbl">Pending approvals</span>
+        </div>
+        <div className="mh-pulse-cell">
+          <span className="mh-pulse-num">
+            {cohortEngHrs}h
+            {cohortEngDeltaHrs !== 0 && (
+              <span className={`mh-pulse-trend ${cohortEngDeltaHrs > 0 ? 'is-good' : 'is-bad'}`}>
+                {cohortEngDeltaHrs > 0 ? '▴' : '▾'} {Math.abs(cohortEngDeltaHrs)}h
+              </span>
+            )}
+          </span>
+          <span className="mh-pulse-lbl">English · cohort</span>
+        </div>
+      </div>
+
+      {/* ── Scholar Overview ── */}
+      <div className="mh-eyebrow mh-eyebrow--mt">
+        <span className="mh-eyebrow-label">Scholar Overview</span>
       </div>
 
       <div className="mh-grid">
@@ -105,12 +261,17 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
           const budgetPct = semBudgetPct(s, sem);
           const risk = riskLevel(s, budgetPct);
           const gpaPct = liveGpa?.[key] ?? null;
+          const gpaPrev = prevGpa?.[key] ?? null;
           const eng = engData[key];
           const engStr = eng ? `${eng.hours} / ${eng.goal} hrs` : '—';
+          const engTrend = monthlyMinutes(engSessions, sess => sess.scholar === key);
           const nextDl = (D.deadlines || [])
             .filter(d => (d.scholar === key || !d.scholar) && d.sort_date >= today)
             .sort((a, b) => a.sort_date.localeCompare(b.sort_date))[0];
           const isActive = s.status === 'active';
+          const stage = pathwayStage(career, key);
+          const daysSince = daysSinceLastExpense(s);
+          const isStale = daysSince != null && daysSince >= 7;
 
           return (
             <div key={key} className={`mh-card mh-card--${isActive ? 'active' : 'trial'}`}>
@@ -143,10 +304,22 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
                 </div>
               </div>
 
+              {stage && (
+                <div className="mh-stage">
+                  <div className="mh-stage-track">
+                    {Array.from({ length: stage.total }).map((_, i) => (
+                      <span key={i} className={`mh-stage-seg${i < stage.passedCount ? ' is-done' : ''}`} />
+                    ))}
+                  </div>
+                  <div className="mh-stage-lbl">{stage.label}</div>
+                </div>
+              )}
+
               <div className="mh-stats">
                 <div className="mh-stat">
                   <span className="mh-stat-val">
                     {gpaPct != null ? `${gpaPct.toFixed(1)}%` : '—'}
+                    {gpaPct != null && <TrendArrow current={gpaPct} previous={gpaPrev} fmt={v => v.toFixed(1)} />}
                   </span>
                   <span className="mh-stat-label">GPA</span>
                 </div>
@@ -158,7 +331,16 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
                 </div>
                 {s.track !== 'TESDA' && (
                   <div className="mh-stat">
-                    <span className="mh-stat-val">{engStr}</span>
+                    <span className="mh-stat-val">
+                      {engStr}
+                      {eng != null && (
+                        <TrendArrow
+                          current={engTrend.thisMonth}
+                          previous={engTrend.lastMonth}
+                          fmt={v => `${Math.round((v / 60) * 10) / 10}h`}
+                        />
+                      )}
+                    </span>
                     <span className="mh-stat-label">English</span>
                   </div>
                 )}
@@ -176,6 +358,15 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
                 )}
               </div>
 
+              <div className={`mh-last-active${isStale ? ' is-stale' : ''}`}>
+                <span className="mh-last-active-dot" />
+                {daysSince == null
+                  ? 'No expenses logged yet'
+                  : daysSince === 0
+                    ? 'Logged expenses today'
+                    : `${isStale ? 'No activity in ' : 'Logged expenses '}${daysSince}d${isStale ? '' : ' ago'}`}
+              </div>
+
               <div className="mh-actions">
                 <button className="mh-btn" onClick={() => onOpenDrawer('query', key)}>Ask →</button>
                 <Link className="mh-btn" href="/navigator/expenses">Log $</Link>
@@ -184,57 +375,6 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
             </div>
           );
         })}
-      </div>
-
-      {/* ── Dashboard Widgets ── */}
-      <div className="mh-eyebrow mh-eyebrow--mt">
-        <span className="mh-eyebrow-label">At a Glance</span>
-      </div>
-
-      <div className="mh-dash">
-        <Link
-          className={`mh-dash-stat${pendingCount > 0 ? ' is-alert' : ''}`}
-          href="/navigator/expenses"
-        >
-          <span className="mh-dash-val">{pendingCount}</span>
-          <span className="mh-dash-lbl">Pending approvals</span>
-        </Link>
-
-        <Link
-          className={`mh-dash-stat${activityCount > 0 ? ' is-warn' : ''}`}
-          href="/navigator/expenses"
-        >
-          <span className="mh-dash-val">{activityCount}</span>
-          <span className="mh-dash-lbl">Unread activity</span>
-        </Link>
-
-        <div className="mh-dash-panel">
-          <div className="mh-dash-panel-head">Next deadlines</div>
-          {upcomingDeadlines.length === 0 ? (
-            <div className="mh-dash-empty">No upcoming deadlines</div>
-          ) : upcomingDeadlines.map((d, i) => (
-            <div key={i} className="mh-dash-dl">
-              <span className="mh-dash-dl-when">{daysUntil(d.sort_date)}</span>
-              <span className="mh-dash-dl-event">{d.event}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="mh-dash-panel">
-          <div className="mh-dash-panel-head">Budget health</div>
-          {budgetHealth.map(({ key, name, pct }) => (
-            <div key={key} className="mh-dash-budget-row">
-              <span className="mh-dash-budget-name">{name}</span>
-              <div className="mh-dash-bar-track">
-                <div
-                  className={`mh-dash-bar${pct != null && pct >= 100 ? ' is-over' : pct != null && pct >= 90 ? ' is-warn' : ''}`}
-                  style={{ width: `${Math.min(pct || 0, 100)}%` }}
-                />
-              </div>
-              <span className="mh-dash-budget-pct">{pct != null ? `${pct}%` : '—'}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* ── Module Cards ── */}
@@ -248,7 +388,7 @@ export function MentorHome({ liveGpa, onOpenDrawer, pendingCount = 0, activityCo
           <div className="mm-card-tag">EXP</div>
           <div className="mm-card-label">Expenses</div>
           <div className="mm-card-blurb">
-            {pendingCount > 0 ? `${pendingCount} pending approval${pendingCount !== 1 ? 's' : ''}` : 'Budgets & spend tracking'}
+            {pendingSubmissions.length > 0 ? `${pendingSubmissions.length} pending approval${pendingSubmissions.length !== 1 ? 's' : ''}` : 'Budgets & spend tracking'}
           </div>
         </Link>
 

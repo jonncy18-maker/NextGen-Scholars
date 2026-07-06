@@ -3364,6 +3364,88 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   font-size: 12px; color: var(--ngs-muted);
 }
 
+/* ── Needs Attention ── */
+.mh-attn-clear {
+  font-size: 13px; color: var(--ngs-muted);
+  padding: 14px 16px; border: 1px dashed var(--ngs-rule); border-radius: 8px;
+  text-align: center;
+}
+.mh-attn-list { display: flex; flex-direction: column; gap: 8px; }
+.mh-attn-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px; border-radius: 9px; font-size: 13.5px;
+}
+.mh-attn-row--critical { background: rgba(177,27,42,0.08); }
+.mh-attn-row--warning  { background: rgba(181,134,42,0.10); }
+.mh-attn-stripe { width: 3px; align-self: stretch; border-radius: 3px; flex-shrink: 0; }
+.mh-attn-row--critical .mh-attn-stripe { background: var(--ngs-red); }
+.mh-attn-row--warning  .mh-attn-stripe { background: var(--ngs-amber); }
+.mh-attn-sev {
+  font-family: var(--ngs-mono); font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; min-width: 52px; flex-shrink: 0;
+}
+.mh-attn-row--critical .mh-attn-sev { color: var(--ngs-red); }
+.mh-attn-row--warning  .mh-attn-sev { color: var(--ngs-amber); }
+.mh-attn-text { flex: 1; color: var(--ngs-ink); }
+.mh-attn-sub { color: var(--ngs-muted); }
+.mh-attn-act {
+  font-size: 12px; font-weight: 600; color: var(--ngs-navy); white-space: nowrap;
+  border: 1px solid var(--ngs-rule); background: #fff; padding: 6px 11px; border-radius: 7px;
+  transition: border-color 0.15s;
+}
+.mh-attn-act:hover { border-color: var(--ngs-navy); }
+
+/* ── This Week (cohort pulse) ── */
+.mh-pulse {
+  display: flex; align-items: stretch;
+  background: #fff; border: 1px solid var(--ngs-rule); border-radius: 10px;
+  box-shadow: var(--ngs-card-shadow, none);
+  overflow-x: auto;
+}
+.mh-pulse-cell {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 14px 22px; border-right: 1px solid var(--ngs-rule);
+  min-width: 120px; flex: 1;
+}
+.mh-pulse-cell:last-child { border-right: none; }
+.mh-pulse-cell.is-flag .mh-pulse-num { color: var(--ngs-amber); }
+.mh-pulse-num {
+  font-size: 19px; font-weight: 700; letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;
+}
+.mh-pulse-lbl {
+  font-family: var(--ngs-mono); font-size: 9.5px; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--ngs-muted);
+}
+.mh-pulse-trend { font-size: 12px; font-weight: 700; }
+.mh-pulse-trend.is-good { color: var(--ngs-green); }
+.mh-pulse-trend.is-bad  { color: var(--ngs-red); }
+
+/* ── per-stat trend arrow (scholar cards) ── */
+.mh-trend { font-size: 11px; font-weight: 700; margin-left: 4px; }
+.mh-trend--good { color: var(--ngs-green); }
+.mh-trend--bad  { color: var(--ngs-red); }
+.mh-trend--flat { color: var(--ngs-muted); }
+
+/* ── pathway stage (scholar cards) ── */
+.mh-stage { display: flex; flex-direction: column; gap: 4px; }
+.mh-stage-track { display: flex; gap: 2px; }
+.mh-stage-seg { flex: 1; height: 4px; background: var(--ngs-rule); border-radius: 2px; }
+.mh-stage-seg.is-done { background: var(--ngs-gold); }
+.mh-stage-lbl {
+  font-family: var(--ngs-mono); font-size: 9.5px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--ngs-muted);
+}
+
+/* ── last activity (scholar cards) ── */
+.mh-last-active {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 11.5px; color: var(--ngs-muted);
+}
+.mh-last-active-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--ngs-green); flex-shrink: 0; }
+.mh-last-active.is-stale { color: var(--ngs-amber); font-weight: 600; }
+.mh-last-active.is-stale .mh-last-active-dot { background: var(--ngs-amber); }
+
 .mh-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
