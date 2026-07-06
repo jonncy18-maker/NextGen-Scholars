@@ -7,6 +7,18 @@ export const dynamic = 'force-dynamic';
 
 const ALLOWED_FIELDS = ['subject', 'units', 'school', 'prelim', 'midterm', 'final_grade', 'period_avg', 'pct_equiv'];
 
+// Neon returns NUMERIC columns as strings — coerce before handing the
+// updated row back to GradesSection.jsx, which calls .toFixed() on these
+// fields (see the same helper in ../route.js).
+const NUMERIC_COLS = ['units', 'prelim', 'midterm', 'final_grade', 'period_avg', 'pct_equiv'];
+function coerceNumeric(row) {
+  const out = { ...row };
+  for (const col of NUMERIC_COLS) {
+    if (out[col] != null) out[col] = Number(out[col]);
+  }
+  return out;
+}
+
 // Mirrors GradesSection.jsx's inline row-edit update (field subset).
 export const PATCH = withErrorHandling(async (request, { params }) => {
   await requireScholarOwn(request);
@@ -21,7 +33,7 @@ export const PATCH = withErrorHandling(async (request, { params }) => {
     [params.id, ...values]
   );
   if (!row) return json({ error: 'Not found' }, { status: 404 });
-  return json(row);
+  return json(coerceNumeric(row));
 });
 
 export const DELETE = withErrorHandling(async (request, { params }) => {

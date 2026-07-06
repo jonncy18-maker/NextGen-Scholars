@@ -5,6 +5,20 @@ import { json, withErrorHandling } from '../../../lib/http.js';
 // Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
 export const dynamic = 'force-dynamic';
 
+// Neon's serverless driver returns NUMERIC columns as strings (precision
+// safety), not JS numbers — every consumer of this route does .toFixed()
+// or arithmetic on these fields, so coerce once here rather than at each
+// call site (GradesSection.jsx, navigator.jsx's computeLiveGpa, RiskSection,
+// GradeEntry.jsx, ScholarHome all read this same response).
+const NUMERIC_COLS = ['units', 'prelim', 'midterm', 'final_grade', 'period_avg', 'pct_equiv'];
+function coerceNumeric(row) {
+  const out = { ...row };
+  for (const col of NUMERIC_COLS) {
+    if (out[col] != null) out[col] = Number(out[col]);
+  }
+  return out;
+}
+
 // GET ?scholar= — mentor: all rows if omitted, scoped if given (GradesSection
 // loads unscoped; GradeEntry.jsx loads scoped). Scholar role is always
 // scoped to their own key regardless of the param.
@@ -16,7 +30,7 @@ export const GET = withErrorHandling(async (request) => {
   const rows = scholar
     ? await sql`select * from grade_entries where scholar = ${scholar} order by sem, created_at`
     : await sql`select * from grade_entries order by scholar, sem, created_at`;
-  return json(rows);
+  return json(rows.map(coerceNumeric));
 });
 
 const COLS = ['scholar', 'sem', 'school', 'subject', 'units', 'prelim', 'midterm', 'final_grade', 'period_avg', 'pct_equiv'];
@@ -52,7 +66,8 @@ export const POST = withErrorHandling(async (request) => {
     `insert into grade_entries (${COLS.join(', ')}) values ${placeholders} returning *`,
     values
   );
-  return json(list.length === 1 ? rows[0] : rows, { status: 201 });
+  const coerced = rows.map(coerceNumeric);
+  return json(list.length === 1 ? coerced[0] : coerced, { status: 201 });
 });
 
 // DELETE ?scholar=&sem= — bulk delete a whole semester's grades (GradesSection).
