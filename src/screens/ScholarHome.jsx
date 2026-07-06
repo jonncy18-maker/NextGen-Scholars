@@ -200,7 +200,7 @@ export function ScholarHome({ scholarKey }) {
   ];
 
   const TRACKERS = [
-    { key: 'english',  icon: <IconClock size={19} />,     label: 'English Hours',    sub: englishSub, href: `/english/${scholarKey}` },
+    { key: 'english',  icon: <IconClock size={19} />,     label: 'English Hours ↗',  sub: englishSub, href: 'https://next-gen-immersion.vercel.app/', external: true },
     { key: 'vacation', icon: <IconIsland size={19} />,    label: 'Vacation Tracker', sub: liveData?.nextTravel ? `Next · ${liveData.nextTravel.dest}` : 'Trip log', href: `/vacation/${scholarKey}` },
     { key: 'career',   icon: <IconBriefcase size={19} />, label: 'Career Tracker',   sub: 'Pathway steps', href: null },
     { key: 'rewards',  icon: <IconTrophy size={19} />,    label: 'Rewards Tracker',  sub: liveData?.nextMilestone ? `Next · ${liveData.nextMilestone.name}` : `${rewardsCount} unlocked`, reward: true, href: `/milestones/${scholarKey}` },
@@ -331,9 +331,12 @@ export function ScholarHome({ scholarKey }) {
                   </div>
                 </>
               );
-              return tile.href
-                ? <Link key={tile.key} className={`sp-tile${tile.reward ? ' is-reward' : ''}`} href={tile.href}>{inner}</Link>
-                : <div key={tile.key} className={`sp-tile sp-tile--inactive${tile.reward ? ' is-reward' : ''}`}>{inner}</div>;
+              if (!tile.href) {
+                return <div key={tile.key} className={`sp-tile sp-tile--inactive${tile.reward ? ' is-reward' : ''}`}>{inner}</div>;
+              }
+              return tile.external
+                ? <a key={tile.key} className={`sp-tile${tile.reward ? ' is-reward' : ''}`} href={tile.href} target="_blank" rel="noopener noreferrer">{inner}</a>
+                : <Link key={tile.key} className={`sp-tile${tile.reward ? ' is-reward' : ''}`} href={tile.href}>{inner}</Link>;
             })}
           </div>
         </section>
