@@ -43,6 +43,7 @@ Env vars are `NEXT_PUBLIC_*` (not Vite's `VITE_*`) — see `.env.example`.
 |---|---|---|---|
 | `DATABASE_URL` | none | Server only (`lib/db.js`) | Neon connection string — full DB access if leaked. |
 | `GOOGLE_AI_KEY` | none | Server only (`lib/ai/*`, `app/api/{ask,ask-scholar,ask-public}/*`) | Gemini API key — quota abuse risk if exposed client-side. |
+| `IMMERSION_DATABASE_URL` | none | Server only (`lib/immersion-db.js`, `app/api/immersion-hours/route.js`) | Read-only connection to the separate NextGen Immersion app's Neon project, using a dedicated `ngs_scholars_reader` role — see "Immersion hours integration" below. |
 
 **Rule:** anything that touches the Neon database directly or calls Gemini
 runs only in `app/api/**` route handlers; the browser calls those routes,
@@ -147,6 +148,46 @@ Tier 1 is a deterministic, rule-based SQL resolver (no LLM, ~80% of queries); Ti
 is Gemini advisory; Tier 3 is Gemini 2.5 Flash ingestion (receipts, grade reports).
 See `ROADMAP-AI.md` for full status. The AI layer is Gemini-only; the `GOOGLE_AI_KEY`
 secret lives only in Vercel's project env vars — never in the client.
+
+## Immersion hours integration (2026-07-06)
+
+The mentor's Navigator "English" section (`src/components/EnglishSection.jsx`,
+`GET /api/immersion-hours`) shows **live** hours/status pulled directly from
+NextGen Immersion (`jonncy18-maker/NextGen-Immersion`,
+https://next-gen-immersion.vercel.app/) — a completely separate app with its
+own Neon project (`silent-cherry-49841538`, "NGS - Immersion") and its own
+Neon Auth account system. There is no shared login, scholar key, or user ID
+between the two apps.
+
+- **Read path only, no writes.** `IMMERSION_DATABASE_URL` connects as a
+  dedicated `ngs_scholars_reader` Postgres role in Immersion's database,
+  created specifically for this — `GRANT SELECT` on exactly three objects
+  (`scholar_pace`, `user_total_hours`, `users`), nothing else. It cannot
+  write, and cannot read Immersion's session-logging tables, video catalog,
+  or anything unrelated to hours. No RLS exists on Immersion's schema, so
+  the plain GRANT is sufficient — no policies or `BYPASSRLS` needed.
+- **Scholar mapping is hardcoded**, since there's no shared identifier:
+  `IMMERSION_USER_ID` in `app/api/immersion-hours/route.js` maps our
+  scholar keys to Immersion's `users.id` (a Neon-Auth-issued uuid), looked
+  up by hand once via the Neon console. Janndilyne isn't in the map — she's
+  TESDA-track with no Immersion account, and `EnglishSection.jsx` already
+  excludes TESDA scholars from this section entirely.
+- **This app's own `english_periods`/`english_sessions` tables are now
+  dead for the mentor view** — `EnglishSection.jsx` doesn't read them at
+  all anymore (it did briefly, in a since-reverted version, which is why
+  the mentor originally saw stale/wrong hours: those tables have had no
+  writer since mentor editing was removed from this section). They're
+  still written to by the *scholar-facing* pages
+  (`EnglishTracking.jsx`/`ScholarHome.jsx`) and read by
+  `MentorHome.jsx`/`RiskSection.jsx` — only the mentor's dedicated English
+  section switched over to Immersion as its source of truth.
+- **`scholar_pace`'s numeric columns come back as strings** from Neon,
+  same gotcha as `grade_entries` — coerced with `Number(...)` in the API
+  route, not left to the client.
+- If a new scholar joins Immersion, add their `IMMERSION_USER_ID` entry by
+  querying `select id, scholar_name from users where role = 'scholar'` in
+  the Immersion Neon project (readable via the same `ngs_scholars_reader`
+  role) and asking the owner which row is which person.
 
 ## Key Rules for Claude Code
 
