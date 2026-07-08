@@ -166,6 +166,15 @@ between the two apps.
   write, and cannot read Immersion's session-logging tables, video catalog,
   or anything unrelated to hours. No RLS exists on Immersion's schema, so
   the plain GRANT is sufficient — no policies or `BYPASSRLS` needed.
+- **`GET /api/immersion-hours` is scholar- and mentor-accessible** (`requireScholarOwn`,
+  not `requireMentor`) — a mentor gets every mapped scholar's hours, a scholar
+  gets only their own (or `{}` if they have no Immersion account). This backs
+  `EnglishSection.jsx` (mentor Navigator), `MentorHome.jsx`'s per-scholar stat +
+  cohort "This Week" pulse, `RiskSection.jsx`'s "OET English" risk metric
+  (adopts Immersion's own ON_TRACK/AT_RISK/PENDING `status` and per-scholar
+  `targetHours` rather than a hardcoded threshold), and `ScholarHome.jsx`'s own
+  "English Hours" stat card/tracker tile — all five now read the same live
+  number instead of the dead local `english_sessions` totals.
 - **Scholar mapping is hardcoded**, since there's no shared identifier:
   `IMMERSION_USER_ID` in `app/api/immersion-hours/route.js` maps our
   scholar keys to Immersion's `users.id` (a Neon-Auth-issued uuid), looked
