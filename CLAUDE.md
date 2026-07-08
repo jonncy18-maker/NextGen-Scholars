@@ -325,6 +325,23 @@ but was lowered to 1200px (PR #186) since 1440px didn't reliably trigger on
 real laptop displays once OS display scaling / browser zoom reduces the
 effective CSS viewport width below the physical resolution.
 
+## Native app (PWA → Play Store) — PLANNED
+
+Part of the NGS native rollout: ship as an installable Android app (PWA wrapped
+in a TWA) on the Play **Internal Testing** track (private — mentor + scholars
+install by email allowlist). Nothing built yet. **NextGen-Immersion is the
+pilot** — prove the pipeline there first, then follow here.
+
+- **`docs/PWA.md`** — installable-PWA groundwork (manifest, service worker,
+  icons). Critical repo-specific rule: the service worker must keep **`/api/**`
+  strictly network-only** and must **never cache scholar-scoped responses**
+  (`/api/bootstrap` etc.) — caching them would reintroduce the "one scholar
+  sees another scholar's numbers" bug class documented above.
+- **Play Store step:** copy NextGen-Immersion's `docs/PLAY-STORE.md` here after
+  the pilot proves out (adapt origin + a new package id).
+
+See `ROADMAP.md` for status.
+
 ## Conventions
 
 - Match the existing inline style of each file (token-based CSS vars `--ngs-*`,

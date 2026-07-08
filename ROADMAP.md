@@ -337,6 +337,29 @@ in place), with an agreed schema:
 
 ---
 
+## Native Android app (PWA → TWA → Play Internal Testing) — PLANNED
+
+**Status:** 🔵 Planned. Not started. Part of the cross-repo NGS native rollout.
+Ship as an installable Android app so scholars install from the Play Store
+rather than "Add to Home Screen". Private distribution via the **Internal
+Testing** track (email allowlist), not a public listing.
+
+**Sequencing:** NextGen-Immersion is the pilot — the PWA→TWA→Play pipeline is
+proven there first, then replicated here. Runbook: `docs/PWA.md` (this repo,
+written) + copy Immersion's `docs/PLAY-STORE.md` when ready.
+
+| Step | State | Notes |
+|---|---|---|
+| PWA foundation | 🔵 Planned | Manifest (`app/manifest.js`), service worker, 192/512 + maskable icons; passes Lighthouse "Installable". SW keeps `/api/**` network-only and **never caches scholar-scoped responses** (bootstrap etc.) — guards the per-scholar isolation bug class. |
+| TWA package | 🔵 Planned | Bubblewrap/PWABuilder; stable package id (e.g. `com.nextgenscholars.scholars`); `public/.well-known/assetlinks.json`. |
+| Auth-in-TWA verify | 🔵 Planned | Bearer-JWT flow works inside the installed app on a real device. |
+| Play Internal Testing | 🔵 Planned | John's Play Console account; mentor + scholar email allowlist; opt-in link. |
+
+Owner split: Claude Code does the code; John owns Play Console, signing, upload,
+tester list, device testing.
+
+---
+
 ## Nice-to-have (no priority)
 
 - **Accessibility pass** — keyboard flow and screen-reader audit across all pages.
