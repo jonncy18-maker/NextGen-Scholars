@@ -4,8 +4,14 @@ import { useRouter } from 'next/navigation';
 import { api } from '../lib/api.js';
 import { NGS_DATA } from '../../scholars-data.js';
 import {
-  IconExpenses, IconGrades, IconClock, IconIsland,
-  IconBriefcase, IconTrophy, IconMessage, IconArrow,
+  IconExpenses,
+  IconGrades,
+  IconClock,
+  IconIsland,
+  IconBriefcase,
+  IconTrophy,
+  IconMessage,
+  IconArrow,
 } from '../components/ScholarIcons.jsx';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
@@ -21,18 +27,36 @@ import { CAT_TO_BUCKET } from '../constants.js';
 const KNOWN_SCHOLARS = new Set(['claire', 'april', 'janndilyne']);
 
 const SEM_LABELS = {
-  Y1S1:'Year 1 · Semester 1', Y1S2:'Year 1 · Semester 2',
-  Y2S1:'Year 2 · Semester 1', Y2S2:'Year 2 · Semester 2',
-  Y3S1:'Year 3 · Semester 1', Y3S2:'Year 3 · Semester 2',
-  Y4S1:'Year 4 · Semester 1', Y4S2:'Year 4 · Semester 2',
-  TG11S1:'Grade 11 · Semester 1', TG11S2:'Grade 11 · Semester 2',
-  TG12S1:'Grade 12 · Semester 1', TG12S2:'Grade 12 · Semester 2',
+  Y1S1: 'Year 1 · Semester 1',
+  Y1S2: 'Year 1 · Semester 2',
+  Y2S1: 'Year 2 · Semester 1',
+  Y2S2: 'Year 2 · Semester 2',
+  Y3S1: 'Year 3 · Semester 1',
+  Y3S2: 'Year 3 · Semester 2',
+  Y4S1: 'Year 4 · Semester 1',
+  Y4S2: 'Year 4 · Semester 2',
+  TG11S1: 'Grade 11 · Semester 1',
+  TG11S2: 'Grade 11 · Semester 2',
+  TG12S1: 'Grade 12 · Semester 1',
+  TG12S2: 'Grade 12 · Semester 2',
 };
 
 // tagline is portal copy — stage and englishTarget now come from live Neon data
 const CONFIGS = {
-  claire: { tagline: <>Four semesters to clear — <em>steady as you go.</em></> },
-  april:  { tagline: <>Trial period in progress — <em>one step at a time.</em></> },
+  claire: {
+    tagline: (
+      <>
+        Four semesters to clear — <em>steady as you go.</em>
+      </>
+    ),
+  },
+  april: {
+    tagline: (
+      <>
+        Trial period in progress — <em>one step at a time.</em>
+      </>
+    ),
+  },
 };
 
 function buildConfig(key) {
@@ -71,7 +95,7 @@ function formatDate(iso) {
 export function ScholarHome({ scholarKey }) {
   const router = useRouter();
   const config = buildConfig(scholarKey);
-  const [authed, setAuthed]   = useState(false);
+  const [authed, setAuthed] = useState(false);
   const [liveData, setLiveData] = useState(null);
 
   // Janndilyne is a TESDA expenses-only dashboard: no English goals, and no
@@ -99,19 +123,13 @@ export function ScholarHome({ scholarKey }) {
   useEffect(() => {
     if (!isKnownScholar || !authed) return;
     async function loadFromNeon() {
-      const todayStr = new Date().toISOString().slice(0, 10);
-      const [bootstrap, periods] = await Promise.all([
+      const [bootstrap, immersion] = await Promise.all([
         api.get('/bootstrap?tables=scholars,academics,milestones,travels,expenses'),
-        api.get('/english/periods'),
+        api.get('/immersion-hours'),
       ]);
 
       const liveSem = bootstrap.scholars?.[0]?.current_sem || config.staticSemKey;
-      const activePeriod = periods.find(p => p.start_date <= todayStr && p.end_date >= todayStr) ?? periods[0] ?? null;
-      const liveEnglishTarget = activePeriod?.hour_goal ? Number(activePeriod.hour_goal) : null;
-
-      const sessions = await (activePeriod
-        ? api.get(`/english/sessions?from=${activePeriod.start_date}&to=${activePeriod.end_date}`)
-        : api.get(`/english/sessions?sem=${liveSem}`));
+      const eng = immersion?.[scholarKey] ?? null;
 
       const academics = bootstrap.academics || [];
       const milestones = bootstrap.milestones || [];
@@ -119,25 +137,34 @@ export function ScholarHome({ scholarKey }) {
       const expenses = bootstrap.expenses || [];
 
       const latestExpense = expenses.slice().sort((a, b) => (a.date < b.date ? 1 : -1))[0];
-      const gradedAcad = academics.slice().sort((a, b) => b.id - a.id).find(a => a.gpa != null);
-      const doneMilestones = milestones.filter(m => m.state === 'done');
-      const nextMilestone = milestones.filter(m => m.state !== 'done').sort((a, b) => a.id - b.id)[0] || null;
-      const nextTravel = travels.filter(t => t.state !== 'done').sort((a, b) => a.id - b.id)[0] || null;
-      const englishMinutes = sessions.reduce((s, r) => s + (r.duration_minutes || 0), 0);
+      const gradedAcad = academics
+        .slice()
+        .sort((a, b) => b.id - a.id)
+        .find((a) => a.gpa != null);
+      const doneMilestones = milestones.filter((m) => m.state === 'done');
+      const nextMilestone =
+        milestones.filter((m) => m.state !== 'done').sort((a, b) => a.id - b.id)[0] || null;
+      const nextTravel =
+        travels.filter((t) => t.state !== 'done').sort((a, b) => a.id - b.id)[0] || null;
 
       const byBucket = {};
-      expenses.filter(e => e.avb === 'Actual').forEach(e => {
-        const b = CAT_TO_BUCKET[e.cat] ?? e.bucket ?? 'college';
-        byBucket[b] = (byBucket[b] || 0) + (e.amount || 0) * (e.qty || 1);
-      });
+      expenses
+        .filter((e) => e.avb === 'Actual')
+        .forEach((e) => {
+          const b = CAT_TO_BUCKET[e.cat] ?? e.bucket ?? 'college';
+          byBucket[b] = (byBucket[b] || 0) + (e.amount || 0) * (e.qty || 1);
+        });
       const invTotal = Object.values(byBucket).reduce((t, v) => t + v, 0);
-      const investmentTotals = invTotal > 0 ? {
-        total: invTotal,
-        college: byBucket.college || 0,
-        life: byBucket.life || 0,
-        milestone: byBucket.milestone || 0,
-        travel: byBucket.travel || 0,
-      } : null;
+      const investmentTotals =
+        invTotal > 0
+          ? {
+              total: invTotal,
+              college: byBucket.college || 0,
+              life: byBucket.life || 0,
+              milestone: byBucket.milestone || 0,
+              travel: byBucket.travel || 0,
+            }
+          : null;
 
       return {
         latestExpenseDate: latestExpense?.date ?? null,
@@ -145,9 +172,10 @@ export function ScholarHome({ scholarKey }) {
         latestGpaSem: gradedAcad?.sem ?? null,
         gpaStatus: gradedAcad?.status ?? null,
         rewardsCount: doneMilestones.length,
-        englishMinutes,
+        englishHours: eng?.currentHours ?? null,
+        englishTargetHours: eng?.targetHours ?? null,
+        hasImmersionAccount: !!eng,
         liveSem,
-        liveEnglishTarget,
         investmentTotals,
         nextMilestone,
         nextTravel,
@@ -163,23 +191,29 @@ export function ScholarHome({ scholarKey }) {
     ? `Last entry · ${formatDate(liveData.latestExpenseDate)}`
     : 'Tap to add expenses';
 
-  const gpaBlurb = liveData?.latestGpa != null
-    ? <>GPA <b>{liveData.latestGpa.toFixed(2)}</b> · {liveData.gpaStatus === 'warn' ? 'near floor' : 'above floor'}</>
-    : 'View your record';
+  const gpaBlurb =
+    liveData?.latestGpa != null ? (
+      <>
+        GPA <b>{liveData.latestGpa.toFixed(2)}</b> ·{' '}
+        {liveData.gpaStatus === 'warn' ? 'near floor' : 'above floor'}
+      </>
+    ) : (
+      'View your record'
+    );
 
   const rewardsCount = liveData?.rewardsCount ?? 0;
 
-  const liveEnglishTarget = liveData?.liveEnglishTarget ?? null;
   const liveSem = liveData?.liveSem || config.staticSemKey;
   const liveStage = SEM_LABELS[liveSem] || config.stage || liveSem;
 
   const englishSub = (() => {
     if (!liveData) return 'Tracking hours';
-    const mins = liveData.englishMinutes;
-    if (mins === null || mins === undefined) return 'Log hours';
-    const h = mins / 60;
+    if (!liveData.hasImmersionAccount) return 'No Immersion account linked yet';
+    const h = liveData.englishHours;
     const display = h % 1 === 0 ? String(h) : h.toFixed(1);
-    return liveEnglishTarget ? `${display} / ${liveEnglishTarget} hrs` : `${display} hrs`;
+    return liveData.englishTargetHours
+      ? `${display} / ${liveData.englishTargetHours} hrs`
+      : `${display} hrs`;
   })();
 
   const PRIMARY = [
@@ -200,12 +234,48 @@ export function ScholarHome({ scholarKey }) {
   ];
 
   const TRACKERS = [
-    { key: 'english',  icon: <IconClock size={19} />,     label: 'English Hours ↗',  sub: englishSub, href: 'https://next-gen-immersion.vercel.app/', external: true },
-    { key: 'vacation', icon: <IconIsland size={19} />,    label: 'Vacation Tracker', sub: liveData?.nextTravel ? `Next · ${liveData.nextTravel.dest}` : 'Trip log', href: `/vacation/${scholarKey}` },
-    { key: 'career',   icon: <IconBriefcase size={19} />, label: 'Career Tracker',   sub: 'Pathway steps', href: null },
-    { key: 'rewards',  icon: <IconTrophy size={19} />,    label: 'Rewards Tracker',  sub: liveData?.nextMilestone ? `Next · ${liveData.nextMilestone.name}` : `${rewardsCount} unlocked`, reward: true, href: `/milestones/${scholarKey}` },
-    { key: 'messages', icon: <IconMessage size={19} />,   label: 'Messages',         sub: 'No new messages', href: null },
-  ].filter(t => !(isExpensesOnly && ['english', 'vacation', 'career', 'rewards'].includes(t.key)));
+    {
+      key: 'english',
+      icon: <IconClock size={19} />,
+      label: 'English Hours ↗',
+      sub: englishSub,
+      href: 'https://next-gen-immersion.vercel.app/',
+      external: true,
+    },
+    {
+      key: 'vacation',
+      icon: <IconIsland size={19} />,
+      label: 'Vacation Tracker',
+      sub: liveData?.nextTravel ? `Next · ${liveData.nextTravel.dest}` : 'Trip log',
+      href: `/vacation/${scholarKey}`,
+    },
+    {
+      key: 'career',
+      icon: <IconBriefcase size={19} />,
+      label: 'Career Tracker',
+      sub: 'Pathway steps',
+      href: null,
+    },
+    {
+      key: 'rewards',
+      icon: <IconTrophy size={19} />,
+      label: 'Rewards Tracker',
+      sub: liveData?.nextMilestone
+        ? `Next · ${liveData.nextMilestone.name}`
+        : `${rewardsCount} unlocked`,
+      reward: true,
+      href: `/milestones/${scholarKey}`,
+    },
+    {
+      key: 'messages',
+      icon: <IconMessage size={19} />,
+      label: 'Messages',
+      sub: 'No new messages',
+      href: null,
+    },
+  ].filter(
+    (t) => !(isExpensesOnly && ['english', 'vacation', 'career', 'rewards'].includes(t.key))
+  );
 
   const inv = liveData?.investmentTotals ?? null;
   const nextMil = liveData?.nextMilestone ?? null;
@@ -215,18 +285,24 @@ export function ScholarHome({ scholarKey }) {
   const scholarStaticGpaFloor = NGS_DATA.scholars[scholarKey]?.gpaFloor ?? 81;
 
   const englishHoursDisplay = (() => {
-    if (!liveData) return null;
-    const mins = liveData.englishMinutes;
-    if (mins == null) return null;
-    const h = mins / 60;
+    if (!liveData?.hasImmersionAccount) return null;
+    const h = liveData.englishHours;
     const display = h % 1 === 0 ? String(h) : h.toFixed(1);
-    return liveData.liveEnglishTarget ? `${display} / ${liveData.liveEnglishTarget} hrs` : `${display} hrs`;
+    return liveData.englishTargetHours
+      ? `${display} / ${liveData.englishTargetHours} hrs`
+      : `${display} hrs`;
   })();
 
   if (!isKnownScholar) return null; // redirecting home, see effect above
 
   if (!authed) {
-    return <ScholarAuthGate scholarKey={scholarKey} name={config.name} onUnlock={() => setAuthed(true)} />;
+    return (
+      <ScholarAuthGate
+        scholarKey={scholarKey}
+        name={config.name}
+        onUnlock={() => setAuthed(true)}
+      />
+    );
   }
 
   return (
@@ -242,26 +318,46 @@ export function ScholarHome({ scholarKey }) {
           </div>
           <p className="sp-greet-kicker">{getGreeting()}</p>
           <h1 className="sp-greet-name">{config.name}.</h1>
-          {(inv || latestGpa != null || nextMil || nextTravel || (englishHoursDisplay && !isExpensesOnly)) && (
+          {(inv ||
+            latestGpa != null ||
+            nextMil ||
+            nextTravel ||
+            (englishHoursDisplay && !isExpensesOnly)) && (
             <div className="sp-stat-cards">
               {inv && (
                 <div className={`sp-sc-card${isExpensesOnly ? ' sp-sc-card--full' : ''}`}>
                   <div className="sp-sc-label">Total Investment</div>
-                  <div className="sp-sc-val">{'₱' + Math.round(inv.total).toLocaleString('en-US')}</div>
+                  <div className="sp-sc-val">
+                    {'₱' + Math.round(inv.total).toLocaleString('en-US')}
+                  </div>
                   <div className="sp-sc-subs">
-                    {[['College', inv.college], ['Life', inv.life], ['Milestones', inv.milestone], ['Travel', inv.travel]].map(([lbl, amt]) => (
-                      <div key={lbl} className="sp-sc-sub"><span>{lbl}</span><span>{fmtPhpShort(amt)}</span></div>
+                    {[
+                      ['College', inv.college],
+                      ['Life', inv.life],
+                      ['Milestones', inv.milestone],
+                      ['Travel', inv.travel],
+                    ].map(([lbl, amt]) => (
+                      <div key={lbl} className="sp-sc-sub">
+                        <span>{lbl}</span>
+                        <span>{fmtPhpShort(amt)}</span>
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
               {latestGpa != null && (
                 <div className="sp-sc-card">
-                  <div className="sp-sc-label">Latest GPA{latestGpaSem ? ` · ${latestGpaSem}` : ''}</div>
+                  <div className="sp-sc-label">
+                    Latest GPA{latestGpaSem ? ` · ${latestGpaSem}` : ''}
+                  </div>
                   <div className="sp-sc-val">{latestGpa.toFixed(2)}%</div>
                   <div className="sp-sc-subs">
-                    <div className={`sp-sc-sub sp-sc-gpa${latestGpa >= scholarStaticGpaFloor ? ' is-ok' : ' is-warn'}`}>
-                      {latestGpa >= scholarStaticGpaFloor ? `Above ${scholarStaticGpaFloor}% floor` : `Below ${scholarStaticGpaFloor}% floor`}
+                    <div
+                      className={`sp-sc-sub sp-sc-gpa${latestGpa >= scholarStaticGpaFloor ? ' is-ok' : ' is-warn'}`}
+                    >
+                      {latestGpa >= scholarStaticGpaFloor
+                        ? `Above ${scholarStaticGpaFloor}% floor`
+                        : `Below ${scholarStaticGpaFloor}% floor`}
                     </div>
                   </div>
                 </div>
@@ -270,14 +366,28 @@ export function ScholarHome({ scholarKey }) {
                 <div className="sp-sc-card">
                   <div className="sp-sc-label">Next Milestone</div>
                   <div className="sp-sc-val sp-sc-val--sm">{nextMil.name}</div>
-                  {nextMil.sem && <div className="sp-sc-subs"><div className="sp-sc-sub"><span>Expected</span><span>{nextMil.sem}</span></div></div>}
+                  {nextMil.sem && (
+                    <div className="sp-sc-subs">
+                      <div className="sp-sc-sub">
+                        <span>Expected</span>
+                        <span>{nextMil.sem}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               {nextTravel && (
                 <div className="sp-sc-card">
                   <div className="sp-sc-label">Next Travel Award</div>
                   <div className="sp-sc-val sp-sc-val--sm">{nextTravel.dest}</div>
-                  {nextTravel.sem && <div className="sp-sc-subs"><div className="sp-sc-sub"><span>Expected</span><span>{nextTravel.sem}</span></div></div>}
+                  {nextTravel.sem && (
+                    <div className="sp-sc-subs">
+                      <div className="sp-sc-sub">
+                        <span>Expected</span>
+                        <span>{nextTravel.sem}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               {englishHoursDisplay && !isExpensesOnly && (
@@ -303,10 +413,12 @@ export function ScholarHome({ scholarKey }) {
             Most used
           </div>
           <div className="sp-primary-grid">
-            {PRIMARY.map(card => (
+            {PRIMARY.map((card) => (
               <Link key={card.key} className="sp-card" href={card.href}>
                 <div className="sp-card-icon">{card.icon}</div>
-                <div className="sp-card-arrow"><IconArrow size={16} /></div>
+                <div className="sp-card-arrow">
+                  <IconArrow size={16} />
+                </div>
                 <div className="sp-card-label">{card.label}</div>
                 <div className="sp-card-blurb">{card.blurb}</div>
               </Link>
@@ -321,7 +433,7 @@ export function ScholarHome({ scholarKey }) {
             <span className="sp-eyebrow-count">{String(TRACKERS.length).padStart(2, '0')}</span>
           </div>
           <div className="sp-tracker-grid">
-            {TRACKERS.map(tile => {
+            {TRACKERS.map((tile) => {
               const inner = (
                 <>
                   <div className="sp-tile-icon">{tile.icon}</div>
@@ -332,11 +444,34 @@ export function ScholarHome({ scholarKey }) {
                 </>
               );
               if (!tile.href) {
-                return <div key={tile.key} className={`sp-tile sp-tile--inactive${tile.reward ? ' is-reward' : ''}`}>{inner}</div>;
+                return (
+                  <div
+                    key={tile.key}
+                    className={`sp-tile sp-tile--inactive${tile.reward ? ' is-reward' : ''}`}
+                  >
+                    {inner}
+                  </div>
+                );
               }
-              return tile.external
-                ? <a key={tile.key} className={`sp-tile${tile.reward ? ' is-reward' : ''}`} href={tile.href} target="_blank" rel="noopener noreferrer">{inner}</a>
-                : <Link key={tile.key} className={`sp-tile${tile.reward ? ' is-reward' : ''}`} href={tile.href}>{inner}</Link>;
+              return tile.external ? (
+                <a
+                  key={tile.key}
+                  className={`sp-tile${tile.reward ? ' is-reward' : ''}`}
+                  href={tile.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {inner}
+                </a>
+              ) : (
+                <Link
+                  key={tile.key}
+                  className={`sp-tile${tile.reward ? ' is-reward' : ''}`}
+                  href={tile.href}
+                >
+                  {inner}
+                </Link>
+              );
             })}
           </div>
         </section>
@@ -346,7 +481,9 @@ export function ScholarHome({ scholarKey }) {
         <footer className="sp-footer">
           <div className="sp-mark">NGS</div>
           <div className="sp-footer-tag">One generation lifts another.</div>
-          <Link href="/" className="sp-home-link">← Home</Link>
+          <Link href="/" className="sp-home-link">
+            ← Home
+          </Link>
         </footer>
       </div>
     </div>

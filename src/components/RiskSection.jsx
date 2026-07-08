@@ -3,7 +3,6 @@ import { useData } from '../context/DataContext.jsx';
 import { api } from '../lib/api.js';
 import { NAMECLASS } from '../constants.js';
 
-const OET_TARGET_HOURS = 200;
 // Weeks in a semester, used for budget burn-rate projection
 const SEM_WEEKS = 16;
 
@@ -11,42 +10,46 @@ const SEM_WEEKS = 16;
 
 function riskLevel(conditions) {
   // conditions: array of 'ok' | 'watch' | 'risk'
-  if (conditions.includes('risk'))  return 'risk';
+  if (conditions.includes('risk')) return 'risk';
   if (conditions.includes('watch')) return 'watch';
   return 'ok';
 }
 
 function gpaRisk(s) {
-  const records = (s.academics || []).filter(a => a.gpa != null);
+  const records = (s.academics || []).filter((a) => a.gpa != null);
   if (!records.length) return { level: 'ok', gpa: null, floor: s.gpaFloor ?? s.gpa_floor };
-  const gpa   = records[records.length - 1].gpa;
+  const gpa = records[records.length - 1].gpa;
   const floor = s.gpaFloor ?? s.gpa_floor ?? 75;
   const level = gpa < floor ? 'risk' : gpa < floor + 2 ? 'watch' : 'ok';
   return { level, gpa, floor };
 }
 
 function budgetRisk(s) {
-  const sem    = s.currentSem;
+  const sem = s.currentSem;
   const budget = sem ? (s.budgets?.[sem] ?? 0) : 0;
   if (budget <= 0) return { level: 'ok', pct: null, spent: 0, budget: 0, sem };
-  const semExps = (s.expenses?.[sem] || []).filter(e => e.avb === 'Actual');
-  const spent   = semExps.reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
-  const pct     = spent / budget;
-  const level   = pct > 0.90 ? 'risk' : pct > 0.75 ? 'watch' : 'ok';
+  const semExps = (s.expenses?.[sem] || []).filter((e) => e.avb === 'Actual');
+  const spent = semExps.reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
+  const pct = spent / budget;
+  const level = pct > 0.9 ? 'risk' : pct > 0.75 ? 'watch' : 'ok';
   return { level, pct, spent, budget, sem };
 }
 
-function englishRisk(engHrs) {
-  if (engHrs == null) return { level: 'ok', hrs: null };
-  const remaining = Math.max(0, OET_TARGET_HOURS - engHrs);
-  const pct       = engHrs / OET_TARGET_HOURS;
-  // heuristic: if < 20% complete and no remaining pace info, mark watch
-  const level = remaining > OET_TARGET_HOURS * 0.95 ? 'watch' : 'ok';
-  return { level, hrs: engHrs, pct, remaining };
+// Sourced live from NextGen Immersion's scholar_pace (see EnglishSection.jsx /
+// app/api/immersion-hours) — its own ON_TRACK/AT_RISK/PENDING status already
+// accounts for pace against the scholar's target, so we just adopt it rather
+// than re-deriving a risk level from raw hours.
+function englishRisk(imm) {
+  if (!imm) return { level: 'ok', hrs: null, target: null };
+  const level = imm.status === 'risk' ? 'risk' : imm.status === 'warning' ? 'watch' : 'ok';
+  const { currentHours: hrs, targetHours: target } = imm;
+  const pct = target ? hrs / target : null;
+  const remaining = target != null ? Math.max(0, target - hrs) : null;
+  return { level, hrs, pct, remaining, target };
 }
 
 function nextPendingMilestone(s) {
-  return (s.milestones || []).find(m => m.state !== 'done') || null;
+  return (s.milestones || []).find((m) => m.state !== 'done') || null;
 }
 
 // ── Mini progress bar ─────────────────────────────────────────────────────────
@@ -57,7 +60,12 @@ function Bar({ pct, level }) {
     const id = requestAnimationFrame(() => setW(Math.min(100, Math.max(0, pct * 100))));
     return () => cancelAnimationFrame(id);
   }, [pct]);
-  const color = level === 'risk' ? 'var(--ngs-red)' : level === 'watch' ? 'var(--ngs-warn)' : 'var(--ngs-green)';
+  const color =
+    level === 'risk'
+      ? 'var(--ngs-red)'
+      : level === 'watch'
+        ? 'var(--ngs-warn)'
+        : 'var(--ngs-green)';
   return (
     <div className="risk-bar-track">
       <div className="risk-bar-fill" style={{ width: w + '%', background: color }} />
@@ -67,20 +75,20 @@ function Bar({ pct, level }) {
 
 // ── Per-scholar risk card ─────────────────────────────────────────────────────
 
-function RiskCard({ sk, engHrs }) {
+function RiskCard({ sk, imm }) {
   const { D } = useData();
-  const s  = D.scholars[sk];
+  const s = D.scholars[sk];
   const nc = NAMECLASS[sk] || '';
 
-  const gpa     = gpaRisk(s);
-  const budget  = budgetRisk(s);
-  const english = englishRisk(engHrs);
-  const ms      = nextPendingMilestone(s);
+  const gpa = gpaRisk(s);
+  const budget = budgetRisk(s);
+  const english = englishRisk(imm);
+  const ms = nextPendingMilestone(s);
 
   const overall = riskLevel([gpa.level, budget.level, english.level]);
 
   const RISK_LABEL = { ok: 'On Track', watch: 'Watch', risk: 'At Risk' };
-  const RISK_CLS   = { ok: 'risk-flag-ok', watch: 'risk-flag-watch', risk: 'risk-flag-risk' };
+  const RISK_CLS = { ok: 'risk-flag-ok', watch: 'risk-flag-watch', risk: 'risk-flag-risk' };
 
   return (
     <div className={`risk-card risk-card-${overall}`}>
@@ -100,14 +108,15 @@ function RiskCard({ sk, engHrs }) {
             )}
           </span>
         </div>
-        {gpa.gpa != null && gpa.floor != null && (
-          <Bar pct={gpa.gpa / 100} level={gpa.level} />
-        )}
+        {gpa.gpa != null && gpa.floor != null && <Bar pct={gpa.gpa / 100} level={gpa.level} />}
         <div className="risk-metric-note">
-          {gpa.gpa == null ? 'No GPA recorded yet'
-            : gpa.level === 'risk'  ? `${(gpa.floor - gpa.gpa).toFixed(1)}pts below floor`
-            : gpa.level === 'watch' ? `${(gpa.gpa - gpa.floor).toFixed(1)}pts above floor`
-            : `${(gpa.gpa - gpa.floor).toFixed(1)}pts above floor`}
+          {gpa.gpa == null
+            ? 'No GPA recorded yet'
+            : gpa.level === 'risk'
+              ? `${(gpa.floor - gpa.gpa).toFixed(1)}pts below floor`
+              : gpa.level === 'watch'
+                ? `${(gpa.gpa - gpa.floor).toFixed(1)}pts above floor`
+                : `${(gpa.gpa - gpa.floor).toFixed(1)}pts above floor`}
         </div>
       </div>
 
@@ -117,14 +126,22 @@ function RiskCard({ sk, engHrs }) {
           <span className="risk-metric-label">OET English</span>
           <span className={`risk-metric-value risk-val-${english.level}`}>
             {english.hrs != null ? `${english.hrs.toFixed(1)} hrs` : '—'}
-            <span className="risk-metric-floor"> / {OET_TARGET_HOURS} hrs</span>
+            {english.target != null && (
+              <span className="risk-metric-floor"> / {english.target} hrs</span>
+            )}
           </span>
         </div>
-        {english.hrs != null && <Bar pct={english.pct} level={english.level} />}
+        {english.hrs != null && english.pct != null && (
+          <Bar pct={english.pct} level={english.level} />
+        )}
         <div className="risk-metric-note">
-          {english.hrs == null ? 'Loading…'
-            : english.remaining === 0 ? 'Target reached'
-            : `${english.remaining.toFixed(0)} hrs remaining`}
+          {english.hrs == null
+            ? 'No Immersion account linked yet'
+            : english.remaining == null
+              ? 'No target set'
+              : english.remaining === 0
+                ? 'Target reached'
+                : `${english.remaining.toFixed(0)} hrs remaining`}
         </div>
       </div>
 
@@ -140,7 +157,8 @@ function RiskCard({ sk, engHrs }) {
         </div>
         {budget.pct != null && <Bar pct={budget.pct} level={budget.level} />}
         <div className="risk-metric-note">
-          {budget.budget === 0 ? 'No budget set for current sem'
+          {budget.budget === 0
+            ? 'No budget set for current sem'
             : `₱${Math.round(budget.spent).toLocaleString()} of ₱${Math.round(budget.budget).toLocaleString()}`}
         </div>
       </div>
@@ -149,9 +167,14 @@ function RiskCard({ sk, engHrs }) {
       <div className="risk-metric risk-metric-last">
         <span className="risk-metric-label">Next milestone</span>
         <div className="risk-milestone">
-          {ms
-            ? <><span className="risk-ms-name">{ms.name}</span>{ms.sem && <span className="risk-ms-sem">{ms.sem}</span>}</>
-            : <span className="risk-ms-none">All milestones complete</span>}
+          {ms ? (
+            <>
+              <span className="risk-ms-name">{ms.name}</span>
+              {ms.sem && <span className="risk-ms-sem">{ms.sem}</span>}
+            </>
+          ) : (
+            <span className="risk-ms-none">All milestones complete</span>
+          )}
         </div>
       </div>
     </div>
@@ -162,18 +185,13 @@ function RiskCard({ sk, engHrs }) {
 
 export function RiskSection({ id, collapsed, onToggle }) {
   const { scholarKeys } = useData();
-  const [engHrs, setEngHrs] = useState({});
+  const [immersion, setImmersion] = useState({});
 
   useEffect(() => {
-    api.get('/english/sessions').then(rows => {
-      const totals = {};
-      rows.forEach(r => {
-        totals[r.scholar] = (totals[r.scholar] || 0) + (r.duration_minutes || 0);
-      });
-      const hrs = {};
-      Object.entries(totals).forEach(([sk, mins]) => { hrs[sk] = mins / 60; });
-      setEngHrs(hrs);
-    }).catch(() => {});
+    api
+      .get('/immersion-hours')
+      .then((data) => setImmersion(data || {}))
+      .catch(() => {});
   }, []);
 
   return (
@@ -181,7 +199,11 @@ export function RiskSection({ id, collapsed, onToggle }) {
       <div className="eyebrow">
         Risk Dashboard
         <span className="eyebrow-rule" />
-        <button className="section-collapse-btn" onClick={onToggle} title={collapsed ? 'Expand' : 'Collapse'}>
+        <button
+          className="section-collapse-btn"
+          onClick={onToggle}
+          title={collapsed ? 'Expand' : 'Collapse'}
+        >
           {collapsed ? '▶' : '▼'}
         </button>
       </div>
@@ -193,8 +215,8 @@ export function RiskSection({ id, collapsed, onToggle }) {
             <span className="section-note">GPA · English · Budget · Milestones</span>
           </div>
           <div className="risk-grid">
-            {scholarKeys.map(sk => (
-              <RiskCard key={sk} sk={sk} engHrs={engHrs[sk] ?? null} />
+            {scholarKeys.map((sk) => (
+              <RiskCard key={sk} sk={sk} imm={immersion[sk] ?? null} />
             ))}
           </div>
         </div>
