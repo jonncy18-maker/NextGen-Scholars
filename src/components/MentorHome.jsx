@@ -118,8 +118,12 @@ export function MentorHome({
 
   // ── "Needs attention" — DB alerts (GPA risk, etc.) + pending approvals,
   // each with a direct link to where the mentor fixes it. Empty → all clear.
+  // Pending approvals are ranked right after critical alerts (not appended
+  // last) so they can't get silently truncated out of the slice(0, 3) below
+  // once alert volume grows.
   const attentionItems = dbAlerts.map((a) => ({
     severity: a.severity === 'critical' ? 'critical' : 'warning',
+    rank: a.severity === 'critical' ? 0 : 2,
     title: a.title,
     sub: a.sub,
     href: '/navigator/progress',
@@ -135,6 +139,7 @@ export function MentorHome({
       : null;
     attentionItems.push({
       severity: 'warning',
+      rank: 1,
       title: `${pendingSubmissions.length} expense submission${pendingSubmissions.length !== 1 ? 's' : ''} waiting for approval`,
       sub:
         oldestDays != null
@@ -144,9 +149,7 @@ export function MentorHome({
       actionLabel: 'Approve →',
     });
   }
-  attentionItems.sort(
-    (a, b) => (a.severity === 'critical' ? 0 : 1) - (b.severity === 'critical' ? 0 : 1)
-  );
+  attentionItems.sort((a, b) => a.rank - b.rank);
 
   // ── Cohort pulse — one horizontal scan instead of a tile grid.
   const needsAttentionCount = scholarKeys.filter((key) => {
@@ -240,10 +243,17 @@ export function MentorHome({
           <span className="mh-pulse-num">{deadlinesNext14}</span>
           <span className="mh-pulse-lbl">Deadlines · 14 days</span>
         </div>
-        <div className="mh-pulse-cell">
-          <span className="mh-pulse-num">{pendingSubmissions.length}</span>
-          <span className="mh-pulse-lbl">Pending approvals</span>
-        </div>
+        {pendingSubmissions.length > 0 ? (
+          <Link className="mh-pulse-cell is-flag" href="/navigator/expenses">
+            <span className="mh-pulse-num">{pendingSubmissions.length}</span>
+            <span className="mh-pulse-lbl">Pending approvals</span>
+          </Link>
+        ) : (
+          <div className="mh-pulse-cell">
+            <span className="mh-pulse-num">{pendingSubmissions.length}</span>
+            <span className="mh-pulse-lbl">Pending approvals</span>
+          </div>
+        )}
         <div className="mh-pulse-cell">
           <span className="mh-pulse-num">{cohortEngHrsThisWeek.toFixed(1)}h</span>
           <span className="mh-pulse-lbl">English · this week</span>
