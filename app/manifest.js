@@ -7,8 +7,14 @@ export default function manifest() {
     name: 'NextGen Scholars',
     short_name: 'NGS',
     description: 'NextGen Scholars — mentorship program dashboards for scholars and mentors.',
-    start_url: '/',
     scope: '/',
+    // start_url is only used when launched from the installed icon (PWA on the
+    // home screen, and the eventual TWA/Play Store wrapper) — not for ordinary
+    // browser visits to '/'. So the installed app opens straight on the login
+    // screen for scholars, while the browser still serves the marketing home
+    // page at '/'. Scope stays '/' so the rest of the app (incl. the home
+    // page, reachable via login's "Back to NextGen Scholars" link) stays in scope.
+    start_url: '/login',
     display: 'standalone',
     background_color: '#131F38',
     theme_color: '#1B2A4A',
