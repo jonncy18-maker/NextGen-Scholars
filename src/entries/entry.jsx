@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { EXPENSE_CATS, AVB_OPTIONS } from '../constants.js';
 import { NGS_DATA } from '../../scholars-data.js';
-import { updateExpense, writeActivityLog, writeSubmission, resubmitExpense, markSubmissionReadByScholar } from '../api-writer.js';
+import { updateExpense, writeActivityLog, writeSubmission, resubmitExpense, markSubmissionReadByScholar, updateSubmission } from '../api-writer.js';
 import { loadFromSupabase, loadScholarSubmissions } from '../api-loader.js';
 import { useChanges } from '../hooks/useChanges.js';
 import { authClient, invalidateToken } from '../lib/auth-client.js';
@@ -71,7 +71,12 @@ export function EntryApp() {
 }
 
 // ── Pending submissions awaiting mentor approval ──────────────────────────────
-function PendingReview({ submissions, openComments, resubmitingId, resubmitDraft, setResubmitDraft, onToggleComment, onStartResubmit, onCancelResubmit, onHandleResubmit }) {
+// Rejected rows can be edited & resubmitted (creates a fresh pending row);
+// still-pending rows can be edited in place — both share one inline form,
+// distinguished by `editMode` ('resubmit' | 'edit'). Either way the scholar can
+// type a plain-language instruction into the AI box to have Gemini adjust the
+// fields, then review and save manually.
+function PendingReview({ submissions, openComments, editingId, editMode, editDraft, setEditDraft, onToggleComment, onStartResubmit, onStartEditPending, onCancelDraft, onHandleResubmit, onHandleEditPending, aiLog, aiInput, setAiInput, aiBusy, onAiEdit }) {
   if (!submissions.length) return null;
 
   return (
@@ -86,7 +91,7 @@ function PendingReview({ submissions, openComments, resubmitingId, resubmitDraft
           const total = (exp.amount || 0) * (exp.qty || 1);
           const isRejected = sub.status === 'rejected';
           const commentOpen = openComments.has(sub.id);
-          const isResubmiting = resubmitingId === sub.id;
+          const isEditing = editingId === sub.id;
 
           return (
             <div key={sub.id} className={`ef-pending-item${isRejected ? ' is-rejected' : ''}`}>
@@ -114,37 +119,69 @@ function PendingReview({ submissions, openComments, resubmitingId, resubmitDraft
               {isRejected && commentOpen && sub.rejection_comment && (
                 <div className="ef-pending-comment">{sub.rejection_comment}</div>
               )}
-              {isRejected && !isResubmiting && (
+              {!isEditing && (
                 <div className="ef-pending-actions">
-                  <button className="ef-resubmit-btn" onClick={() => onStartResubmit(sub)}>
-                    Edit &amp; Resubmit
-                  </button>
+                  {isRejected ? (
+                    <button className="ef-resubmit-btn" onClick={() => onStartResubmit(sub)}>
+                      Edit &amp; Resubmit
+                    </button>
+                  ) : (
+                    <button className="ef-edit-pending-btn" onClick={() => onStartEditPending(sub)}>
+                      Edit
+                    </button>
+                  )}
                 </div>
               )}
-              {isRejected && isResubmiting && (
-                <div className="ef-resubmit-form">
-                  <label className="ef-edit-field"><span>Item</span>
-                    <input value={resubmitDraft.item} onChange={e => setResubmitDraft(d => ({ ...d, item: e.target.value }))} /></label>
-                  <label className="ef-edit-field"><span>Category</span>
-                    <select value={resubmitDraft.cat} onChange={e => setResubmitDraft(d => ({ ...d, cat: e.target.value }))}>
-                      {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}</select></label>
-                  <label className="ef-edit-field"><span>Amount (₱)</span>
-                    <input type="number" step="0.01" min="0" value={resubmitDraft.amount}
-                      onChange={e => setResubmitDraft(d => ({ ...d, amount: e.target.value }))} /></label>
-                  <label className="ef-edit-field"><span>Qty</span>
-                    <input type="number" min="1" value={resubmitDraft.qty}
-                      onChange={e => setResubmitDraft(d => ({ ...d, qty: e.target.value }))} /></label>
-                  <label className="ef-edit-field"><span>Date</span>
-                    <input type="date" value={resubmitDraft.date}
-                      onChange={e => setResubmitDraft(d => ({ ...d, date: e.target.value }))} /></label>
-                  <label className="ef-edit-field"><span>Status</span>
-                    <select value={resubmitDraft.avb} onChange={e => setResubmitDraft(d => ({ ...d, avb: e.target.value }))}>
-                      {AVB_OPTIONS.map(o => <option key={o}>{o}</option>)}</select></label>
-                  <label className="ef-edit-field"><span>Vendor</span>
-                    <input value={resubmitDraft.vendor} onChange={e => setResubmitDraft(d => ({ ...d, vendor: e.target.value }))} /></label>
-                  <div className="ef-edit-actions">
-                    <button className="ef-edit-save" onClick={() => onHandleResubmit(sub)}>Resubmit</button>
-                    <button className="ef-edit-cancel" onClick={onCancelResubmit}>Cancel</button>
+              {isEditing && (
+                <div className="ef-resubmit-form-wrap">
+                  <div className="ef-resubmit-form">
+                    <label className="ef-edit-field"><span>Item</span>
+                      <input value={editDraft.item} onChange={e => setEditDraft(d => ({ ...d, item: e.target.value }))} /></label>
+                    <label className="ef-edit-field"><span>Category</span>
+                      <select value={editDraft.cat} onChange={e => setEditDraft(d => ({ ...d, cat: e.target.value }))}>
+                        {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}</select></label>
+                    <label className="ef-edit-field"><span>Amount (₱)</span>
+                      <input type="number" step="0.01" min="0" value={editDraft.amount}
+                        onChange={e => setEditDraft(d => ({ ...d, amount: e.target.value }))} /></label>
+                    <label className="ef-edit-field"><span>Qty</span>
+                      <input type="number" min="1" value={editDraft.qty}
+                        onChange={e => setEditDraft(d => ({ ...d, qty: e.target.value }))} /></label>
+                    <label className="ef-edit-field"><span>Date</span>
+                      <input type="date" value={editDraft.date}
+                        onChange={e => setEditDraft(d => ({ ...d, date: e.target.value }))} /></label>
+                    <label className="ef-edit-field"><span>Status</span>
+                      <select value={editDraft.avb} onChange={e => setEditDraft(d => ({ ...d, avb: e.target.value }))}>
+                        {AVB_OPTIONS.map(o => <option key={o}>{o}</option>)}</select></label>
+                    <label className="ef-edit-field"><span>Vendor</span>
+                      <input value={editDraft.vendor} onChange={e => setEditDraft(d => ({ ...d, vendor: e.target.value }))} /></label>
+                    <div className="ef-edit-actions">
+                      <button className="ef-edit-save" onClick={() => editMode === 'edit' ? onHandleEditPending(sub) : onHandleResubmit(sub)}>
+                        {editMode === 'edit' ? 'Save changes' : 'Resubmit'}
+                      </button>
+                      <button className="ef-edit-cancel" onClick={onCancelDraft}>Cancel</button>
+                    </div>
+                  </div>
+                  <div className="ef-ai-chat">
+                    {aiLog.length > 0 && (
+                      <div className="ef-ai-chat-log">
+                        {aiLog.map((m, i) => (
+                          <div key={i} className={`ef-ai-chat-msg ef-ai-chat-${m.role}`}>{m.text}</div>
+                        ))}
+                      </div>
+                    )}
+                    <form className="ef-ai-chat-form" onSubmit={e => { e.preventDefault(); onAiEdit(); }}>
+                      <span className="ef-ai-chat-badge">AI</span>
+                      <input
+                        className="ef-ai-chat-input"
+                        value={aiInput}
+                        onChange={e => setAiInput(e.target.value)}
+                        placeholder="Ask AI to fix it — e.g. change amount to 500, set category to Food…"
+                        disabled={aiBusy}
+                      />
+                      <button className="ef-ai-chat-send" type="submit" disabled={aiBusy || !aiInput.trim()}>
+                        {aiBusy ? '…' : 'Fix →'}
+                      </button>
+                    </form>
                   </div>
                 </div>
               )}
@@ -323,6 +360,10 @@ function ExpenseForm({ scholar, onLogout }) {
   const [openComments, setOpenComments] = useState(new Set());
   const [resubmitingId, setResubmitingId] = useState(null);
   const [resubmitDraft, setResubmitDraft] = useState({});
+  const [editMode, setEditMode] = useState('resubmit'); // 'resubmit' (rejected) | 'edit' (in-place)
+  const [aiEditLog, setAiEditLog] = useState([]);
+  const [aiEditInput, setAiEditInput] = useState('');
+  const [aiEditBusy, setAiEditBusy] = useState(false);
 
   useEffect(() => {
     loadFromSupabase()
@@ -463,16 +504,31 @@ function ExpenseForm({ scholar, onLogout }) {
       .catch(err => console.error('writeActivityLog failed:', err));
   }
 
-  function startResubmit(sub) {
+  function draftFromSub(sub) {
     const exp = sub.expense_data || {};
-    setResubmitingId(sub.id);
-    setResubmitDraft({ item: exp.item || '', cat: exp.cat || EXPENSE_CATS[0],
+    return { item: exp.item || '', cat: exp.cat || EXPENSE_CATS[0],
       amount: String(exp.amount || ''), qty: String(exp.qty || 1),
       date: exp.date || TODAY_ISO,
-      avb: exp.avb || AVB_OPTIONS[0], vendor: exp.vendor || '' });
+      avb: exp.avb || AVB_OPTIONS[0], vendor: exp.vendor || '' };
+  }
+
+  function startResubmit(sub) {
+    setEditMode('resubmit');
+    setResubmitingId(sub.id);
+    setResubmitDraft(draftFromSub(sub));
+    setAiEditLog([]); setAiEditInput('');
     if (!sub.read_by_scholar) markSubmissionReadByScholar(sub.id).catch(() => {});
   }
-  function cancelResubmit() { setResubmitingId(null); setResubmitDraft({}); }
+  function startEditPending(sub) {
+    setEditMode('edit');
+    setResubmitingId(sub.id);
+    setResubmitDraft(draftFromSub(sub));
+    setAiEditLog([]); setAiEditInput('');
+  }
+  function cancelResubmit() {
+    setResubmitingId(null); setResubmitDraft({});
+    setAiEditLog([]); setAiEditInput('');
+  }
 
   async function handleResubmit(sub) {
     const expData = {
@@ -490,8 +546,74 @@ function ExpenseForm({ scholar, onLogout }) {
     try {
       const newSub = await resubmitExpense(sub.id, scholar.key, expData);
       setPendingSubmissions(prev => [newSub, ...prev.filter(s => s.id !== sub.id)]);
-      setResubmitingId(null); setResubmitDraft({});
+      cancelResubmit();
     } catch (err) { console.error('resubmit failed:', err); }
+  }
+
+  // Edit a still-pending submission in place — keeps the same row id/sem/sent,
+  // only overwrites the editable fields.
+  async function handleEditPending(sub) {
+    const expData = {
+      ...(sub.expense_data || {}),
+      item:   resubmitDraft.item.trim(),
+      cat:    resubmitDraft.cat,
+      amount: parseFloat(resubmitDraft.amount) || 0,
+      qty:    parseInt(resubmitDraft.qty, 10) || 1,
+      date:   resubmitDraft.date,
+      avb:    resubmitDraft.avb,
+      vendor: resubmitDraft.vendor.trim(),
+    };
+    try {
+      const updated = await updateSubmission(sub.id, expData);
+      setPendingSubmissions(prev => prev.map(s => s.id === sub.id ? (updated || { ...s, expense_data: expData }) : s));
+      cancelResubmit();
+    } catch (err) { console.error('edit pending failed:', err); }
+  }
+
+  // AI-assisted edit: hand the current draft to Gemini via the existing
+  // expense_edit action, apply the corrected fields back into the draft (the
+  // scholar still reviews and saves manually — the AI never writes to the DB).
+  async function handleAiEdit() {
+    const instruction = aiEditInput.trim();
+    if (!instruction || aiEditBusy) return;
+    setAiEditLog(prev => [...prev, { role: 'user', text: instruction }]);
+    setAiEditInput('');
+    setAiEditBusy(true);
+    try {
+      const current = {
+        item:   resubmitDraft.item,
+        amount: Number(resubmitDraft.amount) || 0,
+        qty:    Number(resubmitDraft.qty) || 1,
+        cat:    resubmitDraft.cat,
+        date:   resubmitDraft.date,
+        vendor: resubmitDraft.vendor,
+      };
+      const res = await fetch('/api/ask-scholar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scholar: scholar.key, type: 'expense_edit', items: [current], text: instruction }),
+      });
+      const data = await res.json();
+      const c = data.items && data.items[0];
+      if (c) {
+        setResubmitDraft(d => ({
+          ...d,
+          item:   c.item ?? d.item,
+          amount: c.amount != null ? String(c.amount) : d.amount,
+          qty:    c.qty != null ? String(c.qty) : d.qty,
+          cat:    c.cat ?? d.cat,
+          date:   c.date ?? d.date,
+          vendor: c.vendor ?? d.vendor,
+        }));
+        setAiEditLog(prev => [...prev, { role: 'ai', text: 'Done — updated the fields above. Review, then save.' }]);
+      } else {
+        setAiEditLog(prev => [...prev, { role: 'ai', text: data.error ?? 'Could not apply the edit.' }]);
+      }
+    } catch (err) {
+      setAiEditLog(prev => [...prev, { role: 'ai', text: err.message ?? 'Request failed.' }]);
+    } finally {
+      setAiEditBusy(false);
+    }
   }
 
   function toggleComment(id) {
@@ -551,13 +673,21 @@ function ExpenseForm({ scholar, onLogout }) {
         <PendingReview
           submissions={pendingSubmissions}
           openComments={openComments}
-          resubmitingId={resubmitingId}
-          resubmitDraft={resubmitDraft}
-          setResubmitDraft={setResubmitDraft}
+          editingId={resubmitingId}
+          editMode={editMode}
+          editDraft={resubmitDraft}
+          setEditDraft={setResubmitDraft}
           onToggleComment={toggleComment}
           onStartResubmit={startResubmit}
-          onCancelResubmit={cancelResubmit}
+          onStartEditPending={startEditPending}
+          onCancelDraft={cancelResubmit}
           onHandleResubmit={handleResubmit}
+          onHandleEditPending={handleEditPending}
+          aiLog={aiEditLog}
+          aiInput={aiEditInput}
+          setAiInput={setAiEditInput}
+          aiBusy={aiEditBusy}
+          onAiEdit={handleAiEdit}
         />
 
         {entryMode === null && (

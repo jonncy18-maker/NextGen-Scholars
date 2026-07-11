@@ -78,6 +78,15 @@ export async function markSubmissionReadByScholar(id) {
   api.afterWrite();
 }
 
+// Edit a still-pending submission's expense_data in place (no new row, unlike
+// resubmitExpense which supersedes a rejected one). Server rejects the update
+// unless the row is still 'pending' and owned by the caller.
+export async function updateSubmission(id, expenseData) {
+  const row = await api.patch(`/submissions/${id}`, { expenseData });
+  api.afterWrite();
+  return row;
+}
+
 // ── English forecasts + scenarios ─────────────────────────────────────────────
 
 export async function upsertEnglishForecast(forecastData) {
