@@ -9,9 +9,24 @@ import '../src/styles/grade-entry.css';
 
 import { ErrorBoundary } from '../src/components/ErrorBoundary.jsx';
 import { BfcacheReload } from '../src/components/BfcacheReload.jsx';
+import { RegisterSW } from '../src/components/RegisterSW.jsx';
 
 export const metadata = {
   title: 'NextGen Scholars',
+  // iOS ignores most of the manifest — appleWebApp fills the gap (scholars
+  // are on Android, but this keeps Add-to-Home-Screen sane on iPhones too).
+  appleWebApp: {
+    capable: true,
+    title: 'NGS',
+    statusBarStyle: 'black-translucent',
+  },
+  icons: {
+    apple: '/icons/icon-192.png',
+  },
+};
+
+export const viewport = {
+  themeColor: '#1B2A4A', // --ngs-navy
 };
 
 export default function RootLayout({ children }) {
@@ -27,6 +42,7 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <BfcacheReload />
+        <RegisterSW />
         <ErrorBoundary>{children}</ErrorBoundary>
       </body>
     </html>

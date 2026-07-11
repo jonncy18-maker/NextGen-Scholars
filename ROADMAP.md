@@ -339,7 +339,8 @@ in place), with an agreed schema:
 
 ## Native Android app (PWA → TWA → Play Internal Testing) — PLANNED
 
-**Status:** 🔵 Planned. Not started. Part of the cross-repo NGS native rollout.
+**Status:** 🟡 In progress — PWA foundation shipped 2026-07-11; TWA/Play steps
+still pending. Part of the cross-repo NGS native rollout.
 Ship as an installable Android app so scholars install from the Play Store
 rather than "Add to Home Screen". Private distribution via the **Internal
 Testing** track (email allowlist), not a public listing.
@@ -350,7 +351,7 @@ written) + copy Immersion's `docs/PLAY-STORE.md` when ready.
 
 | Step | State | Notes |
 |---|---|---|
-| PWA foundation | 🔵 Planned | Manifest (`app/manifest.js`), service worker, 192/512 + maskable icons; passes Lighthouse "Installable". SW keeps `/api/**` network-only and **never caches scholar-scoped responses** (bootstrap etc.) — guards the per-scholar isolation bug class. |
+| PWA foundation | ✅ Done (2026-07-11) | Manifest (`app/manifest.js`), hand-rolled service worker (`public/sw.js`, registered by `src/components/RegisterSW.jsx`), 192/512 + maskable icons (`public/icons/`). SW keeps `/api/**` network-only and **never caches scholar-scoped responses** (bootstrap etc.) — guards the per-scholar isolation bug class; only public pages (`/`, `/faq`, scholar profile pages) + hashed static assets are cached. Verified headless: SW controls the page, offline shell loads, zero `/api` cache entries. |
 | TWA package | 🔵 Planned | Bubblewrap/PWABuilder; stable package id (e.g. `com.nextgenscholars.scholars`); `public/.well-known/assetlinks.json`. |
 | Auth-in-TWA verify | 🔵 Planned | Bearer-JWT flow works inside the installed app on a real device. |
 | Play Internal Testing | 🔵 Planned | John's Play Console account; mentor + scholar email allowlist; opt-in link. |

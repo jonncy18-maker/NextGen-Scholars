@@ -1,9 +1,14 @@
 # PWA Foundation — Installable App Groundwork
 
-**Status: PLANNED (not yet built).** Runbook for turning this app into an
-installable Progressive Web App. Nothing here exists in the repo yet — no
-manifest, service worker, or icons. Forward-looking; do not read as shipped
-behavior.
+**Status: SHIPPED (2026-07-11).** The PWA foundation described below is built:
+`app/manifest.js` (manifest metadata route), `public/sw.js` (the minimal
+hand-rolled service worker option — Serwist was skipped to avoid Next 14
+compatibility friction), `public/icons/` (192/512 + maskable 512, gold-on-navy
+NGS badge), and `src/components/RegisterSW.jsx` (registration, mounted in
+`app/layout.jsx`, production-only). `/api/**` is strictly network-only and only
+public pages (`/`, `/faq`, `/claire`, `/april`, `/janndilyne`) plus hashed
+static assets are cached. The sections below remain as the design rationale
+and verification checklist.
 
 **Context:** This is the second app in the NGS native rollout. The pilot is
 **NextGen-Immersion** — build and prove the PWA→TWA→Play pipeline there first
