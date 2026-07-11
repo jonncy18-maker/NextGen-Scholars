@@ -646,6 +646,14 @@ input, select { font-family: inherit; }
   border: none; cursor: pointer; transition: background 0.15s;
 }
 .ef-resubmit-btn:hover { background: var(--ngs-navy-deep); }
+.ef-edit-pending-btn {
+  padding: 7px 16px; border-radius: 5px; font-size: 12.5px; font-weight: 600;
+  background: transparent; color: var(--ngs-navy);
+  border: 1px solid var(--ngs-rule); cursor: pointer; transition: border-color 0.15s, background 0.15s;
+}
+.ef-edit-pending-btn:hover { border-color: var(--ngs-navy); background: rgba(27,42,74,0.04); }
+.ef-resubmit-form-wrap { margin-top: 12px; }
+.ef-resubmit-form-wrap .ef-resubmit-form { margin-top: 0; }
 .ef-resubmit-form {
   margin-top: 12px; display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;
@@ -653,6 +661,36 @@ input, select { font-family: inherit; }
   padding: 14px; border-radius: 6px;
   background: rgba(27,42,74,0.03); border: 1px solid var(--ngs-rule);
 }
+
+/* AI-assisted edit box, shared by the pending/rejected inline forms */
+.ef-ai-chat {
+  margin-top: 8px; padding: 12px 14px; border-radius: 6px;
+  background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.28);
+}
+.ef-ai-chat-log { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.ef-ai-chat-msg { font-size: 12.5px; line-height: 1.45; padding: 6px 10px; border-radius: 5px; max-width: 90%; }
+.ef-ai-chat-user {
+  align-self: flex-end; background: var(--ngs-navy); color: #fff;
+  font-family: var(--ngs-mono); font-size: 11.5px;
+}
+.ef-ai-chat-ai { align-self: flex-start; background: #fff; border: 1px solid var(--ngs-rule); color: var(--ngs-ink); }
+.ef-ai-chat-form { display: flex; align-items: center; gap: 8px; }
+.ef-ai-chat-badge {
+  font-family: var(--ngs-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+  background: var(--ngs-gold); color: var(--ngs-navy); padding: 3px 6px; border-radius: 3px; flex-shrink: 0;
+}
+.ef-ai-chat-input {
+  flex: 1; padding: 8px 10px; border-radius: 5px; font-size: 12.5px;
+  border: 1px solid var(--ngs-rule); background: #fff;
+}
+.ef-ai-chat-input:focus { border-color: var(--ngs-navy); outline: none; }
+.ef-ai-chat-send {
+  padding: 8px 14px; border-radius: 5px; font-size: 12px; font-weight: 600;
+  background: var(--ngs-navy); color: var(--ngs-gold);
+  border: none; cursor: pointer; transition: background 0.15s; flex-shrink: 0;
+}
+.ef-ai-chat-send:hover:not(:disabled) { background: var(--ngs-navy-deep); }
+.ef-ai-chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ════════════════ BATCH ENTRY MODAL ════════════════ */
 .ef-modal-overlay {
