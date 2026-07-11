@@ -165,7 +165,7 @@ export function SubmissionBanner({
                   <SubmissionItem
                     key={sub.id}
                     sub={sub}
-                    onApprove={s => { onApprove(s); if (subCount + feedCount + sysCount - 1 === 0) setOpen(false); }}
+                    onApprove={s => { onApprove(s); if (subCount + feedCount - 1 === 0) setOpen(false); }}
                     onReject={onReject}
                   />
                 ))}
