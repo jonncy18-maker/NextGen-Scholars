@@ -60,6 +60,26 @@ function pathwayStage(careerRows, key) {
   return { passedCount, total: CAREER_STEPS.length, label };
 }
 
+// Days since the scholar's most recent expense activity — the newer of their
+// last approved expense (daysSinceLastExpense, which reads the committed
+// `expenses` table) and their most recent pending submission. Pending
+// submissions live in a separate table and never land in `expenses` until a
+// mentor approves them, so a scholar who just submitted (or edited a pending
+// submission) would otherwise look stale here. `updated_at` is bumped by a DB
+// trigger on every edit, so an edit today refreshes recency too.
+function daysSinceActivity(s, key, pendingSubmissions) {
+  const candidates = [];
+  const approved = daysSinceLastExpense(s);
+  if (approved != null) candidates.push(approved);
+  const latest = (pendingSubmissions || [])
+    .filter((p) => p.scholar_key === key)
+    .map((p) => p.updated_at || p.created_at)
+    .filter(Boolean)
+    .reduce((a, b) => (a > b ? a : b), '');
+  if (latest) candidates.push(Math.floor((Date.now() - new Date(latest).getTime()) / 86400000));
+  return candidates.length ? Math.min(...candidates) : null;
+}
+
 function TrendArrow({ current, previous, higherIsBetter = true, fmt = (v) => v }) {
   if (current == null || previous == null)
     return <span className="mh-trend mh-trend--flat">—</span>;
@@ -286,7 +306,7 @@ export function MentorHome({
             .sort((a, b) => a.sort_date.localeCompare(b.sort_date))[0];
           const isActive = s.status === 'active';
           const stage = pathwayStage(career, key);
-          const daysSince = daysSinceLastExpense(s);
+          const daysSince = daysSinceActivity(s, key, pendingSubmissions);
           const isStale = daysSince != null && daysSince >= 7;
 
           return (

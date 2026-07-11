@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { EXPENSE_CATS, AVB_OPTIONS } from '../constants.js';
 import { NGS_DATA } from '../../scholars-data.js';
 import { updateExpense, writeActivityLog, writeSubmission, resubmitExpense, markSubmissionReadByScholar, updateSubmission } from '../api-writer.js';
@@ -51,16 +51,23 @@ function makeEmptyRow(defaultSem) {
 // falls back to the first migrated scholar.
 export function EntryApp() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const requested = searchParams.get('scholar');
   const scholarKey = SCHOLARS.some(s => s.key === requested) ? requested : SCHOLARS[0].key;
   const scholar = SCHOLARS.find(s => s.key === scholarKey);
 
   const [authed, setAuthed] = useState(false);
 
-  function logout() {
+  async function logout() {
     invalidateToken();
-    authClient.signOut();
+    // Await sign-out before navigating: /login's mount check reads the live
+    // session, so leaving before the cookie clears would bounce straight back
+    // into the dashboard.
+    await authClient.signOut();
     setAuthed(false);
+    // Send the user to the generic /login rather than re-showing this
+    // scholar's specific auth gate.
+    router.replace('/login');
   }
 
   if (!authed) {
