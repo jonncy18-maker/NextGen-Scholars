@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { NGS_DATA } from '../../scholars-data.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
 import { loadFromSupabase, loadPendingSubmissions } from '../api-loader.js';
@@ -66,6 +67,7 @@ function computeLiveGpa(rows) {
 }
 
 export function Navigator({ slug = [] }) {
+  const router = useRouter();
   const section = slug[0] || '';
   const [D, setD] = useState(NGS_DATA);
   const scholarKeys = STATIC_SCHOLAR_KEYS.filter(k => D.scholars[k]);
@@ -427,7 +429,16 @@ export function Navigator({ slug = [] }) {
           onRefresh={() => setRefreshKey(k => k + 1)}
           aiDrawerOpen={aiDrawerOpen}
           onAiDrawerToggle={() => setAiDrawerOpen(v => !v)}
-          onSignOut={() => { invalidateToken(); authClient.signOut(); setUnlocked(false); }}
+          onSignOut={async () => {
+            invalidateToken();
+            // Await sign-out before navigating: /login's mount check reads the
+            // live session, so leaving before the cookie clears would bounce
+            // back in. Redirect to the generic /login rather than re-showing
+            // this mentor-only lock screen.
+            await authClient.signOut();
+            setUnlocked(false);
+            router.replace('/login');
+          }}
         />
         <NavigatorAIDrawer
           open={aiDrawerOpen}
