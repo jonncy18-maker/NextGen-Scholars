@@ -611,6 +611,19 @@ input, select { font-family: inherit; }
 }
 .ef-pending-item-main { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .ef-pending-item-name { font-family: var(--ngs-display); font-size: 14px; color: var(--ngs-navy); }
+
+/* Mobile: scroll the expense lists horizontally instead of squashing the
+   name/columns. Scoped to just these sections — the page itself never scrolls
+   sideways. The approved table's .ef-entries-scroll wrapper already has
+   overflow-x:auto; the min-width below is what actually makes it scroll. */
+@media (max-width: 600px) {
+  .ef-entries-table { min-width: 520px; }
+  .ef-pending-item-main {
+    flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  .ef-pending-item-main > * { flex-shrink: 0; }
+  .ef-pending-item-name { white-space: nowrap; }
+}
 .ef-pending-item.is-rejected .ef-pending-item-name { color: var(--ngs-red); }
 .ef-pending-item-amt { font-family: var(--ngs-mono); font-size: 13px; color: var(--ngs-ink); font-weight: 500; }
 .ef-pending-item-meta {

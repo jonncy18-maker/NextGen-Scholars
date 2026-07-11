@@ -1563,6 +1563,11 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 
   /* Hide Qty column in expense table to save space */
   .exp-col-hide-mobile { display: none; }
+
+  /* Let the expense table scroll sideways (its .exp-table-scroll wrapper
+     already has overflow-x:auto) rather than squashing the item name. */
+  table.exp { min-width: 560px; }
+  .exp-item { white-space: nowrap; word-break: normal; }
 }
 
 /* ════════════════ NAVIGATOR AI PANEL (.nai-*) ════════════════ */
