@@ -117,7 +117,7 @@ export function Navigator({ slug = [] }) {
   }
   const [liveGpa, setLiveGpa]   = useState({});
   const [prevGpa, setPrevGpa]   = useState({});
-  const [sheetsStatus, setSheetsStatus] = useState('loading');
+  const [connStatus, setConnStatus] = useState('loading');
   const [refreshKey, setRefreshKey]     = useState(0);
 
   const [writeError, setWriteError] = useState(false);
@@ -350,7 +350,7 @@ export function Navigator({ slug = [] }) {
 
   useEffect(() => {
     if (!unlocked) return;
-    setSheetsStatus('loading');
+    setConnStatus('loading');
     loadFromSupabase()
       .then(data => {
         // The browser's Better Auth session is shared across tabs/origins —
@@ -364,8 +364,8 @@ export function Navigator({ slug = [] }) {
         }
         const hasScholars = data.scholars && Object.keys(data.scholars).length > 0;
         if (!hasScholars) {
-          console.warn('Sheets returned no scholar data — using static fallback');
-          setSheetsStatus('static');
+          console.warn('Neon returned no scholar data — using static fallback');
+          setConnStatus('static');
           return;
         }
         const mergedScholars = {};
@@ -382,15 +382,15 @@ export function Navigator({ slug = [] }) {
           config: { ...data.config },
         };
         setD(merged);
-        setSheetsStatus('live');
+        setConnStatus('live');
       })
       .catch(err => {
         // A dead session (401) is handled by the useSessionExpired subscription
         // above, which re-locks — nothing extra to do here. Anything else
         // (network blip, server error) falls back to the static snapshot.
         if (err?.status === 401) return;
-        console.warn('Supabase unavailable, using static data:', err.message);
-        setSheetsStatus('static');
+        console.warn('Neon unavailable, using static data:', err.message);
+        setConnStatus('static');
       });
   }, [refreshKey, unlocked]);
 
@@ -451,7 +451,7 @@ export function Navigator({ slug = [] }) {
           sessionExpired={sessionExpired}
         />
         <NavBar
-          sheetsStatus={sheetsStatus}
+          connStatus={connStatus}
           onRefresh={() => setRefreshKey(k => k + 1)}
           aiDrawerOpen={aiDrawerOpen}
           onAiDrawerToggle={() => setAiDrawerOpen(v => !v)}
@@ -579,7 +579,7 @@ export function Navigator({ slug = [] }) {
             Ask AI
           </button>
         )}
-        <NavFooter sheetsStatus={sheetsStatus} writeError={writeError} />
+        <NavFooter connStatus={connStatus} writeError={writeError} />
       </div>
       </FxCtx.Provider>
     </DataCtx.Provider>

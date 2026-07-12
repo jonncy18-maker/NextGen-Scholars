@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export function NavBar({ sheetsStatus, onRefresh, aiDrawerOpen, onAiDrawerToggle, onSignOut }) {
+export function NavBar({ connStatus, onRefresh, aiDrawerOpen, onAiDrawerToggle, onSignOut }) {
   const pathname = usePathname();
   const isHome = pathname === '/navigator' || pathname === '/navigator/';
   const isExpenses = pathname === '/navigator/expenses';
@@ -28,7 +28,7 @@ export function NavBar({ sheetsStatus, onRefresh, aiDrawerOpen, onAiDrawerToggle
             Ask AI
           </button>
           <button
-            className={`nav-refresh${sheetsStatus === 'loading' ? ' is-loading' : ''}`}
+            className={`nav-refresh${connStatus === 'loading' ? ' is-loading' : ''}`}
             onClick={onRefresh}
             title="Reload data from Neon"
           >
