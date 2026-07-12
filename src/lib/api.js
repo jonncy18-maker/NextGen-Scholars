@@ -14,6 +14,23 @@ export function onAfterWrite(listener) {
   return () => { pokeListeners = pokeListeners.filter(l => l !== listener); };
 }
 
+let sessionExpiredListeners = [];
+
+// Fired the moment ANY call through this module gets a 401 that survives the
+// fresh-token retry below — i.e. the session is genuinely dead, not just
+// briefly stale. This is the single choke point every request (bootstrap
+// load, polling, writes) passes through, so it's the one place that can
+// reliably detect "this tab's session died" instead of each screen inventing
+// its own ad-hoc check. Screens subscribe via src/hooks/useSessionExpired.js
+// to re-lock and explain why, rather than silently rendering whatever data
+// they loaded before the session died (the "approved expenses disappeared"
+// incident, 2026-07-12 — a stale mentor tab kept showing its old snapshot
+// forever because nothing surfaced the 401s it was getting).
+export function onSessionExpired(listener) {
+  sessionExpiredListeners.push(listener);
+  return () => { sessionExpiredListeners = sessionExpiredListeners.filter(l => l !== listener); };
+}
+
 class ApiError extends Error {
   constructor(status, body) {
     super(body?.error || `Request failed (${status})`);
@@ -49,7 +66,10 @@ async function request(path, { method = 'GET', body, retry = true } = {}) {
 
   const text = await res.text();
   const data = text ? JSON.parse(text) : null;
-  if (!res.ok) throw new ApiError(res.status, data);
+  if (!res.ok) {
+    if (res.status === 401) sessionExpiredListeners.forEach(l => { try { l(); } catch (e) { console.error('onSessionExpired listener error:', e); } });
+    throw new ApiError(res.status, data);
+  }
   return data;
 }
 
