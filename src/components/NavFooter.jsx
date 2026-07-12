@@ -1,15 +1,15 @@
 import React from 'react';
 import { useData } from '../context/DataContext.jsx';
 
-const SHEETS_LABEL = {
-  loading: { text: 'Neon · syncing…', cls: 'sheets-loading' },
-  live:    { text: 'Neon · live',     cls: 'sheets-live'    },
-  static:  { text: 'Neon · offline',  cls: 'sheets-static'  },
+const CONN_LABEL = {
+  loading: { text: 'Neon · syncing…', cls: 'conn-loading' },
+  live:    { text: 'Neon · live',     cls: 'conn-live'    },
+  static:  { text: 'Neon · offline',  cls: 'conn-static'  },
 };
 
-export function NavFooter({ sheetsStatus, writeError }) {
+export function NavFooter({ connStatus, writeError }) {
   const { D } = useData();
-  const pill = SHEETS_LABEL[sheetsStatus] || SHEETS_LABEL.static;
+  const pill = CONN_LABEL[connStatus] || CONN_LABEL.static;
   return (
     <footer className="footer">
       <div className="wrap">
@@ -19,8 +19,8 @@ export function NavFooter({ sheetsStatus, writeError }) {
         </div>
         <div className="footer-fine">
           <span>Pathway Navigator · Mentor View · Phase 1</span>
-          <span className={`sheets-pill ${pill.cls}`}>{pill.text}</span>
-          {writeError && <span className="sheets-pill sheets-write-err">Write · failed</span>}
+          <span className={`conn-pill ${pill.cls}`}>{pill.text}</span>
+          {writeError && <span className="conn-pill conn-write-err">Write · failed</span>}
           <span>Last updated · {D.config.lastUpdated}</span>
         </div>
       </div>

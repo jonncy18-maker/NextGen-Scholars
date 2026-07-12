@@ -209,9 +209,13 @@ between the two apps.
   Function's behavior exactly, not a regression introduced by the port. Accepted
   risk for now; do not store sensitive PII before real scholar-scoped auth is
   extended to this route.
-- **Stale "Sheets" vocabulary** — some state/props/CSS still use `sheets*` naming left
-  over from the pre-Supabase Google Sheets backend (predates even the Supabase era).
-  Functional, but the names no longer reflect the backend.
+- **Stale "Sheets" vocabulary removed (2026-07-12).** State/props/CSS that dated back
+  to the pre-Supabase Google Sheets backend (`sheetsStatus`, `SHEETS_LABEL`,
+  `sheets-pill`/`sheets-live`/etc. CSS classes, `sheetsOverrides`, `sheetsEvents`) were
+  renamed to reflect the actual Neon backend (`connStatus`, `CONN_LABEL`, `conn-pill`
+  CSS classes, `deadlineOverrides`, `dbEvents`) across `navigator.jsx`, `NavBar.jsx`,
+  `NavFooter.jsx`, `DeadlinesSection.jsx`, `DataContext.jsx`, and `navigator.css`. No
+  remaining references to Google Sheets anywhere in the codebase.
 - **Doc cleanup pass (2026-07-05) done.** `README.md` was rewritten for the
   current Next.js/Neon architecture (routes, source layout, data flow all
   updated). `ROADMAP.md` and `ROADMAP-AI.md` had their still-"pending"-looking

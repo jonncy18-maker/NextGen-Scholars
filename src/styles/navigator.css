@@ -1403,12 +1403,12 @@ table.dl tbody tr:hover { background: var(--ngs-paper-2); }
   font-family: var(--ngs-mono); font-size: 11px; letter-spacing: 0.04em; color: rgba(250,247,240,0.45);
 }
 
-/* sheets status pill */
-.sheets-pill { padding: 1px 7px; border-radius: 99px; font-size: 10px; letter-spacing: 0.06em; }
-.sheets-loading   { background: rgba(255,255,255,0.08); color: rgba(250,247,240,0.5); }
-.sheets-live      { background: rgba(80,200,120,0.18);  color: #6ee09a; }
-.sheets-static    { background: rgba(255,200,60,0.15);  color: #f5c842; }
-.sheets-write-err { background: rgba(255,80,80,0.18);   color: #ff9a9a; }
+/* connection status pill */
+.conn-pill { padding: 1px 7px; border-radius: 99px; font-size: 10px; letter-spacing: 0.06em; }
+.conn-loading   { background: rgba(255,255,255,0.08); color: rgba(250,247,240,0.5); }
+.conn-live      { background: rgba(80,200,120,0.18);  color: #6ee09a; }
+.conn-static    { background: rgba(255,200,60,0.15);  color: #f5c842; }
+.conn-write-err { background: rgba(255,80,80,0.18);   color: #ff9a9a; }
 
 /* ════════════════ MULTI-GROUP MODAL ════════════════ */
 .mgroup-backdrop {
