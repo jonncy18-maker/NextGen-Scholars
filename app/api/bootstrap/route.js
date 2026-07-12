@@ -56,5 +56,30 @@ export const GET = withErrorHandling(async (request) => {
 
   const payload = { role };
   tables.forEach((t, i) => { payload[t] = results[i]; });
+
+  // TEMP DIAGNOSTIC (2026-07-12): the mentor dashboard is showing an old
+  // expense snapshot while the public endpoint on the same DB/deploy returns
+  // fresh data. Log exactly what THIS authenticated request pulled so we can
+  // see server-side whether the vaccines/mark-sent are present. Remove once
+  // the stale-bootstrap cause is found.
+  try {
+    const exp = payload.expenses || [];
+    const claire = exp.filter(e => e.scholar === 'claire');
+    const vaccineBatch = claire.filter(e => String(e.id).includes('1783578173158'));
+    const claireCollegeSent = claire.filter(e => e.cat === 'Tuition');
+    console.log('BOOTSTRAP_PROBE', JSON.stringify({
+      role,
+      scopeKey,
+      dbHost: (process.env.DATABASE_URL || '').replace(/:\/\/[^@]*@/, '://***@').split('/')[2] || 'unknown',
+      totalExpenses: exp.length,
+      claireExpenses: claire.length,
+      vaccineBatchRows: vaccineBatch.length,
+      vaccineItems: vaccineBatch.map(e => e.item),
+      tuitionSentStates: claireCollegeSent.map(e => `${e.item}=${e.sent}`),
+    }));
+  } catch (e) {
+    console.log('BOOTSTRAP_PROBE_ERROR', e?.message);
+  }
+
   return json(payload);
 });
