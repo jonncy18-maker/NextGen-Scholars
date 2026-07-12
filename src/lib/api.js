@@ -41,7 +41,19 @@ class ApiError extends Error {
 
 async function request(path, { method = 'GET', body, retry = true } = {}) {
   const token = await getToken();
-  const res = await fetch(`${API_BASE}/api${path}`, {
+  // Cache-buster: append a unique timestamp to every request URL so no
+  // intermediary keyed on the URL — the browser HTTP cache, Vercel's edge,
+  // or a corporate/ISP proxy — can ever hand back a stale copy. This is
+  // belt-and-suspenders on top of `cache: 'no-store'` below, which some
+  // proxies quietly ignore. Diagnosed live 2026-07-12: the public
+  // (unauthenticated) endpoint returned fresh data in the same browser while
+  // the authenticated /api/bootstrap came back stale — a URL-keyed cache
+  // serving an old snapshot is the classic cause, and a unique URL defeats
+  // every such layer at once. Every route here already ignores unknown query
+  // params, so `_ts` is harmless to the server.
+  const sep = path.includes('?') ? '&' : '?';
+  const url = `${API_BASE}/api${path}${sep}_ts=${Date.now()}`;
+  const res = await fetch(url, {
     method,
     // Every route here is scoped by the caller's token (mentor vs. a
     // specific scholar) — never let the browser serve back a cached
