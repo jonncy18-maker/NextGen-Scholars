@@ -261,6 +261,22 @@ between the two apps.
   `Cache-Control: private, no-store` on every response for this reason; keep
   using `json()` for all `app/api/**` responses rather than a raw
   `new Response(...)` so this stays covered.
+- **Neon driver queries MUST opt out of Next's Data Cache** (root cause of the
+  2026-07-12 "mentor dashboard frozen at an old expense snapshot" bug). The
+  `@neondatabase/serverless` HTTP driver sends every query as a POST through
+  global `fetch`, which Next.js patches with the Vercel Data Cache — and in
+  Next 14 route handlers `export const dynamic = 'force-dynamic'` does **not**
+  opt those fetches out (it sets `forceDynamic` but never `revalidate = 0`,
+  which the POST/auth-header escape hatch in `patch-fetch.js` checks). Result:
+  byte-identical query bodies like bootstrap's `select * from expenses` were
+  cached with a one-year TTL, persisting across requests *and deploys*, while
+  writes (whose bodies differ) landed fine — reads frozen, Neon console/MCP
+  fresh. Fix: `neon(url, { fetchOptions: { cache: 'no-store' } })` in
+  `lib/db.js` and `lib/immersion-db.js`. Any future direct `neon(...)` client
+  or hand-rolled `fetch` from a route handler needs the same
+  `cache: 'no-store'`. Verified by local repro: a POST fetch from a
+  `force-dynamic` GET route handler served the same cached body on every
+  request until `no-store` was added.
 
 ## Working in this environment
 
