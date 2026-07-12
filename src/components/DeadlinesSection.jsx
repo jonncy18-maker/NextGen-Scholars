@@ -27,7 +27,7 @@ export function DeadlinesSection({ id, collapsed, onToggle }) {
     try { return JSON.parse(localStorage.getItem('ngs_dl_local') || '[]'); } catch { return []; }
   });
 
-  const [sheetsOverrides, setSheetsOverrides] = useState(() => {
+  const [deadlineOverrides, setDeadlineOverrides] = useState(() => {
     try { return JSON.parse(localStorage.getItem('ngs_dl_overrides') || '{}'); } catch { return {}; }
   });
 
@@ -37,11 +37,11 @@ export function DeadlinesSection({ id, collapsed, onToggle }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [addDraft, setAddDraft] = useState({ ...EMPTY_DRAFT });
 
-  const sheetsEvents = D.deadlines || [];
+  const dbEvents = D.deadlines || [];
   const allEvents = [
-    ...sheetsEvents.map((d, i) => {
+    ...dbEvents.map((d, i) => {
       const key = dlKey(d, i);
-      const override = sheetsOverrides[key];
+      const override = deadlineOverrides[key];
       return { ...d, ...(override || {}), _key: key, _local: false };
     }),
     ...localEvents.map(d => ({ ...d, _key: d.id, _local: true })),
@@ -76,8 +76,8 @@ export function DeadlinesSection({ id, collapsed, onToggle }) {
       setLocalEvents(updated);
       try { localStorage.setItem('ngs_dl_local', JSON.stringify(updated)); } catch {}
     } else {
-      const updated = { ...sheetsOverrides, [d._key]: editDraft };
-      setSheetsOverrides(updated);
+      const updated = { ...deadlineOverrides, [d._key]: editDraft };
+      setDeadlineOverrides(updated);
       try { localStorage.setItem('ngs_dl_overrides', JSON.stringify(updated)); } catch {}
     }
     cancelEdit();
