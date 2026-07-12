@@ -57,44 +57,5 @@ export const GET = withErrorHandling(async (request) => {
   const payload = { role };
   tables.forEach((t, i) => { payload[t] = results[i]; });
 
-  // TEMP DIAGNOSTIC (2026-07-12): the mentor dashboard is showing an old
-  // expense snapshot while the public endpoint on the same DB/deploy returns
-  // fresh data. Log exactly what THIS authenticated request pulled so we can
-  // see server-side whether the vaccines/mark-sent are present. Remove once
-  // the stale-bootstrap cause is found.
-  try {
-    const exp = payload.expenses || [];
-    const claire = exp.filter(e => e.scholar === 'claire');
-    const vaccineBatch = claire.filter(e => String(e.id).includes('1783578173158'));
-    const claireCollegeSent = claire.filter(e => e.cat === 'Tuition');
-    // Parse the connection string so we can compare the exact DB the app reads
-    // (host + database name + whether it's the -pooler endpoint) against where
-    // the real data lives (patient-flower / neondb / br-green-dust). The 8
-    // missing vaccine rows mean these are almost certainly NOT the same DB.
-    const rawUrl = process.env.DATABASE_URL || '';
-    let dbHost = 'unknown', dbName = 'unknown';
-    try {
-      const u = new URL(rawUrl);
-      dbHost = u.host;
-      dbName = u.pathname.replace(/^\//, '') || 'unknown';
-    } catch {
-      dbHost = rawUrl.replace(/:\/\/[^@]*@/, '://***@').split('/')[2] || 'unknown';
-    }
-    console.log('BOOTSTRAP_PROBE', JSON.stringify({
-      role,
-      scopeKey,
-      dbHost,
-      dbName,
-      isPooler: dbHost.includes('-pooler'),
-      totalExpenses: exp.length,
-      claireExpenses: claire.length,
-      vaccineBatchRows: vaccineBatch.length,
-      vaccineItems: vaccineBatch.map(e => e.item),
-      tuitionSentStates: claireCollegeSent.map(e => `${e.item}=${e.sent}`),
-    }));
-  } catch (e) {
-    console.log('BOOTSTRAP_PROBE_ERROR', e?.message);
-  }
-
   return json(payload);
 });
