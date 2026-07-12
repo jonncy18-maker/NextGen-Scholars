@@ -8,7 +8,10 @@ import { api } from '../lib/api.js';
 // a real account. Verifies via GET /api/me (role/scholar_key resolved
 // server-side from user_profile) rather than trusting anything client-side,
 // so a scholar can never view another scholar's route by mistake or intent.
-export function ScholarAuthGate({ scholarKey, name, onUnlock }) {
+// sessionExpired: true when this gate is showing because a live session died
+// mid-use, not the normal first-visit case — shown as a plain-language banner
+// so a forced re-sign-in never reads as an unexplained logout.
+export function ScholarAuthGate({ scholarKey, name, onUnlock, sessionExpired }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -96,6 +99,9 @@ export function ScholarAuthGate({ scholarKey, name, onUnlock }) {
         <div className="el-badge"><span>N</span><span>G</span><span>S</span></div>
         <h1 className="el-title">Welcome, <em>{name}</em></h1>
         <p className="el-sub">Sign in to continue</p>
+        {sessionExpired && (
+          <div className="el-session-expired">Your session expired — sign in again to see the latest updates.</div>
+        )}
         <form className={`el-form${error ? ' is-error' : ''}`} onSubmit={handleSubmit} autoComplete="off">
           <div className="el-field">
             <label className="el-label" htmlFor="sag-email">Email</label>

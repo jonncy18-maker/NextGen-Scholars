@@ -4,6 +4,7 @@ import { api } from '../lib/api.js';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { SignOutButton } from '../components/SignOutButton.jsx';
 import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
+import { useSessionExpired } from '../hooks/useSessionExpired.js';
 import '../styles/vacation-tracker.css';
 
 // Milestone states mirror the travels table: done (unlocked), booked, planned.
@@ -42,8 +43,16 @@ function fmtPhp(n) {
 export function MilestonesTracker({ scholarKey }) {
   const fallback = FALLBACK[scholarKey] || FALLBACK.claire;
   const [authed,     setAuthed]     = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [name,       setName]       = useState(fallback.name);
   const [milestones, setMilestones] = useState(null);
+
+  useSessionExpired(() => {
+    if (!authed) return;
+    setSessionExpired(true);
+    setAuthed(false);
+    setMilestones(null);
+  });
 
   useEffect(() => {
     if (!authed) return;
@@ -58,7 +67,14 @@ export function MilestonesTracker({ scholarKey }) {
   }, [scholarKey, authed]);
 
   if (!authed) {
-    return <ScholarAuthGate scholarKey={scholarKey} name={fallback.name} onUnlock={() => setAuthed(true)} />;
+    return (
+      <ScholarAuthGate
+        scholarKey={scholarKey}
+        name={fallback.name}
+        onUnlock={() => { setSessionExpired(false); setAuthed(true); }}
+        sessionExpired={sessionExpired}
+      />
+    );
   }
 
   const items       = milestones ?? [];
@@ -71,7 +87,7 @@ export function MilestonesTracker({ scholarKey }) {
     <div className="sp-page">
       <div className="sp">
         <header className="sp-head">
-          <SignOutButton onSignOut={() => setAuthed(false)} />
+          <SignOutButton onSignOut={() => { setSessionExpired(false); setAuthed(false); }} />
           <div className="sp-track">
             <span className="sp-track-dot" />
             NextGen Scholars

@@ -13,7 +13,12 @@ import { signIn } from '../lib/auth-client.js';
 // ask Edge Functions -- removed now that Phase B5 ported those to
 // Neon-backed /api/ask, /api/ask-scholar, /api/ask-public.
 // Nothing in the mentor-facing app calls supabase.auth.* anymore.
-export function LockScreen({ isHiding, onUnlock }) {
+// sessionExpired: true when this lock is showing because a live session died
+// mid-use (not the normal first-load/sign-out case) — shown as a plain-language
+// banner so an automatic re-lock never reads as an unexplained, alarming
+// logout (see the "approved expenses disappeared" incident, 2026-07-12: the
+// old silent-failure behavior was the confusing thing, not the re-lock itself).
+export function LockScreen({ isHiding, onUnlock, sessionExpired }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
@@ -51,6 +56,9 @@ export function LockScreen({ isHiding, onUnlock }) {
         <div className="lock-badge"><span>N</span><span>G</span><span>S</span></div>
         <h1 className="lock-title">Pathway <em>Navigator</em></h1>
         <div className="lock-sub">Mentor access only</div>
+        {sessionExpired && (
+          <div className="lock-session-expired">Your session expired — sign in again to see the latest updates.</div>
+        )}
         <form className={`lock-form${error ? ' is-error' : ''}`} onSubmit={handleSubmit} autoComplete="off">
           <input
             ref={inputRef}

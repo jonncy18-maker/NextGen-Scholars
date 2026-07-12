@@ -18,6 +18,7 @@ import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { SignOutButton } from '../components/SignOutButton.jsx';
 import { CAT_TO_BUCKET } from '../constants.js';
+import { useSessionExpired } from '../hooks/useSessionExpired.js';
 
 // All three scholars now have real Neon Auth accounts (see CLAUDE.md).
 // app/home/[scholar]/page.jsx passes scholarKey straight from the URL with
@@ -96,7 +97,20 @@ export function ScholarHome({ scholarKey }) {
   const router = useRouter();
   const config = buildConfig(scholarKey);
   const [authed, setAuthed] = useState(false);
+  // True only when a re-lock was forced by a dead session, not the normal
+  // first-visit case — shown as an explanatory banner on ScholarAuthGate.
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [liveData, setLiveData] = useState(null);
+
+  // Central "this call got a 401 that didn't recover" signal (src/lib/api.js).
+  // Re-lock instead of leaving this screen silently showing whatever it
+  // loaded before the session died (or, worse, the blank {} fallback below).
+  useSessionExpired(() => {
+    if (!authed) return;
+    setSessionExpired(true);
+    setAuthed(false);
+    setLiveData(null);
+  });
 
   // Janndilyne is a TESDA expenses-only dashboard: no English goals, and no
   // career/vacation/reward trackers. The English stat card is hidden and the
@@ -300,7 +314,8 @@ export function ScholarHome({ scholarKey }) {
       <ScholarAuthGate
         scholarKey={scholarKey}
         name={config.name}
-        onUnlock={() => setAuthed(true)}
+        onUnlock={() => { setSessionExpired(false); setAuthed(true); }}
+        sessionExpired={sessionExpired}
       />
     );
   }
@@ -309,7 +324,7 @@ export function ScholarHome({ scholarKey }) {
     <div className="sp-page">
       <div className="sp">
         <header className="sp-head">
-          <SignOutButton onSignOut={() => setAuthed(false)} />
+          <SignOutButton onSignOut={() => { setSessionExpired(false); setAuthed(false); }} />
           <div className="sp-track">
             <span className="sp-track-dot" />
             {config.track}

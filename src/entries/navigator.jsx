@@ -7,6 +7,7 @@ import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivity
 import { authClient, invalidateToken } from '../lib/auth-client.js';
 import { api } from '../lib/api.js';
 import { useChanges } from '../hooks/useChanges.js';
+import { useSessionExpired } from '../hooks/useSessionExpired.js';
 import { CAT_TO_BUCKET } from '../constants.js';
 import { FxCtx, useFxState } from '../context/FxContext.jsx';
 import { DataCtx } from '../context/DataContext.jsx';
@@ -73,6 +74,10 @@ export function Navigator({ slug = [] }) {
   const scholarKeys = STATIC_SCHOLAR_KEYS.filter(k => D.scholars[k]);
 
   const [unlocked, setUnlocked] = useState(false);
+  // True only when a re-lock was forced by a dead session (not the normal
+  // first-load lock or a manual sign-out) — shown as an explanatory banner on
+  // LockScreen instead of an unexplained logout. Cleared on unlock/sign-out.
+  const [sessionExpired, setSessionExpired] = useState(false);
   // Every Navigator section is its own Next.js page (app/navigator/[[...slug]]),
   // so this component remounts fresh on each section navigation, and the
   // session check below is async — without this, LockScreen would flash
@@ -219,15 +224,19 @@ export function Navigator({ slug = [] }) {
         return scholars === prev.scholars ? prev : { ...prev, scholars };
       });
     }
-  }, {
-    // Dead session detected by the poller — re-lock rather than letting this
-    // tab keep silently rendering its last-known (increasingly stale) data.
-    onAuthError: () => {
-      if (!unlocked) return;
-      console.warn('polling returned 401 — session expired, re-locking');
-      invalidateToken();
-      setUnlocked(false);
-    },
+  });
+
+  // Central "this call got a 401 that didn't recover" signal (src/lib/api.js)
+  // — fires whether the dead session was caught by a bootstrap load, a poll,
+  // or a write. Re-lock rather than letting this tab keep silently rendering
+  // whatever it loaded before the session died (the "approved expenses
+  // disappeared" incident, 2026-07-12).
+  useSessionExpired(() => {
+    if (!unlocked) return;
+    console.warn('session expired — re-locking');
+    invalidateToken();
+    setSessionExpired(true);
+    setUnlocked(false);
   });
 
   function removeExpenseFromD(scholarKey, expenseId) {
@@ -376,20 +385,10 @@ export function Navigator({ slug = [] }) {
         setSheetsStatus('live');
       })
       .catch(err => {
-        // An expired/broken session must NOT silently keep showing whatever
-        // snapshot this tab loaded earlier — a long-lived mentor tab whose
-        // token went stale would keep rendering days-old data with nothing
-        // but the tiny status dot changing (real incident, 2026-07-12: the
-        // mentor approved expenses that "disappeared" because the tab's
-        // bootstrap refreshes were silently 401ing and the frozen snapshot
-        // predated the approval). Re-lock so LockScreen forces a fresh
-        // sign-in; the unlock then re-runs this effect with a valid token.
-        if (err?.status === 401) {
-          console.warn('/api/bootstrap returned 401 — session expired, re-locking');
-          invalidateToken();
-          setUnlocked(false);
-          return;
-        }
+        // A dead session (401) is handled by the useSessionExpired subscription
+        // above, which re-locks — nothing extra to do here. Anything else
+        // (network blip, server error) falls back to the static snapshot.
+        if (err?.status === 401) return;
         console.warn('Supabase unavailable, using static data:', err.message);
         setSheetsStatus('static');
       });
@@ -446,7 +445,11 @@ export function Navigator({ slug = [] }) {
     <DataCtx.Provider value={{ D, scholarKeys }}>
       <FxCtx.Provider value={fxRate}>
       <div className="nav-app">
-        <LockScreen isHiding={unlocked || !authChecked} onUnlock={() => setUnlocked(true)} />
+        <LockScreen
+          isHiding={unlocked || !authChecked}
+          onUnlock={() => { setSessionExpired(false); setUnlocked(true); }}
+          sessionExpired={sessionExpired}
+        />
         <NavBar
           sheetsStatus={sheetsStatus}
           onRefresh={() => setRefreshKey(k => k + 1)}
@@ -459,6 +462,7 @@ export function Navigator({ slug = [] }) {
             // back in. Redirect to the generic /login rather than re-showing
             // this mentor-only lock screen.
             await authClient.signOut();
+            setSessionExpired(false);
             setUnlocked(false);
             router.replace('/login');
           }}

@@ -5,6 +5,7 @@ import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { SignOutButton } from '../components/SignOutButton.jsx';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { ScholarIngestPanel } from '../components/ScholarIngestPanel.jsx';
+import { useSessionExpired } from '../hooks/useSessionExpired.js';
 const ACCEPTED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
 
 // grade_entries' numeric columns (units, prelim, midterm, final_grade,
@@ -387,12 +388,20 @@ function AiGradeImport({ scholarKey, semKey, onSaved }) {
 export function GradeEntry({ scholarKey }) {
   const config = CONFIGS[scholarKey] || CONFIGS.claire;
   const [authed, setAuthed] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const [semKey, setSemKey] = useState(config.semKey);
   const [rows, setRows] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(() => emptyForm(config.defaultSchool));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  useSessionExpired(() => {
+    if (!authed) return;
+    setSessionExpired(true);
+    setAuthed(false);
+    setRows(null);
+  });
 
   // Keep semKey in sync with whatever the mentor last set
   useEffect(() => {
@@ -410,7 +419,14 @@ export function GradeEntry({ scholarKey }) {
   }, [scholarKey, authed]);
 
   if (!authed) {
-    return <ScholarAuthGate scholarKey={scholarKey} name={config.name} onUnlock={() => setAuthed(true)} />;
+    return (
+      <ScholarAuthGate
+        scholarKey={scholarKey}
+        name={config.name}
+        onUnlock={() => { setSessionExpired(false); setAuthed(true); }}
+        sessionExpired={sessionExpired}
+      />
+    );
   }
 
   // live preview — ranges differ per school
@@ -478,7 +494,7 @@ export function GradeEntry({ scholarKey }) {
       <div className="sp">
 
         <header className="sp-head">
-          <SignOutButton onSignOut={() => setAuthed(false)} />
+          <SignOutButton onSignOut={() => { setSessionExpired(false); setAuthed(false); }} />
           <div className="sp-track">
             <span className="sp-track-dot" />
             NextGen Nurses

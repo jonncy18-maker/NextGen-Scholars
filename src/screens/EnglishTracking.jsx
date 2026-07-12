@@ -7,6 +7,7 @@ import { SESSION_CATEGORIES, SESSION_TYPES, classifyActivity } from '../constant
 import { EnglishIngestPanel } from '../components/EnglishIngestPanel.jsx';
 import { calcForecast } from '../lib/english-forecast.js';
 import { upsertEnglishForecast } from '../api-writer.js';
+import { useSessionExpired } from '../hooks/useSessionExpired.js';
 import '../styles/english-tracking.css';
 
 const FALLBACK = {
@@ -285,6 +286,7 @@ function SessionRow({ sess, cats, onSaved, onDeleted }) {
 export function EnglishTracking({ scholarKey }) {
   const fallback = FALLBACK[scholarKey] || FALLBACK.claire;
   const [authed, setAuthed] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const [period,      setPeriod]      = useState(undefined);
   const [sessions,    setSessions]    = useState(null);
@@ -294,6 +296,14 @@ export function EnglishTracking({ scholarKey }) {
   const [submitting, setSubmitting]   = useState(false);
   const [error, setError]             = useState(null);
   const [collapsedCats, setCollapsedCats] = useState(null); // initialized after period loads
+
+  useSessionExpired(() => {
+    if (!authed) return;
+    setSessionExpired(true);
+    setAuthed(false);
+    setPeriod(undefined);
+    setSessions(null);
+  });
 
   function sessionsQuery() {
     return period
@@ -334,7 +344,14 @@ export function EnglishTracking({ scholarKey }) {
   }, [period, sessions, authed]);
 
   if (!authed) {
-    return <ScholarAuthGate scholarKey={scholarKey} name={fallback.name} onUnlock={() => setAuthed(true)} />;
+    return (
+      <ScholarAuthGate
+        scholarKey={scholarKey}
+        name={fallback.name}
+        onUnlock={() => { setSessionExpired(false); setAuthed(true); }}
+        sessionExpired={sessionExpired}
+      />
+    );
   }
 
   const cats         = sessionCategories(period);
@@ -421,7 +438,7 @@ export function EnglishTracking({ scholarKey }) {
     <div className="sp-page">
       <div className="sp">
         <header className="sp-head">
-          <SignOutButton onSignOut={() => setAuthed(false)} />
+          <SignOutButton onSignOut={() => { setSessionExpired(false); setAuthed(false); }} />
           <div className="sp-track">
             <span className="sp-track-dot" />
             NextGen Nurses
