@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext.jsx';
 import { useFmt } from '../../context/FxContext.jsx';
 import { allExpenses } from '../../utils.js';
@@ -106,10 +106,37 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
   const sems    = Object.keys(s.expenses || {});
   const baseRows  = allExpenses(s);
   const baseIds   = new Set(baseRows.map(r => String(r.id)));
+  // `deletedIds` (localStorage `ngs_deleted`) is a client-only optimistic overlay.
+  // A real delete already removes the row from React state (D) and Neon (via
+  // handleDeleteExpenseFromTable), so authoritative server rows (baseRows) must
+  // NEVER be hidden by this overlay — otherwise a re-created / re-approved expense
+  // whose id was once deleted on this browser stays invisible forever, surviving
+  // refresh and "Clear filters" (the "approved expenses disappearing after
+  // approval" bug). Apply the overlay only to not-yet-synced optimistic additions.
   const localRows = (addedExpenses[expScholar] || [])
     .filter(e => !baseIds.has(String(e.id)))
+    .filter(e => !deletedIds.has(String(e.id)))
     .map(e => ({ ...e, status: e.avb }));
-  const allRows   = [...baseRows, ...localRows].filter(r => !deletedIds.has(String(r.id)));
+  const allRows   = [...baseRows, ...localRows];
+
+  // Self-heal: if the server still reports an id sitting in this browser's
+  // `ngs_deleted` set (e.g. a resubmitted expense re-approved under the same id),
+  // drop it from the overlay so the persisted set doesn't keep a stale tombstone.
+  // The filter above already un-hides such rows; this just prevents unbounded growth.
+  useEffect(() => {
+    const list = deletedAll[expScholar];
+    if (!list?.length) return;
+    const sd = D.scholars[expScholar];
+    if (!sd) return;
+    const serverIds = new Set(allExpenses(sd).map(r => String(r.id)));
+    const kept = list.filter(id => !serverIds.has(String(id)));
+    if (kept.length === list.length) return;
+    setDeletedAll(prev => {
+      const updated = { ...prev, [expScholar]: kept };
+      try { localStorage.setItem('ngs_deleted', JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+  }, [expScholar, D]);
 
   const uniqueCats     = EXPENSE_CATS;
   const uniqueStatuses = [...new Set(allRows.map(r => r.status))].sort();
