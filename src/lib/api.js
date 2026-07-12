@@ -1,4 +1,4 @@
-import { getToken } from './auth-client.js';
+import { getToken, invalidateToken } from './auth-client.js';
 
 // Same-origin in prod/preview; VITE_API_BASE-style override only needed if
 // ever running the frontend against a separately-deployed API.
@@ -39,7 +39,11 @@ async function request(path, { method = 'GET', body, retry = true } = {}) {
 
   if (res.status === 401 && retry) {
     // Token may have expired between page load and this call — one retry
-    // with a freshly-fetched token before surfacing the failure.
+    // with a freshly-fetched token before surfacing the failure. getToken()
+    // caches tokens for ~10s, so without invalidateToken() the retry would
+    // re-send the exact same rejected token and 401 again (observed live as
+    // rapid 401 bursts in the Vercel logs, 2026-07-12).
+    invalidateToken();
     return request(path, { method, body, retry: false });
   }
 

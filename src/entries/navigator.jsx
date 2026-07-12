@@ -219,6 +219,15 @@ export function Navigator({ slug = [] }) {
         return scholars === prev.scholars ? prev : { ...prev, scholars };
       });
     }
+  }, {
+    // Dead session detected by the poller — re-lock rather than letting this
+    // tab keep silently rendering its last-known (increasingly stale) data.
+    onAuthError: () => {
+      if (!unlocked) return;
+      console.warn('polling returned 401 — session expired, re-locking');
+      invalidateToken();
+      setUnlocked(false);
+    },
   });
 
   function removeExpenseFromD(scholarKey, expenseId) {
@@ -367,6 +376,20 @@ export function Navigator({ slug = [] }) {
         setSheetsStatus('live');
       })
       .catch(err => {
+        // An expired/broken session must NOT silently keep showing whatever
+        // snapshot this tab loaded earlier — a long-lived mentor tab whose
+        // token went stale would keep rendering days-old data with nothing
+        // but the tiny status dot changing (real incident, 2026-07-12: the
+        // mentor approved expenses that "disappeared" because the tab's
+        // bootstrap refreshes were silently 401ing and the frozen snapshot
+        // predated the approval). Re-lock so LockScreen forces a fresh
+        // sign-in; the unlock then re-runs this effect with a valid token.
+        if (err?.status === 401) {
+          console.warn('/api/bootstrap returned 401 — session expired, re-locking');
+          invalidateToken();
+          setUnlocked(false);
+          return;
+        }
         console.warn('Supabase unavailable, using static data:', err.message);
         setSheetsStatus('static');
       });

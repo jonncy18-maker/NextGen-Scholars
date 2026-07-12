@@ -17,6 +17,7 @@ import { api, onAfterWrite } from '../lib/api.js';
 const POLL_INTERVAL_MS = 25000;
 
 let subscribers = new Set();
+let authErrorSubscribers = new Set();
 let since = null;
 let prevIds = {};
 let intervalId = null;
@@ -49,6 +50,15 @@ async function poll() {
       try { cb(deltas); } catch (err) { console.error('useChanges subscriber error:', err); }
     });
   } catch (err) {
+    // A 401 here means the session died and even api.js's fresh-token retry
+    // couldn't recover it. Without surfacing this, the tab keeps silently
+    // rendering its last-known data forever (the "approved expenses
+    // disappeared" incident, 2026-07-12) — let screens react (e.g. re-lock).
+    if (err?.status === 401) {
+      authErrorSubscribers.forEach(cb => {
+        try { cb(err); } catch (e) { console.error('useChanges auth-error subscriber error:', e); }
+      });
+    }
     console.warn('useChanges poll failed:', err.message);
   } finally {
     inFlight = false;
@@ -82,16 +92,22 @@ function detachGlobalListenersIfIdle() {
 
 // onChange receives { [table]: { rows, deletedIds } } for every polled table
 // on every tick (empty arrays when nothing changed) — cheap to check.
-export function useChanges(onChange) {
+// options.onAuthError (optional) fires when a poll fails with 401 even after
+// api.js's fresh-token retry — i.e. the session is genuinely dead.
+export function useChanges(onChange, { onAuthError } = {}) {
   const cbRef = useRef(onChange);
-  useEffect(() => { cbRef.current = onChange; });
+  const authCbRef = useRef(onAuthError);
+  useEffect(() => { cbRef.current = onChange; authCbRef.current = onAuthError; });
 
   useEffect(() => {
     const wrapped = deltas => cbRef.current(deltas);
+    const wrappedAuth = err => authCbRef.current?.(err);
     subscribers.add(wrapped);
+    authErrorSubscribers.add(wrappedAuth);
     attachGlobalListenersIfNeeded();
     return () => {
       subscribers.delete(wrapped);
+      authErrorSubscribers.delete(wrappedAuth);
       detachGlobalListenersIfIdle();
     };
   }, []);
