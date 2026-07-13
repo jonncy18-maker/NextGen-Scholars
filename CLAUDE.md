@@ -280,7 +280,12 @@ between the two apps.
   or hand-rolled `fetch` from a route handler needs the same
   `cache: 'no-store'`. Verified by local repro: a POST fetch from a
   `force-dynamic` GET route handler served the same cached body on every
-  request until `no-store` was added.
+  request until `no-store` was added. The same rule was applied to the AI
+  layer's hand-rolled Gemini `fetch` calls (`app/api/{ask-public,ask-scholar}`,
+  `lib/ai/{tier2,tier3,action}.js`) — same POST-cached-by-url+body footgun,
+  lower-risk there only because the prompt body varies per request, but now
+  explicitly `cache: 'no-store'` so a cached AI response can't reflect a stale
+  DB-context snapshot.
 
 ## Working in this environment
 
