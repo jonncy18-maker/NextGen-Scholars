@@ -358,6 +358,19 @@ html[data-theme='dark'] .ds-ai-btn {
 .ds-icon-btn:hover { color: var(--ds-ink); border-color: var(--ds-muted); }
 .ds-icon-btn.is-loading { color: var(--ngs-gold); border-color: rgba(201, 168, 76, 0.5); }
 .ds-icon-btn.is-loading svg { animation: ds-spin 1s linear infinite; }
+.ds-icon-btn { position: relative; }
+.ds-icon-btn.has-update { color: var(--ngs-gold); border-color: rgba(201, 168, 76, 0.5); }
+.ds-icon-btn.has-update::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ds-bad, var(--ngs-red));
+  border: 1.5px solid var(--ds-surface, #fff);
+}
 @keyframes ds-spin {
   to { transform: rotate(360deg); }
 }

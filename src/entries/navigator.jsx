@@ -17,8 +17,9 @@ import { Sidebar } from '../components/Sidebar.jsx';
 import { ThemeToggle } from '../components/ThemeToggle.jsx';
 import {
   IcnGrid, IcnWallet, IcnBook, IcnGlobe, IcnClock, IcnRoute,
-  IcnStar, IcnPlane, IcnPie, IcnDoc, IcnSparkle, IcnRefresh, IcnSignOut, IcnHome,
+  IcnStar, IcnPlane, IcnPie, IcnDoc, IcnSparkle, IcnRefresh, IcnUpdate, IcnSignOut, IcnHome,
 } from '../components/ShellIcons.jsx';
+import { useAppUpdate } from '../hooks/useAppUpdate.js';
 import { SubmissionBanner } from '../components/expenses/SubmissionBanner.jsx';
 import { ExpenseSection } from '../components/expenses/ExpenseSection.jsx';
 import { DeadlinesSection } from '../components/DeadlinesSection.jsx';
@@ -151,6 +152,8 @@ export function Navigator({ slug = [] }) {
   const [prevGpa, setPrevGpa]   = useState({});
   const [connStatus, setConnStatus] = useState('loading');
   const [refreshKey, setRefreshKey]     = useState(0);
+
+  const { checking: checkingUpdate, available: updateAvailable, checkForUpdate } = useAppUpdate();
 
   const [writeError, setWriteError] = useState(false);
 
@@ -573,6 +576,13 @@ export function Navigator({ slug = [] }) {
               title="Reload data from Neon"
             >
               <IcnRefresh size={15} />
+            </button>
+            <button
+              className={`ds-icon-btn${checkingUpdate ? ' is-loading' : updateAvailable ? ' has-update' : ''}`}
+              onClick={checkForUpdate}
+              title={updateAvailable ? 'New version installed — tap to reload' : 'Check for app updates'}
+            >
+              <IcnUpdate size={15} />
             </button>
             <span className="ds-updated">Updated · {D.config.lastUpdated}</span>
           </div>
