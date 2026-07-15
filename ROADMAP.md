@@ -1,5 +1,10 @@
 # NextGen Scholars — Roadmap / Tech Debt
 
+## Next Up
+
+Ship the scholar app to the Play Store via the **Internal Testing** track. The PWA foundation shipped 2026-07-11; next is packaging it as a TWA (Bubblewrap — stable package id + `.well-known/assetlinks.json`), verifying the Bearer-JWT auth flow inside the installed app on a real device, then a Play Console Internal Testing release with a mentor + scholar email allowlist. Code is Claude Code's; Play Console, signing, and device testing are John's.
+
+
 ## Phase 1 — Build system & data correctness ✅ Complete
 
 | Area | Status |
