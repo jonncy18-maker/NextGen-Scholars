@@ -185,7 +185,7 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
   display: flex; align-items: center; gap: 10px;
   font-family: var(--ngs-sans); font-size: 11px; font-weight: 600;
   letter-spacing: 0.18em; text-transform: uppercase;
-  color: var(--ngs-navy); margin-bottom: 16px;
+  color: var(--ngs-navy-text); margin-bottom: 16px;
 }
 .sp-eyebrow-rule { width: 22px; height: 1px; background: var(--ngs-gold); }
 .sp-eyebrow-count {
@@ -229,7 +229,7 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
   width: 46px; height: 46px; border-radius: 5px;
   background: var(--ngs-paper-2); border: 1px solid var(--ngs-rule);
   display: flex; align-items: center; justify-content: center;
-  color: var(--ngs-navy);
+  color: var(--ngs-navy-text);
   transition:
     background var(--dur-default) var(--ease-default),
     color var(--dur-default) var(--ease-default),
@@ -240,7 +240,7 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
 }
 .sp-card-label {
   font-family: var(--ngs-display); font-size: 20px; line-height: 1.1;
-  letter-spacing: -0.01em; color: var(--ngs-navy);
+  letter-spacing: -0.01em; color: var(--ngs-navy-text);
   margin-top: auto; padding-top: 18px;
 }
 .sp-card-blurb {
@@ -248,7 +248,7 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
   letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--ngs-muted); margin-top: 7px;
 }
-.sp-card-blurb b { color: var(--ngs-navy); font-weight: 600; }
+.sp-card-blurb b { color: var(--ngs-navy-text); font-weight: 600; }
 .sp-card-arrow {
   position: absolute; top: 18px; right: 16px;
   color: var(--ngs-rule);
@@ -295,7 +295,7 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
   width: 34px; height: 34px; border-radius: 5px; flex-shrink: 0;
   background: var(--ngs-paper-2); border: 1px solid var(--ngs-rule);
   display: flex; align-items: center; justify-content: center;
-  color: var(--ngs-navy); position: relative;
+  color: var(--ngs-navy-text); position: relative;
 }
 .sp-tile.is-reward .sp-tile-icon {
   background: var(--ngs-gold); border-color: var(--ngs-gold); color: var(--ngs-navy);
@@ -308,7 +308,7 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
 }
 .sp-tile-label {
   font-family: var(--ngs-display); font-size: 15.5px; line-height: 1.12;
-  color: var(--ngs-navy); letter-spacing: -0.005em;
+  color: var(--ngs-navy-text); letter-spacing: -0.005em;
 }
 .sp-tile-sub {
   font-family: var(--ngs-mono); font-size: 9.5px; font-weight: 500;
@@ -456,7 +456,7 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
 .sap-input {
   flex: 1; min-width: 0;
   padding: 8px 11px; border-radius: 7px;
-  border: 1px solid var(--ngs-rule, #E5E0D8); background: #fff;
+  border: 1px solid var(--ngs-rule, #E5E0D8); background: var(--ngs-surface, #fff);
   font-family: var(--ngs-sans, 'Manrope', sans-serif); font-size: 13.5px;
   color: var(--ngs-ink, #1C2235);
   transition: border-color 0.12s;
@@ -480,7 +480,7 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
 .sap-chip {
   padding: 4px 10px;
   border: 1px solid var(--ngs-rule, #E5E0D8); border-radius: 16px;
-  background: #fff; color: var(--ngs-navy, #1B2A4A);
+  background: var(--ngs-surface, #fff); color: var(--ngs-navy, #1B2A4A);
   font-family: var(--ngs-sans, 'Manrope', sans-serif); font-size: 11.5px; font-weight: 500;
   cursor: pointer; white-space: nowrap;
   transition: background 0.12s, color 0.12s, border-color 0.12s;
@@ -612,7 +612,7 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
   display: flex; align-items: flex-start;
 }
 .scp-bubble-assistant {
-  background: #fff;
+  background: var(--ngs-surface, #fff);
   border: 1px solid var(--ngs-rule, #E5E0D8);
   border-bottom-left-radius: 4px;
   color: var(--ngs-ink, #1C2235);
@@ -679,3 +679,42 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
 .sd-header-actions {
   display: flex; align-items: center; gap: 10px;
 }
+
+/* ════════════════ DASHBOARD SHELL VARIANT (2026-07 redesign) ════════════════
+   ScholarHome now renders inside the shared ds-shell (see shell.css). The
+   chat panel / ask widget keep their scp-/sap-/paw- styles, which read the
+   --ngs-* vars with warm-paper fallbacks — the .sp-shell scope below remaps
+   those vars to the shell's cool neutrals (light) and the shared dark
+   palette, so the legacy components blend into the new canvas without
+   touching their own rules. */
+.sp-shell {
+  --ngs-paper: #ffffff;
+  --ngs-paper-2: #f7f8fa;
+  --ngs-rule: #e1e4ea;
+  --ngs-ink: #10182b;
+  --ngs-ink-soft: #3a3f4c;
+  --ngs-muted: #667085;
+  --ngs-surface: #ffffff;
+}
+html[data-theme='dark'] .sp-shell {
+  --ngs-paper: var(--ngs-dark-surface);
+  --ngs-paper-2: var(--ngs-dark-surface-2);
+  --ngs-rule: var(--ngs-dark-rule);
+  --ngs-ink: var(--ngs-dark-ink);
+  --ngs-ink-soft: var(--ngs-dark-ink-soft);
+  --ngs-muted: var(--ngs-dark-muted);
+  --ngs-surface: var(--ngs-dark-surface);
+  /* text-role colors, same rationale as the .nav-app dark block */
+  --ngs-navy-text: #A9BEE8;
+  --ngs-blue-nav: #82A8E8;
+  --ngs-green: #5CB884;
+  --ngs-red: #E06A76;
+  --ngs-amber: #D9A94E;
+  --ngs-warn: #D9A94E;
+}
+/* user chat bubble: navy-on-navy has no contrast in dark — flip to gold */
+html[data-theme='dark'] .sp-shell .scp-bubble-user {
+  background: rgba(201, 168, 76, 0.18);
+  color: var(--ngs-gold-soft);
+}
+.sp-shell .scp-panel { margin: 0; }
