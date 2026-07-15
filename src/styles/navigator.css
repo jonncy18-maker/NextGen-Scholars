@@ -3631,7 +3631,9 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 
 /* ── Floating "Ask AI" button — opens the Navigator AI drawer, matches the
    public .paw-fab look so the mentor view has the same affordance as every
-   other page. ── */
+   other page. Mobile-only since the redesign: the shell topbar carries its
+   own Ask AI button on desktop, and the fixed FAB overlapped the rail's
+   financial-overview card. ── */
 .nav-ai-fab {
   position: fixed; z-index: 290;
   bottom: calc(24px + env(safe-area-inset-bottom)); right: 24px;
@@ -3645,6 +3647,9 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   transition: opacity 0.15s, transform 0.15s;
 }
 .nav-ai-fab:hover { opacity: 0.88; transform: translateY(-2px); }
+@media (min-width: 1000px) {
+  .nav-ai-fab { display: none; }
+}
 .nav-ai-fab-dot {
   width: 8px; height: 8px; border-radius: 50%;
   background: var(--ngs-gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.25);

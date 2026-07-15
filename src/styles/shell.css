@@ -862,10 +862,10 @@ html[data-theme='dark'] .ds-attn-act { color: var(--ngs-gold-soft); }
 
 /* ── GPA trend (scholar academic overview) ── */
 .ds-trend-chart { width: 100%; display: block; }
-.ds-trend-chart .ds-trend-line { fill: none; stroke: var(--ngs-navy); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ds-trend-chart .ds-trend-line { fill: none; stroke: var(--ngs-navy); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 html[data-theme='dark'] .ds-trend-chart .ds-trend-line { stroke: var(--ngs-gold-soft); }
-.ds-trend-chart .ds-trend-dot { fill: var(--ngs-gold); stroke: var(--ds-surface); stroke-width: 1.4; }
-.ds-trend-chart .ds-trend-floor { stroke: var(--ds-bad); stroke-width: 1; stroke-dasharray: 3 4; opacity: 0.55; }
+.ds-trend-chart .ds-trend-dot { fill: var(--ngs-gold); stroke: var(--ds-surface); stroke-width: 2.5; }
+.ds-trend-chart .ds-trend-floor { stroke: var(--ds-bad); stroke-width: 1.5; stroke-dasharray: 7 9; opacity: 0.55; }
 .ds-trend-labels {
   display: flex;
   justify-content: space-between;

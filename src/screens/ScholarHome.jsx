@@ -106,15 +106,17 @@ function formatDate(iso) {
 
 // GPA trend line (scholar academic overview). Renders the last ≤8 graded
 // sems as a polyline with the scholar's GPA floor as a dashed reference.
+// Fixed-ratio viewBox (no preserveAspectRatio="none") so the point markers
+// stay round and the floor's dash pattern doesn't stretch.
 function GpaTrend({ points, floor }) {
   if (!points || points.length < 2) return null;
   const vals = points.map((p) => p.gpa);
   const min = Math.min(...vals, floor) - 1;
   const max = Math.max(...vals, floor) + 1;
   const span = max - min || 1;
-  const W = 100;
-  const H = 34;
-  const pad = 3;
+  const W = 640;
+  const H = 180;
+  const pad = 16;
   const step = (W - pad * 2) / (points.length - 1);
   const y = (v) => H - pad - ((v - min) / span) * (H - pad * 2);
   const coords = points.map((p, i) => `${(pad + i * step).toFixed(1)},${y(p.gpa).toFixed(1)}`);
@@ -123,15 +125,14 @@ function GpaTrend({ points, floor }) {
       <svg
         className="ds-trend-chart"
         viewBox={`0 0 ${W} ${H}`}
-        preserveAspectRatio="none"
-        style={{ height: 96 }}
+        style={{ maxHeight: 150 }}
       >
         {floor >= min && floor <= max && (
           <line className="ds-trend-floor" x1="0" x2={W} y1={y(floor)} y2={y(floor)} />
         )}
         <polyline className="ds-trend-line" points={coords.join(' ')} />
         {points.map((p, i) => (
-          <circle key={i} className="ds-trend-dot" cx={pad + i * step} cy={y(p.gpa)} r="1.8" />
+          <circle key={i} className="ds-trend-dot" cx={pad + i * step} cy={y(p.gpa)} r="5" />
         ))}
       </svg>
       <div className="ds-trend-labels">
