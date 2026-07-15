@@ -1,0 +1,109 @@
+'use client';
+
+import React, { useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { IcnMenu, IcnX, IcnExternal } from './ShellIcons.jsx';
+
+// Shared left-rail shell for the mentor Navigator and ScholarHome. Desktop:
+// fixed sidebar. Below the shell breakpoint (see shell.css) it disappears
+// behind a slim mobile header bar with a hamburger that opens the same rail
+// as an off-canvas drawer — state stays internal so pages don't have to
+// wire it. Nav items are plain <Link>s; the drawer closes on item click.
+export function Sidebar({ brand, subtitle, items, footer }) {
+  const [open, setOpen] = useState(false);
+
+  const rail = (
+    <>
+      <Link className="ds-brand" href={brand?.href || '/'} onClick={() => setOpen(false)}>
+        <Image
+          className="ds-brand-emblem"
+          src="/icons/icon-192.png"
+          alt=""
+          width={30}
+          height={30}
+          priority
+        />
+        <span className="ds-brand-text">
+          <span className="ds-brand-name">
+            NextGen
+            <br />
+            Scholars
+          </span>
+          <span className="ds-brand-sub">{subtitle}</span>
+        </span>
+      </Link>
+
+      <nav className="ds-nav">
+        {items.map((item) =>
+          item.external ? (
+            <a
+              key={item.key}
+              className="ds-nav-item"
+              href={item.href}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span className="ds-nav-icon">{item.icon}</span>
+              <span className="ds-nav-label">{item.label}</span>
+              <span className="ds-nav-ext"><IcnExternal size={12} /></span>
+            </a>
+          ) : (
+            <Link
+              key={item.key}
+              className={`ds-nav-item${item.active ? ' is-active' : ''}`}
+              href={item.href}
+              onClick={() => setOpen(false)}
+            >
+              <span className="ds-nav-icon">{item.icon}</span>
+              <span className="ds-nav-label">{item.label}</span>
+              {item.badge != null && item.badge > 0 && (
+                <span className="ds-nav-badge">{item.badge}</span>
+              )}
+            </Link>
+          )
+        )}
+      </nav>
+
+      <div className="ds-side-footer">{footer}</div>
+    </>
+  );
+
+  return (
+    <>
+      {/* mobile header — hidden on desktop */}
+      <header className="ds-mobile-bar">
+        <Link className="ds-mobile-brand" href={brand?.href || '/'}>
+          <Image src="/icons/icon-192.png" alt="" width={26} height={26} priority />
+          <span className="ds-mobile-title">{subtitle}</span>
+        </Link>
+        <button
+          className="ds-mobile-menu"
+          onClick={() => setOpen(true)}
+          aria-label="Open navigation menu"
+        >
+          <IcnMenu size={20} />
+        </button>
+      </header>
+
+      {/* desktop rail */}
+      <aside className="ds-sidebar">{rail}</aside>
+
+      {/* off-canvas drawer (mobile) */}
+      {open && (
+        <div className="ds-drawer-scrim" onClick={() => setOpen(false)}>
+          <aside className="ds-sidebar ds-sidebar--drawer" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="ds-drawer-close"
+              onClick={() => setOpen(false)}
+              aria-label="Close navigation menu"
+            >
+              <IcnX size={18} />
+            </button>
+            {rail}
+          </aside>
+        </div>
+      )}
+    </>
+  );
+}

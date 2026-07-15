@@ -13,9 +13,13 @@ import { FxCtx, useFxState } from '../context/FxContext.jsx';
 import { DataCtx } from '../context/DataContext.jsx';
 import { LockScreen } from '../components/LockScreen.jsx';
 import { SectionErrorBoundary } from '../components/SectionErrorBoundary.jsx';
-import { NavBar } from '../components/NavBar.jsx';
+import { Sidebar } from '../components/Sidebar.jsx';
+import { ThemeToggle } from '../components/ThemeToggle.jsx';
+import {
+  IcnGrid, IcnWallet, IcnBook, IcnGlobe, IcnClock, IcnRoute,
+  IcnStar, IcnPlane, IcnPie, IcnDoc, IcnSparkle, IcnRefresh, IcnSignOut, IcnHome,
+} from '../components/ShellIcons.jsx';
 import { SubmissionBanner } from '../components/expenses/SubmissionBanner.jsx';
-import { StatusSection } from '../components/StatusSection.jsx';
 import { ExpenseSection } from '../components/expenses/ExpenseSection.jsx';
 import { DeadlinesSection } from '../components/DeadlinesSection.jsx';
 import { EnglishSection } from '../components/EnglishSection.jsx';
@@ -25,7 +29,6 @@ import { MentorHome } from '../components/MentorHome.jsx';
 import { CareerSection } from '../components/CareerSection.jsx';
 import { RiskSection } from '../components/RiskSection.jsx';
 import { GradesSection } from '../components/GradesSection.jsx';
-import { NavFooter } from '../components/NavFooter.jsx';
 import { BudgetSection } from '../components/BudgetSection.jsx';
 import { TravelModule } from '../components/TravelModule.jsx';
 import { MilestonesModule } from '../components/MilestonesModule.jsx';
@@ -36,6 +39,35 @@ if (!NGS_DATA || !NGS_DATA.config) {
 }
 
 const STATIC_SCHOLAR_KEYS = ['claire', 'april', 'janndilyne'];
+
+// Sidebar sections. Slugs are unchanged from the pre-redesign tab strip —
+// only the labels adopted the mockup vocabulary (Portfolio, Finances,
+// Academics, Journey Map) so old bookmarks keep working.
+const SECTIONS = [
+  { key: '',                label: 'Portfolio',       icon: <IcnGrid size={16} /> },
+  { key: 'expenses',        label: 'Finances',        icon: <IcnWallet size={16} /> },
+  { key: 'grades',          label: 'Academics',       icon: <IcnBook size={16} /> },
+  { key: 'english',         label: 'English',         icon: <IcnGlobe size={16} /> },
+  { key: 'deadlines',       label: 'Deadlines',       icon: <IcnClock size={16} /> },
+  { key: 'progress',        label: 'Journey Map',     icon: <IcnRoute size={16} /> },
+  { key: 'milestones',      label: 'Milestones',      icon: <IcnStar size={16} /> },
+  { key: 'travel',          label: 'Travel',          icon: <IcnPlane size={16} /> },
+  { key: 'budget',          label: 'Budget',          icon: <IcnPie size={16} /> },
+  { key: 'program-details', label: 'Program Details', icon: <IcnDoc size={16} /> },
+];
+
+const CONN_LABEL = {
+  loading: { text: 'Neon · Syncing…', cls: 'is-syncing' },
+  live:    { text: 'Neon · Live',     cls: 'is-live' },
+  static:  { text: 'Neon · Offline',  cls: 'is-offline' },
+};
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
 
 // Derive the spend bucket for an expense the same way supabase-loader does, so
 // realtime INSERT/UPDATE rows get bucketed correctly (not silently → 'college').
@@ -379,7 +411,10 @@ export function Navigator({ slug = [] }) {
         const merged = {
           ...data,
           scholars: mergedScholars,
-          config: { ...data.config },
+          // Static-first merge: bootstrap's config only carries
+          // exchangeRate/lastUpdated, so narrative fields like mentorName
+          // (scholars-data.js) must survive the live overlay.
+          config: { ...NGS_DATA.config, ...data.config },
         };
         setD(merged);
         setConnStatus('live');
@@ -441,31 +476,68 @@ export function Navigator({ slug = [] }) {
     }));
   }
 
+  const activeSection = SECTIONS.find(s => s.key === section) || SECTIONS[0];
+  const mentorName = D.config.mentorName || 'Mentor';
+  const conn = CONN_LABEL[connStatus] || CONN_LABEL.static;
+  const todayLong = new Date().toLocaleDateString('en-US', {
+    month: 'long', day: 'numeric', year: 'numeric',
+  });
+
+  async function handleSignOut() {
+    invalidateToken();
+    // Await sign-out before navigating: /login's mount check reads the
+    // live session, so leaving before the cookie clears would bounce
+    // back in. Redirect to the generic /login rather than re-showing
+    // this mentor-only lock screen.
+    await authClient.signOut();
+    setSessionExpired(false);
+    setUnlocked(false);
+    router.replace('/login');
+  }
+
   return (
     <DataCtx.Provider value={{ D, scholarKeys }}>
       <FxCtx.Provider value={fxRate}>
-      <div className="nav-app">
+      <div className="nav-app ds-shell">
         <LockScreen
           isHiding={unlocked || !authChecked}
           onUnlock={() => { setSessionExpired(false); setUnlocked(true); }}
           sessionExpired={sessionExpired}
         />
-        <NavBar
-          connStatus={connStatus}
-          onRefresh={() => setRefreshKey(k => k + 1)}
-          aiDrawerOpen={aiDrawerOpen}
-          onAiDrawerToggle={() => setAiDrawerOpen(v => !v)}
-          onSignOut={async () => {
-            invalidateToken();
-            // Await sign-out before navigating: /login's mount check reads the
-            // live session, so leaving before the cookie clears would bounce
-            // back in. Redirect to the generic /login rather than re-showing
-            // this mentor-only lock screen.
-            await authClient.signOut();
-            setSessionExpired(false);
-            setUnlocked(false);
-            router.replace('/login');
-          }}
+        <Sidebar
+          brand={{ href: '/navigator' }}
+          subtitle="Pathway Navigator"
+          items={[
+            ...SECTIONS.map(s => ({
+              key: s.key || 'portfolio',
+              href: s.key ? `/navigator/${s.key}` : '/navigator',
+              label: s.label,
+              icon: s.icon,
+              active: section === s.key,
+              badge: s.key === 'expenses' ? pendingSubmissions.length : undefined,
+            })),
+            { key: 'site', href: '/', label: 'Public Site', icon: <IcnHome size={16} /> },
+          ]}
+          footer={
+            <>
+              <div className="ds-identity">
+                <span className="ds-avatar">{mentorName[0]}</span>
+                <div>
+                  <div className="ds-identity-name">{mentorName}</div>
+                  <div className="ds-identity-role">Mentor · NGS</div>
+                </div>
+              </div>
+              <div className={`ds-conn ${conn.cls}`}>
+                <span className="ds-conn-dot" />
+                {conn.text}
+                {writeError && <span style={{ color: 'var(--ds-bad)' }}> · Write failed</span>}
+              </div>
+              <ThemeToggle />
+              <button className="ds-signout" onClick={handleSignOut} title="Sign out">
+                <IcnSignOut size={13} /> Sign out
+              </button>
+            </>
+          }
         />
         <NavigatorAIDrawer
           open={aiDrawerOpen}
@@ -474,7 +546,38 @@ export function Navigator({ slug = [] }) {
           onTabChange={setAiDrawerTab}
           defaultScholar={aiDrawerDefaultScholar}
         />
-        <main className="wrap">
+        <div className="ds-main">
+        <header className="ds-topbar">
+          <div>
+            <div className="ds-topbar-eyebrow">{activeSection.label}</div>
+            <h1 className="ds-topbar-title">
+              {section === '' ? `${greeting()}, ${mentorName}.` : activeSection.label}
+            </h1>
+            <div className="ds-topbar-sub">
+              {section === ''
+                ? `Here's your portfolio overview for ${todayLong}.`
+                : `${greeting()}, ${mentorName} — ${todayLong}.`}
+            </div>
+          </div>
+          <div className="ds-topbar-actions">
+            <button
+              className={`ds-ai-btn${aiDrawerOpen ? ' is-active' : ''}`}
+              onClick={() => setAiDrawerOpen(v => !v)}
+              title="Open Navigator AI"
+            >
+              <IcnSparkle size={14} /> Ask AI
+            </button>
+            <button
+              className={`ds-icon-btn${connStatus === 'loading' ? ' is-loading' : ''}`}
+              onClick={() => setRefreshKey(k => k + 1)}
+              title="Reload data from Neon"
+            >
+              <IcnRefresh size={15} />
+            </button>
+            <span className="ds-updated">Updated · {D.config.lastUpdated}</span>
+          </div>
+        </header>
+        <main className="ds-content">
           {section === '' && (
             <SectionErrorBoundary name="MentorHome">
               <MentorHome
@@ -485,6 +588,7 @@ export function Navigator({ slug = [] }) {
                 activityCount={activityFeed.length}
                 dbAlerts={dbAlerts}
                 onSemesterChange={handleSemesterChange}
+                unlocked={unlocked}
               />
             </SectionErrorBoundary>
           )}
@@ -569,6 +673,7 @@ export function Navigator({ slug = [] }) {
             </SectionErrorBoundary>
           )}
         </main>
+        </div>
         {unlocked && !aiDrawerOpen && (
           <button
             className="nav-ai-fab"
@@ -579,7 +684,6 @@ export function Navigator({ slug = [] }) {
             Ask AI
           </button>
         )}
-        <NavFooter connStatus={connStatus} writeError={writeError} />
       </div>
       </FxCtx.Provider>
     </DataCtx.Provider>

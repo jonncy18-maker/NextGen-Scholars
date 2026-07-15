@@ -4,6 +4,8 @@ import { api } from '../lib/api.js';
 import { useData } from '../context/DataContext.jsx';
 import { SEMESTER_OPTIONS } from '../constants.js';
 import { daysSinceLastExpense, monthlySpendTrend } from '../utils.js';
+import { Ring, Donut, Sparkline, MiniSteps } from './ShellViz.jsx';
+import { IcnClock, IcnStar, IcnSparkle, IcnWallet, IcnGlobe } from './ShellIcons.jsx';
 
 const SEM_DISPLAY = {
   TG11S1: 'G11·S1',
@@ -26,7 +28,7 @@ const SEM_DISPLAY = {
 };
 
 // Mirrors CareerSection.jsx's pipeline — nursing-track only, so TESDA
-// scholars (no career_steps rows) simply get no pathway bar.
+// scholars (no career_steps rows) simply get no journey stepper.
 const CAREER_STEPS = ['PNLE', 'OET', 'NCLEX', 'OSCE', 'AHPRA'];
 
 function semBudgetPct(scholar, sem) {
@@ -36,6 +38,15 @@ function semBudgetPct(scholar, sem) {
     .reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
   const budget = typeof scholar.budgets?.[sem] === 'number' ? scholar.budgets[sem] : 0;
   return budget > 0 ? Math.round((expenses / budget) * 100) : null;
+}
+
+function semSpendAndBudget(scholar, sem) {
+  if (!sem) return { spent: 0, budget: 0 };
+  const spent = (scholar.expenses?.[sem] || [])
+    .filter((e) => e.avb === 'Actual')
+    .reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
+  const budget = typeof scholar.budgets?.[sem] === 'number' ? scholar.budgets[sem] : 0;
+  return { spent, budget };
 }
 
 function riskLevel(scholar, budgetPct) {
@@ -80,15 +91,38 @@ function daysSinceActivity(s, key, pendingSubmissions) {
   return candidates.length ? Math.min(...candidates) : null;
 }
 
+// Chronological rank for sem keys: TESDA/TG* (SHS) → Y* (college) → Post*.
+// Within a group the keys sort lexically (Y1S1 < Y1S2 < Y2S1 …), so this is
+// enough to order academics rows, whose raw select order isn't guaranteed.
+function semRank(sem = '') {
+  const group = sem.startsWith('Post') ? 2 : sem.startsWith('Y') ? 1 : 0;
+  return `${group}${sem}`;
+}
+
+// GPA series (oldest → newest) for the glance-row sparkline — pulled from the
+// scholar's academics history, which bootstrap loads in full.
+function gpaSeries(scholar) {
+  return (scholar.academics || [])
+    .filter((a) => a.gpa != null)
+    .slice()
+    .sort((a, b) => semRank(a.sem).localeCompare(semRank(b.sem)))
+    .map((a) => Number(a.gpa))
+    .filter((v) => !Number.isNaN(v))
+    .slice(-6);
+}
+
+function fmtPhp(n) {
+  return '₱' + Math.round(n).toLocaleString('en-US');
+}
+
 function TrendArrow({ current, previous, higherIsBetter = true, fmt = (v) => v }) {
-  if (current == null || previous == null)
-    return <span className="mh-trend mh-trend--flat">—</span>;
+  if (current == null || previous == null) return null;
   const diff = current - previous;
-  if (Math.abs(diff) < 0.05) return <span className="mh-trend mh-trend--flat">—</span>;
+  if (Math.abs(diff) < 0.05) return null;
   const isUp = diff > 0;
   const isGood = isUp === higherIsBetter;
   return (
-    <span className={`mh-trend mh-trend--${isGood ? 'good' : 'bad'}`}>
+    <span className={`ds-stat-trend ${isGood ? 'is-good' : 'is-bad'}`}>
       {isUp ? '▴' : '▾'} {fmt(Math.abs(diff))}
     </span>
   );
@@ -102,45 +136,131 @@ export function MentorHome({
   activityCount = 0,
   dbAlerts = [],
   onSemesterChange,
+  unlocked = false,
 }) {
   const { D, scholarKeys } = useData();
   const [engData, setEngData] = useState({});
   const [career, setCareer] = useState([]);
 
+  // Gated on `unlocked` (CLAUDE.md rule): this component mounts behind
+  // LockScreen, so an ungated fetch would run with whatever session cookie
+  // the browser already has — possibly a scholar's — and cache its scoped
+  // response without ever re-fetching after the mentor signs in.
   useEffect(() => {
+    if (!unlocked) return;
     api
       .get('/immersion-hours')
       .then((data) => setEngData(data || {}))
       .catch(() => {});
-  }, []);
+  }, [unlocked]);
 
   useEffect(() => {
+    if (!unlocked) return;
     api
       .get('/career')
       .then((rows) => setCareer(rows || []))
       .catch(() => setCareer([]));
-  }, []);
+  }, [unlocked]);
 
   const today = new Date().toISOString().slice(0, 10);
-  const month = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-  const nextTravels = scholarKeys.map((key) => {
-    const s = D.scholars[key];
-    const next = (s?.travels || []).find((t) => t.state !== 'done');
-    return { key, name: s?.firstName || key, travel: next };
-  });
+  // ── Per-scholar snapshot the glance rows + hero both read ──
+  const rows = scholarKeys
+    .map((key) => {
+      const s = D.scholars[key];
+      if (!s) return null;
+      const sem = s.currentSem || '';
+      const budgetPct = semBudgetPct(s, sem);
+      const risk = riskLevel(s, budgetPct);
+      // D.deadlines rows use {when, sort} (see api-loader.js / scholars-data.js)
+      // — the old MentorHome read d.sort_date/d.when_date here, which never
+      // matched, so its "next deadline" was permanently empty. Fixed.
+      const nextDl = (D.deadlines || [])
+        .filter((d) => (d.scholar === key || !d.scholar) && (d.sort || '') >= today)
+        .sort((a, b) => (a.sort || '').localeCompare(b.sort || ''))[0];
+      const daysSince = daysSinceActivity(s, key, pendingSubmissions);
+      return {
+        key,
+        s,
+        sem,
+        budgetPct,
+        risk,
+        nextDl,
+        daysSince,
+        stage: pathwayStage(career, key),
+        gpa: liveGpa?.[key] ?? null,
+        gpaPrev: prevGpa?.[key] ?? null,
+        series: gpaSeries(s),
+        eng: engData[key],
+      };
+    })
+    .filter(Boolean);
 
-  const nextMilestones = scholarKeys.map((key) => {
-    const s = D.scholars[key];
-    const next = (s?.milestones || []).find((m) => m.state !== 'done');
-    return { key, name: s?.firstName || key, milestone: next };
-  });
+  // ── Hero numbers ──
+  const greenCount = rows.filter((r) => r.risk === 'green').length;
+  const redCount = rows.filter((r) => r.risk === 'red').length;
+  const attentionCount = rows.length - greenCount;
+  const health =
+    redCount > 0
+      ? { cls: 'is-risk', label: 'At Risk', sub: `${redCount} scholar${redCount !== 1 ? 's' : ''} in the red — review now.` }
+      : attentionCount > 0
+        ? { cls: 'is-watch', label: 'Watch', sub: `${attentionCount} scholar${attentionCount !== 1 ? 's' : ''} drifting off plan.` }
+        : { cls: '', label: 'Excellent', sub: 'Everything is progressing according to plan.' };
+  const healthPct = rows.length ? Math.round((greenCount / rows.length) * 100) : null;
 
-  // ── "Needs attention" — DB alerts (GPA risk, etc.) + pending approvals,
-  // each with a direct link to where the mentor fixes it. Empty → all clear.
-  // Pending approvals are ranked right after critical alerts (not appended
-  // last) so they can't get silently truncated out of the slice(0, 3) below
-  // once alert volume grows.
+  const cohortSpend = scholarKeys.reduce(
+    (acc, key) => {
+      const { thisMonth, lastMonth } = monthlySpendTrend(D.scholars[key]);
+      acc.thisMonth += thisMonth;
+      acc.lastMonth += lastMonth;
+      return acc;
+    },
+    { thisMonth: 0, lastMonth: 0 }
+  );
+  const spendDeltaPct =
+    cohortSpend.lastMonth > 0
+      ? Math.round(((cohortSpend.thisMonth - cohortSpend.lastMonth) / cohortSpend.lastMonth) * 100)
+      : null;
+
+  const gpaVals = rows.map((r) => r.gpa).filter((v) => v != null);
+  const avgGpa = gpaVals.length ? gpaVals.reduce((t, v) => t + v, 0) / gpaVals.length : null;
+
+  // ── Insights strip (deterministic, from live data) ──
+  const deadlinesNext14 = (D.deadlines || []).filter((d) => {
+    if (!d.sort || d.sort < today) return false;
+    return Math.ceil((new Date(d.sort) - new Date()) / 86400000) <= 14;
+  }).length;
+  const cohortEngHrsThisWeek = Object.values(engData).reduce(
+    (t, e) => t + (e.hoursThisWeek || 0),
+    0
+  );
+  const insights = [];
+  if (spendDeltaPct != null) {
+    insights.push({
+      icon: <IcnWallet size={13} />,
+      text: `Spending ${spendDeltaPct >= 0 ? 'up' : 'down'} ${Math.abs(spendDeltaPct)}% vs last month (${fmtPhp(cohortSpend.thisMonth)}).`,
+    });
+  }
+  if (cohortEngHrsThisWeek > 0) {
+    insights.push({
+      icon: <IcnGlobe size={13} />,
+      text: `Cohort logged ${cohortEngHrsThisWeek.toFixed(1)}h of English immersion this week.`,
+    });
+  }
+  if (deadlinesNext14 > 0) {
+    insights.push({
+      icon: <IcnClock size={13} />,
+      text: `${deadlinesNext14} deadline${deadlinesNext14 !== 1 ? 's' : ''} in the next 14 days.`,
+    });
+  }
+  if (activityCount > 0) {
+    insights.push({
+      icon: <IcnSparkle size={13} />,
+      text: `${activityCount} unread activity event${activityCount !== 1 ? 's' : ''} from scholars.`,
+    });
+  }
+
+  // ── Needs attention (critical alerts + approvals) — unchanged logic ──
   const attentionItems = dbAlerts.map((a) => ({
     severity: a.severity === 'critical' ? 'critical' : 'warning',
     rank: a.severity === 'critical' ? 0 : 2,
@@ -171,339 +291,354 @@ export function MentorHome({
   }
   attentionItems.sort((a, b) => a.rank - b.rank);
 
-  // ── Cohort pulse — one horizontal scan instead of a tile grid.
-  const needsAttentionCount = scholarKeys.filter((key) => {
-    const s = D.scholars[key];
-    return riskLevel(s, semBudgetPct(s, s.currentSem)) !== 'green';
-  }).length;
+  // ── Rail: upcoming deadlines + next milestones + financial overview ──
+  const upcoming = (D.deadlines || [])
+    .filter((d) => (d.sort || '') >= today)
+    .sort((a, b) => (a.sort || '').localeCompare(b.sort || ''))
+    .slice(0, 5)
+    .map((d) => {
+      const days = Math.max(0, Math.ceil((new Date(d.sort) - new Date()) / 86400000));
+      const who = d.scholar ? D.scholars[d.scholar]?.firstName || d.scholar : 'Program';
+      return { ...d, days, who };
+    });
 
-  const deadlinesNext14 = (D.deadlines || []).filter((d) => {
-    if (d.sort_date < today) return false;
-    const diff = Math.ceil((new Date(d.sort_date) - new Date()) / 86400000);
-    return diff <= 14;
-  }).length;
+  const nextMilestones = scholarKeys
+    .map((key) => {
+      const s = D.scholars[key];
+      const next = (s?.milestones || []).find((m) => m.state !== 'done');
+      return next ? { key, name: s?.firstName || key, milestone: next } : null;
+    })
+    .filter(Boolean);
 
-  const cohortSpend = scholarKeys.reduce(
-    (acc, key) => {
-      const { thisMonth, lastMonth } = monthlySpendTrend(D.scholars[key]);
-      acc.thisMonth += thisMonth;
-      acc.lastMonth += lastMonth;
+  const fin = rows.reduce(
+    (acc, r) => {
+      const { spent, budget } = semSpendAndBudget(r.s, r.sem);
+      acc.spent += spent;
+      acc.budget += budget;
       return acc;
     },
-    { thisMonth: 0, lastMonth: 0 }
+    { spent: 0, budget: 0 }
   );
-  const spendDeltaPct =
-    cohortSpend.lastMonth > 0
-      ? Math.round(((cohortSpend.thisMonth - cohortSpend.lastMonth) / cohortSpend.lastMonth) * 100)
-      : null;
-
-  const cohortEngHrsThisWeek = Object.values(engData).reduce(
-    (t, e) => t + (e.hoursThisWeek || 0),
-    0
-  );
+  const finRemaining = Math.max(0, fin.budget - fin.spent);
+  const finPct = fin.budget > 0 ? Math.round((fin.spent / fin.budget) * 100) : null;
 
   return (
-    <section className="mh-section">
-      {/* ── Needs Attention ── */}
-      <div className="mh-eyebrow">
-        <span className="mh-eyebrow-label">Needs Attention</span>
+    <section className="mh">
+      {/* ── Hero: portfolio health + stat tiles ── */}
+      <div className="ds-hero">
+        <div className={`ds-card ds-card--accent ds-health ${health.cls}`}>
+          <div className="ds-health-body">
+            <div className="ds-stat-label">Portfolio Health</div>
+            <div className="ds-health-status">{health.label}</div>
+            <div className="ds-health-sub">{health.sub}</div>
+          </div>
+          <Ring pct={healthPct} size={62} stroke={4.5}>
+            <IcnSparkle size={18} />
+          </Ring>
+        </div>
+        <div className="ds-card">
+          <div className="ds-stat-label">Total Scholars</div>
+          <div className="ds-stat-val">{rows.length}</div>
+          <div className="ds-stat-sub">Active in program</div>
+        </div>
+        <div className="ds-card">
+          <div className="ds-stat-label">Spent This Month</div>
+          <div className="ds-stat-val">
+            {fmtPhp(cohortSpend.thisMonth)}
+            {spendDeltaPct != null && (
+              <span className={`ds-stat-trend ${spendDeltaPct <= 0 ? 'is-good' : 'is-bad'}`}>
+                {spendDeltaPct > 0 ? '▴' : '▾'} {Math.abs(spendDeltaPct)}%
+              </span>
+            )}
+          </div>
+          <div className="ds-stat-sub">Scholarship support · cohort</div>
+        </div>
+        <div className="ds-card">
+          <div className="ds-stat-label">Avg Academic Standing</div>
+          <div className="ds-stat-val">{avgGpa != null ? `${avgGpa.toFixed(1)}%` : '—'}</div>
+          <div className="ds-stat-sub">Across all scholars</div>
+        </div>
+        <div className="ds-card">
+          <div className="ds-stat-label">Requiring Attention</div>
+          <div className={`ds-stat-val${attentionCount > 0 ? ' is-flag' : ''}`}>
+            {attentionCount}
+          </div>
+          <div className="ds-stat-sub">
+            {attentionCount > 0 ? 'Scholars need support' : 'All on track'}
+          </div>
+        </div>
       </div>
-      {attentionItems.length === 0 ? (
-        <div className="mh-attn-clear">All clear — nothing needs your review right now.</div>
-      ) : (
-        <div className="mh-attn-list">
+
+      {/* ── AI insights strip ── */}
+      {insights.length > 0 && (
+        <div className="ds-card ds-insights">
+          <span className="ds-insights-tag">
+            <IcnSparkle size={13} /> Insights
+          </span>
+          {insights.slice(0, 3).map((ins, i) => (
+            <span key={i} className="ds-insight">
+              <span className="ds-insight-icon">{ins.icon}</span>
+              {ins.text}
+            </span>
+          ))}
+          <button className="ds-insight-link" onClick={() => onOpenDrawer('query')}>
+            Ask AI →
+          </button>
+        </div>
+      )}
+
+      {/* ── Needs attention ── */}
+      {attentionItems.length > 0 && (
+        <>
+          <div className="ds-sec">
+            <span className="ds-sec-title">Needs Attention</span>
+          </div>
           {attentionItems.slice(0, 3).map((item, i) => (
-            <div key={i} className={`mh-attn-row mh-attn-row--${item.severity}`}>
-              <span className="mh-attn-stripe" />
-              <span className="mh-attn-sev">
-                {item.severity === 'critical' ? 'Critical' : 'Watch'}
-              </span>
-              <span className="mh-attn-text">
+            <div key={i} className={`ds-attn${item.severity === 'critical' ? ' ds-attn--critical' : ''}`}>
+              <span className="ds-attn-sev">{item.severity === 'critical' ? 'Critical' : 'Watch'}</span>
+              <span className="ds-attn-text">
                 {item.title}
-                {item.sub && <span className="mh-attn-sub"> — {item.sub}</span>}
+                {item.sub && <span className="ds-attn-sub"> — {item.sub}</span>}
               </span>
-              <Link className="mh-attn-act" href={item.href}>
+              <Link className="ds-attn-act" href={item.href}>
                 {item.actionLabel}
               </Link>
             </div>
           ))}
-        </div>
+        </>
       )}
 
-      {/* ── This Week (cohort pulse) ── */}
-      <div className="mh-eyebrow mh-eyebrow--mt">
-        <span className="mh-eyebrow-label">This Week</span>
-        <span className="mh-eyebrow-date">{month}</span>
-      </div>
-      <div className="mh-pulse">
-        <div className="mh-pulse-cell">
-          <span className="mh-pulse-num">{scholarKeys.length}</span>
-          <span className="mh-pulse-lbl">Scholars</span>
-        </div>
-        <div className={`mh-pulse-cell${needsAttentionCount > 0 ? ' is-flag' : ''}`}>
-          <span className="mh-pulse-num">{needsAttentionCount}</span>
-          <span className="mh-pulse-lbl">Needs attention</span>
-        </div>
-        <div className="mh-pulse-cell">
-          <span className="mh-pulse-num">{activityCount}</span>
-          <span className="mh-pulse-lbl">Unread activity</span>
-        </div>
-        <div className="mh-pulse-cell">
-          <span className="mh-pulse-num">
-            {'₱' + Math.round(cohortSpend.thisMonth).toLocaleString('en-US')}
-            {spendDeltaPct != null && (
-              <span className={`mh-pulse-trend ${spendDeltaPct <= 0 ? 'is-good' : 'is-bad'}`}>
-                {spendDeltaPct > 0 ? '▴' : '▾'} {Math.abs(spendDeltaPct)}%
-              </span>
-            )}
-          </span>
-          <span className="mh-pulse-lbl">Spent this month</span>
-        </div>
-        <div className="mh-pulse-cell">
-          <span className="mh-pulse-num">{deadlinesNext14}</span>
-          <span className="mh-pulse-lbl">Deadlines · 14 days</span>
-        </div>
-        {pendingSubmissions.length > 0 ? (
-          <Link className="mh-pulse-cell is-flag" href="/navigator/expenses">
-            <span className="mh-pulse-num">{pendingSubmissions.length}</span>
-            <span className="mh-pulse-lbl">Pending approvals</span>
-          </Link>
-        ) : (
-          <div className="mh-pulse-cell">
-            <span className="mh-pulse-num">{pendingSubmissions.length}</span>
-            <span className="mh-pulse-lbl">Pending approvals</span>
+      <div className="ds-cols">
+        {/* ── Scholars at a glance ── */}
+        <div className="ds-col-main">
+          <div className="ds-sec">
+            <span className="ds-sec-title">Scholars at a Glance</span>
+            <Link className="ds-sec-link" href="/navigator/progress">
+              View journey map →
+            </Link>
           </div>
-        )}
-        <div className="mh-pulse-cell">
-          <span className="mh-pulse-num">{cohortEngHrsThisWeek.toFixed(1)}h</span>
-          <span className="mh-pulse-lbl">English · this week</span>
-        </div>
-      </div>
-
-      {/* ── Scholar Overview ── */}
-      <div className="mh-eyebrow mh-eyebrow--mt">
-        <span className="mh-eyebrow-label">Scholar Overview</span>
-      </div>
-
-      <div className="mh-grid">
-        {scholarKeys.map((key) => {
-          const s = D.scholars[key];
-          if (!s) return null;
-
-          const sem = s.currentSem || '';
-          const budgetPct = semBudgetPct(s, sem);
-          const risk = riskLevel(s, budgetPct);
-          const gpaPct = liveGpa?.[key] ?? null;
-          const gpaPrev = prevGpa?.[key] ?? null;
-          const eng = engData[key];
-          const engStr = eng
-            ? eng.targetHours != null
-              ? `${eng.currentHours} / ${eng.targetHours} hrs`
-              : `${eng.currentHours} hrs`
-            : '—';
-          const nextDl = (D.deadlines || [])
-            .filter((d) => (d.scholar === key || !d.scholar) && d.sort_date >= today)
-            .sort((a, b) => a.sort_date.localeCompare(b.sort_date))[0];
-          const isActive = s.status === 'active';
-          const stage = pathwayStage(career, key);
-          const daysSince = daysSinceActivity(s, key, pendingSubmissions);
-          const isStale = daysSince != null && daysSince >= 7;
-
-          return (
-            <div key={key} className={`mh-card mh-card--${isActive ? 'active' : 'trial'}`}>
-              <div className="mh-card-header">
-                <div className="mh-card-name-row">
-                  <span className="mh-card-first">{s.firstName || s.name || key}</span>
-                  <span className={`mh-risk mh-risk--${risk}`}>
-                    {risk === 'red' ? 'Alert' : risk === 'amber' ? 'Watch' : 'Good'}
-                  </span>
-                </div>
-                <div className="mh-card-meta">
-                  <span>{s.track || '—'}</span>
-                  <span className="mh-sep">·</span>
-                  {onSemesterChange ? (
-                    <select
-                      className="mh-sem-select"
-                      value={sem}
-                      onChange={(e) => onSemesterChange(key, e.target.value)}
-                    >
-                      {sem && !SEMESTER_OPTIONS.includes(sem) && (
-                        <option value={sem}>{SEM_DISPLAY[sem] || sem}</option>
-                      )}
-                      {SEMESTER_OPTIONS.map((o) => (
-                        <option key={o} value={o}>
-                          {SEM_DISPLAY[o] || o}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <span>{SEM_DISPLAY[sem] || sem || '—'}</span>
-                  )}
-                </div>
-              </div>
-
-              {stage && (
-                <div className="mh-stage">
-                  <div className="mh-stage-track">
-                    {Array.from({ length: stage.total }).map((_, i) => (
-                      <span
-                        key={i}
-                        className={`mh-stage-seg${i < stage.passedCount ? ' is-done' : ''}`}
-                      />
-                    ))}
+          <div className="ds-card ds-glance">
+            <div className="ds-glance-head">
+              <span>Scholar</span>
+              <span>Journey Stage</span>
+              <span>Academic</span>
+              <span>Financial</span>
+              <span>Risk</span>
+              <span>Next Up</span>
+            </div>
+            {rows.map((r) => {
+              const finChip =
+                r.budgetPct == null
+                  ? { cls: 'ds-chip--muted', label: 'No budget' }
+                  : r.budgetPct >= 100
+                    ? { cls: 'ds-chip--bad', label: `${r.budgetPct}% over` }
+                    : r.budgetPct >= 90
+                      ? { cls: 'ds-chip--warn', label: `${r.budgetPct}% used` }
+                      : { cls: 'ds-chip--good', label: `${r.budgetPct}% used` };
+              const riskChip =
+                r.risk === 'red'
+                  ? { cls: 'ds-chip--bad', label: 'High' }
+                  : r.risk === 'amber'
+                    ? { cls: 'ds-chip--warn', label: 'Med' }
+                    : { cls: 'ds-chip--good', label: 'Low' };
+              const isStale = r.daysSince != null && r.daysSince >= 7;
+              return (
+                <div key={r.key} className="ds-glance-row">
+                  <div className="ds-who">
+                    <span className="ds-avatar">{(r.s.firstName || r.key)[0].toUpperCase()}</span>
+                    <div>
+                      <div className="ds-who-name">{r.s.firstName || r.s.name || r.key}</div>
+                      <div className="ds-who-sub">
+                        <span>{r.s.track || '—'}</span>
+                        {onSemesterChange ? (
+                          <select
+                            className="ds-sem-select"
+                            value={r.sem}
+                            onChange={(e) => onSemesterChange(r.key, e.target.value)}
+                          >
+                            {r.sem && !SEMESTER_OPTIONS.includes(r.sem) && (
+                              <option value={r.sem}>{SEM_DISPLAY[r.sem] || r.sem}</option>
+                            )}
+                            {SEMESTER_OPTIONS.map((o) => (
+                              <option key={o} value={o}>
+                                {SEM_DISPLAY[o] || o}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <span>{SEM_DISPLAY[r.sem] || r.sem || '—'}</span>
+                        )}
+                        {isStale && (
+                          <span style={{ color: 'var(--ds-bad)' }}>· quiet {r.daysSince}d</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="mh-stage-lbl">{stage.label}</div>
-                </div>
-              )}
-
-              <div className="mh-stats">
-                <div className="mh-stat">
-                  <span className="mh-stat-val">
-                    {gpaPct != null ? `${gpaPct.toFixed(1)}%` : '—'}
-                    {gpaPct != null && (
-                      <TrendArrow current={gpaPct} previous={gpaPrev} fmt={(v) => v.toFixed(1)} />
+                  <div>
+                    {r.stage ? (
+                      <>
+                        <MiniSteps total={r.stage.total} done={r.stage.passedCount} />
+                        <div className="ds-steps-lbl">{r.stage.label}</div>
+                      </>
+                    ) : (
+                      <span className="ds-who-sub">—</span>
                     )}
-                  </span>
-                  <span className="mh-stat-label">GPA</span>
-                </div>
-                <div className="mh-stat">
-                  <span
-                    className={`mh-stat-val${budgetPct != null && budgetPct >= 90 ? ' is-warn' : ''}`}
-                  >
-                    {budgetPct != null ? `${budgetPct}%` : '—'}
-                  </span>
-                  <span className="mh-stat-label">Budget</span>
-                </div>
-                {s.track !== 'TESDA' && (
-                  <div className="mh-stat">
-                    <span className="mh-stat-val">
-                      {engStr}
-                      {eng?.hoursThisWeek > 0 && (
-                        <span className="mh-trend mh-trend--flat">+{eng.hoursThisWeek}h wk</span>
-                      )}
-                    </span>
-                    <span className="mh-stat-label">English</span>
                   </div>
-                )}
-              </div>
+                  <div className="ds-metric">
+                    <span className="ds-metric-val">
+                      {r.gpa != null ? `${r.gpa.toFixed(1)}%` : '—'}
+                      <TrendArrow current={r.gpa} previous={r.gpaPrev} fmt={(v) => v.toFixed(1)} />
+                    </span>
+                    <Sparkline values={r.series} />
+                  </div>
+                  <span className={`ds-chip ${finChip.cls}`}>{finChip.label}</span>
+                  <span className={`ds-chip ${riskChip.cls}`}>{riskChip.label}</span>
+                  <div className="ds-metric">
+                    {r.nextDl ? (
+                      <>
+                        <span className="ds-metric-val" style={{ whiteSpace: 'normal', fontSize: 11.5 }}>
+                          {r.nextDl.event}
+                        </span>
+                        <span className="ds-who-sub">{r.nextDl.when}</span>
+                      </>
+                    ) : (
+                      <span className="ds-who-sub">No deadlines</span>
+                    )}
+                    <button className="ds-mini-btn" onClick={() => onOpenDrawer('query', r.key)}>
+                      Ask AI →
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+            <div className="ds-glance-foot">
+              <span>
+                Showing {rows.length} scholar{rows.length !== 1 ? 's' : ''}
+              </span>
+              <span>
+                {rows
+                  .filter((r) => r.eng && r.s.track !== 'TESDA')
+                  .map((r) =>
+                    r.eng.targetHours != null
+                      ? `${r.s.firstName} ${r.eng.currentHours}/${r.eng.targetHours}h`
+                      : `${r.s.firstName} ${r.eng.currentHours}h`
+                  )
+                  .join(' · ') || ''}
+              </span>
+            </div>
+          </div>
+        </div>
 
-              <div className="mh-deadline-row">
-                {nextDl ? (
-                  <>
-                    <span className="mh-dl-icon">⏰</span>
-                    <span className="mh-dl-text">{nextDl.event}</span>
-                    <span className="mh-dl-date">{nextDl.when_date}</span>
-                  </>
-                ) : (
-                  <span className="mh-dl-none">No upcoming deadlines</span>
-                )}
-              </div>
-
-              <div className={`mh-last-active${isStale ? ' is-stale' : ''}`}>
-                <span className="mh-last-active-dot" />
-                {daysSince == null
-                  ? 'No expenses logged yet'
-                  : daysSince === 0
-                    ? 'Logged expenses today'
-                    : `${isStale ? 'No activity in ' : 'Logged expenses '}${daysSince}d${isStale ? '' : ' ago'}`}
-              </div>
-
-              <div className="mh-actions">
-                <button className="mh-btn" onClick={() => onOpenDrawer('query', key)}>
-                  Ask →
-                </button>
-                <Link className="mh-btn" href="/navigator/expenses">
-                  Log $
-                </Link>
-                <Link className="mh-btn" href="/navigator/grades">
-                  Log Grades
-                </Link>
+        {/* ── Rail ── */}
+        <div className="ds-col-rail">
+          <div>
+            <div className="ds-sec">
+              <span className="ds-sec-title">Upcoming Deadlines</span>
+              <Link className="ds-sec-link" href="/navigator/deadlines">
+                View all
+              </Link>
+            </div>
+            <div className="ds-card">
+              <div className="ds-dl-list">
+                {upcoming.length === 0 && <div className="ds-empty">Nothing on the calendar.</div>}
+                {upcoming.map((d, i) => (
+                  <div key={d.id ?? i} className="ds-dl">
+                    <span className={`ds-dl-icon${d.days <= 7 ? ' is-urgent' : ''}`}>
+                      <IcnClock size={14} />
+                    </span>
+                    <div className="ds-dl-body">
+                      <div className="ds-dl-title">{d.event}</div>
+                      <div className="ds-dl-sub">
+                        {d.who} · {d.when}
+                      </div>
+                    </div>
+                    <div className="ds-dl-when">
+                      <div className={`ds-dl-days${d.days <= 7 ? ' is-urgent' : ''}`}>{d.days}</div>
+                      <div className="ds-dl-days-lbl">days</div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          );
-        })}
-      </div>
-
-      {/* ── Module Cards ── */}
-      <div className="mh-eyebrow mh-eyebrow--mt">
-        <span className="mh-eyebrow-label">Modules</span>
-      </div>
-
-      <div className="mh-modules">
-        <Link className="mm-card" href="/navigator/expenses">
-          <div className="mm-card-tag">EXP</div>
-          <div className="mm-card-label">Expenses</div>
-          <div className="mm-card-blurb">
-            {pendingSubmissions.length > 0
-              ? `${pendingSubmissions.length} pending approval${pendingSubmissions.length !== 1 ? 's' : ''}`
-              : 'Budgets & spend tracking'}
           </div>
-        </Link>
 
-        <Link className="mm-card" href="/navigator/grades">
-          <div className="mm-card-tag">GPA</div>
-          <div className="mm-card-label">Grades</div>
-          <div className="mm-card-blurb">
-            {scholarKeys
-              .map((k) =>
-                liveGpa?.[k] != null
-                  ? `${D.scholars[k]?.firstName || k} ${liveGpa[k].toFixed(1)}%`
-                  : null
-              )
-              .filter(Boolean)
-              .join(' · ') || 'Transcript & GPA'}
-          </div>
-        </Link>
-
-        <Link className="mm-card" href="/navigator/english">
-          <div className="mm-card-tag">ENG</div>
-          <div className="mm-card-label">English</div>
-          <div className="mm-card-blurb">Hours by scholar · opens Immersion</div>
-        </Link>
-
-        <Link className="mm-card" href="/navigator/travel">
-          <div className="mm-card-tag">TRV</div>
-          <div className="mm-card-label">Travel</div>
-          <div className="mm-card-items">
-            {nextTravels
-              .filter(({ key }) => D.scholars[key]?.track === 'NGN')
-              .map(({ key, name, travel }) => (
-                <div key={key} className="mm-card-row">
-                  <span className="mm-card-row-name">{name}</span>
-                  {travel ? (
-                    <>
-                      <span className={`mm-state mm-state--${travel.state}`}>{travel.state}</span>
-                      <span className="mm-card-row-detail">{travel.dest}</span>
-                    </>
-                  ) : (
-                    <span className="mm-card-row-detail">All done</span>
-                  )}
+          <div>
+            <div className="ds-sec">
+              <span className="ds-sec-title">Financial Overview</span>
+              <Link className="ds-sec-link" href="/navigator/expenses">
+                View finances
+              </Link>
+            </div>
+            <div className="ds-card">
+              {fin.budget > 0 ? (
+                <div className="ds-donut-wrap">
+                  <Donut
+                    size={118}
+                    stroke={15}
+                    centerVal={finPct != null ? `${finPct}%` : '—'}
+                    centerLbl="of budget"
+                    segments={[
+                      { label: 'Spent', value: fin.spent, color: 'var(--ngs-gold)' },
+                      { label: 'Remaining', value: finRemaining, color: 'var(--ngs-blue-nav)' },
+                    ]}
+                  />
+                  <div className="ds-legend">
+                    <div className="ds-legend-row">
+                      <span className="ds-legend-swatch" style={{ background: 'var(--ngs-gold)' }} />
+                      <span className="ds-legend-lbl">Spent</span>
+                      <span className="ds-legend-val">{fmtPhp(fin.spent)}</span>
+                    </div>
+                    <div className="ds-legend-row">
+                      <span className="ds-legend-swatch" style={{ background: 'var(--ngs-blue-nav)' }} />
+                      <span className="ds-legend-lbl">Remaining</span>
+                      <span className="ds-legend-val">{fmtPhp(finRemaining)}</span>
+                    </div>
+                    <div className="ds-legend-row">
+                      <span className="ds-legend-swatch" style={{ background: 'var(--ds-rule)' }} />
+                      <span className="ds-legend-lbl">Budget · current sems</span>
+                      <span className="ds-legend-val">{fmtPhp(fin.budget)}</span>
+                    </div>
+                  </div>
                 </div>
-              ))}
+              ) : (
+                <div className="ds-empty">No budgets set for the current semesters.</div>
+              )}
+            </div>
           </div>
-        </Link>
 
-        <Link className="mm-card" href="/navigator/milestones">
-          <div className="mm-card-tag">MLS</div>
-          <div className="mm-card-label">Milestones</div>
-          <div className="mm-card-items">
-            {nextMilestones.map(({ key, name, milestone }) => (
-              <div key={key} className="mm-card-row">
-                <span className="mm-card-row-name">{name}</span>
-                {milestone ? (
-                  <>
-                    <span className={`mm-state mm-state--${milestone.state}`}>
+          <div>
+            <div className="ds-sec">
+              <span className="ds-sec-title">Next Milestones</span>
+              <Link className="ds-sec-link" href="/navigator/milestones">
+                View all
+              </Link>
+            </div>
+            <div className="ds-card">
+              <div className="ds-dl-list">
+                {nextMilestones.length === 0 && (
+                  <div className="ds-empty">Every milestone is complete.</div>
+                )}
+                {nextMilestones.map(({ key, name, milestone }) => (
+                  <div key={key} className="ds-dl">
+                    <span className="ds-dl-icon">
+                      <IcnStar size={14} />
+                    </span>
+                    <div className="ds-dl-body">
+                      <div className="ds-dl-title">{milestone.name}</div>
+                      <div className="ds-dl-sub">
+                        {name}
+                        {milestone.sem ? ` · expected ${milestone.sem}` : ''}
+                      </div>
+                    </div>
+                    <span className={`ds-chip ${milestone.state === 'active' ? 'ds-chip--warn' : 'ds-chip--muted'}`}>
                       {milestone.state}
                     </span>
-                    <span className="mm-card-row-detail">{milestone.name}</span>
-                  </>
-                ) : (
-                  <span className="mm-card-row-detail">All done</span>
-                )}
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
-        </Link>
+        </div>
       </div>
     </section>
   );

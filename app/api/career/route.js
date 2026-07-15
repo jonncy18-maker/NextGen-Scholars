@@ -1,13 +1,19 @@
 import { sql } from '../../../lib/db.js';
-import { requireMentor } from '../../../lib/auth.js';
+import { requireMentor, requireScholarOwn } from '../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../lib/http.js';
 
 // Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
 export const dynamic = 'force-dynamic';
 
+// Read is scholar-accessible (2026-07 redesign: ScholarHome's "Your Journey"
+// stepper) — a mentor still gets every scholar's rows, a scholar only their
+// own. Writes below stay mentor-only.
 export const GET = withErrorHandling(async (request) => {
-  await requireMentor(request);
-  const rows = await sql`select * from career_steps order by scholar, step`;
+  const { role, scholarKey } = await requireScholarOwn(request);
+  const rows =
+    role === 'scholar'
+      ? await sql`select * from career_steps where scholar = ${scholarKey} order by step`
+      : await sql`select * from career_steps order by scholar, step`;
   return json(rows);
 });
 

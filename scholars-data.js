@@ -18,6 +18,7 @@ const NGS_DATA = {
     exchangeRate: 56,
     password: '',
     lastUpdated: '2026-06-10',
+    mentorName: 'John', // greeting + identity card in the Navigator shell
   },
 
   // ── SCHOLARS ────────────────────────────────────────────────────────────────

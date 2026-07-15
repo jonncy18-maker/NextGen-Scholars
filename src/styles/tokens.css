@@ -26,4 +26,38 @@
   --ngs-blue-nav: #2C5AA0;
   --dur-default: 180ms;
   --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Semantic surface tokens (dashboard redesign). Light defaults here;
+     html[data-theme='dark'] remaps them below. Card/panel surfaces should use
+     --ngs-surface(-2) rather than literal #fff so dark mode holds together. */
+  --ngs-surface: #FFFFFF;
+  --ngs-surface-2: #F7F8FA;
+  /* Status tints — pale card washes that need a dark-mode counterpart */
+  --ngs-tint-green: #EBF5EB;
+  --ngs-tint-red: #FBEAEA;
+  --ngs-tint-gold: #FEF8E8;
+  --ngs-tint-blue: #EBF0FB;
+  /* Readable status text on the tints above (darkened for light mode) */
+  --ngs-status-green: #1a6b2a;
+  --ngs-status-red: #b91c1c;
+  --ngs-status-gold: #8a6200;
+  /* Navy when used as TEXT (not as a button/tag background) — the dark
+     scopes remap this to a readable light navy while true navy backgrounds
+     keep --ngs-navy. */
+  --ngs-navy-text: var(--ngs-navy);
+}
+
+/* ── Dark theme ─────────────────────────────────────────────────────────────
+   Applied per-tree: only the Navigator (.nav-app) and ScholarHome (.sp-shell)
+   shells consume these remaps (their own scoped blocks in navigator.css /
+   scholar-home.css / shell.css key off html[data-theme='dark']). The values
+   live here so both trees share one palette. */
+html[data-theme='dark'] {
+  --ngs-dark-canvas: #0D1526;
+  --ngs-dark-surface: #16203A;
+  --ngs-dark-surface-2: #1C2845;
+  --ngs-dark-rule: #2A3757;
+  --ngs-dark-ink: #E8ECF5;
+  --ngs-dark-ink-soft: #B8C1D6;
+  --ngs-dark-muted: #8A96B0;
 }
