@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { IcnMenu, IcnX, IcnExternal } from './ShellIcons.jsx';
 
 // Shared left-rail shell for the mentor Navigator and ScholarHome. Desktop:
@@ -15,14 +16,14 @@ export function Sidebar({ brand, subtitle, items, footer }) {
   const rail = (
     <>
       <Link className="ds-brand" href={brand?.href || '/'} onClick={() => setOpen(false)}>
-        <span className="ds-brand-emblem" aria-hidden="true">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
-            {/* laurel-flanked flame — nods to the mockup emblem without an asset */}
-            <path d="M12 4c1.8 2 2.6 3.6 2.6 5.2A2.6 2.6 0 0 1 12 11.8a2.6 2.6 0 0 1-2.6-2.6C9.4 7.6 10.2 6 12 4z" />
-            <path d="M5.5 9c0 4.5 2 7.5 6.5 9.5M18.5 9c0 4.5-2 7.5-6.5 9.5" />
-            <path d="M4.5 13.5C5.8 14 6.8 14.8 7.5 16M19.5 13.5c-1.3.5-2.3 1.3-3 2.5" />
-          </svg>
-        </span>
+        <Image
+          className="ds-brand-emblem"
+          src="/icons/icon-192.png"
+          alt=""
+          width={30}
+          height={30}
+          priority
+        />
         <span className="ds-brand-text">
           <span className="ds-brand-name">
             NextGen
@@ -73,7 +74,7 @@ export function Sidebar({ brand, subtitle, items, footer }) {
       {/* mobile header — hidden on desktop */}
       <header className="ds-mobile-bar">
         <Link className="ds-mobile-brand" href={brand?.href || '/'}>
-          <span className="ngs-mark ngs-mark-sm"><span>N</span><span>G</span><span>S</span></span>
+          <Image src="/icons/icon-192.png" alt="" width={26} height={26} priority />
           <span className="ds-mobile-title">{subtitle}</span>
         </Link>
         <button
