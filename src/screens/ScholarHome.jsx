@@ -380,9 +380,9 @@ export function ScholarHome({ scholarKey }) {
         items={navItems}
         footer={
           <>
-            <div className="ds-identity">
+            <div className="ds-identity" title={config.name}>
               <span className="ds-avatar">{config.name[0]}</span>
-              <div>
+              <div className="ds-footer-label">
                 <div className="ds-identity-name">{config.name}</div>
                 <div className="ds-identity-role">{config.trackCode || 'Scholar'} · {liveStage}</div>
               </div>
@@ -392,7 +392,7 @@ export function ScholarHome({ scholarKey }) {
               className="ds-signout"
               onSignOut={() => { setSessionExpired(false); setAuthed(false); }}
             >
-              <IcnSignOut size={13} /> Sign out
+              <IcnSignOut size={13} /> <span className="ds-footer-label">Sign out</span>
             </SignOutButton>
           </>
         }

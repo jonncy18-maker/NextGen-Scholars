@@ -523,21 +523,23 @@ export function Navigator({ slug = [] }) {
           ]}
           footer={
             <>
-              <div className="ds-identity">
+              <div className="ds-identity" title={mentorName}>
                 <span className="ds-avatar">{mentorName[0]}</span>
-                <div>
+                <div className="ds-footer-label">
                   <div className="ds-identity-name">{mentorName}</div>
                   <div className="ds-identity-role">Mentor · NGS</div>
                 </div>
               </div>
-              <div className={`ds-conn ${conn.cls}`}>
+              <div className={`ds-conn ${conn.cls}`} title={conn.text}>
                 <span className="ds-conn-dot" />
-                {conn.text}
-                {writeError && <span style={{ color: 'var(--ds-bad)' }}> · Write failed</span>}
+                <span className="ds-footer-label">
+                  {conn.text}
+                  {writeError && <span style={{ color: 'var(--ds-bad)' }}> · Write failed</span>}
+                </span>
               </div>
               <ThemeToggle />
               <button className="ds-signout" onClick={handleSignOut} title="Sign out">
-                <IcnSignOut size={13} /> Sign out
+                <IcnSignOut size={13} /> <span className="ds-footer-label">Sign out</span>
               </button>
             </>
           }
