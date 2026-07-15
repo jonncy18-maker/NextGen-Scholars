@@ -8,8 +8,9 @@ import { ThemeToggle } from '../components/ThemeToggle.jsx';
 import { Ring, Donut, MiniSteps } from '../components/ShellViz.jsx';
 import {
   IcnGrid, IcnWallet, IcnBook, IcnGlobe, IcnClock, IcnStar,
-  IcnPlane, IcnHome, IcnSignOut, IcnChevron,
+  IcnPlane, IcnHome, IcnSignOut, IcnChevron, IcnUpdate,
 } from '../components/ShellIcons.jsx';
+import { useAppUpdate } from '../hooks/useAppUpdate.js';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
@@ -155,6 +156,7 @@ export function ScholarHome({ scholarKey }) {
   // first-visit case — shown as an explanatory banner on ScholarAuthGate.
   const [sessionExpired, setSessionExpired] = useState(false);
   const [liveData, setLiveData] = useState(null);
+  const { checking: checkingUpdate, available: updateAvailable, checkForUpdate } = useAppUpdate();
 
   // Central "this call got a 401 that didn't recover" signal (src/lib/api.js).
   // Re-lock instead of leaving this screen silently showing whatever it
@@ -405,6 +407,15 @@ export function ScholarHome({ scholarKey }) {
               {getGreeting()} {config.name}.
             </h1>
             <div className="ds-topbar-sub">{config.tagline || liveStage}</div>
+          </div>
+          <div className="ds-topbar-actions">
+            <button
+              className={`ds-icon-btn${checkingUpdate ? ' is-loading' : updateAvailable ? ' has-update' : ''}`}
+              onClick={checkForUpdate}
+              title={updateAvailable ? 'New version installed — tap to reload' : 'Check for app updates'}
+            >
+              <IcnUpdate size={15} />
+            </button>
           </div>
         </header>
         <main className="ds-content">

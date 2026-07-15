@@ -115,6 +115,14 @@ export const IcnRefresh = (p) => (
   </I>
 );
 
+export const IcnUpdate = (p) => (
+  <I {...p}>
+    <path d="M12 3v11" />
+    <path d="M7.5 10L12 14.5 16.5 10" />
+    <path d="M4.5 16.5v2A2.5 2.5 0 0 0 7 21h10a2.5 2.5 0 0 0 2.5-2.5v-2" />
+  </I>
+);
+
 export const IcnMenu = (p) => (
   <I {...p}>
     <path d="M4 7h16M4 12h16M4 17h16" />
