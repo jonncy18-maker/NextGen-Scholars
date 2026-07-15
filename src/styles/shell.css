@@ -29,6 +29,14 @@
   background: var(--ds-canvas);
   color: var(--ds-ink);
   font-family: var(--ngs-sans);
+  transition: grid-template-columns 200ms var(--ease-default);
+}
+/* Sidebar collapse (desktop only — collapsed state is irrelevant below the
+   shell breakpoint, where .ds-sidebar is hidden entirely in favor of the
+   drawer). :has() lets the sidebar's own class drive the shell's grid track
+   without lifting collapsed state up into every page that renders <Sidebar>. */
+.ds-shell:has(.ds-sidebar.is-collapsed) {
+  grid-template-columns: 72px minmax(0, 1fr);
 }
 
 html[data-theme='dark'] .ds-shell {
@@ -59,7 +67,58 @@ html[data-theme='dark'] .ds-shell {
   top: 0;
   height: 100vh;
   overflow-y: auto;
+  overflow-x: hidden;
+  transition: padding 200ms var(--ease-default);
 }
+
+.ds-collapse-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--ds-muted);
+  align-self: flex-start;
+  flex-shrink: 0;
+  transition: color var(--dur-default), background var(--dur-default);
+}
+.ds-collapse-toggle:hover { color: var(--ds-ink); background: var(--ds-surface-2); }
+.ds-sidebar.is-collapsed .ds-collapse-toggle { align-self: center; }
+/* Only the desktop rail collapses — the drawer copy doesn't render this
+   button at all (see Sidebar.jsx), but belt-and-suspenders it here too. */
+.ds-sidebar--drawer .ds-collapse-toggle { display: none; }
+
+.ds-sidebar.is-collapsed {
+  padding-left: 10px;
+  padding-right: 10px;
+  align-items: center;
+}
+.ds-sidebar.is-collapsed .ds-brand { justify-content: center; padding-left: 0; padding-right: 0; }
+.ds-sidebar.is-collapsed .ds-brand-text { display: none; }
+.ds-sidebar.is-collapsed .ds-nav-item {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+  position: relative;
+}
+.ds-sidebar.is-collapsed .ds-nav-label,
+.ds-sidebar.is-collapsed .ds-nav-ext { display: none; }
+.ds-sidebar.is-collapsed .ds-nav-badge {
+  position: absolute;
+  top: 3px;
+  right: 10px;
+  min-width: 8px;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  font-size: 0;
+  overflow: hidden;
+}
+.ds-sidebar.is-collapsed .ds-side-footer { align-items: center; width: 100%; }
+.ds-sidebar.is-collapsed .ds-identity,
+.ds-sidebar.is-collapsed .ds-conn { justify-content: center; padding-left: 0; padding-right: 0; }
+.ds-sidebar.is-collapsed .ds-footer-label { display: none; }
 
 .ds-brand {
   display: flex;

@@ -4,14 +4,17 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { IcnMenu, IcnX, IcnExternal } from './ShellIcons.jsx';
+import { useLocalStorage } from '../hooks/useLocalStorage.js';
 
 // Shared left-rail shell for the mentor Navigator and ScholarHome. Desktop:
-// fixed sidebar. Below the shell breakpoint (see shell.css) it disappears
-// behind a slim mobile header bar with a hamburger that opens the same rail
-// as an off-canvas drawer — state stays internal so pages don't have to
-// wire it. Nav items are plain <Link>s; the drawer closes on item click.
+// fixed sidebar, collapsible to an icon-only rail (persisted). Below the
+// shell breakpoint (see shell.css) it disappears behind a slim mobile header
+// bar with a hamburger that opens the same rail as an off-canvas drawer —
+// state stays internal so pages don't have to wire it. Nav items are plain
+// <Link>s; the drawer closes on item click.
 export function Sidebar({ brand, subtitle, items, footer }) {
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useLocalStorage('ngs_sidebar_collapsed', false);
 
   const rail = (
     <>
@@ -43,6 +46,7 @@ export function Sidebar({ brand, subtitle, items, footer }) {
               href={item.href}
               target="_blank"
               rel="noopener noreferrer"
+              title={item.label}
             >
               <span className="ds-nav-icon">{item.icon}</span>
               <span className="ds-nav-label">{item.label}</span>
@@ -54,6 +58,7 @@ export function Sidebar({ brand, subtitle, items, footer }) {
               className={`ds-nav-item${item.active ? ' is-active' : ''}`}
               href={item.href}
               onClick={() => setOpen(false)}
+              title={item.label}
             >
               <span className="ds-nav-icon">{item.icon}</span>
               <span className="ds-nav-label">{item.label}</span>
@@ -87,7 +92,17 @@ export function Sidebar({ brand, subtitle, items, footer }) {
       </header>
 
       {/* desktop rail */}
-      <aside className="ds-sidebar">{rail}</aside>
+      <aside className={`ds-sidebar${collapsed ? ' is-collapsed' : ''}`}>
+        <button
+          className="ds-collapse-toggle"
+          onClick={() => setCollapsed((v) => !v)}
+          aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+          title={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+        >
+          <IcnMenu size={16} />
+        </button>
+        {rail}
+      </aside>
 
       {/* off-canvas drawer (mobile) */}
       {open && (
