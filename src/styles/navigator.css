@@ -719,7 +719,7 @@ table.exp tbody td { padding: 13px 18px; border-bottom: 1px solid var(--ngs-rule
 table.exp tbody tr:last-child td { border-bottom: 0; }
 table.exp tbody tr { transition: background 0.12s ease; }
 table.exp tbody tr:hover { background: var(--ngs-paper-2); }
-.exp-item { font-family: var(--ngs-display); font-size: 15px; color: var(--ngs-ink); white-space: normal; word-break: break-word; min-width: 120px; }
+.exp-item { font-family: var(--ngs-display); font-size: 15px; color: var(--ngs-ink); white-space: normal; overflow-wrap: break-word; word-break: normal; display: inline-block; min-width: 180px; }
 .exp-cat { font-family: var(--ngs-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; padding: 3px 8px; border: 1px solid var(--ngs-rule); border-radius: 3px; color: var(--ngs-ink-soft); }
 .exp-date, .exp-amount { font-family: var(--ngs-mono); font-size: 13px; color: var(--ngs-ink-soft); }
 .exp-amount { color: var(--ngs-navy-text); }
