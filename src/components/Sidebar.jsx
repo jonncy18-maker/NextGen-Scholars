@@ -16,27 +16,29 @@ export function Sidebar({ brand, subtitle, items, footer }) {
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useLocalStorage('ngs_sidebar_collapsed', false);
 
+  const brandLink = (
+    <Link className="ds-brand" href={brand?.href || '/'} onClick={() => setOpen(false)}>
+      <Image
+        className="ds-brand-emblem"
+        src="/icons/icon-192.png"
+        alt=""
+        width={30}
+        height={30}
+        priority
+      />
+      <span className="ds-brand-text">
+        <span className="ds-brand-name">
+          NextGen
+          <br />
+          Scholars
+        </span>
+        <span className="ds-brand-sub">{subtitle}</span>
+      </span>
+    </Link>
+  );
+
   const rail = (
     <>
-      <Link className="ds-brand" href={brand?.href || '/'} onClick={() => setOpen(false)}>
-        <Image
-          className="ds-brand-emblem"
-          src="/icons/icon-192.png"
-          alt=""
-          width={30}
-          height={30}
-          priority
-        />
-        <span className="ds-brand-text">
-          <span className="ds-brand-name">
-            NextGen
-            <br />
-            Scholars
-          </span>
-          <span className="ds-brand-sub">{subtitle}</span>
-        </span>
-      </Link>
-
       <nav className="ds-nav">
         {items.map((item) =>
           item.external ? (
@@ -91,16 +93,20 @@ export function Sidebar({ brand, subtitle, items, footer }) {
         </button>
       </header>
 
-      {/* desktop rail */}
+      {/* desktop rail — toggle + brand share a row so the nav list below
+          starts higher and fits without scrolling on typical viewports. */}
       <aside className={`ds-sidebar${collapsed ? ' is-collapsed' : ''}`}>
-        <button
-          className="ds-collapse-toggle"
-          onClick={() => setCollapsed((v) => !v)}
-          aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-          title={collapsed ? 'Expand navigation' : 'Collapse navigation'}
-        >
-          <IcnMenu size={16} />
-        </button>
+        <div className="ds-sidebar-head">
+          <button
+            className="ds-collapse-toggle"
+            onClick={() => setCollapsed((v) => !v)}
+            aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+            title={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+          >
+            <IcnMenu size={16} />
+          </button>
+          {brandLink}
+        </div>
         {rail}
       </aside>
 
@@ -115,6 +121,7 @@ export function Sidebar({ brand, subtitle, items, footer }) {
             >
               <IcnX size={18} />
             </button>
+            {brandLink}
             {rail}
           </aside>
         </div>

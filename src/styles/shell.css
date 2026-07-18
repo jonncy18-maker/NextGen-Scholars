@@ -94,6 +94,7 @@ html[data-theme='dark'] .ds-shell {
   padding-right: 10px;
   align-items: center;
 }
+.ds-sidebar.is-collapsed .ds-sidebar-head { flex-direction: column; gap: 10px; }
 .ds-sidebar.is-collapsed .ds-brand { justify-content: center; padding-left: 0; padding-right: 0; }
 .ds-sidebar.is-collapsed .ds-brand-text { display: none; }
 .ds-sidebar.is-collapsed .ds-nav-item {
@@ -120,10 +121,22 @@ html[data-theme='dark'] .ds-shell {
 .ds-sidebar.is-collapsed .ds-conn { justify-content: center; padding-left: 0; padding-right: 0; }
 .ds-sidebar.is-collapsed .ds-footer-label { display: none; }
 
+.ds-sidebar-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--ds-rule);
+}
 .ds-brand {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+}
+/* Drawer keeps the original stacked layout (no toggle button next to it) —
+   restore its own bottom border/padding since .ds-sidebar-head isn't used there. */
+.ds-sidebar--drawer .ds-brand {
   padding: 2px 10px 16px;
   border-bottom: 1px solid var(--ds-rule);
 }
