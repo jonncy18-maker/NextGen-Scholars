@@ -574,8 +574,14 @@ export function Navigator({ slug = [] }) {
             </button>
             <button
               className={`ds-icon-btn${connStatus === 'loading' ? ' is-loading' : ''}`}
-              onClick={() => setRefreshKey(k => k + 1)}
-              title="Reload data from Neon"
+              onClick={() => {
+                setRefreshKey(k => k + 1);
+                // Silent — only reloads (via useAppUpdate's controllerchange
+                // listener) if a newer deployment is actually found, so a
+                // routine data refresh doesn't force an unexpected reload.
+                checkForUpdate({ force: false });
+              }}
+              title="Reload data from Neon (also checks for a newer app deployment)"
             >
               <IcnRefresh size={15} />
             </button>
