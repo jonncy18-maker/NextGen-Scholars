@@ -929,9 +929,10 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
               </div>
 
               <span className="exp-groupmode-subtotal" title={activeFilters > 0 ? 'Subtotal for the current filters' : 'Subtotal for all rows'}>
-                {activeFilters > 0 ? 'Filtered subtotal' : 'Subtotal'}: {$fmt(rows.reduce((t, r) => t + (r.amount || 0) * (r.qty || 1), 0), currency)}
+                <span className="exp-groupmode-subtotal-label">{activeFilters > 0 ? 'Filtered subtotal' : 'Subtotal'}</span>
+                <span className="exp-groupmode-subtotal-amt">{$fmt(rows.reduce((t, r) => t + (r.amount || 0) * (r.qty || 1), 0), currency)}</span>
                 {rows.length !== allRows.length && (
-                  <span className="exp-groupmode-subtotal-count"> ({rows.length} of {allRows.length})</span>
+                  <span className="exp-groupmode-subtotal-count">{rows.length} of {allRows.length}</span>
                 )}
               </span>
 

@@ -522,10 +522,23 @@ table.exp thead th.sort-active { color: var(--ngs-navy-text); }
 }
 .exp-groupmode-single-select:focus { border-color: var(--ngs-gold); }
 .exp-groupmode-subtotal {
-  font-family: var(--ngs-mono); font-size: 11.5px; color: var(--ngs-navy-text);
+  display: inline-flex; align-items: baseline; gap: 7px;
+  padding: 5px 12px; border-radius: 6px;
+  background: var(--ngs-tint-gold);
+  border: 1px solid rgba(201,168,76,0.4);
   white-space: nowrap;
 }
-.exp-groupmode-subtotal-count { color: var(--ngs-muted); }
+.exp-groupmode-subtotal-label {
+  font-family: var(--ngs-mono); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em; color: var(--ngs-amber);
+}
+.exp-groupmode-subtotal-amt {
+  font-family: var(--ngs-mono); font-size: 13px; font-weight: 700; color: var(--ngs-amber);
+}
+.exp-groupmode-subtotal-count {
+  font-family: var(--ngs-mono); font-size: 10px; color: var(--ngs-muted);
+}
+.exp-groupmode-subtotal-count::before { content: '· '; }
 .exp-groupmode-multi-indicator {
   display: flex; align-items: center; gap: 8px;
 }
