@@ -12,22 +12,40 @@ const BUCKET_CARD_LABELS = {
   admin:        'Admin',
 };
 
-export function TotalsRow({ s, currency }) {
+export function TotalsRow({ s, currency, activeBuckets, onBucketClick }) {
   const $fmt = useFmt();
   const b = scholarTotals(s);
   const visibleBuckets = Object.entries(b.byBucket || {}).filter(([, v]) => v > 0);
+  const clickable = typeof onBucketClick === 'function';
+  const hasActive = (activeBuckets || []).length > 0;
   return (
     <div className="totals-row">
-      <div className="total-card lead">
+      <button
+        type="button"
+        className={`total-card lead${clickable ? ' is-clickable' : ''}${clickable && !hasActive ? ' is-active' : ''}`}
+        onClick={clickable ? () => onBucketClick(null) : undefined}
+        disabled={!clickable}
+        title={clickable ? 'Show all expenses' : undefined}
+      >
         <div className="total-val">{$fmt(b.total, currency)}</div>
         <div className="total-lbl">Total Invested</div>
-      </div>
-      {visibleBuckets.map(([key, val]) => (
-        <div key={key} className="total-card">
-          <div className="total-val">{$fmt(val, currency)}</div>
-          <div className="total-lbl">{BUCKET_CARD_LABELS[key] || key}</div>
-        </div>
-      ))}
+      </button>
+      {visibleBuckets.map(([key, val]) => {
+        const isActive = (activeBuckets || []).includes(key);
+        return (
+          <button
+            type="button"
+            key={key}
+            className={`total-card${clickable ? ' is-clickable' : ''}${isActive ? ' is-active' : ''}`}
+            onClick={clickable ? () => onBucketClick(key) : undefined}
+            disabled={!clickable}
+            title={clickable ? `Filter expenses to ${BUCKET_CARD_LABELS[key] || key}` : undefined}
+          >
+            <div className="total-val">{$fmt(val, currency)}</div>
+            <div className="total-lbl">{BUCKET_CARD_LABELS[key] || key}</div>
+          </button>
+        );
+      })}
     </div>
   );
 }

@@ -598,8 +598,18 @@ table.exp thead th.sort-active { color: var(--ngs-navy-text); }
 .viewtoggle button.active { background: var(--ngs-navy); color: var(--ngs-gold); }
 
 .totals-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 26px; }
-.total-card { background: var(--ngs-surface); border: 1px solid var(--ngs-rule); border-radius: 8px; padding: 18px 20px; box-shadow: var(--ngs-card-shadow, none); }
+.total-card {
+  background: var(--ngs-surface); border: 1px solid var(--ngs-rule); border-radius: 8px;
+  padding: 18px 20px; box-shadow: var(--ngs-card-shadow, none);
+  font: inherit; text-align: left; width: 100%; -webkit-appearance: none; appearance: none;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+}
 .total-card.lead { background: var(--ngs-navy); border-color: var(--ngs-navy-text); }
+.total-card.is-clickable { cursor: pointer; }
+.total-card.is-clickable:hover { border-color: var(--ngs-gold); box-shadow: 0 1px 6px rgba(201,168,76,0.18); transform: translateY(-1px); }
+.total-card.is-clickable:disabled { cursor: default; }
+.total-card.is-clickable.is-active { border-color: var(--ngs-gold); box-shadow: 0 0 0 2px rgba(201,168,76,0.3); }
+.total-card.lead.is-clickable.is-active { border-color: var(--ngs-gold); box-shadow: 0 0 0 2px rgba(201,168,76,0.45); }
 .total-val { font-family: var(--ngs-display); font-size: 30px; font-weight: 500; color: var(--ngs-navy-text); line-height: 1; margin-bottom: 7px; letter-spacing: -0.02em; }
 .total-card.lead .total-val { color: var(--ngs-gold); }
 .total-lbl { font-family: var(--ngs-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ngs-muted); }
