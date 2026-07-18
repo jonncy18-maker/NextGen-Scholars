@@ -29,7 +29,7 @@ const SEM_DISPLAY = {
 
 // Mirrors CareerSection.jsx's pipeline — nursing-track only, so TESDA
 // scholars (no career_steps rows) simply get no journey stepper.
-const CAREER_STEPS = ['PNLE', 'OET', 'NCLEX', 'OSCE', 'AHPRA'];
+const CAREER_STEPS = ['Trial Period', 'University', 'PNLE', 'OET', 'NCLEX', 'OSCE', 'AHPRA'];
 
 function semBudgetPct(scholar, sem) {
   if (!sem) return null;

@@ -43,8 +43,10 @@ const SEM_LABELS = {
 
 // Mirrors CareerSection.jsx / MentorHome.jsx — nursing-track licensure
 // pipeline, rendered as the "Your Journey" stepper.
-const CAREER_STEPS = ['PNLE', 'OET', 'NCLEX', 'OSCE', 'AHPRA'];
+const CAREER_STEPS = ['Trial Period', 'University', 'PNLE', 'OET', 'NCLEX', 'OSCE', 'AHPRA'];
 const CAREER_LABELS = {
+  'Trial Period': 'Program Trial Admission',
+  'University': 'College Enrollment',
   PNLE: 'Nursing Licensure',
   OET: 'OET English',
   NCLEX: 'NCLEX',

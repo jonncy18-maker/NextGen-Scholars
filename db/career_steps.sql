@@ -5,7 +5,7 @@
 create table if not exists career_steps (
   id         bigint generated always as identity primary key,
   scholar    text references scholars(scholar_key) on delete cascade,
-  step       text not null check (step in ('PNLE','OET','NCLEX','OSCE','AHPRA')),
+  step       text not null check (step in ('Trial Period','University','PNLE','OET','NCLEX','OSCE','AHPRA')),
   status     text not null default 'pending'
                check (status in ('pending','in_progress','passed','failed','waived')),
   exam_date  date,
