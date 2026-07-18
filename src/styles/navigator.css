@@ -522,8 +522,8 @@ table.exp thead th.sort-active { color: var(--ngs-navy-text); }
 }
 .exp-groupmode-single-select:focus { border-color: var(--ngs-gold); }
 .exp-groupmode-subtotal {
-  display: inline-flex; align-items: baseline; gap: 7px;
-  padding: 5px 12px; border-radius: 6px;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 12px; border-radius: 6px;
   background: var(--ngs-tint-gold);
   border: 1px solid rgba(201,168,76,0.4);
   white-space: nowrap;
@@ -531,6 +531,21 @@ table.exp thead th.sort-active { color: var(--ngs-navy-text); }
 .exp-groupmode-subtotal-label {
   font-family: var(--ngs-mono); font-size: 10px; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.08em; color: var(--ngs-amber);
+}
+.exp-groupmode-subtotal-lines {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.exp-groupmode-subtotal-line {
+  display: flex; align-items: baseline; gap: 6px;
+}
+.exp-groupmode-subtotal-tag {
+  font-family: var(--ngs-mono); font-size: 9px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--ngs-amber);
+  min-width: 38px;
+}
+.exp-groupmode-subtotal-line--budget .exp-groupmode-subtotal-tag,
+.exp-groupmode-subtotal-line--budget .exp-groupmode-subtotal-amt {
+  color: var(--ngs-muted);
 }
 .exp-groupmode-subtotal-amt {
   font-family: var(--ngs-mono); font-size: 13px; font-weight: 700; color: var(--ngs-amber);
