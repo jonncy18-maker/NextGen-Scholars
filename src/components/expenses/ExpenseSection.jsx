@@ -85,6 +85,13 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
       return updated;
     });
     writeSent(r.id, expScholar);
+    // A Budget (planned) row that actually gets sent has, by definition,
+    // become real spend — flip it to Actual so it's not left mis-tracked
+    // as still-planned once the money's out the door.
+    const status = r.status || r.avb;
+    if (status && status !== 'Actual' && onEditExpense) {
+      onEditExpense(expScholar, r.id, { avb: 'Actual' });
+    }
   }
 
   function handleUnsent(r) {

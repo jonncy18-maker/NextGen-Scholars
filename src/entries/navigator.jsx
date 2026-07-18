@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { NGS_DATA } from '../../scholars-data.js';
 import { useLocalStorage } from '../hooks/useLocalStorage.js';
 import { loadFromSupabase, loadPendingSubmissions } from '../api-loader.js';
-import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead, approveSubmission, rejectSubmission, writeSent } from '../api-writer.js';
+import { writeExpense, writeSemester, updateExpense, deleteExpense, markActivityRead, approveSubmission, rejectSubmission } from '../api-writer.js';
 import { authClient, invalidateToken } from '../lib/auth-client.js';
 import { api } from '../lib/api.js';
 import { useChanges } from '../hooks/useChanges.js';
@@ -462,8 +462,11 @@ export function Navigator({ slug = [] }) {
       writeExpense(scholar, feeExp).catch(() => setWriteError(true));
     }
     itemIds.forEach(id => {
-      updateExpenseInD(scholar, id, { sent: 'Yes' });
-      writeSent(id, scholar).catch(() => setWriteError(true));
+      // A Budget (planned) row that actually gets sent has, by definition,
+      // become real spend — flip it to Actual too (a no-op for rows that
+      // were already Actual).
+      updateExpenseInD(scholar, id, { sent: 'Yes', avb: 'Actual' });
+      updateExpense(id, { sent: 'Yes', avb: 'Actual' }).catch(() => setWriteError(true));
     });
     return { feeRecorded: !!feeExp, fee, count: itemIds.length };
   }
