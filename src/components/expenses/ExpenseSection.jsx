@@ -832,26 +832,27 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
                         onClick={() => setDueView(v => v === 'past' ? null : 'past')}
                         title="Unsent expenses with a date in the past"
                       >
-                        Past Due{pastDueRows.length > 0 ? ` (${pastDueRows.length})` : ''}
+                        Past Due{pastDueRows.length > 0 ? ` (${pastDueRows.length} · ${$fmt(pastDueTotal, currency)})` : ''}
                       </button>
                       <button
                         className={`pending-send-due-btn${dueView === 'now' ? ' active' : ''}`}
                         onClick={() => setDueView(v => v === 'now' ? null : 'now')}
                         title="Today, tomorrow, and the day after"
                       >
-                        Due Now{dueNowRows.length > 0 ? ` (${dueNowRows.length})` : ''}
+                        Due Now{dueNowRows.length > 0 ? ` (${dueNowRows.length} · ${$fmt(dueNowTotal, currency)})` : ''}
                       </button>
                       <button
                         className={`pending-send-due-btn${dueView === 'week' ? ' active' : ''}`}
                         onClick={() => setDueView(v => v === 'week' ? null : 'week')}
                         title="Due in 3–7 days"
                       >
-                        1 Week Out{weekOutRows.length > 0 ? ` (${weekOutRows.length})` : ''}
+                        1 Week Out{weekOutRows.length > 0 ? ` (${weekOutRows.length} · ${$fmt(weekOutTotal, currency)})` : ''}
                       </button>
                     </div>
                   </div>
                   <div className="pending-send-right">
                     <div className="pending-send-amount">{$fmt(pendingTotal, currency)}</div>
+                    <div className="pending-send-allnote">total pending</div>
                     {isFiltered && allUnsentTotal !== pendingTotal && (
                       <div className="pending-send-allnote">
                         {$fmt(allUnsentTotal, currency)} total unfiltered
