@@ -434,8 +434,19 @@ export function GradeEntry({ scholarKey }) {
   const isK12 = form.school === 'k12';
   const p = parseFloat(form.prelim), m = parseFloat(form.midterm), f = parseFloat(form.final_grade);
   const gradeMin = isK12 ? 0 : 1, gradeMax = isK12 ? 100 : 5;
-  const allThree = [p, m, f].every(v => !isNaN(v) && v >= gradeMin && v <= gradeMax);
-  const previewAvg = allThree ? Math.round(((p + m + f) / 3) * 10000) / 10000 : null;
+  // K-12 report cards give an already-computed Final Grade per subject —
+  // averaging it again with prelim/midterm (earlier quarters) would double-
+  // count it and drag the result toward the earlier, lower quarters, so
+  // only the final grade is required/used for k12. UV keeps the original
+  // three-period average.
+  const hasRequiredGrades = isK12
+    ? !isNaN(f) && f >= gradeMin && f <= gradeMax
+    : [p, m, f].every(v => !isNaN(v) && v >= gradeMin && v <= gradeMax);
+  const previewAvg = !hasRequiredGrades
+    ? null
+    : isK12
+      ? Math.round(f * 10000) / 10000
+      : Math.round(((p + m + f) / 3) * 10000) / 10000;
   const previewPct = previewAvg != null
     ? (isK12 ? Math.round(previewAvg * 100) / 100 : uvToPct(previewAvg))
     : null;

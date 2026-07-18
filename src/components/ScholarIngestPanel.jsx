@@ -6,7 +6,12 @@ import { uvToPct } from '../screens/GradeEntry.jsx';
 
 const ACCEPTED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
 
-function gradeAvg(prelim, midterm, finalGrade) {
+function gradeAvg(prelim, midterm, finalGrade, school) {
+  // K-12 report cards already give a computed "Final Grade" per subject —
+  // averaging that again with prelim/midterm (mapped from earlier quarters)
+  // double-counts it and drags the result toward the earlier quarters.
+  const f = parseFloat(finalGrade);
+  if (school === 'k12' && !isNaN(f)) return f;
   const vals = [prelim, midterm, finalGrade].map(v => parseFloat(v)).filter(v => !isNaN(v));
   return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
 }
@@ -237,7 +242,7 @@ function StudentGradeReviewCard({ grades: initialGrades, model, scholarKey, sem,
         const p   = g.prelim      != null ? parseFloat(g.prelim)      : null;
         const m   = g.midterm     != null ? parseFloat(g.midterm)     : null;
         const f   = g.final_grade != null ? parseFloat(g.final_grade) : null;
-        const avg = gradeAvg(p, m, f);
+        const avg = gradeAvg(p, m, f, g.school || 'uv');
         return {
           scholar: scholarKey, sem,
           school:      g.school || 'uv',
@@ -274,7 +279,7 @@ function StudentGradeReviewCard({ grades: initialGrades, model, scholarKey, sem,
         </thead>
         <tbody>
           {grades.map((g, idx) => {
-            const avg = gradeAvg(g.prelim, g.midterm, g.final_grade);
+            const avg = gradeAvg(g.prelim, g.midterm, g.final_grade, g.school || 'uv');
             const pct = avg != null ? (g.school === 'k12' ? avg : uvToPct(avg)) : null;
             return (
               <tr key={idx}>
@@ -298,12 +303,12 @@ function StudentGradeReviewCard({ grades: initialGrades, model, scholarKey, sem,
         </tbody>
         {grades.length > 1 && (() => {
           const valid = grades.filter(g => {
-            const avg = gradeAvg(g.prelim, g.midterm, g.final_grade);
+            const avg = gradeAvg(g.prelim, g.midterm, g.final_grade, g.school || 'uv');
             return avg != null && parseFloat(g.units) > 0;
           });
           const totalUnits = valid.reduce((s, g) => s + (parseFloat(g.units) || 0), 0);
           const wa = totalUnits ? valid.reduce((s, g) => {
-            const avg = gradeAvg(g.prelim, g.midterm, g.final_grade);
+            const avg = gradeAvg(g.prelim, g.midterm, g.final_grade, g.school || 'uv');
             return s + avg * (parseFloat(g.units) || 0);
           }, 0) / totalUnits : null;
           const isK12 = valid.every(g => g.school === 'k12');
