@@ -352,6 +352,14 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
 
   const activeFilters = countActiveFilters(filters) + (expSearch ? 1 : 0) + (expSem !== 'all' ? 1 : 0);
 
+  // "Actual" spend only by default, matching Total Invested (scholarTotals())
+  // above — Budget/planned rows would otherwise silently inflate the
+  // subtotal past what's actually been spent. If the mentor explicitly
+  // filters by status, `rows` already reflects that choice, so respect it
+  // (e.g. filtering to Budget shows the Budget subtotal, as expected).
+  const subtotalRows = filters.statuses.length > 0 ? rows : rows.filter(r => r.status === 'Actual');
+  const subtotalAmt = subtotalRows.reduce((t, r) => t + (r.amount || 0) * (r.qty || 1), 0);
+
   let activeGroups = null;
   if (groupMode === 'single') {
     activeGroups = groupExpenses(rows, singleDim);
@@ -939,11 +947,14 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
                 </button>
               </div>
 
-              <span className="exp-groupmode-subtotal" title={activeFilters > 0 ? 'Subtotal for the current filters' : 'Subtotal for all rows'}>
+              <span
+                className="exp-groupmode-subtotal"
+                title={filters.statuses.length > 0 ? 'Subtotal for the current filters' : 'Actual spend only (excludes Budget/planned rows) — matches Total Invested above'}
+              >
                 <span className="exp-groupmode-subtotal-label">{activeFilters > 0 ? 'Filtered subtotal' : 'Subtotal'}</span>
-                <span className="exp-groupmode-subtotal-amt">{$fmt(rows.reduce((t, r) => t + (r.amount || 0) * (r.qty || 1), 0), currency)}</span>
-                {rows.length !== allRows.length && (
-                  <span className="exp-groupmode-subtotal-count">{rows.length} of {allRows.length}</span>
+                <span className="exp-groupmode-subtotal-amt">{$fmt(subtotalAmt, currency)}</span>
+                {subtotalRows.length !== allRows.length && (
+                  <span className="exp-groupmode-subtotal-count">{subtotalRows.length} of {allRows.length}</span>
                 )}
               </span>
 
