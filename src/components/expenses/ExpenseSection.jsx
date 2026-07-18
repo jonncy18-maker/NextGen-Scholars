@@ -75,6 +75,9 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
 
   const [dueView, setDueView] = useState(null);
 
+  // Batch selection (checkbox column, flat/ungrouped view only)
+  const [selectedIds, setSelectedIds] = useState(new Set());
+
   function handleMarkSent(r) {
     setSentAll(prev => {
       const updated = { ...prev, [expScholar]: [...new Set([...(prev[expScholar] || []), String(r.id)])] };
@@ -285,6 +288,7 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
     setAddDepositOpen(false);
     setEditSplitActive(false);
     setEditSplitDeposits([]);
+    setSelectedIds(new Set());
   }
 
   function handleGroupModeClick(mode) {
@@ -369,6 +373,39 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
     activeGroups = groupMultiLevel(rows, multiDims);
   }
 
+  // Batch selection — only offered in the flat (ungrouped) table view, since
+  // group header rows don't map to a single expense to select.
+  function toggleSelect(rowId) {
+    const key = String(rowId);
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }
+  function toggleSelectAllVisible(visibleIds) {
+    const keys = visibleIds.map(String);
+    setSelectedIds(prev => {
+      const allSelected = keys.length > 0 && keys.every(k => prev.has(k));
+      return allSelected ? new Set() : new Set(keys);
+    });
+  }
+  const selectedRows = rows.filter(r => selectedIds.has(String(r.id)));
+  function clearSelection() { setSelectedIds(new Set()); }
+  function batchSetStatus(avb) {
+    selectedRows.forEach(r => onEditExpense && onEditExpense(expScholar, r.id, { avb }));
+    clearSelection();
+  }
+  function batchMarkSent() {
+    selectedRows.forEach(r => { if (r.sent !== 'Yes') handleMarkSent(r); });
+    clearSelection();
+  }
+  function batchDelete() {
+    if (!confirm(`Delete ${selectedRows.length} selected expense${selectedRows.length !== 1 ? 's' : ''}? This cannot be undone.`)) return;
+    selectedRows.forEach(r => handleDeleteExpense(r));
+    clearSelection();
+  }
+
   function countGroupRows(group) {
     if (group.rows) return group.rows.length;
     return (group.subgroups || []).reduce((s, g) => s + countGroupRows(g), 0);
@@ -403,6 +440,7 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
       return (
         <React.Fragment key={r.id || i}>
           <tr>
+            {!activeGroups && <td className="exp-check-cell" />}
             <td><span className="exp-item">{r.item}</span></td>
             <td><span className="exp-cat">{r.cat}</span></td>
             <td className="exp-date">{r.date}</td>
@@ -416,7 +454,7 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
             </td>
           </tr>
           <tr className="exp-edit-row">
-            <td colSpan={9}>
+            <td colSpan={activeGroups ? 9 : 10}>
               <div className="exp-edit-form">
                 <label className="exp-edit-field">
                   <span>Item</span>
@@ -652,7 +690,12 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
     }
 
     return (
-      <tr key={r.id || i}>
+      <tr key={r.id || i} className={selectedIds.has(String(r.id)) ? 'exp-row-selected' : undefined}>
+        {!activeGroups && (
+          <td className="exp-check-cell" onClick={e => e.stopPropagation()}>
+            <input type="checkbox" checked={selectedIds.has(String(r.id))} onChange={() => toggleSelect(r.id)} />
+          </td>
+        )}
         <td><span className="exp-item">{r.item}</span></td>
         <td><span className="exp-cat">{r.cat}</span></td>
         <td className="exp-date">{r.date}</td>
@@ -685,6 +728,7 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
     return (
       <React.Fragment key={groupId}>
         <tr className="exp-split-hd" onClick={() => toggleSplit(groupId)}>
+          {!activeGroups && <td className="exp-check-cell" />}
           <td colSpan={2}>
             <div className="exp-split-hd-inner">
               <span className="exp-split-arrow">{isCollapsed ? '▶' : '▼'}</span>
@@ -708,7 +752,12 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
           const qty      = r.qty || 1;
           const rowTotal = (r.amount || 0) * qty;
           return (
-            <tr key={r.id} className="exp-split-deposit-row">
+            <tr key={r.id} className={`exp-split-deposit-row${selectedIds.has(String(r.id)) ? ' exp-row-selected' : ''}`}>
+              {!activeGroups && (
+                <td className="exp-check-cell">
+                  <input type="checkbox" checked={selectedIds.has(String(r.id))} onChange={() => toggleSelect(r.id)} />
+                </td>
+              )}
               <td><span className="exp-split-deposit-num">↳ {i + 1}</span></td>
               <td></td>
               <td className="exp-date">{r.date}</td>
@@ -1021,10 +1070,33 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
               />
             )}
 
+            {!activeGroups && selectedRows.length > 0 && (
+              <div className="exp-batch-bar">
+                <span className="exp-batch-count">{selectedRows.length} selected</span>
+                <span className="exp-batch-actions">
+                  <button type="button" onClick={() => batchSetStatus('Actual')}>Mark Actual</button>
+                  <button type="button" onClick={() => batchSetStatus('Budget')}>Mark Budget</button>
+                  <button type="button" onClick={batchMarkSent}>Mark Sent</button>
+                  <button type="button" className="exp-batch-delete" onClick={batchDelete}>Delete</button>
+                </span>
+                <button type="button" className="exp-batch-clear" onClick={clearSelection}>Clear</button>
+              </div>
+            )}
+
             <div className="exp-table-scroll">
               <table className="exp">
                 <thead>
                   <tr>
+                    {!activeGroups && (
+                      <th className="exp-th-check">
+                        <input
+                          type="checkbox"
+                          checked={rows.length > 0 && rows.every(r => selectedIds.has(String(r.id)))}
+                          onChange={() => toggleSelectAllVisible(rows.map(r => r.id))}
+                          title="Select all visible rows"
+                        />
+                      </th>
+                    )}
                     <SortTh label="Item"       field="item"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                     <SortTh label="Category"   field="cat"    sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                     <SortTh label="Date"       field="date"   sortField={sortField} sortDir={sortDir} onSort={handleSort} />
@@ -1043,7 +1115,7 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
                       return (
                         <tbody>
                           {displayItems.length === 0
-                            ? <tr className="exp-none"><td colSpan={9}>No matching expenses.</td></tr>
+                            ? <tr className="exp-none"><td colSpan={10}>No matching expenses.</td></tr>
                             : displayItems.map((item, i) =>
                                 item.type === 'split'
                                   ? renderSplitGroup(item.rows)

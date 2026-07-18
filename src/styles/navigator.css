@@ -788,6 +788,34 @@ table.exp tbody tr:hover { background: var(--ngs-paper-2); }
 .mark-sent-btn:hover { background: rgba(47,125,85,0.22) !important; }
 .exp-th-del { width: 1px; }
 .exp-del-cell { white-space: nowrap; }
+
+/* ── batch selection ── */
+.exp-th-check, .exp-check-cell { width: 1px; padding-right: 4px !important; }
+.exp-th-check input, .exp-check-cell input { cursor: pointer; width: 15px; height: 15px; accent-color: var(--ngs-amber); }
+tr.exp-row-selected td { background: rgba(201,168,76,0.08); }
+.exp-batch-bar {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 10px 18px; border-bottom: 1px solid var(--ngs-rule);
+  background: var(--ngs-tint-gold);
+}
+.exp-batch-count {
+  font-family: var(--ngs-mono); font-size: 11.5px; font-weight: 600;
+  color: var(--ngs-amber); white-space: nowrap;
+}
+.exp-batch-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.exp-batch-actions button {
+  font-family: var(--ngs-mono); font-size: 10.5px; letter-spacing: 0.04em;
+  padding: 5px 12px; border-radius: 5px; cursor: pointer;
+  border: 1px solid rgba(201,168,76,0.45); background: var(--ngs-surface); color: var(--ngs-navy-text);
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.exp-batch-actions button:hover { background: rgba(201,168,76,0.12); border-color: var(--ngs-amber); }
+.exp-batch-actions button.exp-batch-delete { color: var(--ngs-red); border-color: rgba(177,27,42,0.35); }
+.exp-batch-actions button.exp-batch-delete:hover { background: rgba(177,27,42,0.1); }
+.exp-batch-clear {
+  margin-left: auto; font-family: var(--ngs-mono); font-size: 10.5px; color: var(--ngs-muted);
+  background: none; border: none; cursor: pointer; text-decoration: underline;
+}
 .exp-del-btn {
   font-family: var(--ngs-mono); font-size: 10px; letter-spacing: 0.06em;
   padding: 4px 10px; border-radius: 4px;
