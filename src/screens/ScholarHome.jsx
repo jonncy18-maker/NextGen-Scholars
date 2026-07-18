@@ -26,6 +26,7 @@ import { useSessionExpired } from '../hooks/useSessionExpired.js';
 const KNOWN_SCHOLARS = new Set(['claire', 'april', 'janndilyne']);
 
 const SEM_LABELS = {
+  Entry: 'Entry (Trial Admission)',
   Y1S1: 'Year 1 · Semester 1',
   Y1S2: 'Year 1 · Semester 2',
   Y2S1: 'Year 2 · Semester 1',
@@ -42,8 +43,10 @@ const SEM_LABELS = {
 
 // Mirrors CareerSection.jsx / MentorHome.jsx — nursing-track licensure
 // pipeline, rendered as the "Your Journey" stepper.
-const CAREER_STEPS = ['PNLE', 'OET', 'NCLEX', 'OSCE', 'AHPRA'];
+const CAREER_STEPS = ['Trial Period', 'University', 'PNLE', 'OET', 'NCLEX', 'OSCE', 'AHPRA'];
 const CAREER_LABELS = {
+  'Trial Period': 'Program Trial Admission',
+  'University': 'College Enrollment',
   PNLE: 'Nursing Licensure',
   OET: 'OET English',
   NCLEX: 'NCLEX',

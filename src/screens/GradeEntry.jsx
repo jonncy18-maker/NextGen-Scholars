@@ -25,6 +25,7 @@ function normalizeGradeRow(r) {
 }
 
 const SEM_LABELS = {
+  Entry:'Entry (Trial Admission)',
   Y1S1:'Year 1 · Semester 1', Y1S2:'Year 1 · Semester 2',
   Y2S1:'Year 2 · Semester 1', Y2S2:'Year 2 · Semester 2',
   Y3S1:'Year 3 · Semester 1', Y3S2:'Year 3 · Semester 2',

@@ -4,9 +4,11 @@ import { useChanges } from '../hooks/useChanges.js';
 import { useData } from '../context/DataContext.jsx';
 import { NAMECLASS } from '../constants.js';
 
-const STEPS = ['PNLE', 'OET', 'NCLEX', 'OSCE', 'AHPRA'];
+const STEPS = ['Trial Period', 'University', 'PNLE', 'OET', 'NCLEX', 'OSCE', 'AHPRA'];
 
 const STEP_SUBTITLE = {
+  'Trial Period': 'Program Trial Admission',
+  'University':   'College Enrollment',
   PNLE:  'Phil. Nursing Licensure',
   OET:   'Occupational English',
   NCLEX: 'US Nursing Licensure',
@@ -99,6 +101,29 @@ function StepEditor({ scholar, step, row, onSave, onCancel, saving, error }) {
   );
 }
 
+function TesdaTrack({ sk }) {
+  const { D } = useData();
+  const name = D.scholars[sk]?.name || sk;
+  const nc   = NAMECLASS[sk] || '';
+  const program = D.scholars[sk]?.program || 'TESDA NC II';
+
+  return (
+    <div className="cs-scholar-card">
+      <div className="cs-scholar-header">
+        <span className={`cs-scholar-name ${nc}`}>{name}</span>
+        <span className="cs-progress-chip">TESDA track</span>
+      </div>
+      <div className="cs-pipeline">
+        <div className="cs-step cs-step-tesda" title={program}>
+          <span className="cs-step-icon">◑</span>
+          <span className="cs-step-name">TESDA</span>
+          <span className="cs-step-sub">{program}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ScholarTrack({ sk, steps }) {
   const { D } = useData();
   const name  = D.scholars[sk]?.name || sk;
@@ -176,7 +201,7 @@ function ScholarTrack({ sk, steps }) {
 }
 
 export function CareerSection({ id, collapsed, onToggle }) {
-  const { scholarKeys } = useData();
+  const { scholarKeys, D } = useData();
 
   const [rows, setRows]         = useState([]);
   const [loadError, setLoadError] = useState(null);
@@ -213,7 +238,7 @@ export function CareerSection({ id, collapsed, onToggle }) {
       {!collapsed && (
         <div className="cs-body">
           <div className="section-head">
-            <h2 className="section-title">PNLE → OET → NCLEX → OSCE → AHPRA</h2>
+            <h2 className="section-title">Trial Period → University → PNLE → OET → NCLEX → OSCE → AHPRA</h2>
             <span className="section-note">Click any step to edit</span>
           </div>
 
@@ -221,7 +246,9 @@ export function CareerSection({ id, collapsed, onToggle }) {
 
           <div className="cs-tracks">
             {scholarKeys.map(sk => (
-              <ScholarTrack key={sk} sk={sk} steps={byScholar(sk)} />
+              D.scholars[sk]?.track === 'TESDA'
+                ? <TesdaTrack key={sk} sk={sk} />
+                : <ScholarTrack key={sk} sk={sk} steps={byScholar(sk)} />
             ))}
           </div>
         </div>

@@ -2251,6 +2251,8 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 .cs-step:hover { border-color: var(--ngs-navy-text); box-shadow: 0 1px 4px rgba(27,42,74,0.1); }
 .cs-step-active { border-color: var(--ngs-gold); box-shadow: 0 0 0 2px rgba(201,168,76,0.25); }
 .cs-step-done { background: var(--ngs-tint-green); border-color: rgba(47,125,85,0.3); }
+.cs-step-tesda { cursor: default; }
+.cs-step-tesda:hover { border-color: var(--ngs-rule); box-shadow: none; }
 
 .cs-step-icon { font-size: 16px; color: var(--ngs-muted); line-height: 1; }
 .cs-step-done .cs-step-icon { color: var(--ngs-green); }
