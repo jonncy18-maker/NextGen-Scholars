@@ -893,7 +893,18 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
             );
           })()}
 
-      <TotalsRow s={s} currency={currency} />
+      <TotalsRow
+        s={s}
+        currency={currency}
+        activeBuckets={filters.buckets}
+        onBucketClick={(key) => {
+          setFilters(f => ({
+            ...f,
+            buckets: key === null ? [] : f.buckets.includes(key) ? [] : [key],
+          }));
+          setShowFilters(true);
+        }}
+      />
 
       {workbenchSlot?.(expScholar)}
 
