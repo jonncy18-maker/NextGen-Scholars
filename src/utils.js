@@ -1,6 +1,7 @@
 // Shared scholar computation helpers used across navigator, claire, and april pages.
 
 const SEM_LABELS = {
+  'Entry': 'Entry (Trial Admission)',
   'Trial · G12': 'Trial · Grade 12',
   'Y1S1': 'Year 1 · S1', 'Y1S2': 'Year 1 · S2',
   'Y2S1': 'Year 2 · S1', 'Y2S2': 'Year 2 · S2',

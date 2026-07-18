@@ -110,6 +110,7 @@ export const NAMECLASS = { claire: '', april: 't-april', janndilyne: 't-janndily
 export const AVB_OPTIONS = ['Actual', 'Budget'];
 
 export const SEMESTER_OPTIONS = [
+  'Entry',
   'TG11S1', 'TG11S2',
   'TG12S1', 'TG12S2',
   'Y1S1',   'Y1S2',

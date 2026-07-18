@@ -26,6 +26,7 @@ import { useSessionExpired } from '../hooks/useSessionExpired.js';
 const KNOWN_SCHOLARS = new Set(['claire', 'april', 'janndilyne']);
 
 const SEM_LABELS = {
+  Entry: 'Entry (Trial Admission)',
   Y1S1: 'Year 1 · Semester 1',
   Y1S2: 'Year 1 · Semester 2',
   Y2S1: 'Year 2 · Semester 1',
