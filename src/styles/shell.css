@@ -527,8 +527,8 @@ a.ds-card:hover { box-shadow: var(--ds-shadow-hover); transform: translateY(-1px
   color: var(--ds-ink);
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  white-space: nowrap;
+  flex-wrap: wrap;
+  gap: 4px 8px;
 }
 .ds-stat-val.is-flag { color: var(--ds-bad); }
 .ds-stat-sub { font-size: 11.5px; color: var(--ds-muted); margin-top: 7px; }
@@ -536,6 +536,7 @@ a.ds-card:hover { box-shadow: var(--ds-shadow-hover); transform: translateY(-1px
   font-family: var(--ngs-mono);
   font-size: 10.5px;
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 .ds-stat-trend.is-good { color: var(--ds-good); }
 .ds-stat-trend.is-bad { color: var(--ds-bad); }
