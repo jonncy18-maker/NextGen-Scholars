@@ -352,6 +352,16 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
 
   const activeFilters = countActiveFilters(filters) + (expSearch ? 1 : 0) + (expSem !== 'all' ? 1 : 0);
 
+  // Split Actual vs Budget so the subtotal never conflates spent money with
+  // planned/not-yet-spent rows (matches Total Invested's Actual-only
+  // definition above, while still surfacing the Budget total instead of
+  // hiding it). Both respect whatever search/semester/filter-panel filters
+  // are already applied to `rows`.
+  const actualRows = rows.filter(r => r.status === 'Actual');
+  const budgetRows = rows.filter(r => r.status !== 'Actual');
+  const actualAmt  = actualRows.reduce((t, r) => t + (r.amount || 0) * (r.qty || 1), 0);
+  const budgetAmt  = budgetRows.reduce((t, r) => t + (r.amount || 0) * (r.qty || 1), 0);
+
   let activeGroups = null;
   if (groupMode === 'single') {
     activeGroups = groupExpenses(rows, singleDim);
@@ -939,12 +949,27 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
                 </button>
               </div>
 
-              <span className="exp-groupmode-subtotal" title={activeFilters > 0 ? 'Subtotal for the current filters' : 'Subtotal for all rows'}>
+              <span
+                className="exp-groupmode-subtotal"
+                title={`${activeFilters > 0 ? 'Filtered subtotal' : 'Subtotal'} — Actual matches Total Invested above; Budget is planned/not-yet-spent rows`}
+              >
                 <span className="exp-groupmode-subtotal-label">{activeFilters > 0 ? 'Filtered subtotal' : 'Subtotal'}</span>
-                <span className="exp-groupmode-subtotal-amt">{$fmt(rows.reduce((t, r) => t + (r.amount || 0) * (r.qty || 1), 0), currency)}</span>
-                {rows.length !== allRows.length && (
-                  <span className="exp-groupmode-subtotal-count">{rows.length} of {allRows.length}</span>
-                )}
+                <span className="exp-groupmode-subtotal-lines">
+                  <span className="exp-groupmode-subtotal-line">
+                    <span className="exp-groupmode-subtotal-tag">Actual</span>
+                    <span className="exp-groupmode-subtotal-amt">{$fmt(actualAmt, currency)}</span>
+                    {actualRows.length !== rows.length && (
+                      <span className="exp-groupmode-subtotal-count">{actualRows.length} rows</span>
+                    )}
+                  </span>
+                  {budgetRows.length > 0 && (
+                    <span className="exp-groupmode-subtotal-line exp-groupmode-subtotal-line--budget">
+                      <span className="exp-groupmode-subtotal-tag">Budget</span>
+                      <span className="exp-groupmode-subtotal-amt">{$fmt(budgetAmt, currency)}</span>
+                      <span className="exp-groupmode-subtotal-count">{budgetRows.length} rows</span>
+                    </span>
+                  )}
+                </span>
               </span>
 
               {groupMode === 'single' && (
