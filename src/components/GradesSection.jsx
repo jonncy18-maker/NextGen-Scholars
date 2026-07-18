@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useData } from '../context/DataContext.jsx';
+import { useChanges } from '../hooks/useChanges.js';
 import { api } from '../lib/api.js';
 import { NAMECLASS, SEMESTER_OPTIONS } from '../constants.js';
 import { uvToPct } from '../screens/GradeEntry.jsx';
@@ -17,6 +18,14 @@ function weightedGpa(rows) {
 }
 
 function recalc(school, prelim, midterm, final_grade) {
+  // K-12 report cards already give a computed "Final Grade" per subject
+  // (the school's own roll-up of its quarters) — averaging that again with
+  // prelim/midterm (mapped from earlier quarters) double-counts it and
+  // drags the result toward the earlier, lower quarters. Use it directly.
+  const f = parseFloat(final_grade);
+  if (school === 'k12' && !isNaN(f)) {
+    return { period_avg: Math.round(f * 10000) / 10000, pct_equiv: Math.round(f * 100) / 100 };
+  }
   const vals = [prelim, midterm, final_grade]
     .map(v => parseFloat(v))
     .filter(v => !isNaN(v));
@@ -394,6 +403,11 @@ export function GradesSection({ id, collapsed, onToggle }) {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  useChanges(deltas => {
+    const d = deltas.grade_entries;
+    if (d && (d.rows.length || d.deletedIds.length)) load();
+  });
 
   return (
     <section className="section" id={id}>
