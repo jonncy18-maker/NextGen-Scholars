@@ -16,6 +16,15 @@ licensure abroad (PH → OET → NCLEX → AHPRA Australia).
   repo depends on Supabase anymore. Full migration history:
   `ROADMAP.md` → "Phase 5 — Migration: Supabase → Neon + Vercel".
 
+> **Personal context:** John maintains a dated personal-context doc (background,
+> constraints, review priorities as the builder) in this Google Drive folder:
+> https://drive.google.com/drive/folders/1cjNFhY6ZnN5xB4PSDhz7FA24KGl92NTy — titles
+> are date-stamped (e.g. `Personal_Context_YYYY-MM-DD.md`). At session start, or
+> whenever asked to review this repo "against what you know about me," use the
+> Google Drive tools to find the **most recently dated** file in that folder (don't
+> assume a fixed filename — a newer one may have been added) and weigh suggestions
+> against it, not just generic best practice.
+
 ## Build system
 
 A Next.js **App Router** app. `app/**/page.jsx` files are thin `'use client'`
