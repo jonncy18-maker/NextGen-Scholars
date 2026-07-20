@@ -6,6 +6,7 @@ import { buildContext } from '../../../lib/ai/context.js';
 import { tier2Ask, tier2WeeklyReport } from '../../../lib/ai/tier2.js';
 import { tier3Ingest, tier3GradeIngest } from '../../../lib/ai/tier3.js';
 import { resolveSendAction } from '../../../lib/ai/action.js';
+import { resolveExpenseBulkEdit } from '../../../lib/ai/expense-edit.js';
 
 // Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
 export const dynamic = 'force-dynamic';
@@ -28,8 +29,8 @@ export const POST = withErrorHandling(async (request) => {
 
   const { scholar, type, text, sem, file } = body;
   if (!scholar && type !== 'weekly_report') return json({ error: 'Missing required field: scholar' }, { status: 400 });
-  if (!['query', 'ingest', 'grade_ingest', 'coach', 'action', 'weekly_report'].includes(type)) {
-    return json({ error: 'Field "type" must be "query", "ingest", "grade_ingest", "coach", "action", or "weekly_report"' }, { status: 400 });
+  if (!['query', 'ingest', 'grade_ingest', 'coach', 'action', 'weekly_report', 'expense_bulk_edit'].includes(type)) {
+    return json({ error: 'Field "type" must be "query", "ingest", "grade_ingest", "coach", "action", "weekly_report", or "expense_bulk_edit"' }, { status: 400 });
   }
 
   if (type === 'weekly_report') {
@@ -45,6 +46,16 @@ export const POST = withErrorHandling(async (request) => {
     const t2 = await tier2WeeklyReport(contexts, geminiKey);
     if (t2.answered) return json({ tier: 2, type: 'weekly_report', report: t2.answer, model: t2.model });
     return json({ tier: 2, status: 'error', error: t2.error }, { status: 502 });
+  }
+
+  if (type === 'expense_bulk_edit') {
+    if (!text?.trim()) return json({ error: 'expense_bulk_edit requires instruction text' }, { status: 400 });
+    if (!Array.isArray(body.rows)) return json({ error: 'expense_bulk_edit requires a rows array' }, { status: 400 });
+    const geminiKey = process.env.GOOGLE_AI_KEY;
+    if (!geminiKey) return json({ status: 'not_configured', error: 'AI not configured — add GOOGLE_AI_KEY to Vercel env vars.', hint: 'Add GOOGLE_AI_KEY to Vercel env vars.' }, { status: 503 });
+    const result = await resolveExpenseBulkEdit(body.rows, text, geminiKey);
+    if (result.error) return json({ status: 'error', error: result.error }, { status: 502 });
+    return json(result);
   }
 
   if (type === 'action') {

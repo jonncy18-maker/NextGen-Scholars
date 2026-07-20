@@ -3299,7 +3299,30 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 .ewb-history { margin-top: 20px; }
 .nai-chip--dim { opacity: 0.65; }
 
-.ewb-upload, .ewb-manual { min-height: 200px; }
+.ewb-upload, .ewb-manual, .ewb-edit { min-height: 200px; }
+
+/* ── Edit-with-AI diff review ── */
+.ewb-edit-diffs { display: flex; flex-direction: column; gap: 10px; margin: 12px 0; }
+.ewb-edit-diff {
+  border: 1px solid var(--ngs-rule); border-radius: 8px; padding: 10px 12px;
+  background: var(--ngs-surface);
+}
+.ewb-edit-diff--delete { border-color: var(--ngs-red, #b91c1c); }
+.ewb-edit-diff-item {
+  font-family: var(--ngs-mono); font-size: 12px; font-weight: 700;
+  color: var(--ngs-navy); margin-bottom: 6px;
+}
+.ewb-edit-diff-field {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 12px; padding: 2px 0;
+}
+.ewb-edit-diff-key {
+  font-family: var(--ngs-mono); font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--ngs-muted); min-width: 66px;
+}
+.ewb-edit-diff-before { color: var(--ngs-muted); text-decoration: line-through; }
+.ewb-edit-diff-arrow { color: var(--ngs-gold); }
+.ewb-edit-diff-after { color: var(--ngs-navy); font-weight: 600; }
 
 /* ── GCash transfer calculator (Janndilyne only) ── */
 .gcc-card {
