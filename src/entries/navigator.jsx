@@ -641,6 +641,8 @@ export function Navigator({ slug = [] }) {
                     <ExpenseWorkbench
                       scholar={scholar}
                       onAddExpense={handleAddExpense}
+                      onEditExpense={handleEditExpense}
+                      onDeleteExpense={handleDeleteExpenseFromTable}
                       onRecordSend={handleRecordSend}
                     />
                   )}
