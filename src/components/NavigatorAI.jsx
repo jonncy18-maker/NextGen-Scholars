@@ -1013,10 +1013,10 @@ export function IngestPanel({ scholar, scholarKeys }) {
         </div>
       )}
 
-      <div className="nai-or-divider">or paste text</div>
+      <div className="nai-or-divider">or type / paste</div>
 
       <textarea className="nai-paste-area"
-        placeholder="Paste a fee schedule, receipt text, or tutor invoice here…"
+        placeholder={'Type in plain language — e.g. "Claire spent ₱500 on jeepney fare today" or "paid ₱3,500 tuition and ₱850 for two textbooks" — or paste a fee schedule / receipt text…'}
         value={pasteText} onChange={e => setPaste(e.target.value)}
         disabled={loading} rows={4} />
 
