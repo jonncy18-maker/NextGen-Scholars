@@ -4,7 +4,6 @@ import { useData } from '../../context/DataContext.jsx';
 import { useFmt } from '../../context/FxContext.jsx';
 import { allExpenses } from '../../utils.js';
 import { CAT_TO_BUCKET } from '../../constants.js';
-import { AddExpenseForm } from './AddExpenseForm.jsx';
 import { GcashCalculator } from './GcashCalculator.jsx';
 
 // Fields compared/diffed when the AI rewrites saved rows. `status` maps to the
@@ -259,12 +258,11 @@ export function ExpenseEditPanel({
   );
 }
 
-// The AI-driven paths (ask / upload receipt / edit-with-AI) that used to live in
-// this panel's tabs now live in the unified Navigator AI console. What remains
-// here is the non-AI manual workflow: the GCash calculator (Janndilyne) and the
-// manual add form — plus a button that opens the console pre-scoped to the
-// active scholar for anything conversational.
-export function ExpenseWorkbench({ scholar, onAddExpense, onRecordSend, onOpenConsole }) {
+// Adding, uploading, and editing expenses all happen in the unified Navigator
+// AI console now. What remains here is the GCash transfer calculator
+// (Janndilyne only) plus a button that opens the console pre-scoped to the
+// active scholar.
+export function ExpenseWorkbench({ scholar, onRecordSend, onOpenConsole }) {
   const { scholarKeys } = useData();
   const [activeScholar, setActiveScholar] = useState(scholar || scholarKeys[0] || 'claire');
 
@@ -297,29 +295,24 @@ export function ExpenseWorkbench({ scholar, onAddExpense, onRecordSend, onOpenCo
       </div>
 
       <p className="eaw-hint" style={{ margin: '0 0 12px' }}>
-        Questions, receipts, and plain-language edits now live in the{' '}
+        Adding expenses, uploading receipts, and plain-language edits all happen in the{' '}
         <button
           type="button"
           className="ewb-inline-link"
           onClick={() => onOpenConsole?.(activeScholar)}
         >
           Ask AI console
-        </button>
-        . Add an expense by hand below.
+        </button>{' '}
+        now — just describe it and review before it saves.
       </p>
 
-      <div className="ewb-body">
-        <div className="ewb-manual">
-          {activeScholar === 'janndilyne' && (
+      {activeScholar === 'janndilyne' && (
+        <div className="ewb-body">
+          <div className="ewb-manual">
             <GcashCalculator scholar={activeScholar} onRecordSend={onRecordSend} />
-          )}
-          <AddExpenseForm
-            scholar={activeScholar}
-            onAdd={(sk, exp) => onAddExpense?.(sk, exp)}
-            onCancel={() => onOpenConsole?.(activeScholar)}
-          />
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
