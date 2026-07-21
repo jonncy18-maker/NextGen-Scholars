@@ -724,7 +724,6 @@ export function Navigator({ slug = [] }) {
                       workbenchSlot={(scholar) => (
                         <ExpenseWorkbench
                           scholar={scholar}
-                          onAddExpense={handleAddExpense}
                           onRecordSend={handleRecordSend}
                           onOpenConsole={(key) => openDrawer(null, key)}
                         />
