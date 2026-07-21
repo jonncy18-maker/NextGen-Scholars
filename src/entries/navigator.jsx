@@ -753,7 +753,12 @@ export function Navigator({ slug = [] }) {
                     <CareerSection id="sec-career" collapsed={false} onToggle={() => {}} />
                   </SectionErrorBoundary>
                   <SectionErrorBoundary name="Risk">
-                    <RiskSection id="sec-risk" collapsed={false} onToggle={() => {}} />
+                    <RiskSection
+                      id="sec-risk"
+                      collapsed={false}
+                      onToggle={() => {}}
+                      liveGpa={liveGpa}
+                    />
                   </SectionErrorBoundary>
                 </>
               )}
