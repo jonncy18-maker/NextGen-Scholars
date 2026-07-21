@@ -15,11 +15,19 @@ function riskLevel(conditions) {
   return 'ok';
 }
 
-function gpaRisk(s) {
-  const records = (s.academics || []).filter((a) => a.gpa != null);
-  if (!records.length) return { level: 'ok', gpa: null, floor: s.gpaFloor ?? s.gpa_floor };
-  const gpa = records[records.length - 1].gpa;
+// `liveGpa` is the most-recent-semester GPA (as %) computed from grade_entries
+// in navigator.jsx — the same source the portfolio and the Academics grade
+// records screen use. Prefer it so the risk card never drifts from what the
+// grade records show; fall back to the legacy `academics` table only when a
+// scholar has no live grade_entries yet.
+function gpaRisk(s, liveGpa) {
   const floor = s.gpaFloor ?? s.gpa_floor ?? 75;
+  let gpa = liveGpa ?? null;
+  if (gpa == null) {
+    const records = (s.academics || []).filter((a) => a.gpa != null);
+    gpa = records.length ? records[records.length - 1].gpa : null;
+  }
+  if (gpa == null) return { level: 'ok', gpa: null, floor };
   const level = gpa < floor ? 'risk' : gpa < floor + 2 ? 'watch' : 'ok';
   return { level, gpa, floor };
 }
@@ -75,12 +83,12 @@ function Bar({ pct, level }) {
 
 // ── Per-scholar risk card ─────────────────────────────────────────────────────
 
-function RiskCard({ sk, imm }) {
+function RiskCard({ sk, imm, liveGpa }) {
   const { D } = useData();
   const s = D.scholars[sk];
   const nc = NAMECLASS[sk] || '';
 
-  const gpa = gpaRisk(s);
+  const gpa = gpaRisk(s, liveGpa);
   const budget = budgetRisk(s);
   const english = englishRisk(imm);
   const ms = nextPendingMilestone(s);
@@ -102,7 +110,7 @@ function RiskCard({ sk, imm }) {
         <div className="risk-metric-top">
           <span className="risk-metric-label">GPA</span>
           <span className={`risk-metric-value risk-val-${gpa.level}`}>
-            {gpa.gpa != null ? `${gpa.gpa}%` : '—'}
+            {gpa.gpa != null ? `${Math.round(gpa.gpa)}%` : '—'}
             {gpa.gpa != null && gpa.floor != null && (
               <span className="risk-metric-floor"> / {gpa.floor}% floor</span>
             )}
@@ -183,7 +191,7 @@ function RiskCard({ sk, imm }) {
 
 // ── Section ───────────────────────────────────────────────────────────────────
 
-export function RiskSection({ id, collapsed, onToggle }) {
+export function RiskSection({ id, collapsed, onToggle, liveGpa = {} }) {
   const { scholarKeys } = useData();
   const [immersion, setImmersion] = useState({});
 
@@ -216,7 +224,12 @@ export function RiskSection({ id, collapsed, onToggle }) {
           </div>
           <div className="risk-grid">
             {scholarKeys.map((sk) => (
-              <RiskCard key={sk} sk={sk} imm={immersion[sk] ?? null} />
+              <RiskCard
+                key={sk}
+                sk={sk}
+                imm={immersion[sk] ?? null}
+                liveGpa={liveGpa[sk] ?? null}
+              />
             ))}
           </div>
         </div>
