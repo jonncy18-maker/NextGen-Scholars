@@ -2247,6 +2247,159 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 }
 .nai-drawer-tab:not(.is-active):hover { color: var(--ngs-ink-soft); }
 
+/* ── Unified AI console ────────────────────────────────────────────────────── */
+/* The console manages its own padding/scroll, so the drawer body is a bare flex
+   column when it hosts the console. */
+.nai-drawer-body--console {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+
+.naic {
+  display: flex; flex-direction: column;
+  flex: 1; min-height: 0;
+}
+
+.naic-thread {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: 18px 18px 8px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+
+/* Empty state */
+.naic-welcome { margin: auto 0; padding: 8px 2px; }
+.naic-welcome-title {
+  font-family: var(--ngs-display); font-size: 18px; font-weight: 600;
+  color: var(--ngs-navy-text); margin-bottom: 6px;
+}
+.naic-welcome-sub {
+  font-size: 13px; line-height: 1.5; color: var(--ngs-ink-soft);
+  max-width: 46ch; margin-bottom: 16px;
+}
+.naic-examples { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+.naic-example {
+  text-align: left; padding: 9px 12px;
+  border: 1px solid var(--ngs-rule); border-radius: 7px;
+  background: var(--ngs-paper-2); color: var(--ngs-ink);
+  font-size: 12.5px; cursor: pointer;
+  transition: border-color var(--dur-default), background var(--dur-default);
+}
+.naic-example:hover { border-color: var(--ngs-navy); background: var(--ngs-surface); }
+.naic-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Turn */
+.naic-turn { display: flex; flex-direction: column; gap: 8px; }
+.naic-user { display: flex; gap: 8px; align-items: flex-start; }
+.naic-user-body {
+  display: flex; flex-direction: column; gap: 4px;
+  background: var(--ngs-navy); color: var(--ngs-surface);
+  padding: 8px 12px; border-radius: 10px 10px 10px 3px;
+  max-width: 82%;
+}
+.naic-user-text { font-size: 13px; line-height: 1.45; white-space: pre-wrap; }
+.naic-user-files { font-size: 11.5px; opacity: 0.82; font-family: var(--ngs-mono); }
+
+.naic-intent-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding-left: 2px;
+}
+.naic-intent-badge {
+  font-family: var(--ngs-mono); font-size: 10.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--ngs-navy-text);
+  background: var(--ngs-paper-2); border: 1px solid var(--ngs-rule);
+  padding: 2px 7px; border-radius: 4px;
+}
+.naic-intent-hint { font-size: 11px; color: var(--ngs-muted); }
+.naic-intent-override {
+  margin-left: auto;
+  font-size: 11px; color: var(--ngs-muted);
+  border: 1px solid var(--ngs-rule); border-radius: 4px;
+  background: var(--ngs-surface); padding: 2px 4px; cursor: pointer;
+}
+.naic-response { padding-left: 2px; }
+
+/* Composer */
+.naic-attachments {
+  padding: 8px 14px; border-top: 1px solid var(--ngs-rule);
+  background: var(--ngs-paper-2);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.naic-attach-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.naic-attach-item {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--ngs-mono); font-size: 11px;
+  background: var(--ngs-surface); border: 1px solid var(--ngs-rule);
+  border-radius: 4px; padding: 3px 4px 3px 8px; color: var(--ngs-ink);
+}
+.naic-attach-item button {
+  border: none; background: transparent; color: var(--ngs-muted);
+  cursor: pointer; font-size: 12px; padding: 0 2px;
+}
+.naic-attach-kind {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11.5px; color: var(--ngs-muted);
+}
+.naic-kind-btn {
+  font-size: 11.5px; font-weight: 600;
+  border: 1px solid var(--ngs-rule); border-radius: 4px;
+  background: var(--ngs-surface); color: var(--ngs-ink-soft);
+  padding: 3px 9px; cursor: pointer;
+}
+.naic-kind-btn.is-on { background: var(--ngs-navy); color: var(--ngs-surface); border-color: var(--ngs-navy); }
+
+.naic-composer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--ngs-rule);
+  background: var(--ngs-surface);
+  padding: 10px 14px 14px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.naic-composer-meta { display: flex; gap: 8px; }
+.naic-composer-row { display: flex; align-items: flex-end; gap: 8px; }
+.naic-attach-btn {
+  flex-shrink: 0; width: 38px; height: 38px;
+  border: 1px solid var(--ngs-rule); border-radius: 8px;
+  background: var(--ngs-paper-2); cursor: pointer; font-size: 16px;
+  transition: border-color var(--dur-default), background var(--dur-default);
+}
+.naic-attach-btn:hover { border-color: var(--ngs-navy); }
+.naic-input {
+  flex: 1; resize: none; min-height: 38px; max-height: 160px;
+  padding: 9px 12px; border: 1px solid var(--ngs-rule); border-radius: 8px;
+  background: var(--ngs-paper-2); color: var(--ngs-ink);
+  font-family: inherit; font-size: 13px; line-height: 1.4;
+}
+.naic-input:focus { outline: none; border-color: var(--ngs-navy); background: var(--ngs-surface); }
+.naic-send {
+  flex-shrink: 0; height: 38px; padding: 0 18px;
+  border: none; border-radius: 8px;
+  background: var(--ngs-navy); color: var(--ngs-surface);
+  font-weight: 600; font-size: 13px; cursor: pointer;
+  transition: opacity var(--dur-default);
+}
+.naic-send:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Workbench console entry point */
+.ewb-console-btn {
+  padding: 9px 14px;
+  border: 1px solid var(--ngs-navy); border-radius: 6px;
+  background: var(--ngs-navy); color: var(--ngs-surface);
+  font-size: 12.5px; font-weight: 600; cursor: pointer;
+  transition: opacity var(--dur-default);
+}
+.ewb-console-btn:hover { opacity: 0.9; }
+.ewb-inline-link {
+  border: none; background: transparent; padding: 0;
+  color: var(--ngs-navy-text); font-weight: 600; cursor: pointer;
+  text-decoration: underline; font-size: inherit;
+}
+
+@media (max-width: 720px) {
+  .nai-drawer { width: 100vw; }
+}
+
 /* ── Career Section (Step 14) ─────────────────────────────────────────────── */
 
 .cs-body { padding: 0 0 24px; }
