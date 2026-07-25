@@ -165,43 +165,23 @@ input, select { font-family: inherit; }
 .el-back:hover { color: rgba(255,255,255,0.6); }
 
 /* ════════════════ EXPENSE FORM PAGE ════════════════ */
-.ef-page { min-height: 100vh; display: flex; flex-direction: column; }
+/* Renders inside the shared scholar shell (.ds-shell), so surfaces, rules and
+   body text below use the shell's --ds-* tokens, which flip in dark mode.
+   Two deliberate exclusions: everything ABOVE this marker is the .el-* lock
+   screen (ScholarAuthGate), which is a full-bleed navy screen rendered
+   OUTSIDE the shell and must keep its fixed palette; and `color: #fff` is
+   left as-is throughout, since those are white foregrounds on navy/red fills
+   rather than theme-dependent surfaces. */
 
-.ef-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 13px 20px;
-  background: var(--ngs-navy-ink);
-  border-bottom: 2px solid rgba(201,168,76,0.3);
-  gap: 12px;
-  position: sticky; top: 0; z-index: 10;
-}
-[data-scholar="april"] .ef-header { border-bottom-color: rgba(74,125,200,0.4); }
-
-.ef-header-left { display: flex; align-items: center; gap: 12px; }
-.ef-header-title {
-  font-size: 14px; color: rgba(228,201,122,0.8);
-  font-family: var(--ngs-mono); letter-spacing: 0.04em;
-}
-[data-scholar="april"] .ef-header-title { color: rgba(107,159,232,0.8); }
-.ef-header-title strong { color: var(--ngs-gold-soft); }
-[data-scholar="april"] .ef-header-title strong { color: #8FBAEF; }
-
-.ef-header-right { display: flex; align-items: center; gap: 8px; }
-.ef-home-link, .ef-logout {
-  font-size: 12px; color: rgba(255,255,255,0.38); padding: 6px 10px;
-  border: 1px solid rgba(255,255,255,0.1); border-radius: 5px;
-  transition: color 0.15s, border-color 0.15s; white-space: nowrap;
-  font-family: var(--ngs-mono); letter-spacing: 0.04em;
-}
-.ef-home-link:hover, .ef-logout:hover {
-  color: rgba(255,255,255,0.72); border-color: rgba(255,255,255,0.28);
-}
+/* The old .ef-page / .ef-header chrome (sticky navy bar, "Portal home" link,
+   "Switch scholar" button) is gone — the page renders inside ScholarShell,
+   which supplies the sidebar, topbar and sign-out. */
 
 /* ── summary stats ── */
 .ef-summary {
   display: flex; align-items: stretch; flex-wrap: wrap;
   margin-bottom: 24px;
-  background: #fff; border: 1px solid var(--ngs-rule); border-radius: 8px;
+  background: var(--ds-surface); border: 1px solid var(--ds-rule); border-radius: 8px;
   overflow: hidden; border-left: 3px solid var(--ngs-gold);
   box-shadow: 0 1px 6px rgba(27,42,74,0.05);
 }
@@ -210,25 +190,25 @@ input, select { font-family: inherit; }
 .ef-summary-stat {
   display: flex; flex-direction: column; gap: 4px;
   padding: 14px 22px; flex: 1; min-width: 100px;
-  border-right: 1px solid var(--ngs-rule);
+  border-right: 1px solid var(--ds-rule);
 }
 .ef-summary-stat:last-of-type { border-right: none; }
 
 .ef-summary-label {
   font-family: var(--ngs-mono); font-size: 9px; text-transform: uppercase;
-  letter-spacing: 0.14em; color: var(--ngs-muted);
+  letter-spacing: 0.14em; color: var(--ds-muted);
 }
 .ef-summary-val {
-  font-family: var(--ngs-display); font-size: 26px; color: var(--ngs-navy);
+  font-family: var(--ngs-display); font-size: 26px; color: var(--ds-ink);
   letter-spacing: -0.02em; line-height: 1;
 }
 .ef-summary-sem {
   display: flex; align-items: center; justify-content: center;
   padding: 14px 18px;
   font-family: var(--ngs-mono); font-size: 11px;
-  letter-spacing: 0.1em; color: var(--ngs-navy); font-weight: 600;
-  text-transform: uppercase; background: var(--ngs-paper-2);
-  border-left: 1px solid var(--ngs-rule);
+  letter-spacing: 0.1em; color: var(--ds-ink); font-weight: 600;
+  text-transform: uppercase; background: var(--ds-surface-2);
+  border-left: 1px solid var(--ds-rule);
 }
 
 .ef-main {
@@ -236,11 +216,26 @@ input, select { font-family: inherit; }
   max-width: 700px; width: 100%; margin: 0 auto;
 }
 
+/* Query container for the wide layout below. Inside the shell the available
+   width is the viewport minus the sidebar (248px, or 72px collapsed), so a
+   viewport media query would flip to two columns while the content column
+   was still narrow — and would not react at all when the sidebar collapses.
+   A container query measures the thing that actually matters. */
+.ef-shellwrap { container-type: inline-size; container-name: efmain; }
+
 /* wide desktop: the single 700px reading column leaves most of a 1920px
    monitor empty. Split into an "actions" rail (chat, add-expense form,
    receipt upload) alongside a wider column for the pending list + expense
-   table, which are the parts that actually benefit from extra width. */
-@media (min-width: 1200px) {
+   table, which are the parts that actually benefit from extra width.
+   880px of *content* width is the equivalent of the old 1200px viewport
+   breakpoint once the 248px sidebar and .ds-content's 2x32px padding are
+   taken out. Keeping the same effective trigger matters: PR #186 lowered
+   this from 1440 to 1200 specifically because real laptop displays, after OS
+   scaling / browser zoom, report a narrower CSS viewport than their physical
+   resolution — raising it again would undo that fix. Collapsing the sidebar
+   frees another 176px, so the two-column layout arrives sooner, which a
+   viewport query could never express. */
+@container efmain (min-width: 880px) {
   .ef-main {
     max-width: 1400px;
     display: grid;
@@ -279,16 +274,16 @@ input, select { font-family: inherit; }
 .ef-field-wide { grid-column: 1 / -1; }
 .ef-field label {
   font-size: 11px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.1em; color: var(--ngs-muted);
+  letter-spacing: 0.1em; color: var(--ds-muted);
 }
 .ef-optional { font-weight: 400; text-transform: none; letter-spacing: 0; }
 .ef-field input, .ef-field select {
   width: 100%; padding: 9px 12px; border-radius: 6px; font-size: 14px;
-  background: #fff; border: 1px solid rgba(27,42,74,0.18);
-  color: var(--ngs-ink); outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+  background: var(--ds-surface); border: 1px solid var(--ds-rule);
+  color: var(--ds-ink); outline: none; transition: border-color 0.15s, box-shadow 0.15s;
 }
 .ef-field input:focus, .ef-field select:focus {
-  border-color: var(--ngs-navy);
+  border-color: var(--ds-ink);
   box-shadow: 0 0 0 3px rgba(27,42,74,0.06);
 }
 
@@ -313,32 +308,32 @@ input, select { font-family: inherit; }
 .ef-mode-card {
   display: flex; flex-direction: column; align-items: flex-start; gap: 5px;
   padding: 18px 20px; border-radius: 8px;
-  border: 1.5px solid var(--ngs-rule); background: #fff;
+  border: 1.5px solid var(--ds-rule); background: var(--ds-surface);
   cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
   text-align: left;
 }
 .ef-mode-card:hover {
-  border-color: var(--ngs-navy);
+  border-color: var(--ds-ink);
   box-shadow: 0 3px 14px rgba(27,42,74,0.09);
   transform: translateY(-2px);
 }
 [data-scholar="april"] .ef-mode-card:hover { border-color: #4A7DC8; }
 
-.ef-mode-card-icon { color: var(--ngs-navy); margin-bottom: 2px; opacity: 0.65; }
+.ef-mode-card-icon { color: var(--ds-ink); margin-bottom: 2px; opacity: 0.65; }
 [data-scholar="april"] .ef-mode-card-icon { color: #4A7DC8; }
 
 .ef-mode-card-label {
   font-family: var(--ngs-display); font-size: 16px; font-weight: 500;
-  color: var(--ngs-navy); line-height: 1.2;
+  color: var(--ds-ink); line-height: 1.2;
 }
 .ef-mode-card-desc {
   font-family: var(--ngs-mono); font-size: 10.5px;
-  color: var(--ngs-muted); letter-spacing: 0.03em;
+  color: var(--ds-muted); letter-spacing: 0.03em;
 }
 
 /* ── entry card (single / multi wrapper) ── */
 .ef-entry-card {
-  background: #fff; border: 1px solid rgba(201,168,76,0.4);
+  background: var(--ds-surface); border: 1px solid rgba(201,168,76,0.4);
   border-radius: 8px; padding: 22px; margin-bottom: 24px;
   animation: efIn 0.18s ease both;
   box-shadow: 0 2px 12px rgba(27,42,74,0.05);
@@ -351,17 +346,17 @@ input, select { font-family: inherit; }
 .ef-entry-card-hd {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 18px; padding-bottom: 14px;
-  border-bottom: 1px solid var(--ngs-rule);
+  border-bottom: 1px solid var(--ds-rule);
 }
 .ef-entry-card-title {
-  font-family: var(--ngs-display); font-size: 18px; color: var(--ngs-navy);
+  font-family: var(--ngs-display); font-size: 18px; color: var(--ds-ink);
 }
 .ef-entry-card-close {
-  font-size: 15px; color: var(--ngs-muted); padding: 5px 9px; border-radius: 4px;
+  font-size: 15px; color: var(--ds-muted); padding: 5px 9px; border-radius: 4px;
   transition: background 0.12s, color 0.12s; cursor: pointer;
-  border: 1px solid var(--ngs-rule);
+  border: 1px solid var(--ds-rule);
 }
-.ef-entry-card-close:hover { background: rgba(0,0,0,0.06); color: var(--ngs-ink); }
+.ef-entry-card-close:hover { background: rgba(0,0,0,0.06); color: var(--ds-ink); }
 
 /* ── multi-expense table ── */
 .ef-multi-card { padding-bottom: 0; }
@@ -371,21 +366,21 @@ input, select { font-family: inherit; }
 }
 .ef-multi-table thead th {
   font-family: var(--ngs-mono); font-size: 9px; text-transform: uppercase;
-  letter-spacing: 0.12em; color: var(--ngs-muted);
-  padding: 8px; border-bottom: 1px solid var(--ngs-rule);
-  text-align: left; white-space: nowrap; background: var(--ngs-paper-2);
+  letter-spacing: 0.12em; color: var(--ds-muted);
+  padding: 8px; border-bottom: 1px solid var(--ds-rule);
+  text-align: left; white-space: nowrap; background: var(--ds-surface-2);
 }
-.ef-multi-row { border-bottom: 1px solid var(--ngs-rule); transition: background 0.1s; }
+.ef-multi-row { border-bottom: 1px solid var(--ds-rule); transition: background 0.1s; }
 .ef-multi-row:last-child { border-bottom: 0; }
-.ef-multi-row:hover { background: rgba(27,42,74,0.02); }
+.ef-multi-row:hover { background: var(--ds-surface-2); }
 .ef-multi-row td { padding: 6px; vertical-align: middle; }
 .ef-multi-input {
   width: 100%; padding: 6px 8px; border-radius: 4px; font-size: 12.5px;
-  border: 1px solid rgba(27,42,74,0.17); background: #fff; color: var(--ngs-ink);
+  border: 1px solid var(--ds-rule); background: var(--ds-surface); color: var(--ds-ink);
   outline: none; font-family: var(--ngs-sans); transition: border-color 0.12s, box-shadow 0.12s;
 }
 .ef-multi-input:focus {
-  border-color: var(--ngs-navy); box-shadow: 0 0 0 2px rgba(27,42,74,0.06);
+  border-color: var(--ds-ink); box-shadow: 0 0 0 2px rgba(27,42,74,0.06);
 }
 .ef-multi-wide { min-width: 130px; }
 .ef-multi-num  { min-width: 90px; }
@@ -396,67 +391,67 @@ input, select { font-family: inherit; }
 .ef-multi-remove {
   width: 24px; height: 24px; border-radius: 50%; font-size: 16px; line-height: 1;
   display: inline-flex; align-items: center; justify-content: center;
-  color: var(--ngs-muted); background: none; border: 1px solid var(--ngs-rule);
+  color: var(--ds-muted); background: none; border: 1px solid var(--ds-rule);
   cursor: pointer; transition: all 0.12s; padding: 0;
 }
 .ef-multi-remove:hover:not(:disabled) { background: var(--ngs-red); color: #fff; border-color: var(--ngs-red); }
 .ef-multi-remove:disabled { opacity: 0.3; cursor: not-allowed; }
 .ef-multi-footer {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
-  padding: 14px 0; border-top: 1px solid var(--ngs-rule); margin-top: 4px;
+  padding: 14px 0; border-top: 1px solid var(--ds-rule); margin-top: 4px;
 }
 .ef-multi-add-row {
   font-family: var(--ngs-mono); font-size: 11px; letter-spacing: 0.06em;
-  padding: 8px 14px; border-radius: 5px; border: 1.5px dashed rgba(27,42,74,0.22);
-  color: rgba(27,42,74,0.55); background: none; cursor: pointer; transition: all 0.15s;
+  padding: 8px 14px; border-radius: 5px; border: 1.5px dashed var(--ds-rule);
+  color: var(--ds-muted); background: none; cursor: pointer; transition: all 0.15s;
 }
 .ef-multi-add-row:hover {
-  border-color: var(--ngs-navy); color: var(--ngs-navy);
-  background: rgba(27,42,74,0.03);
+  border-color: var(--ds-ink); color: var(--ds-ink);
+  background: var(--ds-surface-2);
 }
 
 /* ════════════════ EXPENSE DETAIL TABLE ════════════════ */
 .ef-entries {
   margin-top: 32px;
-  border: 1px solid var(--ngs-rule); border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--ds-rule); border-radius: 8px; overflow: hidden;
   box-shadow: 0 1px 6px rgba(27,42,74,0.04);
 }
 .ef-entries-header {
   display: flex; align-items: center; gap: 12px; padding: 10px 14px;
-  background: var(--ngs-paper-2); border-bottom: 1px solid var(--ngs-rule); flex-wrap: wrap;
+  background: var(--ds-surface-2); border-bottom: 1px solid var(--ds-rule); flex-wrap: wrap;
 }
 .ef-entries-title {
   font-family: var(--ngs-mono); font-size: 10px; text-transform: uppercase;
-  letter-spacing: 0.12em; color: var(--ngs-muted);
+  letter-spacing: 0.12em; color: var(--ds-muted);
 }
 .ef-entries-scroll { overflow-x: auto; }
 .ef-entries-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .ef-entries-table thead th {
   font-family: var(--ngs-mono); font-size: 9px; text-transform: uppercase;
-  letter-spacing: 0.14em; color: var(--ngs-muted);
-  padding: 8px 12px; border-bottom: 1px solid var(--ngs-rule);
-  text-align: left; white-space: nowrap; background: #fff;
+  letter-spacing: 0.14em; color: var(--ds-muted);
+  padding: 8px 12px; border-bottom: 1px solid var(--ds-rule);
+  text-align: left; white-space: nowrap; background: var(--ds-surface);
 }
 .ef-entries-table thead th.ef-entries-right { text-align: right; }
 .ef-entries-table tbody tr {
-  border-bottom: 1px solid var(--ngs-rule); transition: background 0.1s;
+  border-bottom: 1px solid var(--ds-rule); transition: background 0.1s;
 }
 .ef-entries-table tbody tr:last-child { border-bottom: 0; }
-.ef-entries-table tbody tr:hover { background: rgba(27,42,74,0.025); }
+.ef-entries-table tbody tr:hover { background: var(--ds-surface-2); }
 .ef-entries-table tbody tr.ef-entries-budget { opacity: 0.6; }
 .ef-entries-table td { padding: 9px 12px; vertical-align: middle; }
-.ef-entries-item { font-family: var(--ngs-display); font-size: 13.5px; color: var(--ngs-navy); }
-.ef-entries-date { font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-ink-soft); white-space: nowrap; }
+.ef-entries-item { font-family: var(--ngs-display); font-size: 13.5px; color: var(--ds-ink); }
+.ef-entries-date { font-family: var(--ngs-mono); font-size: 11px; color: var(--ds-soft); white-space: nowrap; }
 .ef-entries-right { text-align: right; }
-.ef-entries-amount { font-family: var(--ngs-mono); font-size: 12.5px; color: var(--ngs-navy); white-space: nowrap; font-weight: 500; }
+.ef-entries-amount { font-family: var(--ngs-mono); font-size: 12.5px; color: var(--ds-ink); white-space: nowrap; font-weight: 500; }
 
 /* ── category badge + per-category colors ── */
 .ef-entries-cat {
   font-family: var(--ngs-mono); font-size: 9px; text-transform: uppercase;
   letter-spacing: 0.07em; padding: 2px 7px;
-  border: 1px solid var(--ngs-rule); border-radius: 3px;
-  color: var(--ngs-ink-soft); white-space: nowrap;
-  background: var(--ngs-paper-2);
+  border: 1px solid var(--ds-rule); border-radius: 3px;
+  color: var(--ds-soft); white-space: nowrap;
+  background: var(--ds-surface-2);
 }
 .ef-entries-cat[data-cat="Tuition"],
 .ef-entries-cat[data-cat="Enrollment"] {
@@ -465,7 +460,7 @@ input, select { font-family: inherit; }
 .ef-entries-cat[data-cat="Books"],
 .ef-entries-cat[data-cat="Printing & Research"],
 .ef-entries-cat[data-cat="School Supplies"] {
-  background: rgba(27,42,74,0.07); border-color: rgba(27,42,74,0.18); color: #1B2A4A;
+  background: var(--ds-surface-2); border-color: rgba(27,42,74,0.18); color: #1B2A4A;
 }
 .ef-entries-cat[data-cat="Living Expenses"] {
   background: rgba(47,125,85,0.09); border-color: rgba(47,125,85,0.2); color: #2C7A4B;
@@ -501,41 +496,41 @@ input, select { font-family: inherit; }
 /* ── group / sort controls ── */
 .ef-groupby { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; }
 .ef-groupby-label {
-  font-family: var(--ngs-mono); font-size: 10px; color: var(--ngs-muted);
+  font-family: var(--ngs-mono); font-size: 10px; color: var(--ds-muted);
   text-transform: uppercase; letter-spacing: 0.07em;
 }
 .ef-groupby-chips {
-  display: inline-flex; border: 1px solid var(--ngs-rule); border-radius: 4px; overflow: hidden;
+  display: inline-flex; border: 1px solid var(--ds-rule); border-radius: 4px; overflow: hidden;
 }
 .ef-groupby-chips button {
   font-family: var(--ngs-mono); font-size: 10.5px; padding: 4px 10px;
-  color: var(--ngs-muted); background: none; border: none; cursor: pointer;
+  color: var(--ds-muted); background: none; border: none; cursor: pointer;
   transition: background 0.12s, color 0.12s;
 }
 .ef-groupby-chips button.active { background: var(--ngs-navy); color: var(--ngs-gold); }
-.ef-groupby-chips button:hover:not(.active) { background: #eef0f4; color: var(--ngs-ink); }
+.ef-groupby-chips button:hover:not(.active) { background: #eef0f4; color: var(--ds-ink); }
 .ef-groupby-all-btn {
-  font-family: var(--ngs-mono); font-size: 10px; padding: 4px 9px; color: var(--ngs-muted);
-  background: none; border: 1px solid var(--ngs-rule); border-radius: 4px;
+  font-family: var(--ngs-mono); font-size: 10px; padding: 4px 9px; color: var(--ds-muted);
+  background: none; border: 1px solid var(--ds-rule); border-radius: 4px;
   cursor: pointer; transition: all 0.12s;
 }
-.ef-groupby-all-btn:hover { color: var(--ngs-navy); border-color: var(--ngs-navy); }
+.ef-groupby-all-btn:hover { color: var(--ds-ink); border-color: var(--ds-ink); }
 
-.ef-group-hd { cursor: pointer; user-select: none; background: var(--ngs-paper-2); }
+.ef-group-hd { cursor: pointer; user-select: none; background: var(--ds-surface-2); }
 .ef-group-hd:hover { background: #eaebef; }
 .ef-group-hd td {
   padding: 8px 12px; font-family: var(--ngs-mono); font-size: 11.5px;
-  border-top: 2px solid var(--ngs-rule);
+  border-top: 2px solid var(--ds-rule);
 }
-.ef-group-label { font-weight: 600; color: var(--ngs-navy); margin: 0 10px 0 6px; }
-.ef-group-meta { color: var(--ngs-muted); font-size: 10.5px; }
-.ef-group-total { float: right; font-weight: 600; color: var(--ngs-navy); font-family: var(--ngs-mono); }
-.ef-subtotal td { padding: 6px 12px; background: var(--ngs-paper-2); border-top: 1px dashed var(--ngs-rule); }
+.ef-group-label { font-weight: 600; color: var(--ds-ink); margin: 0 10px 0 6px; }
+.ef-group-meta { color: var(--ds-muted); font-size: 10.5px; }
+.ef-group-total { float: right; font-weight: 600; color: var(--ds-ink); font-family: var(--ngs-mono); }
+.ef-subtotal td { padding: 6px 12px; background: var(--ds-surface-2); border-top: 1px dashed var(--ds-rule); }
 .ef-subtotal-label {
-  font-family: var(--ngs-mono); font-size: 10px; color: var(--ngs-muted);
+  font-family: var(--ngs-mono); font-size: 10px; color: var(--ds-muted);
   text-transform: uppercase; letter-spacing: 0.06em;
 }
-.ef-subtotal-amt { font-family: var(--ngs-mono); font-size: 12px; font-weight: 600; color: var(--ngs-navy); }
+.ef-subtotal-amt { font-family: var(--ngs-mono); font-size: 12px; font-weight: 600; color: var(--ds-ink); }
 
 /* ── row action buttons ── */
 .ef-entries-actions { white-space: nowrap; text-align: right; padding-right: 10px !important; }
@@ -544,12 +539,12 @@ input, select { font-family: inherit; }
   border: 1px solid; cursor: pointer; transition: all 0.12s;
 }
 .ef-row-edit {
-  border-color: rgba(27,42,74,0.22); color: var(--ngs-navy); background: none; margin-right: 4px;
+  border-color: rgba(27,42,74,0.22); color: var(--ds-ink); background: none; margin-right: 4px;
 }
 .ef-row-edit:hover { background: var(--ngs-navy); color: #fff; }
 .ef-row-del { border-color: rgba(177,27,42,0.28); color: var(--ngs-red); background: none; }
 .ef-row-del:hover { background: var(--ngs-red); color: #fff; }
-.ef-row-cancel { border-color: rgba(0,0,0,0.14); color: var(--ngs-muted); background: none; }
+.ef-row-cancel { border-color: rgba(0,0,0,0.14); color: var(--ds-muted); background: none; }
 
 .ef-entries-pending-del { opacity: 0.5; }
 .ef-del-pending {
@@ -569,14 +564,14 @@ input, select { font-family: inherit; }
 .ef-edit-field { display: flex; flex-direction: column; gap: 4px; }
 .ef-edit-field span {
   font-family: var(--ngs-mono); font-size: 9px; text-transform: uppercase;
-  letter-spacing: 0.1em; color: var(--ngs-muted);
+  letter-spacing: 0.1em; color: var(--ds-muted);
 }
 .ef-edit-field input, .ef-edit-field select {
   padding: 6px 8px; border-radius: 4px; font-size: 12.5px;
-  border: 1px solid rgba(27,42,74,0.18); background: #fff;
-  color: var(--ngs-ink); outline: none;
+  border: 1px solid var(--ds-rule); background: var(--ds-surface);
+  color: var(--ds-ink); outline: none;
 }
-.ef-edit-field input:focus, .ef-edit-field select:focus { border-color: var(--ngs-navy); }
+.ef-edit-field input:focus, .ef-edit-field select:focus { border-color: var(--ds-ink); }
 .ef-edit-actions { display: flex; gap: 6px; align-items: flex-end; padding-bottom: 1px; }
 .ef-edit-save {
   padding: 7px 14px; border-radius: 4px; font-size: 12px; font-weight: 600;
@@ -586,28 +581,28 @@ input, select { font-family: inherit; }
 .ef-edit-save:hover { opacity: 0.85; }
 .ef-edit-cancel {
   padding: 7px 12px; border-radius: 4px; font-size: 12px;
-  background: none; border: 1px solid rgba(0,0,0,0.14); color: var(--ngs-muted); cursor: pointer;
+  background: none; border: 1px solid rgba(0,0,0,0.14); color: var(--ds-muted); cursor: pointer;
 }
 
 /* ════════════════ PENDING REVIEW SECTION ════════════════ */
 .ef-pending-section {
   margin-bottom: 24px;
-  border: 1px solid var(--ngs-rule); border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--ds-rule); border-radius: 8px; overflow: hidden;
   box-shadow: 0 1px 6px rgba(27,42,74,0.04);
 }
 .ef-pending-header {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
-  padding: 10px 16px; background: var(--ngs-paper-2); border-bottom: 1px solid var(--ngs-rule);
+  padding: 10px 16px; background: var(--ds-surface-2); border-bottom: 1px solid var(--ds-rule);
 }
 .ef-pending-title {
   font-family: var(--ngs-mono); font-size: 10px; text-transform: uppercase;
-  letter-spacing: 0.12em; color: var(--ngs-navy); font-weight: 600;
+  letter-spacing: 0.12em; color: var(--ds-ink); font-weight: 600;
 }
-.ef-pending-count { font-family: var(--ngs-mono); font-size: 10px; color: var(--ngs-muted); }
+.ef-pending-count { font-family: var(--ngs-mono); font-size: 10px; color: var(--ds-muted); }
 
-.ef-pending-list { display: flex; flex-direction: column; background: #fff; }
+.ef-pending-list { display: flex; flex-direction: column; background: var(--ds-surface); }
 .ef-pending-item {
-  padding: 14px 16px; border-bottom: 1px solid var(--ngs-rule);
+  padding: 14px 16px; border-bottom: 1px solid var(--ds-rule);
   border-left: 3px solid transparent; transition: background 0.12s;
 }
 .ef-pending-item:last-child { border-bottom: 0; }
@@ -616,7 +611,7 @@ input, select { font-family: inherit; }
   border-left-color: var(--ngs-red);
 }
 .ef-pending-item-main { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.ef-pending-item-name { font-family: var(--ngs-display); font-size: 14px; color: var(--ngs-navy); }
+.ef-pending-item-name { font-family: var(--ngs-display); font-size: 14px; color: var(--ds-ink); }
 
 /* Mobile: scroll the expense lists horizontally instead of squashing the
    name/columns. Scoped to just these sections — the page itself never scrolls
@@ -631,10 +626,10 @@ input, select { font-family: inherit; }
   .ef-pending-item-name { white-space: nowrap; }
 }
 .ef-pending-item.is-rejected .ef-pending-item-name { color: var(--ngs-red); }
-.ef-pending-item-amt { font-family: var(--ngs-mono); font-size: 13px; color: var(--ngs-ink); font-weight: 500; }
+.ef-pending-item-amt { font-family: var(--ngs-mono); font-size: 13px; color: var(--ds-ink); font-weight: 500; }
 .ef-pending-item-meta {
-  font-family: var(--ngs-mono); font-size: 10px; color: var(--ngs-muted);
-  background: var(--ngs-paper-2); border: 1px solid var(--ngs-rule);
+  font-family: var(--ngs-mono); font-size: 10px; color: var(--ds-muted);
+  background: var(--ds-surface-2); border: 1px solid var(--ds-rule);
   padding: 2px 6px; border-radius: 3px;
 }
 .ef-pending-badge {
@@ -656,7 +651,7 @@ input, select { font-family: inherit; }
 .ef-pending-comment {
   margin-top: 10px; padding: 10px 14px; border-radius: 5px;
   background: rgba(177,27,42,0.05); border-left: 3px solid rgba(177,27,42,0.35);
-  font-size: 13px; color: var(--ngs-ink); line-height: 1.5;
+  font-size: 13px; color: var(--ds-ink); line-height: 1.5;
 }
 .ef-pending-actions { margin-top: 12px; }
 .ef-resubmit-btn {
@@ -667,10 +662,10 @@ input, select { font-family: inherit; }
 .ef-resubmit-btn:hover { background: var(--ngs-navy-deep); }
 .ef-edit-pending-btn {
   padding: 7px 16px; border-radius: 5px; font-size: 12.5px; font-weight: 600;
-  background: transparent; color: var(--ngs-navy);
-  border: 1px solid var(--ngs-rule); cursor: pointer; transition: border-color 0.15s, background 0.15s;
+  background: transparent; color: var(--ds-ink);
+  border: 1px solid var(--ds-rule); cursor: pointer; transition: border-color 0.15s, background 0.15s;
 }
-.ef-edit-pending-btn:hover { border-color: var(--ngs-navy); background: rgba(27,42,74,0.04); }
+.ef-edit-pending-btn:hover { border-color: var(--ds-ink); background: var(--ds-surface-2); }
 .ef-resubmit-form-wrap { margin-top: 12px; }
 .ef-resubmit-form-wrap .ef-resubmit-form { margin-top: 0; }
 .ef-resubmit-form {
@@ -678,7 +673,7 @@ input, select { font-family: inherit; }
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px;
   align-items: end;
   padding: 14px; border-radius: 6px;
-  background: rgba(27,42,74,0.03); border: 1px solid var(--ngs-rule);
+  background: var(--ds-surface-2); border: 1px solid var(--ds-rule);
 }
 
 /* AI-assisted edit box, shared by the pending/rejected inline forms */
@@ -692,17 +687,17 @@ input, select { font-family: inherit; }
   align-self: flex-end; background: var(--ngs-navy); color: #fff;
   font-family: var(--ngs-mono); font-size: 11.5px;
 }
-.ef-ai-chat-ai { align-self: flex-start; background: #fff; border: 1px solid var(--ngs-rule); color: var(--ngs-ink); }
+.ef-ai-chat-ai { align-self: flex-start; background: var(--ds-surface); border: 1px solid var(--ds-rule); color: var(--ds-ink); }
 .ef-ai-chat-form { display: flex; align-items: center; gap: 8px; }
 .ef-ai-chat-badge {
   font-family: var(--ngs-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
-  background: var(--ngs-gold); color: var(--ngs-navy); padding: 3px 6px; border-radius: 3px; flex-shrink: 0;
+  background: var(--ngs-gold); color: var(--ds-ink); padding: 3px 6px; border-radius: 3px; flex-shrink: 0;
 }
 .ef-ai-chat-input {
   flex: 1; padding: 8px 10px; border-radius: 5px; font-size: 12.5px;
-  border: 1px solid var(--ngs-rule); background: #fff;
+  border: 1px solid var(--ds-rule); background: var(--ds-surface);
 }
-.ef-ai-chat-input:focus { border-color: var(--ngs-navy); outline: none; }
+.ef-ai-chat-input:focus { border-color: var(--ds-ink); outline: none; }
 .ef-ai-chat-send {
   padding: 8px 14px; border-radius: 5px; font-size: 12px; font-weight: 600;
   background: var(--ngs-navy); color: var(--ngs-gold);
@@ -724,7 +719,7 @@ input, select { font-family: inherit; }
   to   { opacity: 1; }
 }
 .ef-modal-panel {
-  background: #fff;
+  background: var(--ds-surface);
   border: 1px solid rgba(201,168,76,0.4);
   border-radius: 10px;
   width: min(96vw, 1100px);
@@ -738,7 +733,7 @@ input, select { font-family: inherit; }
 .ef-modal-hd {
   display: flex; align-items: center; justify-content: space-between;
   padding: 18px 22px 14px;
-  border-bottom: 1px solid var(--ngs-rule);
+  border-bottom: 1px solid var(--ds-rule);
   flex-shrink: 0;
 }
 .ef-modal-form {
@@ -755,7 +750,7 @@ input, select { font-family: inherit; }
   padding: 0 22px !important;
 }
 .ef-modal-footer {
-  border-top: 1px solid var(--ngs-rule);
+  border-top: 1px solid var(--ds-rule);
   padding: 14px 22px !important;
   flex-shrink: 0;
   margin-top: 0 !important;
@@ -777,7 +772,7 @@ input, select { font-family: inherit; }
   margin: 0 0 12px;
   font-size: 13px;
   line-height: 1.5;
-  color: var(--ngs-muted);
+  color: var(--ds-muted);
 }
 .eaw-success {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
@@ -793,17 +788,17 @@ input, select { font-family: inherit; }
 .eaw-success p {
   margin: 0;
   font-size: 14px;
-  color: var(--ngs-navy);
+  color: var(--ds-ink);
 }
 .eaw-again-btn {
   margin-top: 4px;
   padding: 8px 16px;
-  border: 1px solid var(--ngs-rule); border-radius: 8px;
-  background: #fff; color: var(--ngs-navy);
+  border: 1px solid var(--ds-rule); border-radius: 8px;
+  background: var(--ds-surface); color: var(--ds-ink);
   font-family: 'Manrope', sans-serif; font-size: 13px; font-weight: 600;
   cursor: pointer; transition: background 0.15s;
 }
-.eaw-again-btn:hover { background: var(--ngs-paper-2, #f5f1e8); }
+.eaw-again-btn:hover { background: var(--ds-surface-2); }
 
 /* Let the review table scroll horizontally inside the narrow panel */
 .eaw-body .nai-review { overflow-x: auto; }
