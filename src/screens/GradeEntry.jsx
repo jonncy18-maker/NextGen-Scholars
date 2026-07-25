@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import { api } from '../lib/api.js';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
-import { SignOutButton } from '../components/SignOutButton.jsx';
+import { ScholarShell } from '../components/ScholarShell.jsx';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { ScholarIngestPanel } from '../components/ScholarIngestPanel.jsx';
 import { useSessionExpired } from '../hooks/useSessionExpired.js';
@@ -502,28 +501,16 @@ export function GradeEntry({ scholarKey }) {
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
   return (
-    <div className="sp-page">
-      <div className="sp">
-
-        <header className="sp-head">
-          <SignOutButton onSignOut={() => { setSessionExpired(false); setAuthed(false); }} />
-          <div className="sp-track">
-            <span className="sp-track-dot" />
-            NextGen Nurses
-            <span className="sp-track-sep">·</span>
-            NGN
-          </div>
-          <p className="sp-greet-kicker">{config.name}</p>
-          <h1 className="sp-greet-name">Grades.</h1>
-          <div className="sp-head-rule" />
-          <div className="sp-head-meta">
-            <span className="sp-stage">{semLabel}</span>
-            <Link href={config.homeHref} className="sp-tagline" style={{ textDecoration: 'none' }}>
-              ← Back to home
-            </Link>
-          </div>
-        </header>
-
+    <ScholarShell
+      scholarKey={scholarKey}
+      name={config.name}
+      active="academics"
+      eyebrow="Academics"
+      title="Grades."
+      subtitle={semLabel}
+      identityRole={semLabel}
+      onSignOut={() => { setSessionExpired(false); setAuthed(false); }}
+    >
         <ScholarChatPanel
           scholarKey={scholarKey}
           ingestionLabel="Upload grade report"
@@ -531,7 +518,7 @@ export function GradeEntry({ scholarKey }) {
         />
 
         {/* ── GPA card ── */}
-        <section className="sp-section">
+        <section>
           <div className="ge-gpa-card">
             {rows === null ? (
               <div style={{ color: 'rgba(250,247,240,0.5)', fontFamily: 'var(--ngs-mono)', fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
@@ -641,11 +628,10 @@ export function GradeEntry({ scholarKey }) {
 
         {/* ── Current semester grades ── */}
         {rows !== null && currentRows.length > 0 && (
-          <section className="sp-section ge-grades-section">
-            <div className="sp-eyebrow">
-              <span className="sp-eyebrow-rule" />
-              {semLabel}
-              <span className="sp-eyebrow-count">{String(currentRows.length).padStart(2, '0')}</span>
+          <section className="ge-grades-section">
+            <div className="ds-sec">
+              <span className="ds-sec-title">{semLabel}</span>
+              <span className="ds-sec-count">{String(currentRows.length).padStart(2, '0')}</span>
             </div>
             <div className="ge-table-wrap">
               <table className="ge-table">
@@ -699,10 +685,9 @@ export function GradeEntry({ scholarKey }) {
 
         {/* ── Prior semesters ── */}
         {priorSems.length > 0 && (
-          <section className="sp-section ge-prior-section">
-            <div className="sp-eyebrow">
-              <span className="sp-eyebrow-rule" />
-              Prior semesters
+          <section className="ge-prior-section">
+            <div className="ds-sec">
+              <span className="ds-sec-title">Prior semesters</span>
             </div>
             {priorSems.map(sem => (
               <PriorSem key={sem} sem={sem}
@@ -717,13 +702,7 @@ export function GradeEntry({ scholarKey }) {
           scholarKey={scholarKey}
           sem={semKey}
         />
-
-        <footer className="sp-footer">
-          <div className="sp-mark">NGS</div>
-          <div className="sp-footer-tag">One generation lifts another.</div>
-        </footer>
-      </div>
-    </div>
+    </ScholarShell>
   );
 }
 

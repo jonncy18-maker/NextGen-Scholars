@@ -1,3 +1,11 @@
+/* ── GradeEntry (.ge-*) ──────────────────────────────────────────────────────
+   Renders inside the shared scholar shell (.ds-shell), so surfaces, rules and
+   body text use the shell's --ds-* tokens rather than the light-only --ngs-*
+   paper/rule/ink values — those tokens flip automatically in dark mode.
+   Deliberate exceptions: the navy GPA hero and the navy/gold chat bubbles and
+   send button are fixed-palette by design and already carry their own
+   contrasting text color. */
+
 /* ── GPA card ── */
 .ge-gpa-card {
   background: var(--ngs-navy);
@@ -84,10 +92,10 @@
   font-size: 12px;
 }
 
-.ge-preview-avg { font-weight: 600; color: var(--ngs-navy); }
-.ge-preview-sep { color: var(--ngs-muted); }
+.ge-preview-avg { font-weight: 600; color: var(--ds-ink); }
+.ge-preview-sep { color: var(--ds-muted); }
 .ge-preview-pct { font-weight: 600; color: var(--ngs-gold); }
-.ge-preview-desc { color: var(--ngs-muted); font-style: italic; font-family: var(--ngs-sans); }
+.ge-preview-desc { color: var(--ds-muted); font-style: italic; font-family: var(--ngs-sans); }
 
 /* ── grades table ── */
 .ge-grades-section { padding-bottom: 8px; }
@@ -97,7 +105,7 @@
   overflow-x: auto;
   overflow-y: hidden;
   border-radius: 6px;
-  border: 1px solid var(--ngs-rule);
+  border: 1px solid var(--ds-rule);
 }
 
 /* scrollable on hover */
@@ -117,31 +125,31 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ngs-muted);
-  background: var(--ngs-paper-2);
+  color: var(--ds-muted);
+  background: var(--ds-surface-2);
   padding: 10px 12px;
   text-align: left;
   white-space: nowrap;
-  border-bottom: 1px solid var(--ngs-rule);
+  border-bottom: 1px solid var(--ds-rule);
 }
 
 .ge-table td {
   padding: 10px 12px;
-  border-bottom: 1px solid var(--ngs-rule);
-  color: var(--ngs-ink);
+  border-bottom: 1px solid var(--ds-rule);
+  color: var(--ds-ink);
   vertical-align: middle;
 }
 
 .ge-table tbody tr:last-child td { border-bottom: none; }
-.ge-table tbody tr:hover td { background: rgba(27,42,74,0.03); }
+.ge-table tbody tr:hover td { background: var(--ds-surface-2); }
 
 .ge-table.ge-table-sm th,
 .ge-table.ge-table-sm td { padding: 8px 12px; font-size: 12.5px; }
 
 .ge-n { text-align: right !important; white-space: nowrap; }
-.ge-subject { font-weight: 500; color: var(--ngs-navy); }
-.ge-grade { font-family: var(--ngs-mono); color: var(--ngs-muted); }
-.ge-avg   { font-family: var(--ngs-mono); font-weight: 600; color: var(--ngs-navy); }
+.ge-subject { font-weight: 500; color: var(--ds-ink); }
+.ge-grade { font-family: var(--ngs-mono); color: var(--ds-muted); }
+.ge-avg   { font-family: var(--ngs-mono); font-weight: 600; color: var(--ds-ink); }
 .ge-pct   { font-family: var(--ngs-mono); font-weight: 600; color: var(--ngs-gold); }
 .ge-grade-pct { font-size: 9.5px; color: var(--ngs-gold); font-weight: 600; margin-left: 2px; }
 
@@ -151,14 +159,14 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ngs-navy);
-  background: var(--ngs-paper-2);
-  border-top: 2px solid var(--ngs-rule);
+  color: var(--ds-ink);
+  background: var(--ds-surface-2);
+  border-top: 2px solid var(--ds-rule);
 }
 
 /* ── prior semesters ── */
 .ge-prior {
-  border: 1px solid var(--ngs-rule);
+  border: 1px solid var(--ds-rule);
   border-radius: 6px;
   overflow: hidden;
   margin-bottom: 8px;
@@ -170,14 +178,14 @@
   align-items: center;
   gap: 10px;
   padding: 14px 16px;
-  background: var(--ngs-paper);
+  background: var(--ds-surface);
   border: none;
   cursor: pointer;
   font-family: var(--ngs-sans);
   text-align: left;
   transition: background 180ms;
 }
-.ge-prior-btn:hover { background: var(--ngs-paper-2); }
+.ge-prior-btn:hover { background: var(--ds-surface-2); }
 
 .ge-prior-sem {
   font-family: var(--ngs-mono);
@@ -185,12 +193,12 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ngs-navy);
+  color: var(--ds-ink);
 }
 
 .ge-prior-gpa {
   font-size: 13px;
-  color: var(--ngs-muted);
+  color: var(--ds-muted);
   flex: 1;
   padding-left: 4px;
 }
@@ -204,13 +212,13 @@
 
 .ge-chevron {
   font-size: 9px;
-  color: var(--ngs-muted);
+  color: var(--ds-muted);
   margin-left: 4px;
 }
 
 .ge-prior-detail {
-  border-top: 1px solid var(--ngs-rule);
-  background: var(--ngs-paper-2);
+  border-top: 1px solid var(--ds-rule);
+  background: var(--ds-surface-2);
   overflow-x: auto;
 }
 
@@ -229,14 +237,14 @@
   color: var(--ngs-gold); margin-bottom: 10px;
 }
 .ge-ai-import-hint {
-  font-size: 13px; color: var(--ngs-muted); margin-bottom: 10px;
+  font-size: 13px; color: var(--ds-muted); margin-bottom: 10px;
 }
 .ge-ai-preview-list {
   list-style: none; padding: 0; margin: 0 0 10px;
   font-size: 13px; display: flex; flex-direction: column; gap: 4px;
 }
 .ge-ai-preview-list li {
-  background: var(--ngs-paper-2); border-radius: 3px; padding: 5px 10px;
+  background: var(--ds-surface-2); border-radius: 3px; padding: 5px 10px;
 }
 .ge-ai-success {
   font-family: var(--ngs-mono); font-size: 12px;
@@ -248,24 +256,25 @@
 .ge-review-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .ge-review-table th {
   font-family: var(--ngs-mono); font-size: 9.5px; font-weight: 700;
-  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ngs-muted);
-  padding: 4px 6px; border-bottom: 1px solid var(--ngs-rule); text-align: left;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ds-muted);
+  padding: 4px 6px; border-bottom: 1px solid var(--ds-rule); text-align: left;
 }
-.ge-review-table td { padding: 4px 4px; border-bottom: 1px solid var(--ngs-rule); vertical-align: middle; }
+.ge-review-table td { padding: 4px 4px; border-bottom: 1px solid var(--ds-rule); vertical-align: middle; }
 
 .ge-rev-input {
   font-family: var(--ngs-sans); font-size: 12px; padding: 3px 6px;
-  border: 1px solid var(--ngs-rule); border-radius: 4px; width: 100%; box-sizing: border-box;
+  border: 1px solid var(--ds-rule); border-radius: 4px; width: 100%; box-sizing: border-box;
+  background: var(--ds-surface); color: var(--ds-ink);
 }
-.ge-rev-input:focus { outline: none; border-color: var(--ngs-navy); }
+.ge-rev-input:focus { outline: none; border-color: var(--ngs-gold); }
 .ge-rev-wide { min-width: 130px; }
 .ge-rev-num  { width: 64px; text-align: right; font-family: var(--ngs-mono); }
 .ge-rev-select {
   font-family: var(--ngs-mono); font-size: 11px; padding: 3px 4px;
-  border: 1px solid var(--ngs-rule); border-radius: 4px; background: #fff;
+  border: 1px solid var(--ds-rule); border-radius: 4px; background: var(--ds-surface);
 }
 .ge-rev-del {
-  font-size: 14px; color: var(--ngs-muted); background: transparent;
+  font-size: 14px; color: var(--ds-muted); background: transparent;
   border: none; cursor: pointer; padding: 2px 5px; border-radius: 3px;
 }
 .ge-rev-del:hover { color: var(--ngs-red); background: rgba(177,27,42,0.07); }
@@ -281,15 +290,15 @@
   border-radius: 8px; max-width: 90%;
 }
 .ge-rev-chat-user { background: var(--ngs-navy); color: #fff; align-self: flex-end; }
-.ge-rev-chat-ai   { background: var(--ngs-paper-2); color: var(--ngs-ink); align-self: flex-start; border: 1px solid var(--ngs-rule); }
+.ge-rev-chat-ai   { background: var(--ds-surface-2); color: var(--ds-ink); align-self: flex-start; border: 1px solid var(--ds-rule); }
 .ge-rev-chat-form { display: flex; gap: 6px; }
 .ge-rev-chat-input {
   flex: 1; padding: 7px 10px; border-radius: 7px;
-  border: 1px solid var(--ngs-rule); background: #fff;
-  font-family: var(--ngs-sans); font-size: 12.5px; color: var(--ngs-ink);
+  border: 1px solid var(--ds-rule); background: var(--ds-surface);
+  font-family: var(--ngs-sans); font-size: 12.5px; color: var(--ds-ink);
 }
-.ge-rev-chat-input:focus { outline: none; border-color: var(--ngs-navy); }
-.ge-rev-chat-input::placeholder { color: var(--ngs-muted); }
+.ge-rev-chat-input:focus { outline: none; border-color: var(--ngs-gold); }
+.ge-rev-chat-input::placeholder { color: var(--ds-muted); }
 .ge-rev-chat-send {
   padding: 7px 13px; border-radius: 7px; border: none;
   background: var(--ngs-gold); color: var(--ngs-navy);
@@ -299,3 +308,12 @@
 .ge-rev-chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .ge-rev-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+/* The GPA hero is navy in both themes by design. On the dark canvas plain
+   navy sits too close to --ds-surface to read as a raised card, so give it
+   the elevated surface plus a rule in dark. Its inner text is already light
+   (rgba(250,247,240,…)), which holds on either background. */
+html[data-theme='dark'] .ge-gpa-card {
+  background: var(--ds-surface-2);
+  border: 1px solid var(--ds-rule);
+}

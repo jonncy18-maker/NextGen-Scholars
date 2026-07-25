@@ -1,3 +1,15 @@
+/* ── EnglishTracking (.et-*) + ingest panel (.eip-*) ────────────────────────
+   Shared by EnglishTracking and GradeEntry (which reuses the .et-form/.et-field
+   form primitives). Both render inside the shared scholar shell (.ds-shell),
+   so surfaces, rules and body text use the shell's --ds-* tokens, which flip
+   automatically in dark mode.
+
+   Deliberate exceptions: navy is kept where it is a *background* (filled
+   buttons, progress-bar fills, the selected category chip) since those carry
+   their own gold/paper foreground and read on either theme. Navy used as
+   *text* or as an outline-button border was remapped to --ds-ink, and focus
+   borders to --ngs-gold, because navy-on-dark is effectively invisible. */
+
 /* ── progress card ── */
 .et-progress-card {
   background: var(--ngs-navy);
@@ -115,19 +127,19 @@
 .et-cat-btn {
   flex: 1;
   padding: 9px 12px;
-  border: 1.5px solid var(--ngs-rule);
+  border: 1.5px solid var(--ds-rule);
   border-radius: 5px;
-  background: var(--ngs-paper);
+  background: var(--ds-surface);
   font-family: var(--ngs-sans);
   font-size: 13px;
   font-weight: 500;
-  color: var(--ngs-muted);
+  color: var(--ds-muted);
   cursor: pointer;
   transition: border-color 180ms, color 180ms, background 180ms;
 }
 
 .et-cat-btn.is-active {
-  border-color: var(--ngs-navy);
+  border-color: var(--ds-ink);
   background: var(--ngs-navy);
   color: var(--ngs-paper);
 }
@@ -136,13 +148,13 @@
 .et-log-btn {
   width: 100%;
   padding: 14px;
-  border: 1.5px dashed var(--ngs-rule);
+  border: 1.5px dashed var(--ds-rule);
   border-radius: 6px;
   background: none;
   font-family: var(--ngs-sans);
   font-size: 14px;
   font-weight: 600;
-  color: var(--ngs-navy);
+  color: var(--ds-ink);
   cursor: pointer;
   letter-spacing: 0.02em;
   transition: border-color 180ms, background 180ms;
@@ -155,8 +167,8 @@
 
 /* ── form ── */
 .et-form {
-  background: var(--ngs-paper-2);
-  border: 1px solid var(--ngs-rule);
+  background: var(--ds-surface-2);
+  border: 1px solid var(--ds-rule);
   border-radius: 8px;
   padding: 20px;
   display: flex;
@@ -173,18 +185,18 @@
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ngs-navy);
+  color: var(--ds-ink);
 }
 
 .et-form-close {
   font-size: 20px;
   line-height: 1;
-  color: var(--ngs-muted);
+  color: var(--ds-muted);
   padding: 2px 6px;
   border-radius: 4px;
   transition: color 180ms;
 }
-.et-form-close:hover { color: var(--ngs-navy); }
+.et-form-close:hover { color: var(--ds-ink); }
 
 .et-field {
   display: flex;
@@ -198,7 +210,7 @@
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ngs-muted);
+  color: var(--ds-muted);
 }
 
 .et-optional {
@@ -213,12 +225,12 @@
 .et-field textarea {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid var(--ngs-rule);
+  border: 1px solid var(--ds-rule);
   border-radius: 5px;
-  background: var(--ngs-paper);
+  background: var(--ds-surface);
   font-family: var(--ngs-sans);
   font-size: 14px;
-  color: var(--ngs-ink);
+  color: var(--ds-ink);
   outline: none;
   transition: border-color 180ms;
   box-sizing: border-box;
@@ -257,7 +269,7 @@
   padding: 10px 14px;
   font-family: var(--ngs-sans);
   font-size: 13px;
-  color: var(--ngs-red);
+  color: var(--ds-bad);
   margin-bottom: 12px;
 }
 
@@ -272,7 +284,7 @@
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ngs-muted);
+  color: var(--ds-muted);
   margin-bottom: 10px;
 }
 
@@ -282,7 +294,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 12px 0;
-  border-bottom: 1px solid var(--ngs-rule);
+  border-bottom: 1px solid var(--ds-rule);
 }
 .et-row:last-child { border-bottom: none; }
 
@@ -299,19 +311,19 @@
   font-size: 10.5px;
   font-weight: 500;
   letter-spacing: 0.06em;
-  color: var(--ngs-muted);
+  color: var(--ds-muted);
 }
 
 .et-row-type {
   font-family: var(--ngs-sans);
   font-size: 14px;
   font-weight: 500;
-  color: var(--ngs-navy);
+  color: var(--ds-ink);
 }
 
 .et-row-notes {
   font-size: 12.5px;
-  color: var(--ngs-muted);
+  color: var(--ds-muted);
   font-style: italic;
   white-space: nowrap;
   overflow: hidden;
@@ -323,7 +335,7 @@
   font-family: var(--ngs-mono);
   font-size: 12px;
   font-weight: 600;
-  color: var(--ngs-navy);
+  color: var(--ds-ink);
   white-space: nowrap;
   padding-top: 2px;
   flex-shrink: 0;
@@ -333,11 +345,11 @@
 .et-empty {
   padding: 32px 24px 40px;
   font-size: 14px;
-  color: var(--ngs-muted);
+  color: var(--ds-muted);
   font-style: italic;
   text-align: center;
 }
-.et-empty em { font-style: normal; font-weight: 600; color: var(--ngs-navy); }
+.et-empty em { font-style: normal; font-weight: 600; color: var(--ds-ink); }
 
 /* ── pace row (period end + needed pace) ── */
 .et-pace-row {
@@ -354,7 +366,7 @@
 .et-weekly-chart {
   display: flex; align-items: flex-end; gap: 4px;
   padding: 16px 0 20px;
-  border-bottom: 1px solid var(--ngs-rule);
+  border-bottom: 1px solid var(--ds-rule);
   margin-bottom: 18px;
 }
 .et-week-col {
@@ -373,11 +385,11 @@
 .et-week-current .et-week-bar { background: var(--ngs-gold); }
 .et-week-hrs {
   font-family: var(--ngs-mono); font-size: 9px;
-  color: var(--ngs-muted); line-height: 1;
+  color: var(--ds-muted); line-height: 1;
 }
 .et-week-label {
   font-family: var(--ngs-mono); font-size: 8.5px;
-  color: var(--ngs-muted); text-align: center; white-space: nowrap;
+  color: var(--ds-muted); text-align: center; white-space: nowrap;
   letter-spacing: 0.02em;
 }
 .et-week-current .et-week-label { color: var(--ngs-gold); }
@@ -387,18 +399,18 @@
   display: flex; align-items: center; gap: 6px; flex-shrink: 0;
 }
 .et-row-del {
-  font-size: 15px; color: var(--ngs-rule);
+  font-size: 15px; color: var(--ds-rule);
   padding: 1px 5px; border-radius: 3px; cursor: pointer;
   transition: color 150ms, background 150ms; line-height: 1;
 }
-.et-row-del:hover:not(:disabled) { color: var(--ngs-red); background: rgba(177,27,42,0.07); }
+.et-row-del:hover:not(:disabled) { color: var(--ds-bad); background: rgba(177,27,42,0.07); }
 .et-row-del:disabled { opacity: 0.3; cursor: not-allowed; }
 .et-row-edit {
-  font-size: 13px; color: var(--ngs-muted); padding: 1px 5px;
+  font-size: 13px; color: var(--ds-muted); padding: 1px 5px;
   border-radius: 3px; cursor: pointer; line-height: 1;
   transition: color 150ms, background 150ms;
 }
-.et-row-edit:hover { color: var(--ngs-navy); background: var(--ngs-paper-2); }
+.et-row-edit:hover { color: var(--ds-ink); background: var(--ds-surface-2); }
 
 /* ── inline edit row ── */
 .et-row--editing { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 0; }
@@ -407,12 +419,12 @@
 }
 .et-row-edit-fields input,
 .et-row-edit-fields select {
-  padding: 5px 8px; border: 1px solid var(--ngs-rule); border-radius: 4px;
-  font-family: var(--ngs-sans); font-size: 12px; background: var(--ngs-paper);
-  color: var(--ngs-ink);
+  padding: 5px 8px; border: 1px solid var(--ds-rule); border-radius: 4px;
+  font-family: var(--ngs-sans); font-size: 12px; background: var(--ds-surface);
+  color: var(--ds-ink);
 }
 .et-row-edit-fields input:focus,
-.et-row-edit-fields select:focus { outline: none; border-color: var(--ngs-navy); }
+.et-row-edit-fields select:focus { outline: none; border-color: var(--ds-ink); }
 .et-row-edit-actions { display: flex; gap: 6px; }
 .et-edit-save {
   padding: 4px 10px; background: var(--ngs-navy); color: var(--ngs-gold);
@@ -421,10 +433,10 @@
 }
 .et-edit-save:disabled { opacity: 0.4; cursor: not-allowed; }
 .et-edit-cancel {
-  padding: 4px 10px; border: 1px solid var(--ngs-rule); border-radius: 4px;
-  font-size: 11px; color: var(--ngs-muted); cursor: pointer; font-family: var(--ngs-mono);
+  padding: 4px 10px; border: 1px solid var(--ds-rule); border-radius: 4px;
+  font-size: 11px; color: var(--ds-muted); cursor: pointer; font-family: var(--ngs-mono);
 }
-.et-edit-cancel:hover { border-color: var(--ngs-muted); color: var(--ngs-ink); }
+.et-edit-cancel:hover { border-color: var(--ds-muted); color: var(--ds-ink); }
 
 /* ── status chip ── */
 .et-status-chip {
@@ -433,9 +445,9 @@
   font-family: var(--ngs-mono); font-size: 9.5px; font-weight: 700;
   letter-spacing: 0.1em; text-transform: uppercase;
 }
-.et-status-good    { background: rgba(47,125,85,0.12); color: #1d6636; }
-.et-status-warning { background: rgba(201,168,76,0.18); color: #7a6010; }
-.et-status-risk    { background: rgba(177,27,42,0.1);  color: #b11b2a; }
+.et-status-good    { background: rgba(47,125,85,0.12); color: var(--ds-good); }
+.et-status-warning { background: rgba(201,168,76,0.18); color: var(--ds-warn); }
+.et-status-risk    { background: rgba(177,27,42,0.1);  color: var(--ds-bad); }
 
 /* ── progress card top row (hours + status together) ── */
 .et-progress-top-row {
@@ -452,7 +464,7 @@
 .et-cat-chart {
   display: flex; flex-direction: column; gap: 14px;
   padding: 20px 0 18px;
-  border-bottom: 1px solid var(--ngs-rule);
+  border-bottom: 1px solid var(--ds-rule);
   margin-bottom: 18px;
 }
 .et-cat-bar-row {
@@ -464,7 +476,7 @@
 }
 .et-cat-bar-name {
   font-family: var(--ngs-sans); font-size: 13px; font-weight: 600;
-  color: var(--ngs-navy);
+  color: var(--ds-ink);
 }
 .et-cat-bar-tracks { display: flex; flex-direction: column; gap: 3px; }
 .et-cat-bar-track {
@@ -477,49 +489,49 @@
   height: 100%; border-radius: 3px; min-width: 3px;
   transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
 }
-.et-cat-bar-fill--exp { background: rgba(27,42,74,0.15); }
+.et-cat-bar-fill--exp { background: var(--ds-rule); }
 .et-cat-bar-fill--act { background: var(--ngs-navy); }
 .et-cat-bar-fill--good    { background: rgba(47,125,85,0.75); }
 .et-cat-bar-fill--warning { background: rgba(201,168,76,0.8); }
 .et-cat-bar-fill--risk    { background: rgba(177,27,42,0.75); }
 .et-cat-bar-val {
   font-family: var(--ngs-mono); font-size: 9.5px; font-weight: 500;
-  color: var(--ngs-muted); white-space: nowrap;
+  color: var(--ds-muted); white-space: nowrap;
 }
 
 /* ── category grouped session list ── */
 .et-cat-group { margin-bottom: 8px; }
 .et-cat-group-toggle {
   width: 100%; display: flex; align-items: center; gap: 10px;
-  padding: 10px 0; border-bottom: 1px solid var(--ngs-rule);
+  padding: 10px 0; border-bottom: 1px solid var(--ds-rule);
   text-align: left;
 }
 .et-cat-group-name {
   font-family: var(--ngs-sans); font-size: 13px; font-weight: 700;
-  color: var(--ngs-navy); flex: 1;
+  color: var(--ds-ink); flex: 1;
 }
 .et-cat-group-count {
-  font-family: var(--ngs-mono); font-size: 9.5px; color: var(--ngs-muted);
+  font-family: var(--ngs-mono); font-size: 9.5px; color: var(--ds-muted);
   letter-spacing: 0.06em;
 }
 .et-cat-group-hrs {
   font-family: var(--ngs-mono); font-size: 11px; font-weight: 700;
-  color: var(--ngs-navy);
+  color: var(--ds-ink);
 }
 .et-cat-group-chevron {
-  font-size: 9px; color: var(--ngs-muted);
+  font-size: 9px; color: var(--ds-muted);
 }
 .et-cat-group-rows { padding: 0 0 8px; }
 .et-cat-group-empty {
-  padding: 10px 0 6px; font-size: 12px; color: var(--ngs-muted); font-style: italic;
+  padding: 10px 0 6px; font-size: 12px; color: var(--ds-muted); font-style: italic;
 }
 
 /* ── action row (AI + log buttons side by side) ── */
 .et-action-row { display: flex; gap: 10px; margin-bottom: 4px; }
 .et-ai-btn {
   flex-shrink: 0;
-  padding: 12px 16px; border: 1.5px solid var(--ngs-navy); border-radius: 6px;
-  background: transparent; color: var(--ngs-navy);
+  padding: 12px 16px; border: 1.5px solid var(--ds-ink); border-radius: 6px;
+  background: transparent; color: var(--ds-ink);
   font-family: var(--ngs-sans); font-size: 13px; font-weight: 600;
   cursor: pointer; letter-spacing: 0.02em;
   transition: background 180ms, color 180ms;
@@ -530,9 +542,9 @@
 .eip-panel {
   margin: 14px 0 8px;
   padding: 16px;
-  background: var(--ngs-paper-2);
+  background: var(--ds-surface-2);
   border-radius: 10px;
-  border: 1px solid var(--ngs-rule);
+  border: 1px solid var(--ds-rule);
 }
 .eip-header {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -546,20 +558,20 @@
 }
 .eip-title {
   font-family: var(--ngs-sans); font-size: 13px; font-weight: 600;
-  color: var(--ngs-navy);
+  color: var(--ds-ink);
 }
 .eip-hint {
-  font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-muted);
+  font-family: var(--ngs-mono); font-size: 11px; color: var(--ds-muted);
 }
 .eip-form { display: flex; flex-direction: column; gap: 10px; }
 .eip-textarea {
-  width: 100%; padding: 10px 12px; border: 1px solid var(--ngs-rule);
-  border-radius: 6px; background: var(--ngs-paper);
-  font-family: var(--ngs-sans); font-size: 13.5px; color: var(--ngs-ink);
+  width: 100%; padding: 10px 12px; border: 1px solid var(--ds-rule);
+  border-radius: 6px; background: var(--ds-surface);
+  font-family: var(--ngs-sans); font-size: 13.5px; color: var(--ds-ink);
   resize: vertical; box-sizing: border-box;
   transition: border-color 180ms;
 }
-.eip-textarea:focus { outline: none; border-color: var(--ngs-navy); }
+.eip-textarea:focus { outline: none; border-color: var(--ds-ink); }
 .eip-submit {
   padding: 11px; background: var(--ngs-navy); color: var(--ngs-gold);
   border-radius: 6px; font-family: var(--ngs-sans); font-size: 13px; font-weight: 600;
@@ -568,12 +580,12 @@
 .eip-submit:disabled { opacity: 0.45; cursor: not-allowed; }
 .eip-error {
   padding: 9px 12px; border-radius: 6px;
-  background: rgba(177,27,42,0.07); color: #b11b2a;
+  background: rgba(177,27,42,0.07); color: var(--ds-bad);
   font-size: 13px;
 }
 .eip-loading {
   display: flex; align-items: center; gap: 5px;
-  font-family: var(--ngs-mono); font-size: 11.5px; color: var(--ngs-muted);
+  font-family: var(--ngs-mono); font-size: 11.5px; color: var(--ds-muted);
 }
 .eip-dot {
   width: 5px; height: 5px; border-radius: 50%;
@@ -585,7 +597,7 @@
 .eip-success {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
   padding: 12px 14px; border-radius: 7px;
-  background: rgba(47,125,85,0.09); color: #1a6635;
+  background: rgba(47,125,85,0.09); color: var(--ds-good);
   font-size: 13.5px; font-weight: 500;
 }
 .eip-again-btn {
@@ -600,13 +612,13 @@
 }
 .eip-review-title {
   font-family: var(--ngs-sans); font-size: 13px; font-weight: 600;
-  color: var(--ngs-navy);
+  color: var(--ds-ink);
 }
 .eip-review-rows { display: flex; flex-direction: column; gap: 10px; }
 .eip-review-row {
   display: flex; align-items: flex-start; gap: 8px;
-  padding: 10px 12px; background: var(--ngs-paper);
-  border: 1px solid var(--ngs-rule); border-radius: 6px;
+  padding: 10px 12px; background: var(--ds-surface);
+  border: 1px solid var(--ds-rule); border-radius: 6px;
 }
 .eip-review-fields {
   flex: 1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
@@ -616,25 +628,25 @@
 }
 .eip-review-field span {
   font-family: var(--ngs-mono); font-size: 9.5px; font-weight: 600;
-  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ngs-muted);
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--ds-muted);
 }
 .eip-review-field input,
 .eip-review-field select {
-  padding: 5px 8px; border: 1px solid var(--ngs-rule); border-radius: 4px;
-  font-family: var(--ngs-sans); font-size: 12px; background: var(--ngs-paper);
-  color: var(--ngs-ink);
+  padding: 5px 8px; border: 1px solid var(--ds-rule); border-radius: 4px;
+  font-family: var(--ngs-sans); font-size: 12px; background: var(--ds-surface);
+  color: var(--ds-ink);
 }
 .eip-review-field--wide { flex: 1; min-width: 120px; }
 .eip-review-field--notes { flex: 2; min-width: 140px; }
 .eip-review-dur {
   font-family: var(--ngs-mono); font-size: 12px; font-weight: 600;
-  color: var(--ngs-navy); padding-top: 20px; white-space: nowrap;
+  color: var(--ds-ink); padding-top: 20px; white-space: nowrap;
 }
 .eip-review-del {
-  font-size: 16px; color: var(--ngs-muted); padding: 18px 4px 0;
+  font-size: 16px; color: var(--ds-muted); padding: 18px 4px 0;
   cursor: pointer; line-height: 1; transition: color 150ms;
 }
-.eip-review-del:hover { color: var(--ngs-red); }
+.eip-review-del:hover { color: var(--ds-bad); }
 .eip-review-actions { display: flex; align-items: center; gap: 10px; }
 .eip-confirm-btn {
   padding: 9px 16px; background: var(--ngs-navy); color: var(--ngs-gold);
@@ -643,7 +655,15 @@
 }
 .eip-confirm-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .eip-discard-btn {
-  padding: 9px 14px; border: 1px solid var(--ngs-rule); border-radius: 5px;
-  font-family: var(--ngs-sans); font-size: 13px; color: var(--ngs-muted); cursor: pointer;
+  padding: 9px 14px; border: 1px solid var(--ds-rule); border-radius: 5px;
+  font-family: var(--ngs-sans); font-size: 13px; color: var(--ds-muted); cursor: pointer;
 }
-.eip-discard-btn:hover { border-color: var(--ngs-muted); color: var(--ngs-ink); }
+.eip-discard-btn:hover { border-color: var(--ds-muted); color: var(--ds-ink); }
+
+/* The hours hero is navy in both themes by design; on the dark canvas plain
+   navy sits too close to --ds-surface to read as a raised card. Same
+   treatment as GradeEntry's GPA hero. */
+html[data-theme='dark'] .et-progress-card {
+  background: var(--ds-surface-2);
+  border: 1px solid var(--ds-rule);
+}
