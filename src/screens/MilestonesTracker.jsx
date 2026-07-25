@@ -94,8 +94,8 @@ export function MilestonesTracker({ scholarKey }) {
       onSignOut={() => { setSessionExpired(false); setAuthed(false); }}
     >
       {/* Stat cards — the shell's own ds-card/ds-stat-* primitives, so these
-          theme with the rest of the dashboard instead of the vt-summary
-          card's hardcoded light surface. */}
+          theme with the rest of the dashboard instead of the old navy
+          summary card's hardcoded light-only surface. */}
       <div className="ds-hero ds-hero--auto">
         <div className="ds-card ds-card--accent">
           <div className="ds-stat-label">Unlocked</div>

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { api } from '../lib/api.js';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
-import { SignOutButton } from '../components/SignOutButton.jsx';
+import { ScholarShell } from '../components/ScholarShell.jsx';
 import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
 import { useSessionExpired } from '../hooks/useSessionExpired.js';
 import '../styles/vacation-tracker.css';
@@ -85,104 +84,98 @@ export function VacationTracker({ scholarKey }) {
   const investedPhp  = trips.reduce((s, t) => s + (Number(t.amount_php) || 0), 0);
 
   return (
-    <div className="sp-page">
-      <div className="sp">
-        <header className="sp-head">
-          <SignOutButton onSignOut={() => { setSessionExpired(false); setAuthed(false); }} />
-          <div className="sp-track">
-            <span className="sp-track-dot" />
-            NextGen Nurses
-            <span className="sp-track-sep">·</span>
-            NGN
+    <ScholarShell
+      scholarKey={scholarKey}
+      name={name}
+      active="travel"
+      eyebrow="Reward Travel"
+      title="Travel"
+      subtitle="Worlds opened."
+      identityRole="Vacation Tracker"
+      onSignOut={() => { setSessionExpired(false); setAuthed(false); }}
+    >
+      <div className="ds-hero ds-hero--auto">
+        <div className="ds-card ds-card--accent">
+          <div className="ds-stat-label">Trips Taken</div>
+          <div className="ds-stat-val">
+            {travels === null ? '—' : completed.length}
           </div>
-          <p className="sp-greet-kicker">{name}</p>
-          <h1 className="sp-greet-name">Worlds<br/>opened.</h1>
-          <div className="sp-head-rule" />
-          <div className="sp-head-meta">
-            <span className="sp-stage">Vacation Tracker</span>
-            <Link href={fallback.homeHref} className="sp-tagline" style={{ textDecoration: 'none' }}>
-              ← Back to home
-            </Link>
+          <div className="ds-stat-sub">
+            {travels === null
+              ? 'Loading…'
+              : `of ${trips.length} destination${trips.length !== 1 ? 's' : ''}`}
           </div>
-        </header>
-
-        <section className="sp-section">
-          {/* Summary card */}
-          <div className="vt-summary">
-            {travels === null ? (
-              <div className="vt-loading">Loading…</div>
-            ) : (
-              <div className="vt-summary-grid">
-                <div className="vt-stat">
-                  <div className="vt-stat-val">{completed.length}</div>
-                  <div className="vt-stat-label">Trips taken</div>
-                </div>
-                <div className="vt-stat">
-                  <div className="vt-stat-val">{fmtPhp(investedPhp)}</div>
-                  <div className="vt-stat-label">Travel invested</div>
-                </div>
-                <div className="vt-stat">
-                  <div className="vt-stat-val vt-stat-val--sm">
-                    {nextTrip ? `${destEmoji(nextTrip.dest)} ${nextTrip.dest}` : '—'}
-                  </div>
-                  <div className="vt-stat-label">Next destination</div>
-                </div>
-              </div>
-            )}
+        </div>
+        <div className="ds-card">
+          <div className="ds-stat-label">Travel Invested</div>
+          <div className="ds-stat-val">
+            {travels === null ? '—' : fmtPhp(investedPhp)}
           </div>
-
-          <p className="vt-intro">
-            Annual reward trips that scale with each milestone — every destination
-            a deliberate widening of horizons.
-          </p>
-
-          {/* Timeline */}
-          {travels !== null && trips.length > 0 && (
-            <div className="vt-timeline">
-              {trips.map((t, i) => {
-                const meta   = TRIP_STATES[t.state] || TRIP_STATES.planned;
-                const isLast = i === trips.length - 1;
-                const amt    = Number(t.amount_php) || 0;
-                return (
-                  <div key={t.id} className={`vt-trip ${meta.cls}`}>
-                    <div className="vt-trip-rail">
-                      <div className="vt-trip-badge">
-                        {t.state === 'done' ? '✓' : destEmoji(t.dest)}
-                      </div>
-                      {!isLast && <div className="vt-trip-connector" />}
-                    </div>
-                    <div className="vt-trip-body">
-                      <div className="vt-trip-head">
-                        <span className="vt-trip-dest">{t.dest}</span>
-                        <span className={`vt-trip-pill ${meta.cls}`}>{meta.label}</span>
-                      </div>
-                      <div className="vt-trip-meta">
-                        {t.sem && <span className="vt-trip-sem">{t.sem}</span>}
-                        {amt > 0 && <span className="vt-trip-amt">{fmtPhp(amt)}</span>}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {travels !== null && trips.length === 0 && (
-            <div className="vt-empty">
-              No reward trips logged yet. Your mentor adds destinations as
-              milestones are reached.
-            </div>
-          )}
-        </section>
-
-        <PublicAskWidget />
-
-        <footer className="sp-footer">
-          <div className="sp-mark">NGS</div>
-          <div className="sp-footer-tag">One generation lifts another.</div>
-          <Link href="/" className="sp-home-link">← Home</Link>
-        </footer>
+          <div className="ds-stat-sub">across all trips</div>
+        </div>
+        <div className="ds-card">
+          <div className="ds-stat-label">Next Destination</div>
+          <div className="ds-stat-val vt-next-val">
+            {nextTrip ? `${destEmoji(nextTrip.dest)} ${nextTrip.dest}` : '—'}
+          </div>
+          <div className="ds-stat-sub">
+            {nextTrip?.sem ? `expected ${nextTrip.sem}` : 'nothing planned'}
+          </div>
+        </div>
       </div>
-    </div>
+
+      <div className="ds-sec">
+        <span className="ds-sec-title">Your Trips</span>
+      </div>
+
+      <section>
+        <p className="vt-intro">
+          Annual reward trips that scale with each milestone — every destination
+          a deliberate widening of horizons.
+        </p>
+
+        {/* Timeline */}
+        {travels !== null && trips.length > 0 && (
+          <div className="vt-timeline">
+            {trips.map((t, i) => {
+              const meta   = TRIP_STATES[t.state] || TRIP_STATES.planned;
+              const isLast = i === trips.length - 1;
+              const amt    = Number(t.amount_php) || 0;
+              return (
+                <div key={t.id} className={`vt-trip ${meta.cls}`}>
+                  <div className="vt-trip-rail">
+                    <div className="vt-trip-badge">
+                      {t.state === 'done' ? '✓' : destEmoji(t.dest)}
+                    </div>
+                    {!isLast && <div className="vt-trip-connector" />}
+                  </div>
+                  <div className="vt-trip-body">
+                    <div className="vt-trip-head">
+                      <span className="vt-trip-dest">{t.dest}</span>
+                      <span className={`vt-trip-pill ${meta.cls}`}>{meta.label}</span>
+                    </div>
+                    <div className="vt-trip-meta">
+                      {t.sem && <span className="vt-trip-sem">{t.sem}</span>}
+                      {amt > 0 && <span className="vt-trip-amt">{fmtPhp(amt)}</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {travels === null && <div className="vt-loading">Loading…</div>}
+
+        {travels !== null && trips.length === 0 && (
+          <div className="vt-empty">
+            No reward trips logged yet. Your mentor adds destinations as
+            milestones are reached.
+          </div>
+        )}
+      </section>
+
+      <PublicAskWidget />
+    </ScholarShell>
   );
 }
