@@ -16,8 +16,10 @@ const POLLED = {
   expense_submissions: 'scholar_key',
   grade_entries:       'scholar',
   expenses:             'scholar',
-  documents:            'scholar',
   career_steps:         'scholar',
+  // `documents` is deliberately absent: the Documents feature was dropped
+  // rather than ported from Supabase, so nothing reads the table. Polling it
+  // cost two queries per client per tick (~25s) for rows no screen renders.
 };
 
 async function fetchChanges(table, scopeCol, { since, scholarKey }) {

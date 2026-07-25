@@ -1,4 +1,5 @@
 import { json, withErrorHandling } from '../../../lib/http.js';
+import { enforceRateLimit, readJsonBody } from '../../../lib/rate-limit.js';
 import { tier1Resolve } from '../../../lib/ai/tier1.js';
 import { buildContext } from '../../../lib/ai/context.js';
 import { tier2Ask } from '../../../lib/ai/tier2.js';
@@ -33,14 +34,46 @@ async function geminiJson(prompt, apiKey, opts = {}) {
   return gJson?.candidates?.[0]?.content?.parts?.[0]?.text;
 }
 
+// Unauthenticated by design (see the header comment above), so the same two
+// guards as /api/ask-public apply — but the ceiling here is much larger,
+// because the ingest paths legitimately carry a base64 receipt or grade report.
+// 6MB of base64 is roughly a 4.5MB image, comfortably above a phone photo and
+// far below anything that would be worth uploading in bulk. The rate limit is
+// tighter than ask-public's since every call here is a Gemini request (there is
+// no deterministic Tier 1 short-circuit for the ingest/edit types).
+const MAX_BODY_BYTES = 6 * 1024 * 1024;
+const MAX_TEXT_CHARS = 8000;
+const MAX_LIST_ITEMS = 200;
+const MAX_HISTORY_MESSAGES = 20;
+const RATE_LIMIT = { limit: 20, windowSeconds: 300 };
+
 export const POST = withErrorHandling(async (request) => {
-  const body = await request.json().catch(() => null);
+  const limited = await enforceRateLimit(request, 'ask-scholar', RATE_LIMIT);
+  if (limited) return limited;
+
+  const { body, error: bodyError } = await readJsonBody(request, MAX_BODY_BYTES);
+  if (bodyError) return bodyError;
   if (!body) return json({ error: 'Invalid JSON body' }, { status: 400 });
 
   const { scholar, type = 'query', text, sem, file, messages, grades, items, categories } = body;
 
   if (!scholar || !VALID_SCHOLARS.includes(scholar)) {
     return json({ error: 'Invalid or missing scholar key' }, { status: 400 });
+  }
+
+  // Bound the individually-expensive inputs. The body ceiling above already
+  // caps the total, but these keep a single in-budget request from turning
+  // into a very large Gemini prompt.
+  if (typeof text === 'string' && text.length > MAX_TEXT_CHARS) {
+    return json({ error: `Text must be under ${MAX_TEXT_CHARS} characters` }, { status: 413 });
+  }
+  for (const [name, list] of [['grades', grades], ['items', items], ['categories', categories]]) {
+    if (Array.isArray(list) && list.length > MAX_LIST_ITEMS) {
+      return json({ error: `Too many ${name} — max ${MAX_LIST_ITEMS}` }, { status: 413 });
+    }
+  }
+  if (file && (typeof file.base64 !== 'string' || typeof file.mime !== 'string')) {
+    return json({ error: 'file must be { base64, mime }' }, { status: 400 });
   }
 
   if (type === 'ingest') {
@@ -166,6 +199,8 @@ Write a concise 2–3 sentence academic analysis. Cover: overall performance lev
   const ctx = await buildContext(scholar);
   const history = (messages || [])
     .filter(m => m.role === 'user' || m.role === 'model')
+    // Most recent turns only — see the same cap in ask-public.
+    .slice(-MAX_HISTORY_MESSAGES)
     .map(m => ({ role: m.role, text: m.text }));
   const t2 = await tier2Ask(text, ctx, apiKey, history.length ? history : undefined);
 
