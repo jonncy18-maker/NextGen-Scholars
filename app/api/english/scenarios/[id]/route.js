@@ -12,11 +12,12 @@ export const dynamic = 'force-dynamic';
 // Idempotent (no 404 on a missing row), matching the previous behavior — a
 // scholar aiming at another scholar's scenario simply deletes nothing.
 export const DELETE = withErrorHandling(async (request, { params }) => {
+  const { id } = await params;
   const { role, scholarKey } = await requireScholarOwn(request);
   if (role === 'mentor') {
-    await sql`delete from english_scenarios where id = ${params.id}`;
+    await sql`delete from english_scenarios where id = ${id}`;
   } else {
-    await sql`delete from english_scenarios where id = ${params.id} and scholar = ${scholarKey}`;
+    await sql`delete from english_scenarios where id = ${id} and scholar = ${scholarKey}`;
   }
   return json({ ok: true });
 });

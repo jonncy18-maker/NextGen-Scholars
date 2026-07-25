@@ -7,9 +7,10 @@ export const dynamic = 'force-dynamic';
 
 // Mirrors writeActionToggle(id, done).
 export const PATCH = withErrorHandling(async (request, { params }) => {
+  const { id } = await params;
   await requireMentor(request);
   const { done } = await request.json();
-  const [row] = await sql`update actions set done = ${done} where id = ${params.id} returning *`;
+  const [row] = await sql`update actions set done = ${done} where id = ${id} returning *`;
   if (!row) return json({ error: 'Not found' }, { status: 404 });
   return json(row);
 });

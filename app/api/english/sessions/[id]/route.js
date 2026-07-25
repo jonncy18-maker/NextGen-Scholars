@@ -13,19 +13,20 @@ export const dynamic = 'force-dynamic';
 // Otherwise any signed-in scholar could edit or delete another scholar's
 // logged sessions by id.
 export const PATCH = withErrorHandling(async (request, { params }) => {
+  const { id } = await params;
   const { role, scholarKey } = await requireScholarOwn(request);
   const { date, duration_minutes, activity_type, notes } = await request.json();
   const rows = role === 'mentor'
     ? await sql`
         update english_sessions
         set date = ${date}, duration_minutes = ${duration_minutes}, activity_type = ${activity_type}, notes = ${notes ?? null}
-        where id = ${params.id}
+        where id = ${id}
         returning *
       `
     : await sql`
         update english_sessions
         set date = ${date}, duration_minutes = ${duration_minutes}, activity_type = ${activity_type}, notes = ${notes ?? null}
-        where id = ${params.id} and scholar = ${scholarKey}
+        where id = ${id} and scholar = ${scholarKey}
         returning *
       `;
   const [row] = rows;
@@ -34,13 +35,14 @@ export const PATCH = withErrorHandling(async (request, { params }) => {
 });
 
 export const DELETE = withErrorHandling(async (request, { params }) => {
+  const { id } = await params;
   const { role, scholarKey } = await requireScholarOwn(request);
   // Idempotent (no 404 on a missing row), matching the previous behavior — a
   // scholar aiming at someone else's row simply deletes nothing.
   if (role === 'mentor') {
-    await sql`delete from english_sessions where id = ${params.id}`;
+    await sql`delete from english_sessions where id = ${id}`;
   } else {
-    await sql`delete from english_sessions where id = ${params.id} and scholar = ${scholarKey}`;
+    await sql`delete from english_sessions where id = ${id} and scholar = ${scholarKey}`;
   }
   return json({ ok: true });
 });

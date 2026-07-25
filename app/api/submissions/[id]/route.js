@@ -12,6 +12,7 @@ export const dynamic = 'force-dynamic';
 // constrained to their own rows (the RLS anon_update policy is permissive, so
 // the scoping that matters is enforced here at the app layer).
 export const PATCH = withErrorHandling(async (request, { params }) => {
+  const { id } = await params;
   const { role, scholarKey } = await requireScholarOwn(request);
   const { expenseData } = await request.json();
   if (!expenseData || typeof expenseData !== 'object') {
@@ -23,13 +24,13 @@ export const PATCH = withErrorHandling(async (request, { params }) => {
       ? await sql`
           update expense_submissions
           set expense_data = ${expenseData}
-          where id = ${params.id} and status = 'pending'
+          where id = ${id} and status = 'pending'
           returning *
         `
       : await sql`
           update expense_submissions
           set expense_data = ${expenseData}
-          where id = ${params.id} and status = 'pending' and scholar_key = ${scholarKey}
+          where id = ${id} and status = 'pending' and scholar_key = ${scholarKey}
           returning *
         `;
 

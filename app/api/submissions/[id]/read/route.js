@@ -12,15 +12,16 @@ export const dynamic = 'force-dynamic';
 // (expense_data, rejection_comment, …) — so without the scope this both let one
 // scholar flip another's read flag and disclosed that submission's contents.
 export const PATCH = withErrorHandling(async (request, { params }) => {
+  const { id } = await params;
   const { role, scholarKey } = await requireScholarOwn(request);
   const rows = role === 'mentor'
     ? await sql`
         update expense_submissions set read_by_scholar = true
-        where id = ${params.id} returning *
+        where id = ${id} returning *
       `
     : await sql`
         update expense_submissions set read_by_scholar = true
-        where id = ${params.id} and scholar_key = ${scholarKey} returning *
+        where id = ${id} and scholar_key = ${scholarKey} returning *
       `;
   const [row] = rows;
   if (!row) return json({ error: 'Not found' }, { status: 404 });

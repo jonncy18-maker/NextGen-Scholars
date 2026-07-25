@@ -8,7 +8,7 @@ licensure abroad (PH → OET → NCLEX → AHPRA Australia).
 - **Live:** https://next-gen-scholars-jonncy18.vercel.app (Vercel, `main`).
   The old GitHub Pages URL is now a frozen redirect stub (`gh-pages-redirect/`)
   forwarding old bookmarks/hash routes to the Vercel domain.
-- **Stack:** Next.js 14 (App Router) + React 18, backed by Neon (serverless
+- **Stack:** Next.js 16 (App Router) + React 18, backed by Neon (serverless
   Postgres) + Neon Auth (Better Auth) + Next.js API routes, deployed on
   Vercel. Cut over from Vite/HashRouter/Supabase on 2026-07-04 (PR #183);
   full migration history in `ROADMAP.md` → "Phase 5".

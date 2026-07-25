@@ -41,7 +41,7 @@ function aggregateInvestment(expenseRows, budgetRows) {
 }
 
 export const GET = withErrorHandling(async (request, { params }) => {
-  const key = params.key;
+  const { key } = await params;
   if (!PUBLIC_SCHOLARS.has(key)) return json({ error: 'Not found' }, { status: 404 });
 
   const [

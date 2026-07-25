@@ -7,10 +7,11 @@ export const dynamic = 'force-dynamic';
 
 // Mirrors writeSemester(scholar, sem).
 export const PATCH = withErrorHandling(async (request, { params }) => {
+  const { key } = await params;
   await requireMentor(request);
   const { sem } = await request.json();
   const [row] = await sql`
-    update scholars set current_sem = ${sem} where scholar_key = ${params.key} returning *
+    update scholars set current_sem = ${sem} where scholar_key = ${key} returning *
   `;
   if (!row) return json({ error: 'Not found' }, { status: 404 });
   return json(row);
