@@ -26,7 +26,6 @@ input, select { font-family: inherit; }
   font-family: var(--ngs-display); font-size: 17px; font-weight: 600;
   letter-spacing: 0.2em; margin-bottom: 28px;
 }
-.el-badge-sm { font-size: 12px; padding: 6px 9px; margin-bottom: 0; }
 
 /* ════════════════ LOCK SCREEN ════════════════ */
 .el-lock {
@@ -54,46 +53,9 @@ input, select { font-family: inherit; }
   text-align: center; max-width: 400px; width: 100%;
 }
 
-/* ── scholar picker ── */
-.el-scholar-pick {
-  display: flex; gap: 10px; margin-bottom: 22px; width: 100%;
-}
-.el-scholar-btn {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
-  padding: 14px 12px; border-radius: 8px;
-  border: 1.5px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.03);
-  color: rgba(255,255,255,0.45);
-  transition: all 0.2s; cursor: pointer;
-}
-.el-scholar-btn:hover {
-  border-color: rgba(255,255,255,0.28);
-  color: rgba(255,255,255,0.75);
-  background: rgba(255,255,255,0.06);
-}
-.el-scholar-btn.is-active {
-  border-color: var(--ngs-gold);
-  background: rgba(201,168,76,0.1);
-  color: var(--ngs-gold-soft);
-}
-[data-scholar="april"] .el-scholar-btn.is-active {
-  border-color: #6B9FE8;
-  background: rgba(0,56,168,0.13);
-  color: #8FBAEF;
-}
-.el-scholar-initial {
-  width: 38px; height: 38px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  background: rgba(255,255,255,0.07);
-  font-family: var(--ngs-display); font-size: 19px; font-weight: 500;
-  color: inherit; transition: background 0.2s;
-}
-.el-scholar-btn.is-active .el-scholar-initial { background: rgba(201,168,76,0.18); }
-[data-scholar="april"] .el-scholar-btn.is-active .el-scholar-initial { background: rgba(0,56,168,0.22); }
-.el-scholar-name {
-  font-size: 11px; font-weight: 600; letter-spacing: 0.07em;
-  text-transform: uppercase; font-family: var(--ngs-mono);
-}
+/* The old "Who's signing in?" scholar-picker (.el-scholar-*) is gone — the
+   generic /login resolves the destination from credentials via GET /api/me,
+   so the lock screen no longer asks you to pick a person up front. */
 
 .el-title {
   font-family: var(--ngs-display);
