@@ -1,5 +1,6 @@
 import { sql } from '../../../lib/db.js';
 import { json, withErrorHandling } from '../../../lib/http.js';
+import { enforceRateLimit, readJsonBody } from '../../../lib/rate-limit.js';
 
 // Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
 export const dynamic = 'force-dynamic';
@@ -128,12 +129,30 @@ Rules you must follow:
 - Do not invent scholarships, stipends, or financial figures
 - Respond in a tone that is welcoming to prospective applicants`;
 
+// This route is unauthenticated by design (it backs the public homepage "Ask
+// AI" widget), which means anyone on the internet can drive Gemini calls with
+// it. Two guards, since neither is sufficient alone: a per-IP rate limit caps
+// how often, and a body ceiling plus a history cap bound how expensive any one
+// call can be. Text-only endpoint, so the ceiling is small.
+const MAX_BODY_BYTES = 32 * 1024;
+const MAX_HISTORY_MESSAGES = 20;
+const MAX_HISTORY_CHARS = 8000;
+const RATE_LIMIT = { limit: 30, windowSeconds: 300 };
+
 export const POST = withErrorHandling(async (request) => {
+  // Guards run before the AI-configured check on purpose: an unconfigured
+  // deployment should still rate-limit, and a body-size rejection shouldn't
+  // depend on whether a key happens to be set. Rate limit precedes the body
+  // read so a flood of oversized uploads is turned away before we buffer them.
+  const limited = await enforceRateLimit(request, 'ask-public', RATE_LIMIT);
+  if (limited) return limited;
+
+  const { body, error: bodyError } = await readJsonBody(request, MAX_BODY_BYTES);
+  if (bodyError) return bodyError;
+  if (!body) return json({ error: 'Invalid JSON' }, { status: 400 });
+
   const apiKey = process.env.GOOGLE_AI_KEY;
   if (!apiKey) return json({ error: 'AI not configured', status: 'not_configured' }, { status: 503 });
-
-  const body = await request.json().catch(() => null);
-  if (!body) return json({ error: 'Invalid JSON' }, { status: 400 });
 
   const text = typeof body.text === 'string' ? body.text.trim() : '';
   if (!text) return json({ error: 'Question is required' }, { status: 400 });
@@ -145,9 +164,14 @@ export const POST = withErrorHandling(async (request) => {
     if (row?.value) programInfo = row.value;
   } catch { /* use fallback */ }
 
+  let historyChars = 0;
   const history = Array.isArray(body.messages)
     ? body.messages
         .filter(m => (m.role === 'user' || m.role === 'model') && typeof m.text === 'string' && m.text)
+        // Keep the most recent turns, not the first — a truncated tail would
+        // drop exactly the context the current question depends on.
+        .slice(-MAX_HISTORY_MESSAGES)
+        .filter(m => (historyChars += m.text.length) <= MAX_HISTORY_CHARS)
         .map(m => ({ role: m.role, parts: [{ text: m.text }] }))
     : [];
 
