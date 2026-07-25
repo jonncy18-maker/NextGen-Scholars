@@ -10,8 +10,9 @@ export const dynamic = 'force-dynamic';
 // separate Supabase calls (non-atomic — a failure between them left an
 // orphaned submission). Here both run in one Neon transaction() batch.
 export const POST = withErrorHandling(async (request, { params }) => {
+  const { id: submissionId } = await params;
   await requireMentor(request);
-  const [sub] = await sql`select * from expense_submissions where id = ${params.id}`;
+  const [sub] = await sql`select * from expense_submissions where id = ${submissionId}`;
   if (!sub) return json({ error: 'Not found' }, { status: 404 });
 
   const scholar = sub.scholar_key;
@@ -28,7 +29,7 @@ export const POST = withErrorHandling(async (request, { params }) => {
     `,
     client`
       update expense_submissions set status = 'approved', reviewed_at = now()
-      where id = ${params.id}
+      where id = ${submissionId}
       returning *
     `,
   ]);

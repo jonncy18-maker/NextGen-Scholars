@@ -7,12 +7,13 @@ export const dynamic = 'force-dynamic';
 
 // Mirrors rejectSubmission(submissionId, comment).
 export const POST = withErrorHandling(async (request, { params }) => {
+  const { id } = await params;
   await requireMentor(request);
   const { comment } = await request.json().catch(() => ({}));
   const [row] = await sql`
     update expense_submissions
     set status = 'rejected', rejection_comment = ${comment || null}, reviewed_at = now()
-    where id = ${params.id}
+    where id = ${id}
     returning *
   `;
   if (!row) return json({ error: 'Not found' }, { status: 404 });

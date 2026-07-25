@@ -10,6 +10,7 @@ const ALLOWED_FIELDS = ['scholar', 'sem', 'item', 'cat', 'bucket', 'amount', 'qt
 // Mirrors updateExpense(id, fields) / writeSent(id) — arbitrary field-subset
 // update (writeSent just sends { sent: 'Yes' }).
 export const PATCH = withErrorHandling(async (request, { params }) => {
+  const { id } = await params;
   await requireMentor(request);
   const fields = await request.json();
   const keys = Object.keys(fields).filter(k => ALLOWED_FIELDS.includes(k));
@@ -19,14 +20,15 @@ export const PATCH = withErrorHandling(async (request, { params }) => {
   const values = keys.map(k => fields[k]);
   const [row] = await sql.query(
     `update expenses set ${setClause} where id = $1 returning *`,
-    [params.id, ...values]
+    [id, ...values]
   );
   if (!row) return json({ error: 'Not found' }, { status: 404 });
   return json(row);
 });
 
 export const DELETE = withErrorHandling(async (request, { params }) => {
+  const { id } = await params;
   await requireMentor(request);
-  await sql`delete from expenses where id = ${params.id}`;
+  await sql`delete from expenses where id = ${id}`;
   return json({ ok: true });
 });

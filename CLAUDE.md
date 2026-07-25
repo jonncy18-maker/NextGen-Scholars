@@ -9,7 +9,7 @@ licensure abroad (PH → OET → NCLEX → AHPRA Australia).
   The old GitHub Pages URL (https://jonncy18-maker.github.io/NextGen-Scholars/)
   is now a frozen redirect stub (`gh-pages-redirect/`) forwarding old
   bookmarks/hash routes to the Vercel domain — it no longer serves the app.
-- **Stack:** Next.js 14 (App Router) + React 18, backed by Neon (serverless
+- **Stack:** Next.js 16 (App Router) + React 18, backed by Neon (serverless
   Postgres) + Neon Auth (Better Auth) + Next.js API routes, deployed on
   Vercel. Cut over from Vite/HashRouter/Supabase on **2026-07-04** (PR #183);
   Supabase decommission (Phase D) completed the same week — no code in this
@@ -26,6 +26,17 @@ licensure abroad (PH → OET → NCLEX → AHPRA Australia).
 > against it, not just generic best practice.
 
 ## Build system
+
+> **Upgraded to Next.js 16 on 2026-07-25.** Two things to know. (1) `params` in
+> both route handlers and page components is now a **Promise** — route handlers
+> do `const { id } = await params`, and client pages (which cannot be `async`)
+> unwrap it with `React.use(params)`. This is the upgrade's one real trap: a
+> sync `params.id` access still *builds clean* and silently yields `undefined`
+> at runtime, so it breaks in production rather than in CI. Verify dynamic
+> routes by actually hitting them, not by a green build. (2) `next build` now
+> uses Turbopack by default. `package.json` carries `overrides` pinning `sharp`
+> and `postcss` to patched versions — both are transitive deps of `next` that
+> npm audit flags; drop the overrides once next's own ranges catch up.
 
 A Next.js **App Router** app. `app/**/page.jsx` files are thin `'use client'`
 wrappers around the pre-existing screen/component code under `src/` — route params
@@ -288,7 +299,7 @@ between the two apps.
   2026-07-12 "mentor dashboard frozen at an old expense snapshot" bug). The
   `@neondatabase/serverless` HTTP driver sends every query as a POST through
   global `fetch`, which Next.js patches with the Vercel Data Cache — and in
-  Next 14 route handlers `export const dynamic = 'force-dynamic'` does **not**
+  Next 14 route handlers `export const dynamic = 'force-dynamic'` did **not**
   opt those fetches out (it sets `forceDynamic` but never `revalidate = 0`,
   which the POST/auth-header escape hatch in `patch-fetch.js` checks). Result:
   byte-identical query bodies like bootstrap's `select * from expenses` were

@@ -26,6 +26,7 @@ function coerceNumeric(row) {
 // for the scholar role, or any signed-in scholar could edit/delete another
 // scholar's grades by id (same shape as submissions/[id]/route.js).
 export const PATCH = withErrorHandling(async (request, { params }) => {
+  const { id } = await params;
   const { role, scholarKey } = await requireScholarOwn(request);
   const fields = await request.json();
   const keys = Object.keys(fields).filter(k => ALLOWED_FIELDS.includes(k));
@@ -36,21 +37,22 @@ export const PATCH = withErrorHandling(async (request, { params }) => {
   const scope = role === 'mentor' ? '' : ` and scholar = $${keys.length + 2}`;
   const [row] = await sql.query(
     `update grade_entries set ${setClause} where id = $1${scope} returning *`,
-    role === 'mentor' ? [params.id, ...values] : [params.id, ...values, scholarKey]
+    role === 'mentor' ? [id, ...values] : [id, ...values, scholarKey]
   );
   if (!row) return json({ error: 'Not found' }, { status: 404 });
   return json(coerceNumeric(row));
 });
 
 export const DELETE = withErrorHandling(async (request, { params }) => {
+  const { id } = await params;
   const { role, scholarKey } = await requireScholarOwn(request);
   // Stays idempotent (no 404 on a missing row) to match the previous
   // behavior — GradesSection.jsx treats any non-2xx here as a hard error, and
   // a scholar aiming at someone else's row simply deletes nothing.
   if (role === 'mentor') {
-    await sql`delete from grade_entries where id = ${params.id}`;
+    await sql`delete from grade_entries where id = ${id}`;
   } else {
-    await sql`delete from grade_entries where id = ${params.id} and scholar = ${scholarKey}`;
+    await sql`delete from grade_entries where id = ${id} and scholar = ${scholarKey}`;
   }
   return json({ ok: true });
 });

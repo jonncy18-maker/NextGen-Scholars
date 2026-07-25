@@ -7,7 +7,8 @@ export const dynamic = 'force-dynamic';
 
 // Mirrors navigator.jsx's handleDismissDbAlert().
 export const DELETE = withErrorHandling(async (request, { params }) => {
+  const { id } = await params;
   await requireMentor(request);
-  await sql`delete from alerts where id = ${params.id}`;
+  await sql`delete from alerts where id = ${id}`;
   return json({ ok: true });
 });

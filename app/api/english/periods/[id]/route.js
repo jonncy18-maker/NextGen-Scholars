@@ -14,6 +14,7 @@ const ALLOWED_FIELDS = [
 // only form, and updatePeriodWeeklyTargets() (weekly_target_hours +
 // weekly_target_by_category), all of which just PATCH a different field subset.
 export const PATCH = withErrorHandling(async (request, { params }) => {
+  const { id } = await params;
   await requireMentor(request);
   const fields = await request.json();
   const keys = Object.keys(fields).filter(k => ALLOWED_FIELDS.includes(k));
@@ -23,14 +24,15 @@ export const PATCH = withErrorHandling(async (request, { params }) => {
   const values = keys.map(k => fields[k]);
   const [row] = await sql.query(
     `update english_periods set ${setClause} where id = $1 returning *`,
-    [params.id, ...values]
+    [id, ...values]
   );
   if (!row) return json({ error: 'Not found' }, { status: 404 });
   return json(row);
 });
 
 export const DELETE = withErrorHandling(async (request, { params }) => {
+  const { id } = await params;
   await requireMentor(request);
-  await sql`delete from english_periods where id = ${params.id}`;
+  await sql`delete from english_periods where id = ${id}`;
   return json({ ok: true });
 });
