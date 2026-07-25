@@ -1,9 +1,17 @@
 /* ════════════════ VACATION TRACKER (.vt-*) ════════════════
-   Scholar-facing reward-trip timeline. Inherits the .sp-* dashboard
-   shell (scholar-home.css); this file styles only the trip-specific UI. */
+   Scholar-facing reward-trip / milestone timeline. This file styles only the
+   timeline-specific UI; the page chrome around it comes from the shared
+   scholar shell (shell.css).
+
+   Theming note: the surface/rule/text colors below are written as
+   `var(--ds-x, var(--ngs-x))`. Inside the shell (.ds-shell) the --ds-* tokens
+   resolve and flip automatically in dark mode; the --ngs-* fallback keeps
+   these rules correct for any screen still rendering outside the shell
+   (VacationTracker, until it is migrated too). Do not collapse the fallback
+   away until every .vt-* consumer lives inside .ds-shell. */
 
 .vt-loading {
-  color: var(--ngs-muted);
+  color: var(--ds-muted, var(--ngs-muted));
   font-family: var(--ngs-mono); font-size: 12px;
   letter-spacing: 0.1em; text-transform: uppercase;
   padding: 8px 2px;
@@ -36,7 +44,7 @@
 }
 
 .vt-intro {
-  font-size: 14px; line-height: 1.6; color: var(--ngs-ink-soft);
+  font-size: 14px; line-height: 1.6; color: var(--ds-soft, var(--ngs-ink-soft));
   margin: 0 0 22px; max-width: 56ch;
 }
 
@@ -53,22 +61,23 @@
   width: 34px; height: 34px; border-radius: 999px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   font-size: 15px; line-height: 1;
-  background: var(--ngs-paper-2); border: 1px solid var(--ngs-rule);
+  background: var(--ds-surface-2, var(--ngs-paper-2));
+  border: 1px solid var(--ds-rule, var(--ngs-rule));
 }
 .vt-trip.is-done .vt-trip-badge {
   background: var(--ngs-green); color: #fff;
   border-color: var(--ngs-green); font-size: 13px; font-weight: 700;
 }
 .vt-trip.is-booked .vt-trip-badge {
-  border-color: var(--ngs-gold); color: var(--ngs-navy);
+  border-color: var(--ngs-gold); color: var(--ngs-navy-text);
   background: rgba(201,168,76,0.16);
 }
 .vt-trip.is-planned .vt-trip-badge {
-  border-style: dashed; color: var(--ngs-muted);
+  border-style: dashed; color: var(--ds-muted, var(--ngs-muted));
 }
 .vt-trip-connector {
   flex: 1; width: 2px; min-height: 14px;
-  background: var(--ngs-rule); margin: 3px 0;
+  background: var(--ds-rule, var(--ngs-rule)); margin: 3px 0;
 }
 .vt-trip.is-done .vt-trip-connector { background: var(--ngs-green); opacity: 0.4; }
 
@@ -81,34 +90,39 @@
 }
 .vt-trip-dest {
   font-family: var(--ngs-display); font-size: 18px;
-  color: var(--ngs-navy); letter-spacing: -0.01em;
+  color: var(--ds-ink, var(--ngs-navy-text)); letter-spacing: -0.01em;
 }
-.vt-trip.is-planned .vt-trip-dest { color: var(--ngs-ink-soft); }
+.vt-trip.is-planned .vt-trip-dest { color: var(--ds-soft, var(--ngs-ink-soft)); }
 
 .vt-trip-pill {
   font-family: var(--ngs-mono); font-size: 9.5px; font-weight: 600;
   letter-spacing: 0.1em; text-transform: uppercase;
   padding: 3px 8px; border-radius: 999px;
 }
-.vt-trip-pill.is-done    { background: rgba(47,125,85,0.14);  color: var(--ngs-green); }
-.vt-trip-pill.is-booked  { background: rgba(201,168,76,0.16); color: var(--ngs-warn);  }
-.vt-trip-pill.is-planned { background: var(--ngs-rule);       color: var(--ngs-muted); }
+.vt-trip-pill.is-done    { background: rgba(47,125,85,0.14);  color: var(--ds-good, var(--ngs-green)); }
+.vt-trip-pill.is-booked  { background: rgba(201,168,76,0.16); color: var(--ds-warn, var(--ngs-warn)); }
+.vt-trip-pill.is-planned { background: var(--ds-rule, var(--ngs-rule)); color: var(--ds-muted, var(--ngs-muted)); }
 
 .vt-trip-meta {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  font-family: var(--ngs-mono); font-size: 11px; color: var(--ngs-muted);
+  font-family: var(--ngs-mono); font-size: 11px; color: var(--ds-muted, var(--ngs-muted));
 }
 .vt-trip-sem {
   letter-spacing: 0.06em; text-transform: uppercase;
 }
 .vt-trip-amt {
-  color: var(--ngs-navy); font-weight: 600;
+  color: var(--ds-ink, var(--ngs-navy-text)); font-weight: 600;
 }
-.vt-trip-amt::before { content: '· '; color: var(--ngs-muted); font-weight: 400; }
+.vt-trip-amt::before { content: '· '; color: var(--ds-muted, var(--ngs-muted)); font-weight: 400; }
 
 /* ── empty state ── */
 .vt-empty {
   padding: 28px 18px; text-align: center;
-  color: var(--ngs-muted); font-size: 14px; line-height: 1.6;
-  border: 1px dashed var(--ngs-rule); border-radius: 8px;
+  color: var(--ds-muted, var(--ngs-muted)); font-size: 14px; line-height: 1.6;
+  border: 1px dashed var(--ds-rule, var(--ngs-rule)); border-radius: 8px;
 }
+
+/* Stat-card value for the "Next Milestone" tile — a milestone name is far
+   longer than a number, so it needs to wrap rather than use the display
+   face's full stat size. */
+.vt-next-val { font-size: 16px; line-height: 1.3; }
