@@ -71,10 +71,14 @@ export const POST = withErrorHandling(async (request) => {
 });
 
 // DELETE ?scholar=&sem= — bulk delete a whole semester's grades (GradesSection).
+// The ?scholar= param is honored for the mentor role only; a scholar is pinned
+// to their own key regardless of what they pass, exactly like GET above.
+// Without that pin, any signed-in scholar could wipe another scholar's entire
+// semester just by changing the query string.
 export const DELETE = withErrorHandling(async (request) => {
-  await requireScholarOwn(request);
+  const { role, scholarKey } = await requireScholarOwn(request);
   const { searchParams } = new URL(request.url);
-  const scholar = searchParams.get('scholar');
+  const scholar = role === 'mentor' ? searchParams.get('scholar') : scholarKey;
   const sem = searchParams.get('sem');
   if (!scholar || !sem) return json({ error: 'scholar and sem required' }, { status: 400 });
   await sql`delete from grade_entries where scholar = ${scholar} and sem = ${sem}`;
