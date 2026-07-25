@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { api } from '../lib/api.js';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
-import { SignOutButton } from '../components/SignOutButton.jsx';
+import { ScholarShell } from '../components/ScholarShell.jsx';
 import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
 import { useSessionExpired } from '../hooks/useSessionExpired.js';
 import '../styles/vacation-tracker.css';
@@ -84,104 +83,101 @@ export function MilestonesTracker({ scholarKey }) {
   const investedPhp = items.reduce((s, m) => s + (Number(m.amount_php) || 0), 0);
 
   return (
-    <div className="sp-page">
-      <div className="sp">
-        <header className="sp-head">
-          <SignOutButton onSignOut={() => { setSessionExpired(false); setAuthed(false); }} />
-          <div className="sp-track">
-            <span className="sp-track-dot" />
-            NextGen Scholars
-            <span className="sp-track-sep">·</span>
-            Rewards
+    <ScholarShell
+      scholarKey={scholarKey}
+      name={name}
+      active="milestones"
+      eyebrow="Rewards"
+      title="Milestones"
+      subtitle="Tools to rise."
+      identityRole="Milestones Tracker"
+      onSignOut={() => { setSessionExpired(false); setAuthed(false); }}
+    >
+      {/* Stat cards — the shell's own ds-card/ds-stat-* primitives, so these
+          theme with the rest of the dashboard instead of the old navy
+          summary card's hardcoded light-only surface. */}
+      <div className="ds-hero ds-hero--auto">
+        <div className="ds-card ds-card--accent">
+          <div className="ds-stat-label">Unlocked</div>
+          <div className="ds-stat-val">
+            {milestones === null ? '—' : unlocked.length}
           </div>
-          <p className="sp-greet-kicker">{name}</p>
-          <h1 className="sp-greet-name">Tools<br/>to rise.</h1>
-          <div className="sp-head-rule" />
-          <div className="sp-head-meta">
-            <span className="sp-stage">Milestones Tracker</span>
-            <Link href={fallback.homeHref} className="sp-tagline" style={{ textDecoration: 'none' }}>
-              ← Back to home
-            </Link>
+          <div className="ds-stat-sub">
+            {milestones === null
+              ? 'Loading…'
+              : `of ${items.length} milestone${items.length !== 1 ? 's' : ''}`}
           </div>
-        </header>
-
-        <section className="sp-section">
-          {/* Summary card */}
-          <div className="vt-summary">
-            {milestones === null ? (
-              <div className="vt-loading">Loading…</div>
-            ) : (
-              <div className="vt-summary-grid">
-                <div className="vt-stat">
-                  <div className="vt-stat-val">{unlocked.length}</div>
-                  <div className="vt-stat-label">Unlocked</div>
-                </div>
-                <div className="vt-stat">
-                  <div className="vt-stat-val">{fmtPhp(investedPhp)}</div>
-                  <div className="vt-stat-label">Invested</div>
-                </div>
-                <div className="vt-stat">
-                  <div className="vt-stat-val vt-stat-val--sm">
-                    {next ? `${nameEmoji(next.name)} ${next.name}` : '—'}
-                  </div>
-                  <div className="vt-stat-label">Next milestone</div>
-                </div>
-              </div>
-            )}
+        </div>
+        <div className="ds-card">
+          <div className="ds-stat-label">Invested</div>
+          <div className="ds-stat-val">
+            {milestones === null ? '—' : fmtPhp(investedPhp)}
           </div>
-
-          <p className="vt-intro">
-            Devices and infrastructure unlocked as academic targets are hit —
-            every reward a step toward standing on your own.
-          </p>
-
-          {/* Timeline */}
-          {milestones !== null && items.length > 0 && (
-            <div className="vt-timeline">
-              {items.map((m, i) => {
-                const meta   = MS_STATES[m.state] || MS_STATES.planned;
-                const isLast = i === items.length - 1;
-                const amt    = Number(m.amount_php) || 0;
-                return (
-                  <div key={m.id} className={`vt-trip ${meta.cls}`}>
-                    <div className="vt-trip-rail">
-                      <div className="vt-trip-badge">
-                        {m.state === 'done' ? '✓' : nameEmoji(m.name)}
-                      </div>
-                      {!isLast && <div className="vt-trip-connector" />}
-                    </div>
-                    <div className="vt-trip-body">
-                      <div className="vt-trip-head">
-                        <span className="vt-trip-dest">{m.name}</span>
-                        <span className={`vt-trip-pill ${meta.cls}`}>{meta.label}</span>
-                      </div>
-                      <div className="vt-trip-meta">
-                        {m.sem && <span className="vt-trip-sem">{m.sem}</span>}
-                        {amt > 0 && <span className="vt-trip-amt">{fmtPhp(amt)}</span>}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {milestones !== null && items.length === 0 && (
-            <div className="vt-empty">
-              No milestones logged yet. Your mentor adds rewards as academic
-              targets are reached.
-            </div>
-          )}
-        </section>
-
-        <PublicAskWidget />
-
-        <footer className="sp-footer">
-          <div className="sp-mark">NGS</div>
-          <div className="sp-footer-tag">One generation lifts another.</div>
-          <Link href="/" className="sp-home-link">← Home</Link>
-        </footer>
+          <div className="ds-stat-sub">across all rewards</div>
+        </div>
+        <div className="ds-card">
+          <div className="ds-stat-label">Next Milestone</div>
+          <div className="ds-stat-val vt-next-val">
+            {next ? `${nameEmoji(next.name)} ${next.name}` : '—'}
+          </div>
+          <div className="ds-stat-sub">
+            {next?.sem ? `expected ${next.sem}` : 'nothing pending'}
+          </div>
+        </div>
       </div>
-    </div>
+
+      <div className="ds-sec">
+        <span className="ds-sec-title">Your Rewards</span>
+      </div>
+
+      <section>
+        <p className="vt-intro">
+          Devices and infrastructure unlocked as academic targets are hit —
+          every reward a step toward standing on your own.
+        </p>
+
+        {/* Timeline */}
+        {milestones !== null && items.length > 0 && (
+          <div className="vt-timeline">
+            {items.map((m, i) => {
+              const meta   = MS_STATES[m.state] || MS_STATES.planned;
+              const isLast = i === items.length - 1;
+              const amt    = Number(m.amount_php) || 0;
+              return (
+                <div key={m.id} className={`vt-trip ${meta.cls}`}>
+                  <div className="vt-trip-rail">
+                    <div className="vt-trip-badge">
+                      {m.state === 'done' ? '✓' : nameEmoji(m.name)}
+                    </div>
+                    {!isLast && <div className="vt-trip-connector" />}
+                  </div>
+                  <div className="vt-trip-body">
+                    <div className="vt-trip-head">
+                      <span className="vt-trip-dest">{m.name}</span>
+                      <span className={`vt-trip-pill ${meta.cls}`}>{meta.label}</span>
+                    </div>
+                    <div className="vt-trip-meta">
+                      {m.sem && <span className="vt-trip-sem">{m.sem}</span>}
+                      {amt > 0 && <span className="vt-trip-amt">{fmtPhp(amt)}</span>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {milestones === null && <div className="vt-loading">Loading…</div>}
+
+        {milestones !== null && items.length === 0 && (
+          <div className="vt-empty">
+            No milestones logged yet. Your mentor adds rewards as academic
+            targets are reached.
+          </div>
+        )}
+      </section>
+
+      <PublicAskWidget />
+    </ScholarShell>
   );
 }

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { EXPENSE_CATS, AVB_OPTIONS } from '../constants.js';
 import { NGS_DATA } from '../../scholars-data.js';
@@ -8,6 +7,7 @@ import { loadFromSupabase, loadScholarSubmissions } from '../api-loader.js';
 import { useChanges } from '../hooks/useChanges.js';
 import { authClient, invalidateToken } from '../lib/auth-client.js';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
+import { ScholarShell } from '../components/ScholarShell.jsx';
 import { groupExpenses } from '../components/expenses/filterHelpers.js';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { ScholarIngestPanel } from '../components/ScholarIngestPanel.jsx';
@@ -638,18 +638,22 @@ function ExpenseForm({ scholar, onLogout }) {
   const budgetTotal = semExpenses.filter(e => e.avb !== AVB_OPTIONS[0]).reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
 
   return (
-    <div className="ef-page" data-scholar={scholar.key}>
-      <header className="ef-header">
-        <div className="ef-header-left">
-          <div className="el-badge el-badge-sm"><span>N</span><span>G</span><span>S</span></div>
-          <span className="ef-header-title">Add Expense — <strong>{scholar.display}</strong></span>
-        </div>
-        <div className="ef-header-right">
-          <Link href={`/home/${scholar.key}`} className="ef-home-link">← Portal home</Link>
-          <button className="ef-logout" onClick={onLogout}>Switch scholar</button>
-        </div>
-      </header>
-
+    <ScholarShell
+      scholarKey={scholar.key}
+      name={scholar.display}
+      active="finances"
+      eyebrow="Finances"
+      title="Add Expense"
+      subtitle={`${currentSem} · ${semExpenses.length} item${semExpenses.length !== 1 ? 's' : ''}`}
+      identityRole="Expense Entry"
+      onSignOut={onLogout}
+    >
+      {/* ef-main keeps its own two-column layout at wide sizes, but that has
+          to key off the *content* width now, not the viewport — the shell
+          spends 248px on the sidebar (72px collapsed), so a viewport media
+          query would flip to two columns while the column itself was still
+          narrow. This wrapper is the query container; see entry.css. */}
+      <div className="ef-shellwrap" data-scholar={scholar.key}>
       <main className="ef-main">
         <ScholarChatPanel
           scholarKey={scholar.key}
@@ -859,6 +863,7 @@ function ExpenseForm({ scholar, onLogout }) {
       </main>
 
       <ExpenseAskWidget scholarKey={scholar.key} sem={currentSem} />
-    </div>
+      </div>
+    </ScholarShell>
   );
 }

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { api } from '../lib/api.js';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
-import { SignOutButton } from '../components/SignOutButton.jsx';
+import { ScholarShell } from '../components/ScholarShell.jsx';
 import { SESSION_CATEGORIES, SESSION_TYPES, classifyActivity } from '../constants.js';
 import { EnglishIngestPanel } from '../components/EnglishIngestPanel.jsx';
 import { calcForecast } from '../lib/english-forecast.js';
@@ -435,28 +434,17 @@ export function EnglishTracking({ scholarKey }) {
   });
 
   return (
-    <div className="sp-page">
-      <div className="sp">
-        <header className="sp-head">
-          <SignOutButton onSignOut={() => { setSessionExpired(false); setAuthed(false); }} />
-          <div className="sp-track">
-            <span className="sp-track-dot" />
-            NextGen Nurses
-            <span className="sp-track-sep">·</span>
-            NGN
-          </div>
-          <p className="sp-greet-kicker">{fallback.name}</p>
-          <h1 className="sp-greet-name">English<br/>Hours.</h1>
-          <div className="sp-head-rule" />
-          <div className="sp-head-meta">
-            <span className="sp-stage">{periodLabel}</span>
-            <Link href={fallback.homeHref} className="sp-tagline" style={{ textDecoration: 'none' }}>
-              ← Back to home
-            </Link>
-          </div>
-        </header>
-
-        <section className="sp-section">
+    <ScholarShell
+      scholarKey={scholarKey}
+      name={fallback.name}
+      active="english"
+      eyebrow="English (OET)"
+      title="English Hours."
+      subtitle={periodLabel}
+      identityRole={periodLabel}
+      onSignOut={() => { setSessionExpired(false); setAuthed(false); }}
+    >
+        <section>
           {/* Progress card */}
           <div className="et-progress-card">
             {sessions === null ? (
@@ -578,11 +566,10 @@ export function EnglishTracking({ scholarKey }) {
 
         {/* Session history grouped by category */}
         {sessions !== null && sessions.length > 0 && (
-          <section className="sp-section et-history-section">
-            <div className="sp-eyebrow">
-              <span className="sp-eyebrow-rule" />
-              Sessions
-              <span className="sp-eyebrow-count">{sessions.length.toString().padStart(2, '0')}</span>
+          <section className="et-history-section">
+            <div className="ds-sec">
+              <span className="ds-sec-title">Sessions</span>
+              <span className="ds-sec-count">{sessions.length.toString().padStart(2, '0')}</span>
             </div>
             {Object.entries(grouped).map(([cat, rows]) => (
               <div key={cat} className="et-cat-group">
@@ -622,11 +609,6 @@ export function EnglishTracking({ scholarKey }) {
           </div>
         )}
 
-        <footer className="sp-footer">
-          <div className="sp-mark">NGS</div>
-          <div className="sp-footer-tag">One generation lifts another.</div>
-        </footer>
-      </div>
-    </div>
+    </ScholarShell>
   );
 }

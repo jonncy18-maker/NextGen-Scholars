@@ -4,12 +4,10 @@ import { useRouter } from 'next/navigation';
 import { api } from '../lib/api.js';
 import { NGS_DATA } from '../../scholars-data.js';
 import { Sidebar } from '../components/Sidebar.jsx';
+import { scholarNavItems } from '../components/ScholarShell.jsx';
 import { ThemeToggle } from '../components/ThemeToggle.jsx';
 import { Ring, Donut, MiniSteps } from '../components/ShellViz.jsx';
-import {
-  IcnGrid, IcnWallet, IcnBook, IcnGlobe, IcnClock, IcnStar,
-  IcnPlane, IcnHome, IcnSignOut, IcnChevron, IcnUpdate,
-} from '../components/ShellIcons.jsx';
+import { IcnClock, IcnSignOut, IcnChevron, IcnUpdate } from '../components/ShellIcons.jsx';
 import { useAppUpdate } from '../hooks/useAppUpdate.js';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
@@ -364,16 +362,10 @@ export function ScholarHome({ scholarKey }) {
     );
   }
 
-  const navItems = [
-    { key: 'overview', href: `/home/${scholarKey}`, label: 'Overview', icon: <IcnGrid size={16} />, active: true },
-    { key: 'finances', href: config.expensesHref, label: 'Finances', icon: <IcnWallet size={16} /> },
-    { key: 'academics', href: `/grades/${scholarKey}`, label: 'Academics', icon: <IcnBook size={16} /> },
-    !isExpensesOnly && { key: 'english', href: `/english/${scholarKey}`, label: 'English (OET)', icon: <IcnGlobe size={16} /> },
-    !isExpensesOnly && { key: 'immersion', href: 'https://next-gen-immersion.vercel.app/', label: 'Immersion App', icon: <IcnClock size={16} />, external: true },
-    !isExpensesOnly && { key: 'milestones', href: `/milestones/${scholarKey}`, label: 'Milestones', icon: <IcnStar size={16} /> },
-    !isExpensesOnly && { key: 'travel', href: `/vacation/${scholarKey}`, label: 'Travel', icon: <IcnPlane size={16} /> },
-    { key: 'site', href: '/', label: 'Public Site', icon: <IcnHome size={16} /> },
-  ].filter(Boolean);
+  // Shared with every other scholar module via ScholarShell — see
+  // components/ScholarShell.jsx. Kept as one list so the sidebar can't drift
+  // between Overview and the modules it links to.
+  const navItems = scholarNavItems(scholarKey, 'overview');
 
   return (
     <div className="sp-shell ds-shell">
