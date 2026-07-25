@@ -46,8 +46,20 @@ export const POST = withErrorHandling(async (request) => {
   const scholar = role === 'mentor' ? body.scholar : scholarKey;
   if (!scholar) return json({ error: 'scholar required' }, { status: 400 });
 
+  // Scope the supersede-the-original update to the caller's own rows for the
+  // scholar role — id alone would let one scholar mark another scholar's
+  // submission 'resubmitted', silently pulling it out of the mentor's review
+  // queue. No status filter here on purpose: resubmitExpense() supersedes a
+  // *rejected* row, so requiring 'pending' would break the resubmit flow.
   if (resubmitOf) {
-    await sql`update expense_submissions set status = 'resubmitted' where id = ${resubmitOf}`;
+    if (role === 'mentor') {
+      await sql`update expense_submissions set status = 'resubmitted' where id = ${resubmitOf}`;
+    } else {
+      await sql`
+        update expense_submissions set status = 'resubmitted'
+        where id = ${resubmitOf} and scholar_key = ${scholarKey}
+      `;
+    }
   }
 
   const [row] = await sql`
