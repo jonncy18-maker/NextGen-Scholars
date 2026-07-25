@@ -98,6 +98,7 @@ in Vercel's project env vars only.
 | `lib/db.js` | Lazy Neon serverless client (`@neondatabase/serverless`, HTTP mode) + `selectWhere()` helper. Lazy on purpose — Next's build-time page-data-collection step evaluates route modules, so an eager `neon(...)` call at module scope throws when `DATABASE_URL` isn't set at build time. |
 | `lib/auth.js` | JWKS-verified JWT auth (`jose` + `createRemoteJWKSet`, cached) → role/`scholar_key` resolved from `public.user_profile` (never trusted from the token). `requireMentor`/`requireScholarOwn` helpers. |
 | `lib/http.js` | `json()` + `withErrorHandling()` response helpers for API routes. |
+| `lib/rate-limit.js` | Fixed-window per-IP rate limiter + `readJsonBody()` size cap, backing the two unauthenticated AI routes. Counters live in Neon's `rate_limit` table, not process memory — these are serverless functions, so an in-process counter is per-instance and Vercel scales out under exactly the load the limiter exists to stop. Fails open on DB error. |
 | `lib/ai/{context,tier1,tier2,tier3,action}.js` | Gemini tiered AI layer (context builder, deterministic tier1 SQL resolver, tier2 advisory, tier3 ingestion, GCash action matching). |
 | `src/api-loader.js`, `src/api-writer.js` | Neon-backed data loader/writer, one function per operation, imported by every mentor/scholar screen. |
 | `app/api/bootstrap/route.js` | One-call data fetch scoped by mentor/scholar role (mentor unscoped, scholar filtered to own `scholar_key`). |
@@ -109,7 +110,6 @@ in Vercel's project env vars only.
 | `src/components/ScholarAuthGate.jsx` | Real Better Auth sign-in gate for all three scholar-facing pages (Claire, April, Janndilyne). |
 | `src/lib/auth-client.js` | Better Auth React client (`createAuthClient` + `jwtClient()` plugin) pointed at the Neon Auth base URL. `getToken()` reads the JWT off the `set-auth-jwt` response header. |
 | `src/lib/api.js` | Fetch wrapper for `app/api/**` — Bearer token per request via `getToken()`, one 401-retry, `afterWrite()` poke hook consumed by `useChanges.js`. |
-| `app/sign-in/page.jsx`, `src/entries/sign-in.jsx` | **Temporary** Better Auth test harness at `/sign-in`, not linked from app nav. Was used to live-verify the auth flow during migration; cleanup candidate. |
 | `gh-pages-redirect/` | Static redirect stub (`index.html` + `404.html`, rafgraph/spa-github-pages trick) published to GitHub Pages by `.github/workflows/deploy.yml` — forwards old bookmarks/hash routes to the Vercel domain. No build step; not part of the Next.js app. |
 
 ## Data architecture
@@ -209,6 +209,13 @@ between the two apps.
 
 ## Key Rules for Claude Code
 
+- **`EXPENSE_CATS` has exactly one home: `src/constants.js`.** Both `lib/ai/expense-edit.js`
+  and `lib/ai/tier3.js` used to carry their own copy listing 12 of the 21 categories,
+  missing every travel and milestone one. In `expense-edit.js` that silently rewrote any
+  travel expense the mentor edited to `Other`/`college` (it coerces against the list),
+  corrupting the bucket totals the public profile pages publish; in `tier3.js` it left
+  Gemini no correct category to pick when ingesting a flight or hotel receipt. Both now
+  import the shared list — never re-inline it.
 - **`scholars-data.js` narrative drift** — it is the source of truth for narrative/profile
   fields. Profile pages merge Neon operational data on top at runtime. Keep
   `publicProfile` blocks in sync with any Neon-controlled fields (e.g. `currentSem`,
@@ -217,7 +224,10 @@ between the two apps.
   client-supplied `scholar` key — this matches the pre-migration Supabase Edge
   Function's behavior exactly, not a regression introduced by the port. Accepted
   risk for now; do not store sensitive PII before real scholar-scoped auth is
-  extended to this route.
+  extended to this route. Since 2026-07-25 it and `ask-public` are rate-limited
+  per IP and body-size capped (`lib/rate-limit.js`) so an anonymous caller can't
+  burn the Gemini quota — that bounds *cost*, not *access*: the scholar key is
+  still trusted, so the PII caveat above stands unchanged.
 - **Stale "Sheets" vocabulary removed (2026-07-12).** State/props/CSS that dated back
   to the pre-Supabase Google Sheets backend (`sheetsStatus`, `SHEETS_LABEL`,
   `sheets-pill`/`sheets-live`/etc. CSS classes, `sheetsOverrides`, `sheetsEvents`) were
