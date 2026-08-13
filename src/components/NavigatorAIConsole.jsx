@@ -10,6 +10,7 @@ import {
   QUICK_PROMPTS,
 } from './NavigatorAI.jsx';
 import { ExpenseEditPanel } from './expenses/ExpenseWorkbench.jsx';
+import { AgentResult } from './AgentPanel.jsx';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Unified mentor AI console.
@@ -32,12 +33,14 @@ const INTENT_META = {
   expense_bulk_edit: { label: 'Edit expenses', hint: 'Proposes edits to saved expenses' },
   action: { label: 'GCash send', hint: 'Matches a send to unsent items' },
   weekly_report: { label: 'Weekly report', hint: 'Drafts a cohort update' },
+  agent: { label: 'Do it', hint: 'Looks things up and proposes the change' },
 };
 
 // Ordered override choices (weekly_report is offered explicitly, not auto-routed
 // except on the clear phrase, since it ignores the scholar selector).
 const OVERRIDE_ORDER = [
   'query',
+  'agent',
   'ingest',
   'grade_ingest',
   'expense_bulk_edit',
@@ -51,6 +54,12 @@ const EDIT_RE =
   /\b(change|update|edit|fix|correct|rename|recategor\w*|reassign|set|delete|remove|drop|move|merge)\b/i;
 const ADD_RE = /\b(add|log|record|spent|spend|bought|buy|paid|pay|purchase[ds]?|expense[ds]?)\b/i;
 const AMOUNT_RE = /(₱|\bphp\b|\bpeso?s?\b|\d)/i;
+// Everything the app can change that ISN'T an expense row. The expense paths
+// above have purpose-built review cards (ReviewCard, ExpenseEditPanel) and stay
+// on them; anything else that asks for a change goes to the agent, which can
+// reach the whole tool registry.
+const AGENT_OBJECT_RE =
+  /\b(grade[sd]?|subject|semester|sem|submission|submitted|approve|reject|action item|to-?do|alert|career|pnle|oet|nclex|osce|ahpra|english|session|period|hours?|scenario|milestone|config|program details)\b/i;
 
 // Deterministic intent router. Evaluated in order; first match wins.
 export function routeIntent({ text = '', hasFiles = false, fileKind = 'receipt', scholar = '' }) {
@@ -60,6 +69,9 @@ export function routeIntent({ text = '', hasFiles = false, fileKind = 'receipt',
   if (REPORT_RE.test(t)) return 'weekly_report';
   // GCash send-matching is Janndilyne-only (the only scholar with a GCash flow).
   if (scholar === 'janndilyne' && ACTION_RE.test(t)) return 'action';
+  // A change to something other than an expense row — grades, submissions,
+  // English sessions, actions, alerts, career steps, config — is the agent's.
+  if ((EDIT_RE.test(t) || ADD_RE.test(t)) && AGENT_OBJECT_RE.test(t)) return 'agent';
   if (EDIT_RE.test(t)) return 'expense_bulk_edit';
   if (ADD_RE.test(t) && AMOUNT_RE.test(t)) return 'ingest';
   return 'query';
@@ -110,6 +122,36 @@ function QueryResponse({ scholar, text }) {
   if (state.loading) return <Thinking label="Checking the data…" />;
   if (state.error) return <div className="nai-error">{state.error}</div>;
   return <ResultDisplay result={state.result} />;
+}
+
+// Free-form agent turn — reads what it needs through /api/agent's tool
+// registry, then either answers or hands back a confirm card. Nothing it
+// proposes has touched the database at this point.
+function AgentResponse({ scholar, text }) {
+  const [state, setState] = useState({ loading: true, data: null, error: null });
+  useEffect(() => {
+    let live = true;
+    // The selected scholar is context, not a constraint — the mentor's agent
+    // can act on anyone, so this only tells it who's on screen.
+    const framed = scholar
+      ? `${text}\n\n(The dashboard is currently showing ${cap(scholar)}.)`
+      : text;
+    api
+      .post('/agent', { mode: 'plan', text: framed })
+      .then((data) => {
+        if (live) setState({ loading: false, data, error: null });
+      })
+      .catch((err) => {
+        if (live) setState({ loading: false, data: null, error: err.message });
+      });
+    return () => {
+      live = false;
+    };
+  }, [scholar, text]);
+
+  if (state.loading) return <Thinking label="Looking it up…" />;
+  if (state.error) return <div className="nai-error">{state.error}</div>;
+  return <AgentResult data={state.data} />;
 }
 
 function IngestResponse({ scholar, sem, text, files }) {
@@ -325,6 +367,8 @@ function TurnResponse({ turn, writers }) {
       return <ActionResponse scholar={scholar} text={text} onRecordSend={writers.onRecordSend} />;
     case 'weekly_report':
       return <WeeklyReportPanel scholarKeys={scholarKeys} />;
+    case 'agent':
+      return <AgentResponse scholar={scholar} text={text} />;
     case 'query':
     default:
       return <QueryResponse scholar={scholar} text={text} />;

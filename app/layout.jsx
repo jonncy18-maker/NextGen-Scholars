@@ -7,6 +7,7 @@ import '../src/styles/entry.css';
 import '../src/styles/scholar-home.css';
 import '../src/styles/english-tracking.css';
 import '../src/styles/grade-entry.css';
+import '../src/styles/agent.css';
 
 import { ErrorBoundary } from '../src/components/ErrorBoundary.jsx';
 import { BfcacheReload } from '../src/components/BfcacheReload.jsx';
