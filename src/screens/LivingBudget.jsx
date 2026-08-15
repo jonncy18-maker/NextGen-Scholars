@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { api } from '../lib/api.js';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { ScholarShell } from '../components/ScholarShell.jsx';
+import { BudgetAskPanel } from '../components/BudgetAskPanel.jsx';
 import { useSessionExpired } from '../hooks/useSessionExpired.js';
 import {
   LIVING_KINDS, LIVING_ROLLUPS, LIVING_SEED_CATEGORIES, LIVING_PROMPTS,
@@ -51,6 +52,7 @@ export function LivingBudget({ scholarKey }) {
   const fallback = FALLBACK[scholarKey] || FALLBACK.claire;
 
   const [authed, setAuthed] = useState(false);
+  const [isMentor, setIsMentor] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [name, setName] = useState(fallback.name);
 
@@ -82,16 +84,20 @@ export function LivingBudget({ scholarKey }) {
   // another scholar's dashboard). That is the documented cause of the
   // "scholar sees another scholar's numbers" bug — see CLAUDE.md.
   const load = useCallback(async () => {
+    // `scholar` is always sent, even though the API infers it for a scholar
+    // caller. A MENTOR is unscoped by default, so without it they'd get every
+    // scholar's categories merged into one list on whichever /budget/:scholar
+    // page they opened.
     const [catRows, planRows] = await Promise.all([
-      api.get('/living/categories'),
-      api.get(`/living/plan?month=${month}`),
+      api.get(`/living/categories?scholar=${encodeURIComponent(scholarKey)}`),
+      api.get(`/living/plan?month=${month}&scholar=${encodeURIComponent(scholarKey)}`),
     ]);
 
     const planMap = {};
     (planRows ?? []).forEach(r => { planMap[r.category_id] = Number(r.planned_php) || 0; });
 
     return { catRows: catRows ?? [], planMap };
-  }, [month]);
+  }, [month, scholarKey]);
 
   useEffect(() => {
     if (!authed) return;
@@ -203,6 +209,17 @@ export function LivingBudget({ scholarKey }) {
     }
   }
 
+  // Re-read after any out-of-band mutation (currently the AI panel's Apply).
+  const refresh = useCallback(async () => {
+    try {
+      const { catRows, planMap } = await load();
+      setCats(catRows);
+      setPlan(planMap);
+    } catch (err) {
+      setError(err?.message || 'Could not refresh your budget.');
+    }
+  }, [load]);
+
   async function patchCategory(id, fields) {
     try {
       await updateLivingCategory(id, fields);
@@ -230,8 +247,8 @@ export function LivingBudget({ scholarKey }) {
         scholarKey={scholarKey}
         name={fallback.name}
         sessionExpired={sessionExpired}
-        onUnlock={(profile) => {
-          if (profile?.firstName) setName(profile.firstName);
+        onUnlock={(me) => {
+          setIsMentor(me?.role === 'mentor');
           setSessionExpired(false);
           setAuthed(true);
         }}
@@ -246,8 +263,10 @@ export function LivingBudget({ scholarKey }) {
       active="budget"
       eyebrow="My Budget"
       title={monthLabel(month)}
-      subtitle="What you plan to spend this month — you decide the categories"
-      identityRole="Scholar"
+      subtitle={isMentor
+        ? `Viewing ${fallback.name}'s budget as mentor — edits here change her plan`
+        : 'What you plan to spend this month — you decide the categories'}
+      identityRole={isMentor ? 'Mentor' : 'Scholar'}
       onSignOut={() => { setAuthed(false); setCats(null); setPlan({}); }}
     >
       <div className="lb-monthbar">
@@ -299,6 +318,13 @@ export function LivingBudget({ scholarKey }) {
           </section>
 
           <AddCategory busy={busy} onAdd={addCategory} />
+
+          <BudgetAskPanel
+            scholarKey={scholarKey}
+            month={month}
+            categories={active}
+            onApplied={refresh}
+          />
 
           {openPrompts.length > 0 && (
             <section className="lb-prompts">

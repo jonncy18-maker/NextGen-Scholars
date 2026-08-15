@@ -203,6 +203,7 @@ produces an estimate, which becomes the defensible monthly figure to send her.
 | Step | State | Notes |
 |---|---|---|
 | Phase 1 — planning | ✅ Done (2026-08-15) | `/budget/:scholar`. She defines her **own** categories (`living_category`) and sets a planned amount per month (`living_plan`). Seeded starter set + an "easy to forget" prompt list weighted toward the motorcycle's annual costs. |
+| Mentor access + AI | ✅ Done (2026-08-15) | `ScholarAuthGate` now admits the mentor to any scholar's page — a mentor's `scholar_key` is null, so the old equality check had locked him out of *every* scholar route, not just this one. Plus `/api/ask-budget`: the assistant can do everything the page can do by hand. Authenticated, and the model only ever **proposes** ops for approval (same contract as `action.js`). |
 | Phase 2 — actuals | 🔵 Planned | Envelope entry, sinking-fund accrual balances, plan-vs-actual, mentor rollup. Deliberately deferred until a month of real numbers shows which categories she actually uses. |
 | `/api/changes` polling | 🔵 Planned | The living tables aren't in the polling map, so a mentor edit won't surface in an open scholar tab. Fine while the mentor has no living-budget UI; wire before Phase 2. |
 

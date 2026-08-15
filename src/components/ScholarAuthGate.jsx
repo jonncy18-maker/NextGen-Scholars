@@ -11,6 +11,17 @@ import { api } from '../lib/api.js';
 // sessionExpired: true when this gate is showing because a live session died
 // mid-use, not the normal first-visit case — shown as a plain-language banner
 // so a forced re-sign-in never reads as an unexplained logout.
+//
+// The mentor passes this gate for ANY scholar's page. `requireScholarOwn`
+// deliberately resolves a mentor's scholar_key to null, so the old
+// `me.scholarKey === scholarKey` test rejected the mentor from every
+// scholar-facing route with "This account isn't set up for this portal yet."
+// The API layer has always allowed mentor access to these routes unscoped;
+// only this client gate disagreed.
+function mayView(me, scholarKey) {
+  return me?.role === 'mentor' || me?.scholarKey === scholarKey;
+}
+
 export function ScholarAuthGate({ scholarKey, name, onUnlock, sessionExpired }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,7 +46,7 @@ export function ScholarAuthGate({ scholarKey, name, onUnlock, sessionExpired }) 
       if (!data?.session) { setCheckingSession(false); return; }
       try {
         const me = await api.get('/me');
-        if (!cancelled && me.scholarKey === scholarKey) onUnlock();
+        if (!cancelled && mayView(me, scholarKey)) onUnlock(me);
       } catch {
         // fall through to the sign-in form
       } finally {
@@ -74,14 +85,14 @@ export function ScholarAuthGate({ scholarKey, name, onUnlock, sessionExpired }) 
 
     try {
       const me = await api.get('/me');
-      if (me.scholarKey !== scholarKey) {
+      if (!mayView(me, scholarKey)) {
         invalidateToken();
         await authClient.signOut();
         setError("This account isn't set up for this portal yet.");
         setLoading(false);
         return;
       }
-      onUnlock();
+      onUnlock(me);
     } catch {
       invalidateToken();
       await authClient.signOut();

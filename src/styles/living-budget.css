@@ -327,6 +327,128 @@
 }
 .lb-chip:disabled { opacity: 0.5; cursor: default; }
 
+/* ── ask panel ── */
+.lb-ask {
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-rule);
+  border-radius: 14px;
+  padding: 20px 22px 22px;
+  margin-bottom: 22px;
+}
+.lb-ask-title {
+  font-family: var(--ngs-display);
+  font-size: 19px;
+  font-weight: 400;
+  color: var(--ds-ink);
+  margin: 0 0 5px;
+}
+.lb-ask-sub {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ds-muted);
+  max-width: 60ch;
+  margin: 0 0 14px;
+}
+.lb-ask-form { display: flex; gap: 8px; }
+.lb-ask-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 10px 13px;
+  border: 1px solid var(--ds-rule);
+  border-radius: 9px;
+  background: var(--ds-surface-2);
+  color: var(--ds-ink);
+  font-size: 14px;
+  font-family: var(--ngs-sans);
+}
+.lb-ask-input:focus { outline: none; border-color: var(--ngs-gold); background: var(--ds-surface); }
+.lb-ask-form button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 9px;
+  background: var(--ngs-navy);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+.lb-ask-form button:disabled { opacity: 0.45; cursor: default; }
+
+.lb-ask-error {
+  margin-top: 12px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--ds-bad);
+  background: rgba(224, 106, 118, 0.08);
+  color: var(--ds-bad);
+  font-size: 13px;
+}
+.lb-ask-answer {
+  margin-top: 14px;
+  padding: 13px 15px;
+  border-radius: 9px;
+  background: var(--ds-surface-2);
+  color: var(--ds-soft);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* Proposed changes. Gold edge because this is the one block on the page that
+   is asking for a decision rather than reporting state. */
+.lb-proposal {
+  margin-top: 14px;
+  padding: 15px 17px;
+  border: 1px solid var(--ngs-gold);
+  border-left-width: 3px;
+  border-radius: 10px;
+  background: var(--ds-gold-tint);
+}
+.lb-proposal-summary {
+  font-size: 14px;
+  color: var(--ds-ink);
+  margin-bottom: 10px;
+}
+.lb-proposal-list {
+  margin: 0 0 14px;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.lb-proposal-list li {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ds-soft);
+}
+.lb-proposal-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.lb-apply {
+  padding: 9px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--ngs-navy);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+.lb-apply:disabled { opacity: 0.5; cursor: default; }
+.lb-discard {
+  padding: 9px 16px;
+  border: 1px solid var(--ds-rule);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ds-muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+.lb-proposal-note {
+  margin-top: 10px;
+  font-family: var(--ngs-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+}
+
 /* ── phone ── */
 @media (max-width: 560px) {
   .lb-total-value { font-size: 34px; }
