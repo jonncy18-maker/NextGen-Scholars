@@ -1,16 +1,25 @@
 import { sql } from '../../../../lib/db.js';
-import { requireScholarOwn } from '../../../../lib/auth.js';
+import { requireScholarOwn, AuthError } from '../../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../../lib/http.js';
 
 export const dynamic = 'force-dynamic';
 
 const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;   // 'YYYY-MM' — monthly, not per-semester
 
+// See the matching helper in ../categories/route.js: a scholar with a null
+// scholar_key must be rejected rather than falling through to the unscoped
+// query, which would return every scholar's planned amounts.
+function scopeFor({ role, scholarKey }, requestedScholar) {
+  if (role === 'mentor') return requestedScholar || null;   // null = all scholars
+  if (!scholarKey) throw new AuthError(403, 'No scholar_key on profile');
+  return scholarKey;
+}
+
 export const GET = withErrorHandling(async (request) => {
-  const { role, scholarKey } = await requireScholarOwn(request);
+  const user = await requireScholarOwn(request);
   const { searchParams } = new URL(request.url);
   const month  = searchParams.get('month');
-  const target = role === 'mentor' ? searchParams.get('scholar') : scholarKey;
+  const target = scopeFor(user, searchParams.get('scholar'));
 
   if (month && !MONTH_RE.test(month)) {
     return json({ error: 'month must be YYYY-MM' }, { status: 400 });
@@ -37,6 +46,9 @@ export const GET = withErrorHandling(async (request) => {
 // stacking duplicate rows as she revises her estimate.
 export const PUT = withErrorHandling(async (request) => {
   const { role, scholarKey } = await requireScholarOwn(request);
+  if (role !== 'mentor' && !scholarKey) {
+    throw new AuthError(403, 'No scholar_key on profile');
+  }
   const body = await request.json();
 
   const month = String(body.month ?? '');

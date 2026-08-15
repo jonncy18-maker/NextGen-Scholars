@@ -75,6 +75,16 @@ create table if not exists living_category (
 create index if not exists living_category_scholar_idx
   on living_category (scholar) where archived_at is null;
 
+-- This unique index is load-bearing, not just hygiene: it is what makes the
+-- first-visit seed idempotent. The API checks for an existing name before
+-- inserting, but that check and the insert are separate round trips — two tabs,
+-- a double-tap on a slow connection, or React StrictMode's double-mounted
+-- effect can both observe an empty table and both seed. `on conflict do nothing`
+-- against this index is the actual guarantee. Case-insensitive because "Food"
+-- and "food" are the same category to a human.
+create unique index if not exists living_category_scholar_name_key
+  on living_category (scholar, lower(name));
+
 -- ── PLAN (her envelope allocation, per category per month) ──────────────────
 -- References category_id, never the category NAME — so she can rename freely
 -- without orphaning history.

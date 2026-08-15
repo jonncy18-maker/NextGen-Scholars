@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { api } from '../lib/api.js';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { ScholarShell } from '../components/ScholarShell.jsx';
@@ -57,8 +57,14 @@ export function LivingBudget({ scholarKey }) {
   const [month, setMonth] = useState(() => monthKey(new Date()));
   const [cats, setCats] = useState(null);          // null = still loading
   const [plan, setPlan] = useState({});            // category_id -> planned_php
+  const [loading, setLoading] = useState(false);   // a month's amounts are in flight
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+
+  // Seeding is a one-shot per scholar per session. Without this the seed
+  // branch below re-fires on every month change for a scholar who has
+  // archived all her categories, posting a wasted seed each time she taps ‹.
+  const seeded = useRef(null);
 
   useSessionExpired(() => {
     if (!authed) return;
@@ -91,14 +97,22 @@ export function LivingBudget({ scholarKey }) {
     if (!authed) return;
     let cancelled = false;
 
+    // Drop the previous month's amounts immediately. Leaving them on screen
+    // while the new month loads isn't just visually wrong: blurring an input
+    // in that window would write the OLD month's figure into the NEW month.
+    // `loading` keeps the inputs inert until the real values arrive.
+    setPlan({});
+    setLoading(true);
+
     (async () => {
       try {
         let { catRows, planMap } = await load();
 
         // First visit: seed the starter set rather than showing a blank page.
-        // The server skips names already present, so a double-mount or a
-        // second tab can't produce duplicates.
-        if (catRows.length === 0) {
+        // Idempotent server-side (unique index on scholar + lower(name)), so a
+        // double-mount or a second tab cannot duplicate it.
+        if (catRows.length === 0 && seeded.current !== scholarKey) {
+          seeded.current = scholarKey;
           await createLivingCategories(scholarKey, LIVING_SEED_CATEGORIES);
           ({ catRows, planMap } = await load());
         }
@@ -111,6 +125,8 @@ export function LivingBudget({ scholarKey }) {
         if (cancelled) return;
         setCats([]);
         setError(err?.message || 'Could not load your budget.');
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     })();
 
@@ -145,11 +161,22 @@ export function LivingBudget({ scholarKey }) {
 
   async function savePlan(categoryId, value) {
     const amount = Math.max(0, Number(value) || 0);
+    // Optimistic, but remember what to put back. Without the rollback a
+    // rejected write left the row and the monthly total displaying the new
+    // figure as though it had saved, and a later reload silently reverted it —
+    // the worst failure mode for a number she's about to act on.
+    const prior = plan[categoryId];
     setPlan(p => ({ ...p, [categoryId]: amount }));
     try {
       await setLivingPlan({ month, category_id: categoryId, planned_php: amount });
     } catch (err) {
-      setError(err?.message || 'Could not save that amount.');
+      setPlan(p => {
+        const next = { ...p };
+        if (prior === undefined) delete next[categoryId];
+        else next[categoryId] = prior;
+        return next;
+      });
+      setError(err?.message || 'Could not save that amount — it has not been changed.');
     }
   }
 
@@ -252,6 +279,7 @@ export function LivingBudget({ scholarKey }) {
                 key={cat.id}
                 cat={cat}
                 value={plan[cat.id] ?? ''}
+                disabled={loading}
                 onAmount={v => savePlan(cat.id, v)}
                 onPatch={fields => patchCategory(cat.id, fields)}
                 onRemove={() => removeCategory(cat.id)}
@@ -294,7 +322,7 @@ export function LivingBudget({ scholarKey }) {
 
 // One category: name, kind, planned amount, and (for sinking funds) the
 // target/months that produce a monthly accrual.
-function CategoryRow({ cat, value, onAmount, onPatch, onRemove }) {
+function CategoryRow({ cat, value, disabled, onAmount, onPatch, onRemove }) {
   const [local, setLocal] = useState(value === '' ? '' : String(value));
   const [open, setOpen] = useState(false);
 
@@ -328,8 +356,9 @@ function CategoryRow({ cat, value, onAmount, onPatch, onRemove }) {
             className="lb-amount-input"
             value={local}
             placeholder="0"
+            disabled={disabled}
             onChange={e => setLocal(e.target.value)}
-            onBlur={() => onAmount(local)}
+            onBlur={() => { if (!disabled) onAmount(local); }}
           />
         </div>
 

@@ -37,13 +37,19 @@ export const PATCH = withErrorHandling(async (request, { params }) => {
   const kind = 'kind' in body && KINDS.includes(body.kind) ? body.kind : cur.kind;
   const rollup = 'rollup' in body && ROLLUPS.includes(body.rollup) ? body.rollup : cur.rollup;
 
+  // Non-numeric input clears the field rather than reaching Postgres as NaN.
+  const asNum = (v) => {
+    if (v === null || v === '') return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  };
+
   const target = 'sinking_target_php' in body
-    ? (body.sinking_target_php == null ? null : Number(body.sinking_target_php))
+    ? asNum(body.sinking_target_php)
     : cur.sinking_target_php;
 
-  const months = 'sinking_months' in body
-    ? (body.sinking_months == null ? null : Math.max(1, Math.round(Number(body.sinking_months))))
-    : cur.sinking_months;
+  const rawMonths = 'sinking_months' in body ? asNum(body.sinking_months) : cur.sinking_months;
+  const months = rawMonths === null ? null : Math.max(1, Math.round(rawMonths));
 
   const sort = 'sort_order' in body && Number.isFinite(Number(body.sort_order))
     ? Number(body.sort_order)
@@ -82,14 +88,17 @@ export const DELETE = withErrorHandling(async (request, { params }) => {
   const cur = await loadOwned(id, user);
   if (!cur) return json({ error: 'Not found' }, { status: 404 });
 
-  const [{ count }] = await sql`
-    select count(*)::int as count from living_plan where category_id = ${id}
+  // Delete and the "has no history" test must be ONE statement. Checking the
+  // count first and deleting second leaves a window where a plan row inserted
+  // in between gets silently removed by the FK's on-delete-cascade — exactly
+  // the history loss the archive rule exists to prevent.
+  const dropped = await sql`
+    delete from living_category
+    where id = ${id}
+      and not exists (select 1 from living_plan where category_id = ${id})
+    returning id
   `;
-
-  if (count === 0) {
-    await sql`delete from living_category where id = ${id}`;
-    return json({ deleted: true, archived: false });
-  }
+  if (dropped.length > 0) return json({ deleted: true, archived: false });
 
   const [row] = await sql`
     update living_category
