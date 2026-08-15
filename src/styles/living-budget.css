@@ -1,0 +1,337 @@
+/* ════════════════════════════════════════════════════════════════════════
+   SCHOLAR LIVING BUDGET (`lb-`) — /budget/:scholar
+   Renders inside ScholarShell, so every colour here reads the scoped
+   --ds-* surface vars. That means the dark theme needs no overrides in
+   this file: shell.css remaps --ds-* once under html[data-theme='dark']
+   and these rules follow automatically.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── month switcher ── */
+.lb-monthbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.lb-monthnav {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--ds-rule);
+  background: var(--ds-surface);
+  color: var(--ds-soft);
+  border-radius: 8px;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+.lb-monthnav:hover { border-color: var(--ngs-gold); color: var(--ngs-gold); }
+.lb-monthlabel {
+  font-family: var(--ngs-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+}
+
+.lb-error {
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--ds-bad);
+  background: rgba(224, 106, 118, 0.08);
+  color: var(--ds-bad);
+  font-size: 13px;
+}
+
+.lb-loading,
+.lb-empty {
+  padding: 28px;
+  text-align: center;
+  color: var(--ds-muted);
+  font-size: 14px;
+}
+
+/* ── the headline number ── */
+.lb-total-card {
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-rule);
+  border-radius: 14px;
+  box-shadow: var(--ds-shadow);
+  padding: 26px 28px;
+  margin-bottom: 22px;
+}
+.lb-total-label {
+  font-family: var(--ngs-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+  margin-bottom: 6px;
+}
+.lb-total-value {
+  font-family: var(--ngs-serif);
+  font-size: 42px;
+  line-height: 1.05;
+  color: var(--ds-ink);
+  letter-spacing: -0.02em;
+}
+.lb-total-hint {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ds-muted);
+  max-width: 52ch;
+}
+
+.lb-rollups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ds-rule);
+}
+.lb-rollup {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--ds-surface-2);
+}
+.lb-rollup-label {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+}
+.lb-rollup-value {
+  font-family: var(--ngs-mono);
+  font-size: 12px;
+  color: var(--ds-ink);
+}
+
+/* ── category rows ── */
+.lb-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.lb-row {
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-rule);
+  border-radius: 11px;
+  box-shadow: var(--ds-shadow);
+  overflow: hidden;
+}
+/* Sinking funds carry a gold edge — they behave differently from everything
+   else on the page (they accrue toward a cost that is not due this month),
+   so they read differently too. */
+.lb-row.is-sinking { border-left: 3px solid var(--ngs-gold); }
+
+.lb-row-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 15px;
+}
+.lb-row-name {
+  font-size: 15px;
+  color: var(--ds-ink);
+  margin-bottom: 3px;
+}
+.lb-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.lb-kind {
+  font-family: var(--ngs-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+}
+.lb-kind-sinking { color: var(--ngs-gold); }
+.lb-accrual {
+  font-family: var(--ngs-mono);
+  font-size: 11px;
+  color: var(--ds-muted);
+}
+
+.lb-row-amount {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.lb-peso { color: var(--ds-muted); font-size: 14px; }
+.lb-amount-input {
+  width: 108px;
+  padding: 7px 9px;
+  border: 1px solid var(--ds-rule);
+  border-radius: 8px;
+  background: var(--ds-surface-2);
+  color: var(--ds-ink);
+  font-family: var(--ngs-mono);
+  font-size: 14px;
+  text-align: right;
+}
+.lb-amount-input:focus {
+  outline: none;
+  border-color: var(--ngs-gold);
+  background: var(--ds-surface);
+}
+/* Spinners steal width and are useless on a phone keypad. */
+.lb-amount-input::-webkit-outer-spin-button,
+.lb-amount-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.lb-amount-input { -moz-appearance: textfield; appearance: textfield; }
+
+.lb-row-toggle {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--ds-muted);
+  font-size: 16px;
+  line-height: 1;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.lb-row-toggle:hover { background: var(--ds-surface-2); color: var(--ds-ink); }
+
+/* ── inline edit drawer ── */
+.lb-row-edit {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 15px 16px;
+  border-top: 1px solid var(--ds-rule);
+  background: var(--ds-surface-2);
+}
+.lb-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 150px;
+  flex: 1 1 150px;
+}
+.lb-field > span {
+  font-family: var(--ngs-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+}
+.lb-field input,
+.lb-field select {
+  padding: 7px 9px;
+  border: 1px solid var(--ds-rule);
+  border-radius: 8px;
+  background: var(--ds-surface);
+  color: var(--ds-ink);
+  font-size: 13px;
+  font-family: var(--ngs-sans);
+}
+.lb-field input:focus,
+.lb-field select:focus { outline: none; border-color: var(--ngs-gold); }
+
+.lb-remove {
+  flex: 0 0 auto;
+  align-self: flex-end;
+  padding: 7px 12px;
+  border: 1px solid var(--ds-rule);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ds-bad);
+  font-size: 12px;
+  cursor: pointer;
+}
+.lb-remove:hover { border-color: var(--ds-bad); }
+
+/* ── add your own ── */
+.lb-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 26px;
+}
+.lb-add-name {
+  flex: 1 1 200px;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px dashed var(--ds-rule);
+  border-radius: 9px;
+  background: var(--ds-surface);
+  color: var(--ds-ink);
+  font-size: 14px;
+  font-family: var(--ngs-sans);
+}
+.lb-add-name:focus { outline: none; border-style: solid; border-color: var(--ngs-gold); }
+.lb-add select {
+  padding: 9px 10px;
+  border: 1px solid var(--ds-rule);
+  border-radius: 9px;
+  background: var(--ds-surface);
+  color: var(--ds-ink);
+  font-size: 13px;
+}
+.lb-add button {
+  padding: 9px 20px;
+  border: none;
+  border-radius: 9px;
+  background: var(--ngs-navy);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+.lb-add button:disabled { opacity: 0.45; cursor: default; }
+
+/* ── commonly-forgotten prompts ── */
+.lb-prompts {
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-rule);
+  border-radius: 14px;
+  padding: 20px 22px 22px;
+}
+.lb-prompts-title {
+  font-family: var(--ngs-display);
+  font-size: 19px;
+  font-weight: 400;
+  color: var(--ds-ink);
+  margin: 0 0 5px;
+}
+.lb-prompts-sub {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ds-muted);
+  max-width: 56ch;
+  margin: 0 0 14px;
+}
+.lb-prompt-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.lb-chip {
+  padding: 7px 13px;
+  border: 1px solid var(--ds-rule);
+  border-radius: 999px;
+  background: var(--ds-surface-2);
+  color: var(--ds-soft);
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.lb-chip:hover {
+  border-color: var(--ngs-gold);
+  background: var(--ds-gold-tint);
+  color: var(--ds-ink);
+}
+.lb-chip:disabled { opacity: 0.5; cursor: default; }
+
+/* ── phone ── */
+@media (max-width: 560px) {
+  .lb-total-value { font-size: 34px; }
+  .lb-row-main { grid-template-columns: minmax(0, 1fr) auto; row-gap: 10px; }
+  .lb-row-toggle { grid-column: 2; grid-row: 1; }
+  .lb-row-amount { grid-column: 1 / -1; justify-content: flex-start; }
+  .lb-amount-input { width: 100%; text-align: left; }
+}
