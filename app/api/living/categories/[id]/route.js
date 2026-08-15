@@ -44,9 +44,12 @@ export const PATCH = withErrorHandling(async (request, { params }) => {
     return Number.isFinite(n) ? n : null;
   };
 
-  const target = 'sinking_target_php' in body
+  // Clamped: a negative total cost yields a negative monthly accrual, which
+  // renders to the scholar as "save -₱400/month".
+  const rawTarget = 'sinking_target_php' in body
     ? asNum(body.sinking_target_php)
     : cur.sinking_target_php;
+  const target = rawTarget === null || rawTarget === undefined ? null : Math.max(0, Number(rawTarget));
 
   const rawMonths = 'sinking_months' in body ? asNum(body.sinking_months) : cur.sinking_months;
   const months = rawMonths === null ? null : Math.max(1, Math.round(rawMonths));

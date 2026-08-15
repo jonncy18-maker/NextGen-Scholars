@@ -247,6 +247,10 @@ export function LivingBudget({ scholarKey }) {
         scholarKey={scholarKey}
         name={fallback.name}
         sessionExpired={sessionExpired}
+        // Safe here, and ONLY here: every fetch on this screen sends
+        // ?scholar=, so a mentor sees exactly one scholar's budget. See the
+        // note on mayView() before adding this to another screen.
+        allowMentor
         onUnlock={(me) => {
           setIsMentor(me?.role === 'mentor');
           setSessionExpired(false);
@@ -322,7 +326,9 @@ export function LivingBudget({ scholarKey }) {
           <BudgetAskPanel
             scholarKey={scholarKey}
             month={month}
-            categories={active}
+            // All categories, not just active ones, so an op naming an
+            // archived category still renders with its real name.
+            categories={cats ?? []}
             onApplied={refresh}
           />
 

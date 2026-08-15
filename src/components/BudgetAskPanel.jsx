@@ -79,7 +79,10 @@ export function BudgetAskPanel({ scholarKey, month, categories, onApplied }) {
 
     try {
       const res = await api.post('/ask-budget', { scholar: scholarKey, month, text: q });
-      if (res.kind === 'proposal') setProposal(res);
+      // Freeze the month the proposal was generated against. She can page to a
+      // different month between Ask and Apply, and writing September's changes
+      // into October is both wrong and invisible.
+      if (res.kind === 'proposal') setProposal({ ...res, month });
       else setAnswer(res.text);
       setText('');
     } catch (err) {
@@ -93,6 +96,7 @@ export function BudgetAskPanel({ scholarKey, month, categories, onApplied }) {
     if (!proposal || applying) return;
     setApplying(true);
     setError(null);
+    const applyMonth = proposal.month || month;
 
     try {
       // Creates run first so a set_plan on a brand-new category has an id to
@@ -109,7 +113,7 @@ export function BudgetAskPanel({ scholarKey, month, categories, onApplied }) {
         });
         const created = Array.isArray(rows) ? rows[0] : rows;
         if (created?.id && op.planned_php > 0) {
-          await setLivingPlan({ month, category_id: created.id, planned_php: op.planned_php });
+          await setLivingPlan({ month: applyMonth, category_id: created.id, planned_php: op.planned_php });
         }
       }
 
@@ -120,7 +124,7 @@ export function BudgetAskPanel({ scholarKey, month, categories, onApplied }) {
         } else if (op.op === 'archive_category') {
           await deleteLivingCategory(op.id);
         } else if (op.op === 'set_plan') {
-          await setLivingPlan({ month, category_id: op.category_id, planned_php: op.planned_php });
+          await setLivingPlan({ month: applyMonth, category_id: op.category_id, planned_php: op.planned_php });
         }
       }
 
@@ -128,7 +132,16 @@ export function BudgetAskPanel({ scholarKey, month, categories, onApplied }) {
       setAnswer('Done — your budget has been updated.');
       onApplied?.();
     } catch (err) {
-      setError(err?.message || 'Some changes could not be applied.');
+      setError(
+        (err?.message || 'Some changes could not be applied.') +
+        ' Some changes may have gone through — check the list above and ask again for anything missing.'
+      );
+      // Clear the proposal even though it only partly applied. Leaving it on
+      // screen with a live Apply button invites a retry that replays the ops
+      // that already succeeded: creates and amounts are idempotent, but a
+      // repeated archive hits an already-removed row, 404s, and masks the
+      // original error behind a different one.
+      setProposal(null);
       // Reload regardless: a partial apply means what's on screen is stale.
       onApplied?.();
     } finally {

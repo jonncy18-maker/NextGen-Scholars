@@ -96,7 +96,7 @@ export const POST = withErrorHandling(async (request) => {
   // Existing names for this scholar, archived ones included — a name is taken
   // whether or not the category is currently visible.
   const existing = await sql`
-    select id, name, archived_at from living_category where scholar = ${scholar}
+    select * from living_category where scholar = ${scholar}
   `;
   const byName = new Map(existing.map(r => [r.name.toLowerCase(), r]));
 
@@ -122,8 +122,15 @@ export const POST = withErrorHandling(async (request) => {
           returning *
         `;
         rows.push(row);
+      } else {
+        // Already active (or archived with restore suppressed): return the
+        // existing row rather than nothing. Callers use the returned id to
+        // attach a planned amount — the AI panel's "add haircuts at ₱300"
+        // silently dropped the ₱300 when the name already existed, because a
+        // skipped create came back as an empty array and looked like success.
+        rows.push(prior);
       }
-      continue;   // already active — nothing to do
+      continue;
     }
 
     // `on conflict do nothing` against the (scholar, lower(name)) unique index
@@ -140,7 +147,17 @@ export const POST = withErrorHandling(async (request) => {
       on conflict (scholar, lower(name)) do nothing
       returning *
     `;
-    if (inserted[0]) rows.push(inserted[0]);
+    if (inserted[0]) {
+      rows.push(inserted[0]);
+    } else {
+      // Lost the race — another request inserted this name between our check
+      // and our insert. Return the winner's row so the caller still gets an id.
+      const [winner] = await sql`
+        select * from living_category
+        where scholar = ${scholar} and lower(name) = ${c.name.toLowerCase()}
+      `;
+      if (winner) rows.push(winner);
+    }
   }
 
   return json(rows, { status: rows.length ? 201 : 200 });

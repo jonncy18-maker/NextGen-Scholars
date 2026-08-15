@@ -2,7 +2,7 @@ import { sql } from '../../../lib/db.js';
 import { requireScholarOwn, AuthError } from '../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../lib/http.js';
 import { enforceRateLimit, readJsonBody } from '../../../lib/rate-limit.js';
-import { resolveBudgetRead, resolveBudgetOps } from '../../../lib/ai/budget.js';
+import { resolveBudgetRead, resolveBudgetOps, looksLikeWriteIntent } from '../../../lib/ai/budget.js';
 
 // Scoped per-caller — must never be cached by Next.js or the CDN.
 export const dynamic = 'force-dynamic';
@@ -70,7 +70,11 @@ export const POST = withErrorHandling(async (request) => {
 
   // Tier 1: answer it here if we can. Free, instant, and the arithmetic is
   // done on real rows rather than guessed by a language model.
-  const direct = resolveBudgetRead(text, state);
+  //
+  // Skipped entirely when she's asking for a CHANGE. The read matchers are
+  // substring tests, so "set my food total to 3000" would otherwise match
+  // "total" and come back with her monthly total while changing nothing.
+  const direct = looksLikeWriteIntent(text) ? null : resolveBudgetRead(text, state);
   if (direct) return json({ kind: 'answer', tier: 1, text: direct });
 
   const apiKey = process.env.GOOGLE_AI_KEY;
