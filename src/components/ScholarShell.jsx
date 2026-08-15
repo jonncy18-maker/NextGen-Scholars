@@ -6,7 +6,7 @@ import { ThemeToggle } from './ThemeToggle.jsx';
 import { SignOutButton } from './SignOutButton.jsx';
 import {
   IcnGrid, IcnWallet, IcnBook, IcnGlobe, IcnClock,
-  IcnStar, IcnPlane, IcnHome, IcnSignOut, IcnUpdate,
+  IcnStar, IcnPlane, IcnHome, IcnSignOut, IcnUpdate, IcnPie,
 } from './ShellIcons.jsx';
 import { useAppUpdate } from '../hooks/useAppUpdate.js';
 
@@ -39,6 +39,9 @@ export function scholarNavItems(scholarKey, active) {
   return [
     { key: 'overview', href: `/home/${scholarKey}`, label: 'Overview', icon: <IcnGrid size={16} /> },
     { key: 'finances', href: `/entry?scholar=${scholarKey}`, label: 'Finances', icon: <IcnWallet size={16} /> },
+    // The scholar's OWN living budget (her allowance), distinct from
+    // 'finances' above, which is the sponsor-funded expense entry.
+    { key: 'budget', href: `/budget/${scholarKey}`, label: 'My Budget', icon: <IcnPie size={16} /> },
     { key: 'academics', href: `/grades/${scholarKey}`, label: 'Academics', icon: <IcnBook size={16} /> },
     !expensesOnly && { key: 'english', href: `/english/${scholarKey}`, label: 'English (OET)', icon: <IcnGlobe size={16} /> },
     !expensesOnly && { key: 'immersion', href: 'https://next-gen-immersion.vercel.app/', label: 'Immersion App', icon: <IcnClock size={16} />, external: true },

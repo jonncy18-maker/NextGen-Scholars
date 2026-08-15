@@ -22,6 +22,13 @@ auditing the schema.
   polling (added during the migration to 7 tables: `activity_log`, `alerts`,
   `career_steps`, `documents`, `expense_submissions`, `expenses`,
   `grade_entries`) — never committed either.
+- `living_budget.sql` — the **scholar's own** living-expense budget
+  (`living_category`, `living_plan`, `allowance`), added 2026-08 for the dorm
+  move. Unlike the files above, this one **was** applied to Neon at the time it
+  was written, so the repo and the live database agree. Read its header before
+  touching either ledger: `budgets` (in `schema.sql`) is the *program's*
+  per-semester scholarship budget, these tables are the *scholar's* own money,
+  and summing across the two double-counts every peso of allowance.
 
 The Deno Edge Functions that used to live in `supabase/functions/` were
 ported to `app/api/{ask,ask-scholar,ask-public}/route.js` in Phase B5 and

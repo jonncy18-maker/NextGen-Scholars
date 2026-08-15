@@ -19,6 +19,12 @@ const SCHOLAR_SCOPED = {
   alerts: 'scholar',
   deadlines: 'scholar',
   actions: 'scholar',
+  // The scholar's OWN living budget. Note `budgets` above is a different
+  // thing entirely — the program's per-semester scholarship budget. See
+  // db/living_budget.sql before summing anything across the two.
+  living_category: 'scholar',
+  living_plan: 'scholar',
+  allowance: 'scholar',
 };
 
 async function fetchTable(table, { scholarKey }) {
@@ -38,6 +44,7 @@ async function fetchTable(table, { scholarKey }) {
 const ALL_TABLES = [
   'config', 'scholars', 'academics', 'milestones', 'travels',
   'budgets', 'expenses', 'alerts', 'deadlines', 'actions',
+  'living_category', 'living_plan', 'allowance',
 ];
 
 export const GET = withErrorHandling(async (request) => {

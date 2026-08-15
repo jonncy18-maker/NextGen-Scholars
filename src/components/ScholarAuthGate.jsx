@@ -11,7 +11,33 @@ import { api } from '../lib/api.js';
 // sessionExpired: true when this gate is showing because a live session died
 // mid-use, not the normal first-visit case — shown as a plain-language banner
 // so a forced re-sign-in never reads as an unexplained logout.
-export function ScholarAuthGate({ scholarKey, name, onUnlock, sessionExpired }) {
+//
+// `allowMentor` lets the mentor through for ANY scholar's page. It is OPT-IN,
+// per screen, and must stay that way.
+//
+// A mentor's scholar_key is null by design (`requireScholarOwn`), so the
+// scholarKey equality test alone locks the mentor out of every scholar route.
+// Making that unconditional looks harmless — the mentor is allowed to see this
+// data — but it is not, because these screens were all written on the
+// assumption that only the owning scholar reaches them, and so most of them
+// never scope their fetches: /api/bootstrap, /grades, /english/periods and
+// /english/sessions all return EVERY scholar's rows to a mentor caller.
+//
+// The concrete danger isn't disclosure, it's corruption. EnglishTracking
+// recomputes and upserts a forecast row on load; unscoped, it would sum every
+// scholar's sessions and write that total against one scholar's name, with no
+// button pressed and no error shown. Others would render cross-scholar sums
+// labelled as one named person, which is worse than an error page.
+//
+// So: only pass allowMentor from a screen that scopes every fetch by
+// scholarKey. LivingBudget does (`?scholar=` on both reads). If you add it
+// elsewhere, scope that screen's fetches first.
+function mayView(me, scholarKey, allowMentor) {
+  if (allowMentor && me?.role === 'mentor') return true;
+  return me?.scholarKey === scholarKey;
+}
+
+export function ScholarAuthGate({ scholarKey, name, onUnlock, sessionExpired, allowMentor = false }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -35,7 +61,7 @@ export function ScholarAuthGate({ scholarKey, name, onUnlock, sessionExpired }) 
       if (!data?.session) { setCheckingSession(false); return; }
       try {
         const me = await api.get('/me');
-        if (!cancelled && me.scholarKey === scholarKey) onUnlock();
+        if (!cancelled && mayView(me, scholarKey, allowMentor)) onUnlock(me);
       } catch {
         // fall through to the sign-in form
       } finally {
@@ -43,7 +69,7 @@ export function ScholarAuthGate({ scholarKey, name, onUnlock, sessionExpired }) 
       }
     }).catch(() => { if (!cancelled) setCheckingSession(false); });
     return () => { cancelled = true; controller.abort(); };
-  }, [scholarKey, onUnlock]);
+  }, [scholarKey, onUnlock, allowMentor]);
 
   useEffect(() => {
     if (!checkingSession) inputRef.current?.focus();
@@ -74,14 +100,14 @@ export function ScholarAuthGate({ scholarKey, name, onUnlock, sessionExpired }) 
 
     try {
       const me = await api.get('/me');
-      if (me.scholarKey !== scholarKey) {
+      if (!mayView(me, scholarKey, allowMentor)) {
         invalidateToken();
         await authClient.signOut();
         setError("This account isn't set up for this portal yet.");
         setLoading(false);
         return;
       }
-      onUnlock();
+      onUnlock(me);
     } catch {
       invalidateToken();
       await authClient.signOut();

@@ -119,3 +119,81 @@ export const SEMESTER_OPTIONS = [
   'Y4S1',   'Y4S2',
   'PostY1', 'PostY2', 'PostY3', 'PostY4',
 ];
+
+// ── Scholar living budget (/budget/:scholar) ────────────────────────────────
+// These are for the SCHOLAR'S OWN living-expense budget — her allowance and how
+// she spends it. They are NOT related to EXPENSE_CATS above, which are the
+// mentor's sponsor categories (Tuition, Uniforms, Books), nor to the `budgets`
+// table, which is the program's per-semester scholarship budget. See
+// db/living_budget.sql for why the two ledgers must never be summed together.
+//
+// Categories themselves are USER-DEFINED at runtime and live in the
+// living_category table — the lists below are a starting template, not a
+// closed enum. Anything here can be renamed or archived by the scholar, and
+// she can add categories that appear nowhere in this file.
+
+// What the app reasons about, regardless of what she names a category.
+export const LIVING_KINDS = [
+  { key: 'fixed',    label: 'Fixed',    hint: 'Same amount every month — rent, wifi' },
+  { key: 'variable', label: 'Variable', hint: 'Changes month to month — food, fuel' },
+  { key: 'sinking',  label: 'Sinking',  hint: "Not billed monthly — save a little each month for it" },
+];
+
+// Stable grouping so scholars' self-named categories stay comparable to each
+// other in the mentor view (April and Nathalie will invent different names).
+export const LIVING_ROLLUPS = [
+  { key: 'housing',   label: 'Housing'   },
+  { key: 'food',      label: 'Food'      },
+  { key: 'transport', label: 'Transport' },
+  { key: 'school',    label: 'School'    },
+  { key: 'personal',  label: 'Personal'  },
+  { key: 'savings',   label: 'Savings'   },
+];
+
+// Auto-created the first time a scholar opens their budget. A blank page is
+// both paralysing and counterproductive — it guarantees the easy-to-forget
+// categories stay forgotten. Every one of these can be renamed or archived.
+export const LIVING_SEED_CATEGORIES = [
+  { name: 'Dorm Rent',               kind: 'fixed',    rollup: 'housing'   },
+  { name: 'Food',                    kind: 'variable', rollup: 'food'      },
+  { name: 'Fuel',                    kind: 'variable', rollup: 'transport' },
+  { name: 'Parking',                 kind: 'fixed',    rollup: 'transport' },
+  { name: 'Load & Data',             kind: 'fixed',    rollup: 'personal'  },
+  { name: 'Laundry',                 kind: 'variable', rollup: 'personal'  },
+  { name: 'Toiletries',              kind: 'variable', rollup: 'personal'  },
+  { name: 'Printing & Photocopying', kind: 'variable', rollup: 'school'    },
+  { name: 'Savings',                 kind: 'variable', rollup: 'savings'   },
+];
+
+// Offered as one-tap additions, NOT auto-created. These are the costs that
+// ambush a first budget: they are real, they are irregular, and nobody
+// remembers them in month one. The motorcycle ones especially — registration
+// and insurance arrive annually and land as a crisis if never accrued for.
+export const LIVING_PROMPTS = [
+  { name: 'Motorcycle Maintenance', kind: 'sinking',  rollup: 'transport', sinkingMonths: 3,
+    hint: 'Oil, tires, brakes, chain' },
+  { name: 'LTO Registration',       kind: 'sinking',  rollup: 'transport', sinkingMonths: 12,
+    hint: 'Once a year' },
+  { name: 'TPL Insurance',          kind: 'sinking',  rollup: 'transport', sinkingMonths: 12,
+    hint: 'Once a year' },
+  { name: 'Rain Gear',              kind: 'sinking',  rollup: 'transport', sinkingMonths: 6,
+    hint: 'Rainy season does not pause clinicals' },
+  { name: 'Clinical Duty Fees',     kind: 'variable', rollup: 'school',
+    hint: 'Varies by rotation' },
+  { name: 'Uniform & Scrubs',       kind: 'sinking',  rollup: 'school',    sinkingMonths: 6,
+    hint: 'Replacement, not the first set' },
+  { name: 'Nursing Kit',            kind: 'sinking',  rollup: 'school',    sinkingMonths: 6,
+    hint: 'Steth, BP cuff, penlight' },
+  { name: 'Medicine & Health',      kind: 'variable', rollup: 'personal'   },
+  { name: 'Emergency Buffer',       kind: 'variable', rollup: 'savings',
+    hint: 'For the month something goes wrong' },
+];
+
+// Monthly accrual for a sinking category: total cost spread over the months
+// until it is due. Returns 0 unless both halves are set.
+export function sinkingMonthly(cat) {
+  const target = Number(cat?.sinking_target_php);
+  const months = Number(cat?.sinking_months);
+  if (!target || !months || months <= 0) return 0;
+  return target / months;
+}

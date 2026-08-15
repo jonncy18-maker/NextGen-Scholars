@@ -112,3 +112,43 @@ export async function updatePeriodWeeklyTargets(periodId, weeklyTargetHours, wee
   });
   api.afterWrite();
 }
+
+// ── Scholar living budget (/budget/:scholar) ─────────────────────────────────
+// The scholar's own allowance budget with user-defined categories. Separate in
+// every way from the mentor's `expenses`/`budgets` — see db/living_budget.sql.
+
+// Accepts one category or an array (used to seed the starter set). The server
+// skips names this scholar already has, so calling it twice is safe.
+//
+// `restoreArchived` decides what happens when the name exists but is archived:
+// true (default) brings it back, which is what a deliberate add should do.
+// The seed passes false so that re-opening a budget whose categories were all
+// archived doesn't resurrect them with the template's settings.
+export async function createLivingCategories(scholar, categories, { restoreArchived = true } = {}) {
+  const rows = await api.post('/living/categories', Array.isArray(categories)
+    ? { scholar, categories, restoreArchived }
+    : { scholar, ...categories, restoreArchived });
+  api.afterWrite();
+  return rows;
+}
+
+export async function updateLivingCategory(id, fields) {
+  const row = await api.patch(`/living/categories/${id}`, fields);
+  api.afterWrite();
+  return row;
+}
+
+// Archives rather than destroys when the category already has plan history;
+// the response says which happened ({ deleted, archived }).
+export async function deleteLivingCategory(id) {
+  const res = await api.del(`/living/categories/${id}`);
+  api.afterWrite();
+  return res;
+}
+
+// Upsert on (category_id, month) — safe to call repeatedly as she revises.
+export async function setLivingPlan({ month, category_id, planned_php, note }) {
+  const row = await api.put('/living/plan', { month, category_id, planned_php, note });
+  api.afterWrite();
+  return row;
+}

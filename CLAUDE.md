@@ -85,6 +85,7 @@ in Vercel's project env vars only.
 | `/grades/:scholar` | `GradeEntry` | GPA / grade entry. Real Better Auth sign-in. |
 | `/vacation/:scholar` | `VacationTracker` | Reward-trip tracker. Real Better Auth sign-in. |
 | `/milestones/:scholar` | `MilestonesTracker` | Reward-milestone tracker. Real Better Auth sign-in. |
+| `/budget/:scholar` | `LivingBudget` | Scholar's **own** living-expense budget with user-defined categories. Real Better Auth sign-in. Not the program budget — see "Two money ledgers" below. |
 
 ## Files
 
@@ -118,7 +119,8 @@ in Vercel's project env vars only.
 | `app/api/public/profile/[key]/route.js` | Public, unauthenticated curated whitelist backing the public profile pages — see "Public-profile dataset leak" below. |
 | `app/api/me/route.js` | Returns `{ role, scholarKey }` for the caller's own token — used by `ScholarAuthGate.jsx` (scholar pages) and `navigator.jsx` (mentor gate) to verify a session actually matches the expected role/scholar before trusting it. |
 | `app/api/{ask,ask-scholar,ask-public}/route.js` | Gemini AI orchestrators. `ask` is mentor-only; `ask-scholar`/`ask-public` unauthenticated by design (see "Key Rules for Claude Code"). |
-| `src/components/ScholarAuthGate.jsx` | Real Better Auth sign-in gate for all three scholar-facing pages (Claire, April, Janndilyne). |
+| `src/components/ScholarAuthGate.jsx` | Real Better Auth sign-in gate for all scholar-facing pages. Admits a scholar for **her own** key, and the **mentor for any** scholar (a mentor's `scholar_key` is null by design, so the old equality check locked the mentor out of every scholar route). Both the mount-time session check and the sign-in path use the same `mayView()` test. |
+| `app/api/ask-budget/route.js` + `lib/ai/budget.js` | AI for the living budget. **Authenticated** (`requireScholarOwn`) — unlike `ask-scholar`, because it can propose mutations. Deterministic Tier-1 reads answer common questions with no LLM call; anything else goes to Gemini, which **proposes operations only**. The client shows them for approval and applies them via `/api/living/**`, so the AI path has no privilege the manual path lacks. Budget state is read server-side from Neon, never accepted from the caller. |
 | `src/lib/auth-client.js` | Better Auth React client (`createAuthClient` + `jwtClient()` plugin) pointed at the Neon Auth base URL. `getToken()` reads the JWT off the `set-auth-jwt` response header. |
 | `src/lib/api.js` | Fetch wrapper for `app/api/**` — Bearer token per request via `getToken()`, one 401-retry, `afterWrite()` poke hook consumed by `useChanges.js`. |
 | `gh-pages-redirect/` | Static redirect stub (`index.html` + `404.html`, rafgraph/spa-github-pages trick) published to GitHub Pages by `.github/workflows/deploy.yml` — forwards old bookmarks/hash routes to the Vercel domain. No build step; not part of the Next.js app. |
@@ -227,6 +229,17 @@ between the two apps.
   corrupting the bucket totals the public profile pages publish; in `tier3.js` it left
   Gemini no correct category to pick when ingesting a flight or hotel receipt. Both now
   import the shared list — never re-inline it.
+- **Two money ledgers, never summed (2026-08, PR #243).** `expenses` + `budgets` are the
+  *program's* money: what the scholarship spends on a scholar, and its per-semester plan.
+  `living_category` / `living_plan` / `allowance` (`db/living_budget.sql`, backing
+  `/budget/:scholar`) are the *scholar's own* money: her allowance and how she chooses to
+  spend it. The allowance is **one** row in `expenses` (`Living Expenses` / `life`) and
+  simultaneously the **entire income line** on her side — so summing her line items into
+  `expenses` as well double-counts every peso and inflates the bucket totals
+  `app/api/public/profile/[key]` publishes. `allowance.expense_id` is the only join between
+  the two. Likewise `EXPENSE_CATS` are the mentor's sponsor categories and have nothing to
+  do with her categories, which are user-defined rows, not a constant. `BudgetSection.jsx`
+  and the `budgets` table remain the *program* budget — don't repurpose either.
 - **`scholars-data.js` narrative drift** — it is the source of truth for narrative/profile
   fields. Profile pages merge Neon operational data on top at runtime. Keep
   `publicProfile` blocks in sync with any Neon-controlled fields (e.g. `currentSem`,
