@@ -86,6 +86,13 @@ export const POST = withErrorHandling(async (request) => {
   const cleaned  = incoming.map(clean).filter(c => c.name);
   if (cleaned.length === 0) return json({ error: 'name required' }, { status: 400 });
 
+  // Whether a name that exists but is archived should be brought back.
+  // Tapping a chip or typing a name she archived earlier SHOULD restore it —
+  // that's a deliberate act. The first-visit seed should NOT: if she archived
+  // every category, re-posting the starter set would resurrect all nine and
+  // overwrite the kind/rollup/sinking settings she'd customised on them.
+  const restoreArchived = body.restoreArchived !== false;
+
   // Existing names for this scholar, archived ones included — a name is taken
   // whether or not the category is currently visible.
   const existing = await sql`
@@ -102,7 +109,7 @@ export const POST = withErrorHandling(async (request) => {
     // reappeared in "Easy to forget", tapping it produced no visible change,
     // and no amount of retrying ever would.
     if (prior) {
-      if (prior.archived_at) {
+      if (prior.archived_at && restoreArchived) {
         const [row] = await sql`
           update living_category set
             archived_at = null,

@@ -85,6 +85,7 @@ in Vercel's project env vars only.
 | `/grades/:scholar` | `GradeEntry` | GPA / grade entry. Real Better Auth sign-in. |
 | `/vacation/:scholar` | `VacationTracker` | Reward-trip tracker. Real Better Auth sign-in. |
 | `/milestones/:scholar` | `MilestonesTracker` | Reward-milestone tracker. Real Better Auth sign-in. |
+| `/budget/:scholar` | `LivingBudget` | Scholar's **own** living-expense budget with user-defined categories. Real Better Auth sign-in. Not the program budget — see "Two money ledgers" below. |
 
 ## Files
 
@@ -227,6 +228,17 @@ between the two apps.
   corrupting the bucket totals the public profile pages publish; in `tier3.js` it left
   Gemini no correct category to pick when ingesting a flight or hotel receipt. Both now
   import the shared list — never re-inline it.
+- **Two money ledgers, never summed (2026-08, PR #243).** `expenses` + `budgets` are the
+  *program's* money: what the scholarship spends on a scholar, and its per-semester plan.
+  `living_category` / `living_plan` / `allowance` (`db/living_budget.sql`, backing
+  `/budget/:scholar`) are the *scholar's own* money: her allowance and how she chooses to
+  spend it. The allowance is **one** row in `expenses` (`Living Expenses` / `life`) and
+  simultaneously the **entire income line** on her side — so summing her line items into
+  `expenses` as well double-counts every peso and inflates the bucket totals
+  `app/api/public/profile/[key]` publishes. `allowance.expense_id` is the only join between
+  the two. Likewise `EXPENSE_CATS` are the mentor's sponsor categories and have nothing to
+  do with her categories, which are user-defined rows, not a constant. `BudgetSection.jsx`
+  and the `budgets` table remain the *program* budget — don't repurpose either.
 - **`scholars-data.js` narrative drift** — it is the source of truth for narrative/profile
   fields. Profile pages merge Neon operational data on top at runtime. Keep
   `publicProfile` blocks in sync with any Neon-controlled fields (e.g. `currentSem`,

@@ -189,6 +189,48 @@ Postgres) + Neon Auth (Better Auth). **All phases done**, including Phase D
 
 ---
 
+## Phase 6 — Scholar living budget (2026-08, PR #243)
+
+Claire moved into a dorm with two classmates — clinicals plus classes leave her
+about 2–3 hours of sleep, and commuting home would take what's left. That gives
+her, for the first time, living expenses **she** controls rather than costs the
+program pays directly. Individual scholar budgets were never part of the
+program before this.
+
+Goal is planning, not tracking: she thinks through what her expenses will be and
+produces an estimate, which becomes the defensible monthly figure to send her.
+
+| Step | State | Notes |
+|---|---|---|
+| Phase 1 — planning | ✅ Done (2026-08-15) | `/budget/:scholar`. She defines her **own** categories (`living_category`) and sets a planned amount per month (`living_plan`). Seeded starter set + an "easy to forget" prompt list weighted toward the motorcycle's annual costs. |
+| Phase 2 — actuals | 🔵 Planned | Envelope entry, sinking-fund accrual balances, plan-vs-actual, mentor rollup. Deliberately deferred until a month of real numbers shows which categories she actually uses. |
+| `/api/changes` polling | 🔵 Planned | The living tables aren't in the polling map, so a mentor edit won't surface in an open scholar tab. Fine while the mentor has no living-budget UI; wire before Phase 2. |
+
+**Do not merge these with the program's money.** `budgets` is the *scholarship's*
+per-semester budget and `EXPENSE_CATS` are the *mentor's* sponsor categories;
+neither relates to this. The allowance sent is one row in `expenses` and
+simultaneously the entire income line on her side, so summing her line items
+into `expenses` too would double-count every peso and inflate the bucket totals
+the public profile pages publish. `allowance.expense_id` is the only join
+between the two ledgers. Full rationale in `db/living_budget.sql`'s header.
+
+Design calls worth keeping: categories keyed by id (rename freely, history
+never orphans); archived rather than hard-deleted once they have plan rows; she
+names a category anything but picks a `kind` (`fixed`/`variable`/`sinking`) so
+the app can reason about it; a `rollup` field keeps future scholars'
+self-named categories comparable in the mentor view. No approval workflow — she
+already has one for sponsor expenses, and requiring sign-off on her own budget
+would defeat the exercise. Mentor visibility is unchanged and total.
+
+Built through the Agentic Loop. The isolated audit returned FAIL on the first
+pass with five real defects — most seriously, both GET handlers treated a falsy
+scope as "no filter" and ran unscoped, so a scholar whose nullable
+`user_profile.scholar_key` was unset would have received every scholar's data.
+Every other scholar-scoped route degrades to zero rows instead. Fixed, re-audited
+PASS.
+
+---
+
 ## AI Intelligence Layer
 
 Tiered system — Tier 1 (smart query, no LLM) handles ~80%, escalates to

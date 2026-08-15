@@ -106,5 +106,9 @@ export const DELETE = withErrorHandling(async (request, { params }) => {
     where id = ${id}
     returning *
   `;
+  // The delete can also match zero rows because the category vanished
+  // concurrently rather than because it has history. Don't claim an archive
+  // that didn't happen — the row would simply be missing from the response.
+  if (!row) return json({ error: 'Not found' }, { status: 404 });
   return json({ deleted: false, archived: true, category: row });
 });

@@ -113,7 +113,15 @@ export function LivingBudget({ scholarKey }) {
         // double-mount or a second tab cannot duplicate it.
         if (catRows.length === 0 && seeded.current !== scholarKey) {
           seeded.current = scholarKey;
-          await createLivingCategories(scholarKey, LIVING_SEED_CATEGORIES);
+          try {
+            await createLivingCategories(scholarKey, LIVING_SEED_CATEGORIES, { restoreArchived: false });
+          } catch (err) {
+            // Release the claim, or a failed seed (offline, 500) would leave
+            // her staring at the empty state for the rest of the session with
+            // no retry path short of a full reload.
+            seeded.current = null;
+            throw err;
+          }
           ({ catRows, planMap } = await load());
         }
 

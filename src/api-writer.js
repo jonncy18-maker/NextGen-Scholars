@@ -119,10 +119,15 @@ export async function updatePeriodWeeklyTargets(periodId, weeklyTargetHours, wee
 
 // Accepts one category or an array (used to seed the starter set). The server
 // skips names this scholar already has, so calling it twice is safe.
-export async function createLivingCategories(scholar, categories) {
+//
+// `restoreArchived` decides what happens when the name exists but is archived:
+// true (default) brings it back, which is what a deliberate add should do.
+// The seed passes false so that re-opening a budget whose categories were all
+// archived doesn't resurrect them with the template's settings.
+export async function createLivingCategories(scholar, categories, { restoreArchived = true } = {}) {
   const rows = await api.post('/living/categories', Array.isArray(categories)
-    ? { scholar, categories }
-    : { scholar, ...categories });
+    ? { scholar, categories, restoreArchived }
+    : { scholar, ...categories, restoreArchived });
   api.afterWrite();
   return rows;
 }
