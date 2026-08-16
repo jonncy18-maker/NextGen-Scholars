@@ -11,6 +11,11 @@ function gcFee(n) { return Math.ceil(n / 500) * 15; }
 const peso = n =>
   '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+// What a line item is actually worth. A row carries a quantity (e.g. an
+// "Event fee" of ₱500 ×2), and every other total in the app is amount × qty —
+// reading `amount` alone here understated the transfer for any multi-qty row.
+const lineTotal = e => Number(e.amount || 0) * (Number(e.qty) || 1);
+
 // Scoped GCash transfer helper — shown only on Janndilyne's expense entry view.
 //   • Calculator: Need → Send (gross-up) and Send → Receive (net).
 //   • Picker: select the unsent items a transfer covers.
@@ -45,9 +50,9 @@ export function GcashCalculator({ scholar, onRecordSend }) {
   const cashouts = totalSend > 0 ? Math.ceil(totalSend / 5000) : 0;
 
   // Items she still needs funded = unsent line items.
-  const pending = allExpenses(s).filter(e => e.sent !== 'Yes' && Number(e.amount) > 0);
+  const pending = allExpenses(s).filter(e => e.sent !== 'Yes' && lineTotal(e) > 0);
   const selectedItems = pending.filter(e => selected.has(String(e.id)));
-  const subtotal = selectedItems.reduce((sum, e) => sum + Number(e.amount), 0);
+  const subtotal = selectedItems.reduce((sum, e) => sum + lineTotal(e), 0);
   const recordFee = subtotal > 0 ? gcFee(subtotal) : 0;
 
   function toggle(id) {
@@ -92,7 +97,7 @@ export function GcashCalculator({ scholar, onRecordSend }) {
       if (json.action === 'record_send' && Array.isArray(json.items) && json.items.length > 0) {
         const items = json.items;
         const sem = items[0].sem || s.currentSem || '';
-        const feeAmt = Number(json.fee) || gcFee(items.reduce((sum, it) => sum + Number(it.amount || 0), 0));
+        const feeAmt = Number(json.fee) || gcFee(items.reduce((sum, it) => sum + lineTotal(it), 0));
         onRecordSend?.(scholar, { itemIds: items.map(it => String(it.id)), fee: feeAmt, sem });
         const names = items.map(it => it.item).join(', ');
         flash('ok', `Recorded ₱${feeAmt.toLocaleString('en-PH')} fee · marked sent: ${names}`);
@@ -183,6 +188,7 @@ export function GcashCalculator({ scholar, onRecordSend }) {
             )}
             {pending.map(e => {
               const on = selected.has(String(e.id));
+              const qty = Number(e.qty) || 1;
               return (
                 <button
                   key={e.id}
@@ -190,8 +196,13 @@ export function GcashCalculator({ scholar, onRecordSend }) {
                   className={`gcc-item${on ? ' is-sel' : ''}`}
                   onClick={() => toggle(e.id)}
                 >
-                  <span className="gcc-item-name">{on ? '✓ ' : ''}{e.item}</span>
-                  <span className="gcc-mono">{peso(e.amount)}</span>
+                  <span className="gcc-item-name">
+                    {on ? '✓ ' : ''}{e.item}
+                    {qty > 1 && (
+                      <span className="gcc-item-qty">×{qty} @ {peso(e.amount)}</span>
+                    )}
+                  </span>
+                  <span className="gcc-mono">{peso(lineTotal(e))}</span>
                 </button>
               );
             })}
