@@ -67,6 +67,26 @@ Called when Tier 1 can't answer. Receives full scholar context bundle. Read-only
 
 **Model:** `gemini-2.5-flash`
 
+### Tier 4 — Agent (tool calling, read + write) ✅ 2026-08-13
+
+Gemini function calling over `lib/ai/tools.js`, a registry holding one entry per
+operation a signed-in human can perform manually — the AI's capability parity
+layer. 36 tools for the mentor, 18 for a scholar (role-filtered at declaration
+time, re-checked at execution time).
+
+Covers: expenses (add/edit/delete/mark-sent), submissions (submit/edit/approve/
+reject/resubmit), grades (add/edit/delete/wipe-semester), English periods,
+sessions and scenarios, action items, alerts, scholar semester, career steps,
+program config — plus read tools for every one of those tables.
+
+**Writes never execute inside the model loop.** The loop runs read tools freely;
+the first mutating call halts it and returns a proposal card. Saving requires a
+separate confirmed request. See `CLAUDE.md` → "Tier 4 — the agent" for the three
+invariants (no in-loop writes · untrusted model args · scholar-key pinning) that
+any new tool must preserve.
+
+**Model:** `gemini-2.5-flash` · **Route:** `app/api/agent/route.js` (both roles)
+
 ### Tier 3 — Gemini 2.5 Flash (data ingestion + multimodal)
 
 Called for unstructured input → structured DB write.

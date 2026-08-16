@@ -112,6 +112,10 @@ in Vercel's project env vars only.
 | `lib/http.js` | `json()` + `withErrorHandling()` response helpers for API routes. |
 | `lib/rate-limit.js` | Fixed-window per-IP rate limiter + `readJsonBody()` size cap, backing the two unauthenticated AI routes. Counters live in Neon's `rate_limit` table, not process memory — these are serverless functions, so an in-process counter is per-instance and Vercel scales out under exactly the load the limiter exists to stop. Fails open on DB error. |
 | `lib/ai/{context,tier1,tier2,tier3,action}.js` | Gemini tiered AI layer (context builder, deterministic tier1 SQL resolver, tier2 advisory, tier3 ingestion, GCash action matching). |
+| `lib/ai/tools.js` | **Tool registry** — one entry per operation a signed-in human can perform manually, each declaring `roles`, `mutates`, a Gemini function schema, a plain-English `summarize()` and a handler. The single source of "what the AI can do". |
+| `lib/ai/agent.js` | Tier 4 agent loop — runs Gemini with the registry, executes read tools in-loop, **stops and returns a proposal the moment the model calls a mutating tool**. `runConfirmed()` executes only what the human approved. |
+| `app/api/agent/route.js` | The agent endpoint (`mode: 'plan' | 'confirm'`), open to **both** signed-in roles. `GET` returns the caller's tool inventory. |
+| `src/components/AgentPanel.jsx` | Confirm-card UI for proposed changes (per-row skip, expandable args, per-call save results) + `agentPlan`/`agentConfirm` helpers. Shared by the mentor console and the scholar chat panel. |
 | `src/api-loader.js`, `src/api-writer.js` | Neon-backed data loader/writer, one function per operation, imported by every mentor/scholar screen. |
 | `app/api/bootstrap/route.js` | One-call data fetch scoped by mentor/scholar role (mentor unscoped, scholar filtered to own `scholar_key`). |
 | `app/api/changes/route.js` | Polling endpoint (`?since=` → `{ now, tables }`) consumed by `src/hooks/useChanges.js`. |
@@ -170,6 +174,41 @@ Tier 1 is a deterministic, rule-based SQL resolver (no LLM, ~80% of queries); Ti
 is Gemini advisory; Tier 3 is Gemini 2.5 Flash ingestion (receipts, grade reports).
 See `ROADMAP-AI.md` for full status. The AI layer is Gemini-only; the `GOOGLE_AI_KEY`
 secret lives only in Vercel's project env vars — never in the client.
+
+### Tier 4 — the agent (2026-08-13)
+
+Tiers 1–3 each answer one fixed shape of question and are effectively read-only.
+Tier 4 (`app/api/agent`, `lib/ai/{tools,agent}.js`) gives the AI **capability parity
+with the manual UI**: every operation a signed-in human can perform has exactly one
+entry in `lib/ai/tools.js`, and Gemini reaches them by function calling. 36 tools for
+the mentor role, 18 for a scholar.
+
+Three rules hold this together — break any one and the safety story is gone:
+
+- **Writes never run inside the model loop.** `runPlan()` executes read tools only;
+  the first mutating call ends the loop and comes back as a `proposal`. Writing
+  requires a *second*, human-initiated request (`mode: 'confirm'`), re-authorised
+  against that request's own token. This is structural, not prompted — a prompt
+  injection hidden in an expense note or a scholar's message cannot cause a silent
+  write, only a card a human then rejects.
+- **The model's arguments are untrusted input.** Every handler re-validates:
+  categories and semesters against `src/constants.js`, ids against the real rows.
+  Nothing is passed through to SQL on the model's say-so.
+- **Scholar-role callers are pinned to their own `scholar_key`** inside each handler,
+  from the verified token's `user_profile` row — never from `args.scholar`. This
+  mirrors what the equivalent `app/api/**` route does; when you add a tool touching a
+  scholar-scoped table, carry the `and scholar = <own key>` clause the same way.
+
+**When you add a manual operation, add the matching tool.** The registry is the
+parity contract — a new write endpoint without a tool entry silently makes the two
+surfaces diverge again. Tools that write to expenses must derive `bucket` from
+`CAT_TO_BUCKET` (see the `EXPENSE_CATS` rule below — same corruption risk).
+
+Surfaces: the mentor console routes non-expense change requests to it (`agent`
+intent in `NavigatorAIConsole.jsx`, also selectable manually); `ScholarChatPanel.jsx`
+uses it as its primary path on all scholar pages, falling back to the older
+unauthenticated `/api/ask-scholar` only on 401/503. Existing expense ingest/bulk-edit
+flows keep their purpose-built review cards and are unchanged.
 
 ## Immersion hours integration (2026-07-06)
 
