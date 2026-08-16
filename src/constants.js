@@ -133,10 +133,17 @@ export const SEMESTER_OPTIONS = [
 // she can add categories that appear nowhere in this file.
 
 // What the app reasons about, regardless of what she names a category.
+//
+// `key` is the value stored in living_category.kind and is FIXED by the DB
+// check constraint ('fixed' | 'variable' | 'sinking'). `label` is what a human
+// sees. The two deliberately differ: "Variable"/"Sinking" are budgeting jargon
+// that meant nothing to the scholars using this, so the UI says Flexible and
+// Non-recurring instead. Never rename the keys to match the labels — that is a
+// migration, not a rename.
 export const LIVING_KINDS = [
-  { key: 'fixed',    label: 'Fixed',    hint: 'Same amount every month — rent, wifi' },
-  { key: 'variable', label: 'Variable', hint: 'Changes month to month — food, fuel' },
-  { key: 'sinking',  label: 'Sinking',  hint: "Not billed monthly — save a little each month for it" },
+  { key: 'fixed',    label: 'Fixed',         hint: 'Same amount every month — rent, parking' },
+  { key: 'variable', label: 'Flexible',      hint: 'Changes month to month — food, fuel' },
+  { key: 'sinking',  label: 'Non-recurring', hint: 'Lands later — fare home, gifts, haircut' },
 ];
 
 // Stable grouping so scholars' self-named categories stay comparable to each
@@ -166,28 +173,74 @@ export const LIVING_SEED_CATEGORIES = [
 ];
 
 // Offered as one-tap additions, NOT auto-created. These are the costs that
-// ambush a first budget: they are real, they are irregular, and nobody
-// remembers them in month one. The motorcycle ones especially — registration
-// and insurance arrive annually and land as a crisis if never accrued for.
+// ambush a first budget: real, irregular, and forgotten in month one.
+//
+// ── Everything here must be HER money ──────────────────────────────────────
+// This list used to carry LTO Registration, TPL Insurance, Uniform & Scrubs,
+// Nursing Kit, Rain Gear and Motorcycle Maintenance. Every one of those is
+// PROGRAM-funded — they map onto EXPENSE_CATS ('Motor', 'Uniforms', 'Medical
+// Equipment') and are paid from the scholarship, not from her allowance.
+// Planning them here made her budget for money she never receives and set up
+// exactly the double-count db/living_budget.sql exists to prevent.
+//
+// The genuinely personal lumpy costs cluster around family, home and social
+// obligation — which is what a first-time budgeter actually gets ambushed by.
+// Before adding anything here, ask: does the scholarship pay for this? If yes,
+// it belongs in the mentor's expense tracker, not in her budget.
 export const LIVING_PROMPTS = [
-  { name: 'Motorcycle Maintenance', kind: 'sinking',  rollup: 'transport', sinkingMonths: 3,
-    hint: 'Oil, tires, brakes, chain' },
-  { name: 'LTO Registration',       kind: 'sinking',  rollup: 'transport', sinkingMonths: 12,
-    hint: 'Once a year' },
-  { name: 'TPL Insurance',          kind: 'sinking',  rollup: 'transport', sinkingMonths: 12,
-    hint: 'Once a year' },
-  { name: 'Rain Gear',              kind: 'sinking',  rollup: 'transport', sinkingMonths: 6,
-    hint: 'Rainy season does not pause clinicals' },
-  { name: 'Clinical Duty Fees',     kind: 'variable', rollup: 'school',
-    hint: 'Varies by rotation' },
-  { name: 'Uniform & Scrubs',       kind: 'sinking',  rollup: 'school',    sinkingMonths: 6,
-    hint: 'Replacement, not the first set' },
-  { name: 'Nursing Kit',            kind: 'sinking',  rollup: 'school',    sinkingMonths: 6,
-    hint: 'Steth, BP cuff, penlight' },
-  { name: 'Medicine & Health',      kind: 'variable', rollup: 'personal'   },
-  { name: 'Emergency Buffer',       kind: 'variable', rollup: 'savings',
+  { name: 'Fare Home',         kind: 'sinking',  rollup: 'transport', sinkingMonths: 4,
+    hint: 'Sem break, fiesta, Christmas' },
+  { name: 'Gifts',             kind: 'sinking',  rollup: 'personal',  sinkingMonths: 12,
+    hint: 'Christmas and birthdays land in one brutal month' },
+  { name: 'Fiesta',            kind: 'sinking',  rollup: 'personal',  sinkingMonths: 12,
+    hint: 'Town celebration contribution' },
+  { name: 'Haircut',           kind: 'sinking',  rollup: 'personal',  sinkingMonths: 3 },
+  { name: 'Shoes & Slippers',  kind: 'sinking',  rollup: 'personal',  sinkingMonths: 6,
+    hint: 'Everyday footwear — the program buys clinical shoes' },
+  { name: 'Everyday Clothes',  kind: 'sinking',  rollup: 'personal',  sinkingMonths: 6,
+    hint: 'Not uniforms — those are covered' },
+  { name: 'Dorm Deposit',      kind: 'sinking',  rollup: 'housing',   sinkingMonths: 6,
+    hint: 'If your landlord asks for advance months' },
+  { name: 'Medicine & Health', kind: 'variable', rollup: 'personal'   },
+  { name: 'Emergency Buffer',  kind: 'variable', rollup: 'savings',
     hint: 'For the month something goes wrong' },
 ];
+
+// ── Normalising a rhythm to a month ────────────────────────────────────────
+// An AVERAGE month, deliberately — not the calendar length of the month being
+// edited. A category built from daily items then reads the same figure every
+// month instead of drifting between a 28-day February and a 31-day August.
+// A budget is a plan, not a forecast: a number that moves for reasons she did
+// not cause reads as a bug and ruins month-to-month comparison. Because these
+// are the true averages, the ANNUAL total still comes out exactly right.
+export const MONTH_DAYS  = 365.25 / 12;        // 30.4375
+export const MONTH_WEEKS = MONTH_DAYS / 7;     //  4.3482
+
+export const LIVING_BASES = [
+  { key: 'day',   label: 'day',   per: MONTH_DAYS  },
+  { key: 'week',  label: 'week',  per: MONTH_WEEKS },
+  { key: 'month', label: 'month', per: 1           },
+];
+
+const BASIS_PER = Object.fromEntries(LIVING_BASES.map(b => [b.key, b.per]));
+
+// One line item's contribution to the month, rounded to the peso.
+//
+// Rounding happens PER LINE and the rounded lines are then summed (see
+// itemsTotalPhp). Rounding once at the end would be marginally more accurate
+// but would leave the figures on screen not adding up to the total on screen —
+// which reads as a broken app to the person relying on it.
+export function itemMonthlyPhp(item) {
+  const qty  = Number(item?.qty);
+  const unit = Number(item?.unit_php ?? item?.unitPhp);
+  const per  = BASIS_PER[item?.basis] ?? 1;
+  if (!Number.isFinite(qty) || !Number.isFinite(unit)) return 0;
+  return Math.round(qty * unit * per);
+}
+
+export function itemsTotalPhp(items) {
+  return (items || []).reduce((sum, it) => sum + itemMonthlyPhp(it), 0);
+}
 
 // Monthly accrual for a sinking category: total cost spread over the months
 // until it is due. Returns 0 unless both halves are set.

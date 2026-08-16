@@ -54,6 +54,15 @@ export const PATCH = withErrorHandling(async (request, { params }) => {
   const rawMonths = 'sinking_months' in body ? asNum(body.sinking_months) : cur.sinking_months;
   const months = rawMonths === null ? null : Math.max(1, Math.round(rawMonths));
 
+  // Which month the bill actually lands in, for the "money leaves here" marker
+  // in the Through December view. Validated to 'YYYY-MM' — a free-text month
+  // that fails to match any column simply never renders a marker, which looks
+  // like the feature is broken rather than like bad input.
+  const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
+  const dueMonth = 'sinking_due_month' in body
+    ? (MONTH_RE.test(String(body.sinking_due_month ?? '')) ? String(body.sinking_due_month) : null)
+    : cur.sinking_due_month;
+
   const sort = 'sort_order' in body && Number.isFinite(Number(body.sort_order))
     ? Number(body.sort_order)
     : cur.sort_order;
@@ -70,6 +79,7 @@ export const PATCH = withErrorHandling(async (request, { params }) => {
       rollup = ${rollup},
       sinking_target_php = ${target},
       sinking_months = ${months},
+      sinking_due_month = ${dueMonth},
       sort_order = ${sort},
       archived_at = ${archivedAt},
       updated_at = now()

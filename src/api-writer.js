@@ -152,3 +152,24 @@ export async function setLivingPlan({ month, category_id, planned_php, note }) {
   api.afterWrite();
   return row;
 }
+
+// Replace one category's line-item breakdown for one month. The server rolls
+// the items up and writes the total to living_plan in the same call, so the
+// planned amount and the items justifying it can never drift apart — don't
+// follow this with a setLivingPlan() for the same category/month.
+export async function setLivingItems({ month, category_id, items }) {
+  const res = await api.put('/living/items', { month, category_id, items });
+  api.afterWrite();
+  return res;
+}
+
+// Drop a category's breakdown, turning it back into a plain typed amount.
+// Note PUT /living/plan already does this implicitly, so this is only for an
+// explicit "remove the breakdown, keep the amount" action.
+export async function clearLivingItems({ month, category_id }) {
+  const res = await api.del(
+    `/living/items?category_id=${encodeURIComponent(category_id)}&month=${encodeURIComponent(month)}`
+  );
+  api.afterWrite();
+  return res;
+}

@@ -3988,3 +3988,49 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   font-size: 13px;
   color: var(--ngs-red);
 }
+
+/* ── Living Budget section (mentor's way in to /budget/:scholar) ───────────
+   A link list, not an editor: LivingBudget renders its own ScholarShell, so
+   the mentor follows these through rather than having the whole screen
+   duplicated inside the Navigator. See LivingBudgetSection.jsx. */
+.lbs-intro {
+  margin: 0 0 18px;
+  max-width: 68ch;
+  font-size: 14px;
+  color: var(--ngs-ink-soft);
+}
+.lbs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+}
+.lbs-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  border: 1px solid var(--ngs-rule);
+  border-radius: 12px;
+  background: var(--ngs-surface);
+  box-shadow: var(--ngs-card-shadow);
+  text-decoration: none;
+  color: inherit;
+}
+.lbs-card:hover {
+  border-color: var(--ngs-gold);
+  box-shadow: var(--ngs-card-shadow-hover);
+}
+.lbs-card:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
+.lbs-card-name {
+  font-family: var(--ngs-display);
+  font-size: 19px;
+  font-weight: 600;
+}
+.lbs-card-meta { font-size: 12.5px; color: var(--ngs-muted); }
+.lbs-card-cta {
+  margin-top: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ngs-navy-text, var(--ngs-navy));
+}
+.lbs-empty { font-size: 14px; color: var(--ngs-muted); }
