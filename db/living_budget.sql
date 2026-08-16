@@ -61,6 +61,12 @@ create table if not exists living_category (
   sinking_target_php numeric,
   sinking_months     integer check (sinking_months is null or sinking_months > 0),
 
+  -- 'YYYY-MM' of the month the cost actually lands, when she knows it. Drives
+  -- the "money leaves this month" marker in the Through December view: the
+  -- accrual is what she sets aside monthly, this is when it goes out. Null is
+  -- normal — plenty of irregular costs have no known date.
+  sinking_due_month  text,
+
   sort_order  integer not null default 0,
 
   -- Soft delete. A category with history must never be hard-deleted: the plan

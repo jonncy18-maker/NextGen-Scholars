@@ -77,6 +77,22 @@ export const PUT = withErrorHandling(async (request) => {
 
   const note = body.note == null ? null : String(body.note).slice(0, 500);
 
+  // Writing a bare total means "this is the number now", so any line-item
+  // breakdown for the same month has to go. Leaving it would produce a figure
+  // its own breakdown contradicts — the builder would reopen showing items
+  // that sum to something else, and the Build list would keep advertising
+  // "built from 5 items" against a number those items never produced.
+  //
+  // This is the single chokepoint for that rule: the builder's Simple mode,
+  // the inline amount box, and the AI panel's `set_plan` op all land here, so
+  // none of them can leave the two out of step. The itemised path does NOT go
+  // through this route — app/api/living/items writes items and their rolled-up
+  // total together in one call.
+  await sql`
+    delete from living_plan_item
+    where category_id = ${cat.id} and month = ${month}
+  `;
+
   const [row] = await sql`
     insert into living_plan (scholar, month, category_id, planned_php, note)
     values (${cat.scholar}, ${month}, ${cat.id}, ${planned}, ${note})

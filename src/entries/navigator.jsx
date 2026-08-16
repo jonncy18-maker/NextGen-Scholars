@@ -52,6 +52,7 @@ import { CareerSection } from '../components/CareerSection.jsx';
 import { RiskSection } from '../components/RiskSection.jsx';
 import { GradesSection } from '../components/GradesSection.jsx';
 import { BudgetSection } from '../components/BudgetSection.jsx';
+import { LivingBudgetSection } from '../components/LivingBudgetSection.jsx';
 import { TravelModule } from '../components/TravelModule.jsx';
 import { MilestonesModule } from '../components/MilestonesModule.jsx';
 import { ProgramDetailsSection } from '../components/ProgramDetailsSection.jsx';
@@ -60,7 +61,9 @@ if (!NGS_DATA || !NGS_DATA.config) {
   throw new Error('NGS_DATA missing — hard-refresh (Ctrl/Cmd+Shift+R)');
 }
 
-const STATIC_SCHOLAR_KEYS = ['claire', 'april', 'janndilyne'];
+// 'demo' is a sandbox scholar (scholars-data.js) for previewing the scholar-side
+// screens from the mentor's own account — remove once testing is done.
+const STATIC_SCHOLAR_KEYS = ['claire', 'april', 'janndilyne', 'demo'];
 
 // Sidebar sections. Slugs are unchanged from the pre-redesign tab strip —
 // only the labels adopted the mockup vocabulary (Portfolio, Finances,
@@ -75,6 +78,7 @@ const SECTIONS = [
   { key: 'milestones', label: 'Milestones', icon: <IcnStar size={16} /> },
   { key: 'travel', label: 'Travel', icon: <IcnPlane size={16} /> },
   { key: 'budget', label: 'Budget', icon: <IcnPie size={16} /> },
+  { key: 'living-budget', label: 'Living Budget', icon: <IcnWallet size={16} /> },
   { key: 'program-details', label: 'Program Details', icon: <IcnDoc size={16} /> },
 ];
 
@@ -804,6 +808,11 @@ export function Navigator({ slug = [] }) {
               {section === 'budget' && (
                 <SectionErrorBoundary name="Budget">
                   <BudgetSection />
+                </SectionErrorBoundary>
+              )}
+              {section === 'living-budget' && (
+                <SectionErrorBoundary name="Living Budget">
+                  <LivingBudgetSection id="sec-living-budget" />
                 </SectionErrorBoundary>
               )}
               {section === 'program-details' && (
