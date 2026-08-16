@@ -407,89 +407,33 @@ const NGS_DATA = {
       },
     },
 
-    // ── JANNDILYNE ──────────────────────────────────────────────────────────────
-    // TESDA track — a separate, unadvertised one-off program. No English hours
-    // tracking and no travel/vacation program (unlike NGN/NGH scholars). Deliberately
-    // has no `english` or `card` field: she must not appear on the public homepage.
-    // NOTE: placeholder copy below — owner to confirm full name, program/NC, city,
-    // cohort, and quote.
-    janndilyne: {
-      name: 'Janndilyne',
-      firstName: 'Janndilyne',
-      track: 'TESDA',
-      school: 'TESDA Training Center',        // TODO: confirm institution
-      city: 'Cebu',                            // TODO: confirm city
-      program: 'TESDA NC II',                  // TODO: confirm program / qualification
-      cohort: 'Cohort 2026',                   // TODO: confirm cohort
+    // ── DEMO (test/sandbox scholar) ──────────────────────────────────────────────
+    // Not a real scholar. Created to let the mentor sign in as a scholar and see
+    // what the /home, /english, /grades, /vacation, /milestones, /budget screens
+    // look like from that side, without touching real student data. No `card` and
+    // no `english` field (mirrors janndilyne) so she never appears on the public
+    // homepage or profile pages. Safe to delete (DB rows + this block + the
+    // KNOWN_SCHOLARS entry in src/screens/ScholarHome.jsx + the auth account) once
+    // testing is done.
+    demo: {
+      name: 'Demo Scholar',
+      firstName: 'Demo',
+      track: 'NGN',
+      school: 'Sandbox University',
+      city: 'Cebu',
+      program: 'BSN Nursing',
+      cohort: 'Sandbox',
       status: 'active',
-      currentSem: 'TESDA',                     // single rolling term (no semester progression)
-      gpaFloor: null,
+      currentSem: 'Y1S1',
+      gpaFloor: 85,
 
-      // ── PUBLIC PROFILE (/janndilyne) ─────────────────────────────────────────
-      // No `travels` and no `english` keys — those sections are omitted by design
-      // (ScholarProfile renders them conditionally).
-      publicProfile: {
-        firstName: 'Janndilyne',
-        track: 'TESDA',
-        trackName: 'NextGen TESDA',
-        cohort: 'Cohort 2026',
-        school: 'TESDA Training Center',
-        city: 'Cebu',
-        program: 'TESDA NC II',
-        status: 'active',
-        statusLabel: 'Active Scholar',
-        updated: 'Updated June 2026',
-        quote: 'A skilled trade is a passport. This program is helping me earn mine.', // TODO: confirm
-        headlineStats: [
-          { value: 'In Training', label: 'Current Stage' },
-          { value: 'NC II',       label: 'Target Cert' },
-          { value: '2026',        label: 'Certification' },
+      english: {
+        scholar: 'Demo · Sandbox',
+        stage: 'Stage 2 — Progressive English',
+        desc: 'Sample data only — for previewing the scholar-side dashboard.',
+        observations: [
+          { type: 'pos', text: 'Sample observation — not real data.' },
         ],
-        currentSemester: {
-          title: 'In training.',
-          intro: 'Working toward TESDA National Certificate competency assessment.',
-          period: 'TESDA',
-          year: '2026',
-          subjects: [
-            'Core competency units',         // TODO: confirm units
-            'Workplace English',
-            'Trade theory',
-            'Practical / hands-on training',
-          ],
-        },
-        academics: {
-          title: 'Competency, not GPA.',
-          intro: 'TESDA progress is measured by competency-based assessment rather than a semester GPA.',
-          current: { label: 'Latest Assessment', value: null, floor: null },
-        },
-        support: {
-          title: 'What it takes to lift one.',
-          intro: 'A single donor underwrites Janndilyne end-to-end — training fees, materials, and the milestone rewards that mark each step.',
-          total: {
-            value: '—',
-            rawPhp: 0,
-            detail: 'Training fees, materials, and milestone rewards',
-            progress: 0,
-          },
-          categories: [
-            { icon: 'cap',    name: 'Training & Assessment', amount: '—', detail: 'Course fees, registration, and TESDA assessment fees.' },
-            { icon: 'trophy', name: 'Milestone Rewards',     amount: '—', detail: 'Earned as each competency target is met.' },
-          ],
-        },
-        milestones: [
-          { icon: 'check', name: 'Enrolled in TESDA program', detail: 'Training started · 2026', state: 'done',   badge: 'Done'   },
-          { icon: 'cap',   name: 'NC II Certification',       detail: 'Competency assessment',   state: 'future', badge: 'Future' },
-        ],
-        pathway: {
-          title: 'From training to placement.',
-          intro: 'A vocational pathway from TESDA certification toward stable employment.',
-          steps: [
-            { label: 'TESDA<br/>Training',     state: 'active'   },
-            { label: 'NC II<br/>Assessment',   state: 'next'     },
-            { label: 'Certification',          state: 'next'     },
-            { label: 'Placement',              state: 'goal'     },
-          ],
-        },
       },
     },
   },
