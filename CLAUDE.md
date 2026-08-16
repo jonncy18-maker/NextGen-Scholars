@@ -372,13 +372,21 @@ between the two apps.
   tested live in the human's own browser; use `mcp__Vercel__web_fetch_vercel_url`
   for automated checks against deployed Vercel URLs instead of `curl`/`WebFetch`.
 
-## Agentic Loop
+## Coder Profile & Agentic Loop
+
+Two layers, both read in full at the start of each session.
+
+Profile: https://raw.githubusercontent.com/jonncy18-maker/agentic-loop/main/CODER_PROFILE.md
+Applies to **every task, with no threshold** — governs how code is written and how it
+gets verified (root rule: anything not verified by execution is unverified, and gets
+reported as unverified).
 
 Protocol: https://raw.githubusercontent.com/jonncy18-maker/agentic-loop/main/AGENTIC_LOOP.md
-(read in full at the start of each session; orchestrator: `orchestrator.js` in the same repo).
-Activate for any change touching 3+ files, a new component/module, the data
+(orchestrator: `orchestrator.js` in the same repo). Governs whether the right thing was
+built. Activate for any change touching 3+ files, a new component/module, the data
 layer, or with user-visible behavior, or estimated at more than ~5 minutes of
 work — otherwise (typo, one-liner, single-file config change) just do it directly.
+A change small enough to skip the loop is still governed by the profile.
 
 ## Wide-screen layout
 
