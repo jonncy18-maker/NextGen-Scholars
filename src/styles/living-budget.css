@@ -132,7 +132,10 @@
 
 .lb-row-main {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  /* [name+meta] [amount] [open builder] [row menu] — the builder button was
+     added with the Build tab; a three-column track left it wrapping onto a
+     second line. */
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: 12px;
   padding: 13px 15px;
@@ -511,7 +514,26 @@
 .lb-tab-cnt { font-family: var(--ngs-mono); font-size: 10.5px; color: var(--ngs-muted); }
 
 /* ── Month bar + segmented control ──────────────────────────────────────── */
-.lb-monthbar { flex-wrap: wrap; gap: 12px; }
+/* The month bar now carries a right-hand control (the Detail / Through
+   December toggle, or Add category on the Build tab), so it needs to space
+   its two ends apart and wrap on narrow screens instead of squeezing.
+
+   `.lb-monthnav` above is the ‹ / › BUTTON, not a container — the group
+   wrapper is .lb-monthgroup. Reusing the button class on the wrapper collapsed
+   the whole thing into a 30px box with the label wrapped inside it. */
+.lb-monthbar {
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+}
+.lb-monthgroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* Keeps "August 2026" on one line as months change width, without the fixed
+   min-width that would push the toggle off a narrow screen. */
+.lb-monthlabel { white-space: nowrap; }
 .lb-seg {
   display: inline-flex; padding: 3px; gap: 2px;
   border: 1px solid var(--ngs-rule); border-radius: 8px;

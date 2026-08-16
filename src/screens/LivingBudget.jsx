@@ -413,9 +413,9 @@ export function LivingBudget({ scholarKey }) {
       </div>
 
       <div className="lb-monthbar">
-        <div className="lb-monthnav">
+        <div className="lb-monthgroup">
           <button
-            className="lb-monthnav-btn"
+            className="lb-monthnav"
             onClick={() => setMonth((m) => shiftMonth(m, -1))}
             aria-label="Previous month"
           >
@@ -423,7 +423,7 @@ export function LivingBudget({ scholarKey }) {
           </button>
           <span className="lb-monthlabel">{monthLabel(month)}</span>
           <button
-            className="lb-monthnav-btn"
+            className="lb-monthnav"
             onClick={() => setMonth((m) => shiftMonth(m, 1))}
             aria-label="Next month"
           >
