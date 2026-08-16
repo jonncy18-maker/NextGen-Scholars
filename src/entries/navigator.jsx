@@ -284,14 +284,28 @@ export function Navigator({ slug = [] }) {
             sem: e.sem,
             group_id: e.group_id || null,
           };
-          const semList = sd.expenses?.[e.sem] || [];
-          const exists = semList.some((ex) => String(ex.id) === String(e.id));
-          const newSemList = exists
-            ? semList.map((ex) => (String(ex.id) === String(e.id) ? row : ex))
-            : [...semList, row];
+          // Upsert into the row's (possibly new) sem list, and drop any copy
+          // of the same id sitting under a DIFFERENT sem key — an edit can
+          // move an expense between semesters, and only checking the target
+          // list would append a second copy while the old one lingers.
+          const newExpenses = {};
+          let replaced = false;
+          Object.entries(sd.expenses || {}).forEach(([sem, list]) => {
+            if (sem === e.sem) {
+              if (list.some((ex) => String(ex.id) === String(e.id))) {
+                replaced = true;
+                newExpenses[sem] = list.map((ex) => (String(ex.id) === String(e.id) ? row : ex));
+              } else {
+                newExpenses[sem] = list;
+              }
+            } else {
+              newExpenses[sem] = list.filter((ex) => String(ex.id) !== String(e.id));
+            }
+          });
+          if (!replaced) newExpenses[e.sem] = [...(newExpenses[e.sem] || []), row];
           scholars = {
             ...scholars,
-            [e.scholar]: { ...sd, expenses: { ...(sd.expenses || {}), [e.sem]: newSemList } },
+            [e.scholar]: { ...sd, expenses: newExpenses },
           };
         });
         if (expDelta.deletedIds.length) {
@@ -353,12 +367,37 @@ export function Navigator({ slug = [] }) {
     setD((prev) => {
       const sd = prev.scholars[scholarKey];
       if (!sd) return prev;
+      // D.scholars[*].expenses is keyed by sem, so an edit that changes `sem`
+      // must MOVE the row between lists. Updating it in place under the old
+      // key leaves a stale copy behind that the poll patch can't see (it only
+      // dedupes within the new sem's list), which duplicated the expense in
+      // every flattened view until the next full bootstrap.
+      let row = null;
+      let fromSem = null;
+      Object.entries(sd.expenses || {}).forEach(([sem, list]) => {
+        const found = list.find((e) => String(e.id) === String(expenseId));
+        if (found) {
+          row = found;
+          fromSem = sem;
+        }
+      });
+      if (!row) return prev;
+      const destSem = fields.sem || fromSem;
       const newExp = {};
       Object.entries(sd.expenses || {}).forEach(([sem, list]) => {
-        newExp[sem] = list.map((e) =>
-          String(e.id) === String(expenseId) ? { ...e, ...fields } : e
-        );
+        if (sem === fromSem && fromSem === destSem) {
+          newExp[sem] = list.map((e) =>
+            String(e.id) === String(expenseId) ? { ...e, ...fields } : e
+          );
+        } else if (sem === fromSem) {
+          newExp[sem] = list.filter((e) => String(e.id) !== String(expenseId));
+        } else {
+          newExp[sem] = list;
+        }
       });
+      if (destSem !== fromSem) {
+        newExp[destSem] = [...(newExp[destSem] || []), { ...row, ...fields }];
+      }
       return { ...prev, scholars: { ...prev.scholars, [scholarKey]: { ...sd, expenses: newExp } } };
     });
   }
