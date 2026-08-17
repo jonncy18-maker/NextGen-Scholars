@@ -38,7 +38,6 @@ const FALLBACK = {
   claire: { name: 'Claire' },
   april: { name: 'April' },
   janndilyne: { name: 'Janndilyne' },
-  demo: { name: 'Demo' },
 };
 
 // Render order for the three groups. `kind` values are the DB's
