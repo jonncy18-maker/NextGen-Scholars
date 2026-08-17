@@ -61,7 +61,10 @@ if (!NGS_DATA || !NGS_DATA.config) {
   throw new Error('NGS_DATA missing — hard-refresh (Ctrl/Cmd+Shift+R)');
 }
 
-const STATIC_SCHOLAR_KEYS = ['claire', 'april', 'janndilyne'];
+// 'demo' is a persistent sandbox scholar (scholars-data.js) for previewing the
+// scholar-side screens from the mentor's own account. Kept on purpose — see the
+// DEMO block in scholars-data.js before removing it.
+const STATIC_SCHOLAR_KEYS = ['claire', 'april', 'janndilyne', 'demo'];
 
 // Sidebar sections. Slugs are unchanged from the pre-redesign tab strip —
 // only the labels adopted the mockup vocabulary (Portfolio, Finances,

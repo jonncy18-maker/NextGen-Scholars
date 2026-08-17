@@ -16,12 +16,15 @@ import { SignOutButton } from '../components/SignOutButton.jsx';
 import { CAT_TO_BUCKET } from '../constants.js';
 import { useSessionExpired } from '../hooks/useSessionExpired.js';
 
-// All three scholars have real Neon Auth accounts (see CLAUDE.md).
+// All real scholars have real Neon Auth accounts (see CLAUDE.md).
 // app/home/[scholar]/page.jsx passes scholarKey straight from the URL with
 // no server-side whitelist, so anything outside this set redirects home
 // instead of falling through to a scholar dashboard for a key that doesn't
 // exist (used to fall through to a cosmetic Supabase-backed gate here).
-const KNOWN_SCHOLARS = new Set(['claire', 'april', 'janndilyne']);
+// `demo` is a persistent sandbox scholar (see scholars-data.js) for previewing
+// this screen from the scholar side. Kept on purpose — see the DEMO block in
+// scholars-data.js before removing it.
+const KNOWN_SCHOLARS = new Set(['claire', 'april', 'janndilyne', 'demo']);
 
 const SEM_LABELS = {
   Entry: 'Entry (Trial Admission)',
