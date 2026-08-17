@@ -407,35 +407,6 @@ const NGS_DATA = {
       },
     },
 
-    // ── DEMO (test/sandbox scholar) ──────────────────────────────────────────────
-    // Not a real scholar. Created to let the mentor sign in as a scholar and see
-    // what the /home, /english, /grades, /vacation, /milestones, /budget screens
-    // look like from that side, without touching real student data. No `card` and
-    // no `english` field (mirrors janndilyne) so she never appears on the public
-    // homepage or profile pages. Safe to delete (DB rows + this block + the
-    // KNOWN_SCHOLARS entry in src/screens/ScholarHome.jsx + the auth account) once
-    // testing is done.
-    demo: {
-      name: 'Demo Scholar',
-      firstName: 'Demo',
-      track: 'NGN',
-      school: 'Sandbox University',
-      city: 'Cebu',
-      program: 'BSN Nursing',
-      cohort: 'Sandbox',
-      status: 'active',
-      currentSem: 'Y1S1',
-      gpaFloor: 85,
-
-      english: {
-        scholar: 'Demo · Sandbox',
-        stage: 'Stage 2 — Progressive English',
-        desc: 'Sample data only — for previewing the scholar-side dashboard.',
-        observations: [
-          { type: 'pos', text: 'Sample observation — not real data.' },
-        ],
-      },
-    },
   },
 
   // ── OFFLINE FALLBACK — Supabase is source of truth for all of the below ─────
