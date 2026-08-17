@@ -407,6 +407,44 @@ const NGS_DATA = {
       },
     },
 
+    // ── DEMO (persistent sandbox scholar) ───────────────────────────────────────
+    // Not a real scholar, and not temporary scaffolding — this is a kept fixture.
+    // It lets the mentor sign in as a scholar and see what the /home, /english,
+    // /grades, /vacation, /milestones, /budget screens look like from that side
+    // without touching real student data. Removed once in PR #248 and restored
+    // right after, so leave it in place unless the owner explicitly asks again.
+    //
+    // She never surfaces publicly, and it is these two whitelists that guarantee
+    // it — not anything in this block: the homepage names claire/april directly
+    // (HomePage.jsx's Scholars()), and app/api/public/profile/[key] serves only
+    // its PUBLIC_SCHOLARS set. Do not add 'demo' to either. The `english` block
+    // below is sample copy for the signed-in scholar screens only.
+    //
+    // Full footprint, if it ever does need removing: this block, the whitelists
+    // in ScholarHome.jsx (KNOWN_SCHOLARS), navigator.jsx (STATIC_SCHOLAR_KEYS)
+    // and LivingBudget.jsx (FALLBACK), plus the Neon rows and the Better Auth
+    // account (jbshaw.cpa@gmail.com), which live outside this repo.
+    demo: {
+      name: 'Demo Scholar',
+      firstName: 'Demo',
+      track: 'NGN',
+      school: 'Sandbox University',
+      city: 'Cebu',
+      program: 'BSN Nursing',
+      cohort: 'Sandbox',
+      status: 'active',
+      currentSem: 'Y1S1',
+      gpaFloor: 85,
+
+      english: {
+        scholar: 'Demo · Sandbox',
+        stage: 'Stage 2 — Progressive English',
+        desc: 'Sample data only — for previewing the scholar-side dashboard.',
+        observations: [
+          { type: 'pos', text: 'Sample observation — not real data.' },
+        ],
+      },
+    },
   },
 
   // ── OFFLINE FALLBACK — Supabase is source of truth for all of the below ─────
