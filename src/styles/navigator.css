@@ -3545,6 +3545,10 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
 .gcc-item:hover { border-color: var(--ngs-gold); }
 .gcc-item.is-sel { border-color: var(--ngs-gold); background: rgba(201,168,76,0.1); }
 .gcc-item-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gcc-item-qty {
+  margin-left: 8px; font-family: var(--ngs-mono); font-size: 11px;
+  color: var(--ngs-muted); letter-spacing: 0.02em;
+}
 .gcc-sub {
   display: flex; justify-content: space-between; align-items: baseline;
   margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--ngs-rule);
