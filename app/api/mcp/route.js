@@ -33,10 +33,12 @@ function rpcError(id, code, message) {
   return { jsonrpc: '2.0', id, error: { code, message } };
 }
 
-function respond(body, status = 200) {
+const APP_URL = 'https://next-gen-scholars-jonncy18.vercel.app';
+
+function respond(body, status = 200, extraHeaders = {}) {
   return new Response(body == null ? null : JSON.stringify(body), {
     status,
-    headers: { 'content-type': 'application/json', 'cache-control': 'private, no-store' },
+    headers: { 'content-type': 'application/json', 'cache-control': 'private, no-store', ...extraHeaders },
   });
 }
 
@@ -122,7 +124,11 @@ export async function POST(request) {
     ctx = await requireMcpKey(request);
   } catch (err) {
     if (err instanceof McpAuthError) {
-      return respond(rpcError(null, -32001, err.message), err.status);
+      // Points an OAuth-aware MCP client at the protected-resource metadata
+      // (RFC 9728) so it can discover /oauth/authorize and self-serve a
+      // token instead of needing a manually-pasted key — see docs/MCP.md.
+      const headers = { 'www-authenticate': `Bearer resource_metadata="${APP_URL}/.well-known/oauth-protected-resource"` };
+      return respond(rpcError(null, -32001, err.message), err.status, headers);
     }
     throw err;
   }

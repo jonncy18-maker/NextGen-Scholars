@@ -19,20 +19,25 @@ approval step your MCP client offers *is* the safety gate for writes.
 
 ## Auth
 
-Bearer token, verified against the `mcp_api_keys` table (`lib/mcp-auth.js`) —
-not a Better Auth session, since an MCP client's config is static and has no
-browser in the loop to refresh a short-lived JWT. Every key is full-mentor
-scope; there's no scholar-restricted variant.
+Every request to `/api/mcp` needs a Bearer token verified against the
+`mcp_api_keys` table (`lib/mcp-auth.js`) — not a Better Auth session, since
+an MCP client's config can't hold onto a short-lived JWT the way a browser
+session does. Every key is full-mentor scope; there's no scholar-restricted
+variant. Two ways a token ends up in that table:
 
-**Generating a key:** insert a row with a hashed token, e.g.:
+1. **Manually generated** — insert a row with a hashed token yourself:
+   ```sql
+   insert into mcp_api_keys (label, token_hash)
+   values ('some label', encode(digest('<paste a long random token>', 'sha256'), 'hex'));
+   ```
+   Give the plaintext token to whoever's configuring the client; only the
+   hash is ever stored. Used by the Claude Code path below.
+2. **Minted through the OAuth flow** (`lib/oauth.js`, `db/oauth.sql`) — a
+   real mentor sign-in + consent at `/oauth/authorize` produces one
+   automatically, labeled `oauth:<client_id>`. Used by the claude.ai web
+   Connectors path below.
 
-```sql
-insert into mcp_api_keys (label, token_hash)
-values ('some label', encode(digest('<paste a long random token>', 'sha256'), 'hex'));
-```
-
-Give the plaintext token to whoever's configuring the client; only the hash
-is ever stored. **Revoke** a key by setting `revoked_at = now()` — never
+**Revoke** any key, either kind, by setting `revoked_at = now()` — never
 delete the row, so `last_used_at`/`label` stay around for audit.
 
 ## Client config
@@ -71,17 +76,25 @@ export NGS_MCP_TOKEN="<your key>"
 Claude Code shows its own per-tool approval prompt before running anything,
 which is the human-in-the-loop for writes (see above).
 
-### claude.ai web Connectors (custom connector) — not supported yet
+### claude.ai web Connectors (custom connector) — Phase 2, now supported
 
-The web Settings → Connectors "Add custom connector" flow expects the server
-to run a full OAuth 2.1 authorization flow (discovery + dynamic client
-registration) — pointing it at this URL fails with a sign-in/registration
-error, and there's no Client ID to paste in that fixes it, since this app
-doesn't run an OAuth authorization server. Wiring that up (an
-`/.well-known/oauth-protected-resource` endpoint, an authorization + token
-endpoint, dynamic client registration) is tracked as a **Phase 2** follow-up
-so this can be added as a connector from anywhere, not just Claude Code.
-Until then, use Claude Code as above.
+Settings → Connectors → "Add custom connector" now works: point it at
+```
+https://next-gen-scholars-jonncy18.vercel.app/api/mcp
+```
+with no headers. `/api/mcp` responds to an unauthenticated request with a
+`WWW-Authenticate: Bearer resource_metadata="…/.well-known/oauth-protected-resource"`
+header; claude.ai follows that to `/.well-known/oauth-protected-resource` →
+`/.well-known/oauth-authorization-server` (RFC 9728 / RFC 8414), registers
+itself via `POST /api/oauth/register` (RFC 7591, no client secret — PKCE
+carries the security per OAuth 2.1), then opens `/oauth/authorize` in a
+browser tab. That page (`app/oauth/authorize/page.jsx`) is a real mentor
+sign-in (same Better Auth session as the rest of the app) followed by an
+explicit consent screen; approving it calls `POST /api/oauth/authorize`,
+which mints a single-use authorization code, and claude.ai exchanges that at
+`POST /api/oauth/token` for an access token — written into `mcp_api_keys`
+exactly like a manually-generated key, so nothing about `/api/mcp` itself
+needed to change. No refresh tokens; revoke the same way as any other key.
 
 ### Claude Desktop
 
