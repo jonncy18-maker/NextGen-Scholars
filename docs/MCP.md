@@ -37,22 +37,59 @@ delete the row, so `last_used_at`/`label` stay around for audit.
 
 ## Client config
 
-Point an MCP client at:
-
-```
-https://next-gen-scholars-jonncy18.vercel.app/api/mcp
-```
-
-with header:
-
-```
-Authorization: Bearer <token>
-```
-
 This is a stateless "Streamable HTTP" MCP server (POST-only JSON-RPC, no
 `Mcp-Session-Id`, no server-initiated SSE stream) — every request carries
 full context via the bearer token, so there's no session state to track
 between calls.
+
+### Claude Code (supported today)
+
+The repo's `.mcp.json` already points at this server:
+
+```json
+{
+  "mcpServers": {
+    "nextgen-scholars": {
+      "type": "http",
+      "url": "https://next-gen-scholars-jonncy18.vercel.app/api/mcp",
+      "headers": { "Authorization": "Bearer ${NGS_MCP_TOKEN}" }
+    }
+  }
+}
+```
+
+`.mcp.json` is committed (no secret in it) — the token itself comes from
+your **local** shell environment, never from the repo. Before opening Claude
+Code in this project, set:
+
+```bash
+export NGS_MCP_TOKEN="<your key>"
+```
+
+(e.g. in `~/.zshrc`/`~/.bashrc`). Claude Code expands `${NGS_MCP_TOKEN}` in
+`.mcp.json` at connection time. From here it's just a normal MCP server —
+Claude Code shows its own per-tool approval prompt before running anything,
+which is the human-in-the-loop for writes (see above).
+
+### claude.ai web Connectors (custom connector) — not supported yet
+
+The web Settings → Connectors "Add custom connector" flow expects the server
+to run a full OAuth 2.1 authorization flow (discovery + dynamic client
+registration) — pointing it at this URL fails with a sign-in/registration
+error, and there's no Client ID to paste in that fixes it, since this app
+doesn't run an OAuth authorization server. Wiring that up (an
+`/.well-known/oauth-protected-resource` endpoint, an authorization + token
+endpoint, dynamic client registration) is tracked as a **Phase 2** follow-up
+so this can be added as a connector from anywhere, not just Claude Code.
+Until then, use Claude Code as above.
+
+### Claude Desktop
+
+Same shape of config (`type: "http"`, `url`, `headers.Authorization`) goes
+into Claude Desktop's own MCP settings. Check Claude Desktop's current docs
+for whether it expands `${VAR}` in header values the way Claude Code does —
+if not, the token has to go directly in that config instead of via env var,
+so treat that config file as sensitive.
 
 ## What it can do
 
