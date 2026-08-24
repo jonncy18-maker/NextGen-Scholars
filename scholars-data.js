@@ -407,6 +407,25 @@ const NGS_DATA = {
       },
     },
 
+    // ── DEMO (test account) ────────────────────────────────────────────────────
+    // jbshaw.cpa@gmail.com's Neon Auth account (scholar_key='demo'), used to
+    // test the scholar-side login flow end-to-end. Placeholder data only — not
+    // a real scholar. No `card` field, so it never appears on the public
+    // homepage "Meet the Scholars" list, and no `publicProfile` since there's
+    // no /demo public route.
+    demo: {
+      name: 'John Shaw (Demo)',
+      firstName: 'John',
+      track: 'NGN',
+      school: 'Demo University',
+      city: 'Cebu',
+      program: 'BSN Nursing',
+      cohort: 'Test',
+      status: 'active',
+      currentSem: 'Y1S1',
+      gpaFloor: 81,
+    },
+
   },
 
   // ── OFFLINE FALLBACK — Supabase is source of truth for all of the below ─────

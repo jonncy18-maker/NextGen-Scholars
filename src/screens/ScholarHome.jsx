@@ -21,7 +21,7 @@ import { useSessionExpired } from '../hooks/useSessionExpired.js';
 // no server-side whitelist, so anything outside this set redirects home
 // instead of falling through to a scholar dashboard for a key that doesn't
 // exist (used to fall through to a cosmetic Supabase-backed gate here).
-const KNOWN_SCHOLARS = new Set(['claire', 'april', 'janndilyne']);
+const KNOWN_SCHOLARS = new Set(['claire', 'april', 'janndilyne', 'demo']);
 
 const SEM_LABELS = {
   Entry: 'Entry (Trial Admission)',
@@ -65,6 +65,13 @@ const CONFIGS = {
     tagline: (
       <>
         Trial period in progress — <em>one step at a time.</em>
+      </>
+    ),
+  },
+  demo: {
+    tagline: (
+      <>
+        Test account — <em>not a real scholar.</em>
       </>
     ),
   },
