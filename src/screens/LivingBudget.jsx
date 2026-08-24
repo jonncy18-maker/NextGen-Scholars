@@ -38,6 +38,10 @@ const FALLBACK = {
   claire: { name: 'Claire' },
   april: { name: 'April' },
   janndilyne: { name: 'Janndilyne' },
+  // Test account (jbshaw.cpa@gmail.com, scholar_key='demo' — see CLAUDE.md).
+  // Falling through to FALLBACK.claire below showed "Welcome, Claire" on a
+  // page that has nothing to do with Claire.
+  demo: { name: 'John' },
 };
 
 // Render order for the three groups. `kind` values are the DB's

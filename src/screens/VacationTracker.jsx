@@ -9,24 +9,33 @@ import '../styles/vacation-tracker.css';
 // State metadata for a single reward trip. The travels table stores one of
 // three states: done (taken), booked (confirmed, upcoming), planned (intended).
 export const TRIP_STATES = {
-  done:    { label: 'Completed', badge: '✓', cls: 'is-done'    },
-  booked:  { label: 'Booked',    badge: '✈', cls: 'is-booked'  },
-  planned: { label: 'Planned',   badge: '○', cls: 'is-planned' },
+  done: { label: 'Completed', badge: '✓', cls: 'is-done' },
+  booked: { label: 'Booked', badge: '✈', cls: 'is-booked' },
+  planned: { label: 'Planned', badge: '○', cls: 'is-planned' },
 };
 
 const FALLBACK = {
-  claire:     { name: 'Claire',     homeHref: '/home/claire' },
-  april:      { name: 'April',      homeHref: '/home/april' },
+  claire: { name: 'Claire', homeHref: '/home/claire' },
+  april: { name: 'April', homeHref: '/home/april' },
   janndilyne: { name: 'Janndilyne', homeHref: '/home/janndilyne' },
+  // Test account (jbshaw.cpa@gmail.com, scholar_key='demo' — see CLAUDE.md).
+  demo: { name: 'John', homeHref: '/home/demo' },
 };
 
 // A loose emoji map so each destination gets a sense of place. Falls back to
 // the trip-state badge when nothing matches.
 const DEST_EMOJI = [
-  [/cebu/i, '🏝'], [/boracay/i, '🌊'], [/bohol/i, '🏖'],
-  [/hong ?kong/i, '🌆'], [/cruise/i, '🚢'], [/taiwan/i, '🚢'],
-  [/manila|visa/i, '🛂'], [/u\.?s\.?|united states|america|immersion/i, '✈'],
-  [/japan|tokyo/i, '🗼'], [/korea|seoul/i, '🏙'], [/singapore/i, '🌃'],
+  [/cebu/i, '🏝'],
+  [/boracay/i, '🌊'],
+  [/bohol/i, '🏖'],
+  [/hong ?kong/i, '🌆'],
+  [/cruise/i, '🚢'],
+  [/taiwan/i, '🚢'],
+  [/manila|visa/i, '🛂'],
+  [/u\.?s\.?|united states|america|immersion/i, '✈'],
+  [/japan|tokyo/i, '🗼'],
+  [/korea|seoul/i, '🏙'],
+  [/singapore/i, '🌃'],
 ];
 
 function destEmoji(dest) {
@@ -42,9 +51,9 @@ function fmtPhp(n) {
 
 export function VacationTracker({ scholarKey }) {
   const fallback = FALLBACK[scholarKey] || FALLBACK.claire;
-  const [authed,  setAuthed]  = useState(false);
+  const [authed, setAuthed] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
-  const [name,    setName]    = useState(fallback.name);
+  const [name, setName] = useState(fallback.name);
   const [travels, setTravels] = useState(null);
 
   useSessionExpired(() => {
@@ -57,13 +66,20 @@ export function VacationTracker({ scholarKey }) {
   useEffect(() => {
     if (!authed) return;
     let cancelled = false;
-    api.get('/bootstrap?tables=scholars,travels').then(data => {
-      if (cancelled) return;
-      const fn = data.scholars?.[0]?.first_name;
-      if (fn) setName(fn);
-      setTravels((data.travels ?? []).slice().sort((a, b) => a.id - b.id));
-    }).catch(() => { if (!cancelled) setTravels([]); });
-    return () => { cancelled = true; };
+    api
+      .get('/bootstrap?tables=scholars,travels')
+      .then((data) => {
+        if (cancelled) return;
+        const fn = data.scholars?.[0]?.first_name;
+        if (fn) setName(fn);
+        setTravels((data.travels ?? []).slice().sort((a, b) => a.id - b.id));
+      })
+      .catch(() => {
+        if (!cancelled) setTravels([]);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [scholarKey, authed]);
 
   if (!authed) {
@@ -71,17 +87,20 @@ export function VacationTracker({ scholarKey }) {
       <ScholarAuthGate
         scholarKey={scholarKey}
         name={fallback.name}
-        onUnlock={() => { setSessionExpired(false); setAuthed(true); }}
+        onUnlock={() => {
+          setSessionExpired(false);
+          setAuthed(true);
+        }}
         sessionExpired={sessionExpired}
       />
     );
   }
 
-  const trips        = travels ?? [];
-  const completed    = trips.filter(t => t.state === 'done');
-  const upcoming     = trips.filter(t => t.state !== 'done');
-  const nextTrip     = upcoming[0] || null;
-  const investedPhp  = trips.reduce((s, t) => s + (Number(t.amount_php) || 0), 0);
+  const trips = travels ?? [];
+  const completed = trips.filter((t) => t.state === 'done');
+  const upcoming = trips.filter((t) => t.state !== 'done');
+  const nextTrip = upcoming[0] || null;
+  const investedPhp = trips.reduce((s, t) => s + (Number(t.amount_php) || 0), 0);
 
   return (
     <ScholarShell
@@ -92,14 +111,15 @@ export function VacationTracker({ scholarKey }) {
       title="Travel"
       subtitle="Worlds opened."
       identityRole="Vacation Tracker"
-      onSignOut={() => { setSessionExpired(false); setAuthed(false); }}
+      onSignOut={() => {
+        setSessionExpired(false);
+        setAuthed(false);
+      }}
     >
       <div className="ds-hero ds-hero--auto">
         <div className="ds-card ds-card--accent">
           <div className="ds-stat-label">Trips Taken</div>
-          <div className="ds-stat-val">
-            {travels === null ? '—' : completed.length}
-          </div>
+          <div className="ds-stat-val">{travels === null ? '—' : completed.length}</div>
           <div className="ds-stat-sub">
             {travels === null
               ? 'Loading…'
@@ -108,9 +128,7 @@ export function VacationTracker({ scholarKey }) {
         </div>
         <div className="ds-card">
           <div className="ds-stat-label">Travel Invested</div>
-          <div className="ds-stat-val">
-            {travels === null ? '—' : fmtPhp(investedPhp)}
-          </div>
+          <div className="ds-stat-val">{travels === null ? '—' : fmtPhp(investedPhp)}</div>
           <div className="ds-stat-sub">across all trips</div>
         </div>
         <div className="ds-card">
@@ -130,17 +148,17 @@ export function VacationTracker({ scholarKey }) {
 
       <section>
         <p className="vt-intro">
-          Annual reward trips that scale with each milestone — every destination
-          a deliberate widening of horizons.
+          Annual reward trips that scale with each milestone — every destination a deliberate
+          widening of horizons.
         </p>
 
         {/* Timeline */}
         {travels !== null && trips.length > 0 && (
           <div className="vt-timeline">
             {trips.map((t, i) => {
-              const meta   = TRIP_STATES[t.state] || TRIP_STATES.planned;
+              const meta = TRIP_STATES[t.state] || TRIP_STATES.planned;
               const isLast = i === trips.length - 1;
-              const amt    = Number(t.amount_php) || 0;
+              const amt = Number(t.amount_php) || 0;
               return (
                 <div key={t.id} className={`vt-trip ${meta.cls}`}>
                   <div className="vt-trip-rail">
@@ -169,8 +187,7 @@ export function VacationTracker({ scholarKey }) {
 
         {travels !== null && trips.length === 0 && (
           <div className="vt-empty">
-            No reward trips logged yet. Your mentor adds destinations as
-            milestones are reached.
+            No reward trips logged yet. Your mentor adds destinations as milestones are reached.
           </div>
         )}
       </section>
