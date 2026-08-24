@@ -242,11 +242,11 @@ export function itemsTotalPhp(items) {
   return (items || []).reduce((sum, it) => sum + itemMonthlyPhp(it), 0);
 }
 
-// Monthly accrual for a sinking category: total cost spread over the months
-// until it is due. Returns 0 unless both halves are set.
-export function sinkingMonthly(cat) {
-  const target = Number(cat?.sinking_target_php);
-  const months = Number(cat?.sinking_months);
-  if (!target || !months || months <= 0) return 0;
-  return target / months;
+// A non-recurring (sinking) category's contribution to a given month's
+// projection: the full one-time cost in the month it's actually due,
+// nothing before or after. Replaces the old monthly-average smoothing
+// (2026-08) — simpler, and matches how the money actually moves.
+export function sinkingMonthAmount(cat, monthKey) {
+  if (cat?.sinking_due_month !== monthKey) return 0;
+  return Number(cat?.sinking_target_php) || 0;
 }

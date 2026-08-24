@@ -44,8 +44,10 @@ create table if not exists living_category (
   -- She names it whatever she likes; `kind` is what the app reasons about.
   --   fixed    — predictable, same every month (dorm rent, wifi)
   --   variable — fluctuates; where tradeoffs and rollover live (food, fuel)
-  --   sinking  — NOT billed monthly; accrues toward an irregular cost
-  --              (LTO registration, TPL insurance, oil change, tires)
+  --   sinking  — a ONE-TIME irregular cost (LTO registration, TPL insurance,
+  --              oil change, tires): ₱0 every month except sinking_due_month,
+  --              which carries the full sinking_target_php. Was averaged
+  --              across sinking_months (now unused/vestigial) before 2026-08.
   kind        text not null default 'variable'
                 check (kind in ('fixed', 'variable', 'sinking')),
 
@@ -56,15 +58,19 @@ create table if not exists living_category (
                 check (rollup in ('housing', 'food', 'transport',
                                   'school', 'personal', 'savings')),
 
-  -- Sinking-fund maths: monthly accrual = sinking_target_php / sinking_months.
-  -- Null for fixed/variable categories.
+  -- The full one-time cost. Null for fixed/variable categories.
   sinking_target_php numeric,
+  -- Unused since 2026-08 (the app no longer averages a sinking category
+  -- across months — see `kind` above) but kept, unenforced, for any row that
+  -- still carries an old value; nothing reads it.
   sinking_months     integer check (sinking_months is null or sinking_months > 0),
 
   -- 'YYYY-MM' of the month the cost actually lands, when she knows it. Drives
-  -- the "money leaves this month" marker in the Through December view: the
-  -- accrual is what she sets aside monthly, this is when it goes out. Null is
-  -- normal — plenty of irregular costs have no known date.
+  -- both the "money leaves this month" marker in the Through December view
+  -- AND the month sinking_target_php actually counts toward her total — see
+  -- sinkingMonthAmount() in src/constants.js. Null is normal — plenty of
+  -- irregular costs have no known date, and simply contribute ₱0 everywhere
+  -- until she sets one.
   sinking_due_month  text,
 
   sort_order  integer not null default 0,

@@ -10,7 +10,7 @@ import {
   LIVING_SEED_CATEGORIES,
   LIVING_PROMPTS,
   LIVING_BASES,
-  sinkingMonthly,
+  sinkingMonthAmount,
   itemMonthlyPhp,
   itemsTotalPhp,
 } from '../constants.js';
@@ -89,6 +89,23 @@ function monthsToYearEnd(key) {
     out.push(`${y}-${String(mm).padStart(2, '0')}`);
   }
   return out;
+}
+
+// One category's projected contribution to a given month: fixed/flexible
+// repeat this month's stored plan as an estimate (the app only ever loads
+// one month of `plan` at a time); a non-recurring category contributes only
+// in the month it's actually due — see sinkingMonthAmount in constants.js.
+function projectedAmount(cat, amountOf, monthKey) {
+  return cat.kind === 'sinking' ? sinkingMonthAmount(cat, monthKey) : amountOf(cat);
+}
+
+// Shared by the Through December table and the Dashboard's "What's coming"
+// bars, so the two never drift into showing different monthly totals.
+function projectMonth(groups, amountOf, monthKey) {
+  return groups.reduce(
+    (sum, g) => sum + g.rows.reduce((t, c) => t + projectedAmount(c, amountOf, monthKey), 0),
+    0
+  );
 }
 
 export function LivingBudget({ scholarKey }) {
@@ -719,6 +736,14 @@ function DashboardTab({
   );
   const nextDue = sinkingFunds[0];
 
+  // Per-month projection for the "What's coming" bars — mostly flat, except
+  // a real spike wherever a non-recurring cost's due month falls.
+  const monthTotals = useMemo(
+    () => horizon.map((m) => projectMonth(groups, amountOf, m)),
+    [groups, amountOf, horizon]
+  );
+  const maxMonthTotal = Math.max(...monthTotals, 1);
+
   return (
     <>
       <section className="lb-total-card lb-dash-hero">
@@ -776,7 +801,7 @@ function DashboardTab({
               </div>
               <div className="lb-dash-headsup-sub">
                 {nextDue
-                  ? `${monthLabel(nextDue.cat.sinking_due_month)} · ${fmtPhp(sinkingMonthly(nextDue.cat))}/mo is covering it`
+                  ? `${monthLabel(nextDue.cat.sinking_due_month)} · ${fmtPhp(nextDue.cat.sinking_target_php)} total`
                   : 'Set a due month on one in Build to see it here'}
               </div>
             </div>
@@ -891,13 +916,17 @@ function DashboardTab({
           <div className="lb-dash-bars">
             {horizon.map((m, i) => {
               const dueHere = sinkingFunds.some((f) => f.cat.sinking_due_month === m);
+              const monthTotal = monthTotals[i];
               return (
                 <div key={m} className={`lb-dash-bar-col${i === 0 ? ' is-now' : ''}`}>
                   {dueHere && <span className="lb-dash-bar-due" />}
                   <span className="lb-dash-bar-val">
-                    {Math.round(total).toLocaleString('en-US')}
+                    {Math.round(monthTotal).toLocaleString('en-US')}
                   </span>
-                  <div className="lb-dash-bar" />
+                  <div
+                    className="lb-dash-bar"
+                    style={{ height: `${Math.max(4, (monthTotal / maxMonthTotal) * 120)}px` }}
+                  />
                   <span className="lb-dash-bar-label">{monthShort(m)}</span>
                 </div>
               );
@@ -907,8 +936,8 @@ function DashboardTab({
           {sinkingFunds.length > 0 && (
             <div className="lb-dash-bar-note">
               <span className="lb-dash-bar-note-dot" />
-              {sinkingFunds.map((f) => f.cat.name).join(', ')} actually leave
-              {sinkingFunds.length === 1 ? 's' : ''} then — the bars still show the flat set-aside
+              {sinkingFunds.map((f) => f.cat.name).join(', ')} land
+              {sinkingFunds.length === 1 ? 's' : ''} as a one-time cost in its due month
             </div>
           )}
         </section>
@@ -918,7 +947,7 @@ function DashboardTab({
         <section className="lb-dash-card" style={{ marginTop: 20 }}>
           <h3>Non-recurring, coming up</h3>
           <div className="lb-dash-card-sub" style={{ marginBottom: 18 }}>
-            Costs you&rsquo;re setting aside for a little each month
+            One-time costs, landing in full the month they&rsquo;re due
           </div>
 
           {sinkingFunds.map(({ cat, monthsToDue }) => {
@@ -928,9 +957,7 @@ function DashboardTab({
                 <div className="lb-dash-sink-top">
                   <div>
                     <div className="lb-dash-sink-name">{cat.name}</div>
-                    <div className="lb-dash-sink-meta">
-                      {fmtPhp(sinkingMonthly(cat))}/mo → {fmtPhp(cat.sinking_target_php)} target
-                    </div>
+                    <div className="lb-dash-sink-meta">{fmtPhp(cat.sinking_target_php)} total</div>
                   </div>
                   <div>
                     <div className="lb-dash-sink-due">{monthLabel(cat.sinking_due_month)}</div>
@@ -1013,7 +1040,6 @@ function SummaryLine({ cat, items, amount, total }) {
   // categories: app/api/living/items writes the rolled-up total there in the
   // same call that saves the items, so there is no second figure to reconcile.
   const built = (items || []).length;
-  const accrual = sinkingMonthly(cat);
   return (
     <div className="lb-line">
       <span className="lb-line-name">{cat.name}</span>
@@ -1022,10 +1048,8 @@ function SummaryLine({ cat, items, amount, total }) {
           {built} item{built === 1 ? '' : 's'}
         </span>
       )}
-      {cat.kind === 'sinking' && accrual > 0 && (
-        <span className="lb-line-note">
-          {fmtPhp(cat.sinking_target_php)} ÷ {cat.sinking_months} mo
-        </span>
+      {cat.kind === 'sinking' && cat.sinking_due_month && (
+        <span className="lb-line-note">due {monthLabel(cat.sinking_due_month)}</span>
       )}
       <span className="lb-line-spacer" />
       <span className="lb-line-amt">{fmtPhp(amount)}</span>
@@ -1037,9 +1061,7 @@ function SummaryLine({ cat, items, amount, total }) {
 }
 
 function YearView({ groups, horizon, amountOf }) {
-  const monthTotals = horizon.map(() =>
-    groups.reduce((s, g) => s + g.rows.reduce((t, c) => t + amountOf(c), 0), 0)
-  );
+  const monthTotals = horizon.map((m) => projectMonth(groups, amountOf, m));
   const grand = monthTotals.reduce((a, b) => a + b, 0);
 
   return (
@@ -1065,18 +1087,21 @@ function YearView({ groups, horizon, amountOf }) {
                     <td className="lb-mx-cat" colSpan={horizon.length + 2}>
                       {g.label}
                       {g.kind === 'sinking' && (
-                        <span className="lb-mx-krow-sub"> (monthly set-aside)</span>
+                        <span className="lb-mx-krow-sub"> (one-time, in its due month)</span>
                       )}
                     </td>
                   </tr>
                   {g.rows.map((cat) => {
-                    const amt = amountOf(cat);
+                    const restOfYear =
+                      cat.kind === 'sinking'
+                        ? horizon.reduce((s, m) => s + sinkingMonthAmount(cat, m), 0)
+                        : amountOf(cat) * horizon.length;
                     return (
                       <tr key={cat.id}>
                         <td className="lb-mx-cat">{cat.name}</td>
                         {horizon.map((m, i) => (
                           <td key={m} className={i === 0 ? 'is-now' : undefined}>
-                            {Math.round(amt).toLocaleString('en-US')}
+                            {Math.round(projectedAmount(cat, amountOf, m)).toLocaleString('en-US')}
                             {cat.sinking_due_month === m && (
                               <span
                                 className="lb-mx-due"
@@ -1085,7 +1110,7 @@ function YearView({ groups, horizon, amountOf }) {
                             )}
                           </td>
                         ))}
-                        <td>{Math.round(amt * horizon.length).toLocaleString('en-US')}</td>
+                        <td>{Math.round(restOfYear).toLocaleString('en-US')}</td>
                       </tr>
                     );
                   })}
@@ -1123,7 +1148,7 @@ function YearView({ groups, horizon, amountOf }) {
             Build.
           </li>
           <li>
-            <b>Non-recurring</b> shows the monthly set-aside, not the bill.
+            <b>Non-recurring</b> shows ₱0 until its due month, then the full cost in one shot.
           </li>
         </ul>
       </div>
@@ -1178,8 +1203,6 @@ function BuildRow({ cat, value, items, disabled, onAmount, onBuild, onPatch, onR
     setLocal(value === '' ? '' : String(value));
   }, [value]);
 
-  const accrual = sinkingMonthly(cat);
-
   return (
     <div className="lb-row">
       <div className="lb-row-main">
@@ -1191,9 +1214,10 @@ function BuildRow({ cat, value, items, disabled, onAmount, onBuild, onPatch, onR
                 built from {built} item{built === 1 ? '' : 's'}
               </button>
             )}
-            {cat.kind === 'sinking' && accrual > 0 && (
+            {cat.kind === 'sinking' && cat.sinking_target_php > 0 && (
               <span className="lb-accrual">
-                {fmtPhp(cat.sinking_target_php)} ÷ {cat.sinking_months} mo ≈ {fmtPhp(accrual)}/mo
+                {fmtPhp(cat.sinking_target_php)} total
+                {cat.sinking_due_month ? ` · due ${monthLabel(cat.sinking_due_month)}` : ''}
               </span>
             )}
           </div>
@@ -1281,18 +1305,7 @@ function BuildRow({ cat, value, items, disabled, onAmount, onBuild, onPatch, onR
                 />
               </label>
               <label className="lb-field">
-                <span>Due in (months)</span>
-                <input
-                  type="number"
-                  min="1"
-                  defaultValue={cat.sinking_months ?? ''}
-                  onBlur={(e) =>
-                    onPatch({ sinking_months: e.target.value === '' ? null : e.target.value })
-                  }
-                />
-              </label>
-              <label className="lb-field">
-                <span>Bill lands (YYYY-MM)</span>
+                <span>Due month (YYYY-MM)</span>
                 <input
                   placeholder="2026-12"
                   defaultValue={cat.sinking_due_month ?? ''}
@@ -1454,7 +1467,7 @@ function BuilderModal({ cat, month, existingItems, currentAmount, busy, onCancel
             <>
               <div className="lb-simple-wrap">
                 <label className="lb-field">
-                  <span>{cat.kind === 'sinking' ? 'Monthly set-aside' : 'Amount'}</span>
+                  <span>Amount</span>
                   <input
                     type="number"
                     min="0"

@@ -29,8 +29,8 @@ function describe(op, nameOf) {
   switch (op.op) {
     case 'create_category': {
       const bits = [`Add "${op.name}"`, `as ${kindLabel(op.kind).toLowerCase()}`, `in ${rollupLabel(op.rollup)}`];
-      if (op.kind === 'sinking' && op.sinking_target_php && op.sinking_months) {
-        bits.push(`— saving ${php(op.sinking_target_php)} over ${op.sinking_months} months (${php(op.sinking_target_php / op.sinking_months)}/mo)`);
+      if (op.kind === 'sinking' && op.sinking_target_php) {
+        bits.push(`— ${php(op.sinking_target_php)} one-time${op.sinking_due_month ? `, due ${op.sinking_due_month}` : ''}`);
       }
       if (op.planned_php > 0) bits.push(`— ${php(op.planned_php)} this month`);
       return bits.join(' ');
@@ -43,8 +43,8 @@ function describe(op, nameOf) {
       if ('sinking_target_php' in op) {
         changes.push(op.sinking_target_php == null ? 'clear the total cost' : `set total cost ${php(op.sinking_target_php)}`);
       }
-      if ('sinking_months' in op) {
-        changes.push(op.sinking_months == null ? 'clear the months' : `due in ${op.sinking_months} months`);
+      if ('sinking_due_month' in op) {
+        changes.push(op.sinking_due_month == null ? 'clear the due month' : `due ${op.sinking_due_month}`);
       }
       return `${nameOf(op.id)}: ${changes.join(', ')}`;
     }
@@ -109,9 +109,14 @@ export function BudgetAskPanel({ scholarKey, month, categories, onApplied }) {
           kind: op.kind,
           rollup: op.rollup,
           sinking_target_php: op.sinking_target_php,
-          sinking_months: op.sinking_months,
         });
         const created = Array.isArray(rows) ? rows[0] : rows;
+        // The create endpoint doesn't take a due month (it's set via the same
+        // PATCH the manual Build-tab editor uses), so a fresh sinking category
+        // needs a follow-up update to actually persist one.
+        if (created?.id && op.sinking_due_month) {
+          await updateLivingCategory(created.id, { sinking_due_month: op.sinking_due_month });
+        }
         if (created?.id && op.planned_php > 0) {
           await setLivingPlan({ month: applyMonth, category_id: created.id, planned_php: op.planned_php });
         }
