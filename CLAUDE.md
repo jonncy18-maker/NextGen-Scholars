@@ -62,13 +62,14 @@ Env vars are `NEXT_PUBLIC_*` (not Vite's `VITE_*`) — see `.env.example`.
 | Key | Prefix | Lives | Why |
 |---|---|---|---|
 | `DATABASE_URL` | none | Server only (`lib/db.js`) | Neon connection string — full DB access if leaked. |
-| `GOOGLE_AI_KEY` | none | Server only (`lib/ai/*`, `app/api/{ask,ask-scholar,ask-public}/*`) | Gemini API key — quota abuse risk if exposed client-side. |
+| `GOOGLE_AI_KEY` | none | Server only (`lib/ai/*`, `app/api/{ask-scholar,ask-public}/*`) | Gemini API key — powers the two **unauthenticated, public-facing** AI routes only. Quota abuse risk if exposed client-side. |
+| `ANTHROPIC_API_KEY` | none | Server only (`lib/ai/*`, `app/api/{ask,ask-budget,agent}/*`) | Claude API key — the AI brain for **signed-in mentor/scholar accounts**. Quota abuse risk if exposed client-side. |
 | `IMMERSION_DATABASE_URL` | none | Server only (`lib/immersion-db.js`, `app/api/immersion-hours/route.js`) | Read-only connection to the separate NextGen Immersion app's Neon project, using a dedicated `ngs_scholars_reader` role — see "Immersion hours integration" below. |
 
-**Rule:** anything that touches the Neon database directly or calls Gemini
+**Rule:** anything that touches the Neon database directly or calls Gemini/Claude
 runs only in `app/api/**` route handlers; the browser calls those routes,
-never Neon or Gemini directly. Never commit a value for either key — set both
-in Vercel's project env vars only.
+never Neon, Gemini, or Claude directly. Never commit a value for any key — set
+all of them in Vercel's project env vars only.
 
 ## Routes
 
@@ -111,9 +112,10 @@ in Vercel's project env vars only.
 | `lib/auth.js` | JWKS-verified JWT auth (`jose` + `createRemoteJWKSet`, cached) → role/`scholar_key` resolved from `public.user_profile` (never trusted from the token). `requireMentor`/`requireScholarOwn` helpers. |
 | `lib/http.js` | `json()` + `withErrorHandling()` response helpers for API routes. |
 | `lib/rate-limit.js` | Fixed-window per-IP rate limiter + `readJsonBody()` size cap, backing the two unauthenticated AI routes. Counters live in Neon's `rate_limit` table, not process memory — these are serverless functions, so an in-process counter is per-instance and Vercel scales out under exactly the load the limiter exists to stop. Fails open on DB error. |
-| `lib/ai/{context,tier1,tier2,tier3,action}.js` | Gemini tiered AI layer (context builder, deterministic tier1 SQL resolver, tier2 advisory, tier3 ingestion, GCash action matching). |
-| `lib/ai/tools.js` | **Tool registry** — one entry per operation a signed-in human can perform manually, each declaring `roles`, `mutates`, a Gemini function schema, a plain-English `summarize()` and a handler. The single source of "what the AI can do". |
-| `lib/ai/agent.js` | Tier 4 agent loop — runs Gemini with the registry, executes read tools in-loop, **stops and returns a proposal the moment the model calls a mutating tool**. `runConfirmed()` executes only what the human approved. |
+| `lib/ai/{context,tier1,tier2,tier3,action}.js` | Tiered AI layer (context builder, deterministic tier1 SQL resolver, tier2 advisory, tier3 ingestion, GCash action matching). `tier2`/`tier3` are provider-switchable (Claude for authenticated callers, Gemini for `ask-public`/`ask-scholar`) — see "Provider routing" below. |
+| `lib/ai/claude.js` | Claude call wrapper (`callClaude`, `CLAUDE_MODEL`, `textFromMessage`, `toJsonSchema`) — the AI brain for signed-in accounts. See "Provider routing" below. |
+| `lib/ai/tools.js` | **Tool registry** — one entry per operation a signed-in human can perform manually, each declaring `roles`, `mutates`, a function schema (Gemini's OpenAPI-subset shape, converted to Claude's `input_schema` at the call site), a plain-English `summarize()` and a handler. The single source of "what the AI can do". |
+| `lib/ai/agent.js` | Tier 4 agent loop — runs Claude with the registry, executes read tools in-loop, **stops and returns a proposal the moment the model calls a mutating tool**. `runConfirmed()` executes only what the human approved. |
 | `app/api/agent/route.js` | The agent endpoint (`mode: 'plan' | 'confirm'`), open to **both** signed-in roles. `GET` returns the caller's tool inventory. |
 | `src/components/AgentPanel.jsx` | Confirm-card UI for proposed changes (per-row skip, expandable args, per-call save results) + `agentPlan`/`agentConfirm` helpers. Shared by the mentor console and the scholar chat panel. |
 | `src/api-loader.js`, `src/api-writer.js` | Neon-backed data loader/writer, one function per operation, imported by every mentor/scholar screen. |
@@ -122,9 +124,9 @@ in Vercel's project env vars only.
 | `app/api/config/route.js` | GET/PUT for the `config` table (mentor-only) — currently backs `ProgramDetailsSection.jsx`'s program-details editor, whose text `app/api/ask-public/route.js` reads for the public AI chat's context. |
 | `app/api/public/profile/[key]/route.js` | Public, unauthenticated curated whitelist backing the public profile pages — see "Public-profile dataset leak" below. |
 | `app/api/me/route.js` | Returns `{ role, scholarKey }` for the caller's own token — used by `ScholarAuthGate.jsx` (scholar pages) and `navigator.jsx` (mentor gate) to verify a session actually matches the expected role/scholar before trusting it. |
-| `app/api/{ask,ask-scholar,ask-public}/route.js` | Gemini AI orchestrators. `ask` is mentor-only; `ask-scholar`/`ask-public` unauthenticated by design (see "Key Rules for Claude Code"). |
+| `app/api/{ask,ask-scholar,ask-public}/route.js` | AI orchestrators. `ask` is mentor-only (Claude); `ask-scholar`/`ask-public` are unauthenticated by design and stay on Gemini (see "Key Rules for Claude Code" and "Provider routing" above). |
 | `src/components/ScholarAuthGate.jsx` | Real Better Auth sign-in gate for all scholar-facing pages. Admits a scholar for **her own** key, and the **mentor for any** scholar (a mentor's `scholar_key` is null by design, so the old equality check locked the mentor out of every scholar route). Both the mount-time session check and the sign-in path use the same `mayView()` test. |
-| `app/api/ask-budget/route.js` + `lib/ai/budget.js` | AI for the living budget. **Authenticated** (`requireScholarOwn`) — unlike `ask-scholar`, because it can propose mutations. Deterministic Tier-1 reads answer common questions with no LLM call; anything else goes to Gemini, which **proposes operations only**. The client shows them for approval and applies them via `/api/living/**`, so the AI path has no privilege the manual path lacks. Budget state is read server-side from Neon, never accepted from the caller. |
+| `app/api/ask-budget/route.js` + `lib/ai/budget.js` | AI for the living budget. **Authenticated** (`requireScholarOwn`) — unlike `ask-scholar`, because it can propose mutations. Deterministic Tier-1 reads answer common questions with no LLM call; anything else goes to Claude, which **proposes operations only**. The client shows them for approval and applies them via `/api/living/**`, so the AI path has no privilege the manual path lacks. Budget state is read server-side from Neon, never accepted from the caller. |
 | `src/lib/auth-client.js` | Better Auth React client (`createAuthClient` + `jwtClient()` plugin) pointed at the Neon Auth base URL. `getToken()` reads the JWT off the `set-auth-jwt` response header. |
 | `src/lib/api.js` | Fetch wrapper for `app/api/**` — Bearer token per request via `getToken()`, one 401-retry, `afterWrite()` poke hook consumed by `useChanges.js`. |
 | `gh-pages-redirect/` | Static redirect stub (`index.html` + `404.html`, rafgraph/spa-github-pages trick) published to GitHub Pages by `.github/workflows/deploy.yml` — forwards old bookmarks/hash routes to the Vercel domain. No build step; not part of the Next.js app. |
@@ -171,17 +173,40 @@ snapshot (nav shows an offline indicator).
 A tiered intelligence system behind the `/api/ask*` routes (`lib/ai/{context,tier1,
 tier2,tier3,action}.js`, ported verbatim from the original Supabase Edge Functions).
 Tier 1 is a deterministic, rule-based SQL resolver (no LLM, ~80% of queries); Tier 2
-is Gemini advisory; Tier 3 is Gemini 2.5 Flash ingestion (receipts, grade reports).
-See `ROADMAP-AI.md` for full status. The AI layer is Gemini-only; the `GOOGLE_AI_KEY`
-secret lives only in Vercel's project env vars — never in the client.
+is LLM advisory; Tier 3 is LLM multimodal ingestion (receipts, grade reports).
+See `ROADMAP-AI.md` for full status.
+
+### Provider routing (2026-08-24) — Claude for signed-in accounts, Gemini for the public
+
+The AI brain is **Claude Sonnet** (`claude-sonnet-5`, `lib/ai/claude.js`) for every
+route gated behind a real Better Auth sign-in — `app/api/ask` (mentor), `app/api/
+ask-budget` (scholar), and `app/api/agent` (both roles, Tier 4) — since both signed-in
+roles now share the same universal Tier 4 tool surface and it made sense to put one
+model behind all of it. The two **unauthenticated, public-facing** routes stay on
+Gemini exactly as before: `app/api/ask-public` (homepage widget) and `app/api/
+ask-scholar` (documented unauthenticated fallback — see its own rule below). Gemini's
+`GOOGLE_AI_KEY` and Claude's `ANTHROPIC_API_KEY` are both server-only Vercel env vars;
+neither is ever sent to the client.
+
+`lib/ai/tier2.js` and `lib/ai/tier3.js` are **shared** between an authenticated caller
+(`/api/ask`, Claude) and the unauthenticated `/api/ask-scholar` (Gemini) — both export
+their functions with a `provider` parameter (`'claude' | 'gemini'`, default `'gemini'`
+so existing unauthenticated call sites are unchanged) rather than carrying two copies
+of the same prompt logic. `lib/ai/{action,expense-edit,budget}.js` and `lib/ai/agent.js`
+are each used by exactly one authenticated route, so those import `lib/ai/claude.js`
+directly with no provider switch. When you add a new authenticated AI call site, route
+it through Claude the same way; when you touch `ask-public`/`ask-scholar`, keep it on
+Gemini — don't let the two drift back together or split further apart than this.
 
 ### Tier 4 — the agent (2026-08-13)
 
 Tiers 1–3 each answer one fixed shape of question and are effectively read-only.
 Tier 4 (`app/api/agent`, `lib/ai/{tools,agent}.js`) gives the AI **capability parity
 with the manual UI**: every operation a signed-in human can perform has exactly one
-entry in `lib/ai/tools.js`, and Gemini reaches them by function calling. 36 tools for
-the mentor role, 18 for a scholar.
+entry in `lib/ai/tools.js`, and Claude reaches them by tool use (the registry declares
+parameters in Gemini's OpenAPI-subset shape for historical reasons — `lib/ai/claude.js`'s
+`toJsonSchema()` converts to Claude's JSON-Schema `input_schema` at the call site rather
+than carrying two parallel schemas). 36 tools for the mentor role, 18 for a scholar.
 
 Three rules hold this together — break any one and the safety story is gone:
 

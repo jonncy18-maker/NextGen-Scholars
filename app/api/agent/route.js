@@ -6,7 +6,9 @@ import { toolsForRole } from '../../../lib/ai/tools.js';
 // Every response here is scoped per-caller (mentor vs. a specific scholar) — must never be cached by Next.js or the CDN.
 export const dynamic = 'force-dynamic';
 
-// The agent endpoint — the AI's parity path with the manual UI.
+// The agent endpoint — the AI's parity path with the manual UI. Runs on
+// Claude, the AI brain for signed-in mentor/scholar accounts (see CLAUDE.md
+// "AI layer").
 //
 // Unlike app/api/ask/route.js (mentor-only, fixed `type`s, read-only), this
 // route serves both signed-in roles and can change data. Two modes:
@@ -64,10 +66,10 @@ export const POST = withErrorHandling(async (request) => {
   const text = typeof body.text === 'string' ? body.text.trim() : '';
   if (!text) return json({ error: 'text is required' }, { status: 400 });
 
-  const apiKey = process.env.GOOGLE_AI_KEY;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return json(
-      { status: 'not_configured', error: 'AI not configured — add GOOGLE_AI_KEY to Vercel env vars.' },
+      { status: 'not_configured', error: 'AI not configured — add ANTHROPIC_API_KEY to Vercel env vars.' },
       { status: 503 }
     );
   }
