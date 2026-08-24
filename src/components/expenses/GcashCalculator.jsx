@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext.jsx';
 import { useFmt, FxCtx } from '../../context/FxContext.jsx';
-import { allExpenses } from '../../utils.js';
+import { allExpenses, parseAmount } from '../../utils.js';
 import { api } from '../../lib/api.js';
 
 // GCash cash-out fee: ₱15 per ₱500 block (or any fraction of one).
@@ -37,7 +37,7 @@ export function GcashCalculator({ scholar, onRecordSend }) {
   const [aiText, setAiText] = useState('');
   const [aiBusy, setAiBusy] = useState(false);
 
-  const raw = parseFloat(amount) || 0;
+  const raw = parseAmount(amount) || 0;
   const fee = raw > 0 ? gcFee(raw) : 0;
 
   // need → send: she receives `raw`, you send raw + fee.
@@ -142,7 +142,7 @@ export function GcashCalculator({ scholar, onRecordSend }) {
             <span className="gcc-peso">₱</span>
             <input
               className="gcc-input"
-              type="number" min="0" step="0.01" placeholder="0"
+              type="text" inputMode="decimal" placeholder="0"
               value={amount}
               onChange={e => setAmount(e.target.value)}
             />

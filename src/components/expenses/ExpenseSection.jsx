@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext.jsx';
 import { useFmt } from '../../context/FxContext.jsx';
-import { allExpenses } from '../../utils.js';
+import { allExpenses, parseAmount } from '../../utils.js';
 import { writeSent } from '../../api-writer.js';
 import { FilterPanel } from './FilterPanel.jsx';
 import { TotalsRow } from './ExpenseCharts.jsx';
@@ -187,7 +187,7 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
       cat:    editDraft.cat,
       bucket: editDraft.bucket || CAT_TO_BUCKET[editDraft.cat] || 'college',
       date:   editDraft.date,
-      amount: parseFloat(editDraft.amount) || 0,
+      amount: parseAmount(editDraft.amount) || 0,
       qty:    parseInt(editDraft.qty, 10)  || 1,
       avb:    editDraft.avb,
       vendor: editDraft.vendor.trim(),
@@ -211,7 +211,7 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
   }
 
   function handleSaveSplit(r) {
-    const valid = editSplitDeposits.filter(d => d.amount && parseFloat(d.amount) > 0);
+    const valid = editSplitDeposits.filter(d => d.amount && parseAmount(d.amount) > 0);
     if (valid.length < 2) return;
     const groupId = `grp_${Date.now()}`;
     const shared = {
@@ -225,7 +225,7 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
     // Deposit 1 → update the original row in place
     if (onEditExpense) onEditExpense(expScholar, r.id, {
       ...shared,
-      amount:   parseFloat(valid[0].amount),
+      amount:   parseAmount(valid[0].amount),
       qty:      1,
       date:     valid[0].date,
       sent:     valid[0].sent,
@@ -237,7 +237,7 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
       if (onAddExpense) onAddExpense(expScholar, {
         id: `local_${Date.now()}_${i}`,
         ...shared,
-        amount:   parseFloat(d.amount),
+        amount:   parseAmount(d.amount),
         qty:      1,
         date:     d.date,
         sent:     d.sent,
@@ -253,7 +253,7 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
   }
 
   function handleSaveNewDeposit(r) {
-    if (!newDeposit.amount || parseFloat(newDeposit.amount) <= 0) return;
+    if (!newDeposit.amount || parseAmount(newDeposit.amount) <= 0) return;
     const groupId = editDraft.group_id;
 
     // Persist group_id on the original row if this is the first split
@@ -265,7 +265,7 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
       id:       `local_${Date.now()}`,
       item:     editDraft.item.trim() || r.item,
       cat:      editDraft.cat || r.cat,
-      amount:   parseFloat(newDeposit.amount),
+      amount:   parseAmount(newDeposit.amount),
       qty:      1,
       date:     newDeposit.date,
       avb:      editDraft.avb || r.avb || r.status || 'Actual',
@@ -486,7 +486,7 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
                 {!editSplitActive && (
                   <label className="exp-edit-field">
                     <span>Amount (₱)</span>
-                    <input type="number" step="0.01" min="0" value={editDraft.amount} onChange={ev => setEditDraft(d => ({ ...d, amount: ev.target.value }))} />
+                    <input type="text" inputMode="decimal" value={editDraft.amount} onChange={ev => setEditDraft(d => ({ ...d, amount: ev.target.value }))} />
                   </label>
                 )}
                 {!editSplitActive && (
@@ -545,14 +545,14 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
 
                 {/* ── First-time split: full deposit table ── */}
                 {!groupId && editSplitActive && (() => {
-                  const refAmt   = parseFloat(editDraft.amount) || r.amount || 0;
+                  const refAmt   = parseAmount(editDraft.amount) || r.amount || 0;
                   const allocated = editSplitDeposits
-                    .filter(d => d.amount && parseFloat(d.amount) > 0)
-                    .reduce((s, d) => s + parseFloat(d.amount), 0);
+                    .filter(d => d.amount && parseAmount(d.amount) > 0)
+                    .reduce((s, d) => s + parseAmount(d.amount), 0);
                   const diff     = refAmt - allocated;
                   const balanced = Math.abs(diff) < 0.01;
                   const over     = diff < -0.01;
-                  const validDeps = editSplitDeposits.filter(d => d.amount && parseFloat(d.amount) > 0);
+                  const validDeps = editSplitDeposits.filter(d => d.amount && parseAmount(d.amount) > 0);
                   return (
                     <>
                       <div className="exp-edit-split-ref">
@@ -571,7 +571,7 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
                       {editSplitDeposits.map(d => (
                         <div key={d._id} className="split-deposit-row">
                           <input
-                            type="number" step="0.01" min="0" placeholder="0.00"
+                            type="text" inputMode="decimal" placeholder="0.00"
                             value={d.amount}
                             onChange={e => setEditSplitDeposits(ds => ds.map(x => x._id === d._id ? { ...x, amount: e.target.value } : x))}
                           />
@@ -652,7 +652,7 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
                     <label className="exp-edit-field">
                       <span>Amount (₱)</span>
                       <input
-                        type="number" step="0.01" min="0" placeholder="0.00"
+                        type="text" inputMode="decimal" placeholder="0.00"
                         value={newDeposit.amount}
                         onChange={e => setNewDeposit(d => ({ ...d, amount: e.target.value }))}
                         autoFocus
@@ -679,7 +679,7 @@ export function ExpenseSection({ currency, onCurrencyChange, fxRate, fxStatus, a
                           type="button" className="exp-edit-save"
                           style={{ padding: '7px 14px', fontSize: 12 }}
                           onClick={() => handleSaveNewDeposit(r)}
-                          disabled={!newDeposit.amount || parseFloat(newDeposit.amount) <= 0}
+                          disabled={!newDeposit.amount || parseAmount(newDeposit.amount) <= 0}
                         >Add</button>
                         <button
                           type="button" className="exp-edit-cancel"

@@ -69,9 +69,9 @@ export function FilterPanel({ filters, setFilters, uniqueCats, uniqueStatuses, u
         <div className="filter-col">
           <div className="filter-label">Amount (₱)</div>
           <div className="filter-range">
-            <input type="number" placeholder="Min" value={filters.amtMin} min="0" onChange={e => setFilters(f => ({ ...f, amtMin: e.target.value }))} />
+            <input type="text" inputMode="decimal" placeholder="Min" value={filters.amtMin} onChange={e => setFilters(f => ({ ...f, amtMin: e.target.value }))} />
             <span className="filter-range-sep">→</span>
-            <input type="number" placeholder="Max" value={filters.amtMax} min="0" onChange={e => setFilters(f => ({ ...f, amtMax: e.target.value }))} />
+            <input type="text" inputMode="decimal" placeholder="Max" value={filters.amtMax} onChange={e => setFilters(f => ({ ...f, amtMax: e.target.value }))} />
           </div>
         </div>
 

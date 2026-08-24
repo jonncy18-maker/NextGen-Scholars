@@ -99,3 +99,34 @@ export function monthlySpendTrend(s) {
   });
   return { thisMonth, lastMonth };
 }
+
+// Parse a user-typed money string into a number, tolerating the ways people
+// actually type amounts: "15,000", "₱15,000.50", "15 000". A bare parseFloat
+// stops at the first separator — parseFloat('15,000') is 15 — so any amount
+// that reaches us with its grouping intact was being silently truncated.
+// Returns NaN when there is no digit at all, so callers can keep the same
+// isNaN() validity checks they used with parseFloat.
+export function parseAmount(v) {
+  if (typeof v === 'number') return v;
+  if (v == null) return NaN;
+  const s = String(v).replace(/[^\d.,-]/g, '').trim();
+  if (!/\d/.test(s)) return NaN;
+  const lastComma = s.lastIndexOf(',');
+  const lastDot   = s.lastIndexOf('.');
+  let normalized;
+  if (lastComma !== -1 && lastDot !== -1) {
+    // Both present — whichever comes last is the decimal separator.
+    const decimalAt = Math.max(lastComma, lastDot);
+    normalized = s.slice(0, decimalAt).replace(/[.,]/g, '') + '.' + s.slice(decimalAt + 1).replace(/[.,]/g, '');
+  } else if (lastComma !== -1) {
+    // Commas only. Grouped ("15,000" / "1,234,567") is thousands separation;
+    // a lone comma with 1-2 trailing digits ("15,5") is a comma-decimal locale.
+    normalized = /^-?\d{1,3}(,\d{3})+$/.test(s) ? s.replace(/,/g, '') : s.replace(/,/g, '.');
+  } else {
+    // Dots only — a single dot is the ordinary decimal point ("16053.55");
+    // repeated dots can only be thousands grouping ("1.234.567").
+    normalized = (s.match(/\./g) || []).length > 1 ? s.replace(/\./g, '') : s;
+  }
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : NaN;
+}

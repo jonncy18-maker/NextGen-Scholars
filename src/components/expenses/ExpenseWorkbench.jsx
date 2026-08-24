@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../lib/api.js';
 import { useData } from '../../context/DataContext.jsx';
 import { useFmt } from '../../context/FxContext.jsx';
-import { allExpenses } from '../../utils.js';
+import { allExpenses, parseAmount } from '../../utils.js';
 import { CAT_TO_BUCKET } from '../../constants.js';
 import { GcashCalculator } from './GcashCalculator.jsx';
 
@@ -38,7 +38,7 @@ function diffRow(before, after) {
     if (fieldEq(before[f], after[f])) continue;
     changed.push({ field: f, before: before[f], after: after[f] });
     if (f === 'status') patch.avb = after.status;
-    else if (f === 'amount') patch.amount = Number(after.amount) || 0;
+    else if (f === 'amount') patch.amount = parseAmount(after.amount) || 0;
     else if (f === 'qty') patch.qty = Number(after.qty) || 1;
     else patch[f] = after[f];
   }
