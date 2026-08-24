@@ -68,6 +68,13 @@ function shiftMonth(key, delta) {
   return monthKey(new Date(y, m - 1 + delta, 1));
 }
 
+// Whole months from one "YYYY-MM" key to another (positive = b is later).
+function monthsBetween(a, b) {
+  const [ay, am] = a.split('-').map(Number);
+  const [by, bm] = b.split('-').map(Number);
+  return (by - ay) * 12 + (bm - am);
+}
+
 // This month through December of the same year — the horizon the "Through
 // December" view projects over. December itself returns a single column rather
 // than an empty run.
@@ -96,7 +103,7 @@ export function LivingBudget({ scholarKey }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
-  const [tab, setTab] = useState('budget'); // 'budget' | 'build'
+  const [tab, setTab] = useState('dashboard'); // 'dashboard' | 'budget' | 'build'
   const [view, setView] = useState('detail'); // 'detail' | 'year'
   const [collapsed, setCollapsed] = useState(() => new Set());
 
@@ -390,6 +397,14 @@ export function LivingBudget({ scholarKey }) {
         <button
           className="lb-tab"
           role="tab"
+          aria-selected={tab === 'dashboard'}
+          onClick={() => setTab('dashboard')}
+        >
+          Dashboard
+        </button>
+        <button
+          className="lb-tab"
+          role="tab"
           aria-selected={tab === 'budget'}
           onClick={() => setTab('budget')}
         >
@@ -450,6 +465,17 @@ export function LivingBudget({ scholarKey }) {
 
       {cats === null ? (
         <div className="lb-loading">Loading your budget…</div>
+      ) : tab === 'dashboard' ? (
+        <DashboardTab
+          groups={groups}
+          active={active}
+          amountOf={amountOf}
+          total={total}
+          month={month}
+          horizon={horizon}
+          unbudgetedCount={unbudgetedCount}
+          onGoToBuild={() => setTab('build')}
+        />
       ) : tab === 'budget' ? (
         <>
           <section className="lb-total-card">
@@ -577,6 +603,360 @@ export function LivingBudget({ scholarKey }) {
         />
       )}
     </ScholarShell>
+  );
+}
+
+// ── Dashboard view ─────────────────────────────────────────────────────────
+
+const ROLLUP_COLOR_VAR = {
+  housing: 'var(--lb-r-housing)',
+  food: 'var(--lb-r-food)',
+  transport: 'var(--lb-r-transport)',
+  school: 'var(--lb-r-school)',
+  personal: 'var(--lb-r-personal)',
+  savings: 'var(--lb-r-savings)',
+};
+
+function CheckIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M20 6L9 17l-5-5"
+        stroke="var(--ngs-green)"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="var(--ngs-gold)" strokeWidth="2.2" />
+      <path
+        d="M12 7v5l3.5 2"
+        stroke="var(--ngs-gold)"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+// Month keys strictly between `fromKey` and `toKey` (exclusive/inclusive),
+// used to draw the sinking-fund timeline dots.
+function sinkTimeline(fromKey, toKey) {
+  const n = monthsBetween(fromKey, toKey);
+  if (n <= 0) return [{ key: toKey, label: monthShort(toKey), due: true }];
+  const out = [];
+  for (let i = 1; i <= n; i++) {
+    const k = shiftMonth(fromKey, i);
+    out.push({ key: k, label: monthShort(k), due: k === toKey });
+  }
+  return out;
+}
+
+function DashboardTab({
+  groups,
+  active,
+  amountOf,
+  total,
+  month,
+  horizon,
+  unbudgetedCount,
+  onGoToBuild,
+}) {
+  // "Semester" is an approximation, not a real academic-calendar lookup —
+  // living budget has no semester start/end data of its own, so it scales
+  // this month's plan the same way the Through December view already
+  // projects a category forward: repeat the current estimate.
+  const [scope, setScope] = useState('month');
+  const mult = scope === 'semester' ? 6 : 1;
+
+  const rollupTotals = useMemo(() => {
+    const sums = {};
+    for (const cat of active) {
+      const amt = amountOf(cat);
+      if (amt <= 0) continue;
+      sums[cat.rollup] = (sums[cat.rollup] || 0) + amt;
+    }
+    return LIVING_ROLLUPS.map((r) => ({ key: r.key, label: r.label, amount: sums[r.key] || 0 }))
+      .filter((r) => r.amount > 0)
+      .sort((a, b) => b.amount - a.amount);
+  }, [active, amountOf]);
+
+  const donutTotal = rollupTotals.reduce((s, r) => s + r.amount, 0);
+  const C = 2 * Math.PI * 70;
+  let cursor = 0;
+  const segments = rollupTotals.map((r) => {
+    const frac = donutTotal > 0 ? r.amount / donutTotal : 0;
+    const length = frac * C;
+    const seg = {
+      ...r,
+      length,
+      offset: -cursor,
+      color: ROLLUP_COLOR_VAR[r.key] || 'var(--ngs-muted)',
+    };
+    cursor += length;
+    return seg;
+  });
+
+  const sinkingFunds = useMemo(
+    () =>
+      active
+        .filter((c) => c.kind === 'sinking' && c.sinking_due_month)
+        .map((c) => ({ cat: c, monthsToDue: monthsBetween(month, c.sinking_due_month) }))
+        .filter((f) => f.monthsToDue >= 0)
+        .sort((a, b) => a.monthsToDue - b.monthsToDue),
+    [active, month]
+  );
+  const nextDue = sinkingFunds[0];
+
+  return (
+    <>
+      <section className="lb-total-card lb-dash-hero">
+        <div>
+          <div className="lb-total-label">Planned this month</div>
+          <div className="lb-total-value">{fmtPhp(total)}</div>
+          <div className="lb-dash-hero-note">Nothing changes unless you change it in Build.</div>
+
+          <div className="lb-dash-ksplit">
+            {groups.map((g) => (
+              <div key={g.kind} className={`lb-dash-ksplit-row is-${g.kind}`}>
+                <span className="lb-dash-ksplit-dot" />
+                <span className="lb-dash-ksplit-name">{g.label}</span>
+                <span className="lb-dash-ksplit-track">
+                  <span
+                    className="lb-dash-ksplit-fill"
+                    style={{ width: total > 0 ? `${Math.round((g.total / total) * 100)}%` : '0%' }}
+                  />
+                </span>
+                <span className="lb-dash-ksplit-amt">{fmtPhp(g.total)}</span>
+                <span className="lb-dash-ksplit-cnt">
+                  {g.rows.length} cat{g.rows.length === 1 ? '' : 's'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="lb-dash-headsup">
+          <div className="lb-dash-headsup-title">Heads up</div>
+
+          <div className="lb-dash-headsup-item">
+            <CheckIcon />
+            <div>
+              {unbudgetedCount > 0 ? (
+                <button type="button" className="lb-dash-headsup-lead" onClick={onGoToBuild}>
+                  {unbudgetedCount} categor{unbudgetedCount === 1 ? 'y' : 'ies'} still unbudgeted
+                </button>
+              ) : (
+                <div className="lb-dash-headsup-lead">All {active.length} categories budgeted</div>
+              )}
+              <div className="lb-dash-headsup-sub">
+                {unbudgetedCount > 0 ? 'Set an amount in Build' : 'Nothing sitting at ₱0'}
+              </div>
+            </div>
+          </div>
+
+          <div className="lb-dash-headsup-item">
+            <ClockIcon />
+            <div>
+              <div className="lb-dash-headsup-lead">
+                {nextDue
+                  ? `${nextDue.cat.name} due in ${nextDue.monthsToDue} month${nextDue.monthsToDue === 1 ? '' : 's'}`
+                  : 'No non-recurring costs due yet'}
+              </div>
+              <div className="lb-dash-headsup-sub">
+                {nextDue
+                  ? `${monthLabel(nextDue.cat.sinking_due_month)} · ${fmtPhp(sinkingMonthly(nextDue.cat))}/mo is covering it`
+                  : 'Set a due month on one in Build to see it here'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="lb-dash-grid2">
+        <section className="lb-dash-card">
+          <div className="lb-dash-card-hd">
+            <div>
+              <h3>Where it&rsquo;s going</h3>
+              <div className="lb-dash-card-sub">By category group</div>
+            </div>
+            <div className="lb-seg" role="tablist">
+              <button
+                role="tab"
+                aria-selected={scope === 'month'}
+                onClick={() => setScope('month')}
+              >
+                Month
+              </button>
+              <button
+                role="tab"
+                aria-selected={scope === 'semester'}
+                onClick={() => setScope('semester')}
+              >
+                Semester
+              </button>
+            </div>
+          </div>
+          <div className="lb-dash-scope-label">
+            {scope === 'semester' ? `${monthLabel(month)} · next 6 months` : monthLabel(month)}
+          </div>
+
+          {segments.length === 0 ? (
+            <div className="lb-dash-donut-empty">
+              Nothing budgeted yet — switch to Build to start.
+            </div>
+          ) : (
+            <div className="lb-dash-donut-row">
+              <svg viewBox="0 0 180 180" width="150" height="150" style={{ flex: 'none' }}>
+                <g transform="rotate(-90 90 90)">
+                  <circle
+                    cx="90"
+                    cy="90"
+                    r="70"
+                    fill="none"
+                    stroke="var(--ngs-rule)"
+                    strokeWidth="26"
+                  />
+                  {segments.map((s) => (
+                    <circle
+                      key={s.key}
+                      cx="90"
+                      cy="90"
+                      r="70"
+                      fill="none"
+                      strokeWidth="26"
+                      style={{ stroke: s.color }}
+                      strokeDasharray={`${s.length} ${C - s.length}`}
+                      strokeDashoffset={s.offset}
+                    />
+                  ))}
+                </g>
+                <text
+                  x="90"
+                  y="86"
+                  textAnchor="middle"
+                  style={{ fontFamily: 'var(--ngs-display)', fontSize: 22, fill: 'var(--ngs-ink)' }}
+                >
+                  {fmtPhp(donutTotal * mult)}
+                </text>
+                <text
+                  x="90"
+                  y="104"
+                  textAnchor="middle"
+                  style={{
+                    fontFamily: 'var(--ngs-mono)',
+                    fontSize: 9,
+                    letterSpacing: '.08em',
+                    fill: 'var(--ngs-muted)',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {scope === 'semester' ? 'next 6 mo' : 'this month'}
+                </text>
+              </svg>
+
+              <div className="lb-dash-legend">
+                {segments.map((s) => (
+                  <div key={s.key} className="lb-dash-legend-row">
+                    <span className="lb-dash-legend-dot" style={{ background: s.color }} />
+                    <span className="lb-dash-legend-name">{s.label}</span>
+                    <span className="lb-dash-legend-amt">{fmtPhp(s.amount * mult)}</span>
+                    <span className="lb-dash-legend-pct">
+                      {donutTotal > 0 ? `${Math.round((s.amount / donutTotal) * 100)}%` : '—'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="lb-dash-card">
+          <h3>What&rsquo;s coming</h3>
+          <div className="lb-dash-card-sub" style={{ marginBottom: 20 }}>
+            Through {monthLabel(horizon[horizon.length - 1] || month)}, at this month&rsquo;s plan
+          </div>
+
+          <div className="lb-dash-bars">
+            {horizon.map((m, i) => {
+              const dueHere = sinkingFunds.some((f) => f.cat.sinking_due_month === m);
+              return (
+                <div key={m} className={`lb-dash-bar-col${i === 0 ? ' is-now' : ''}`}>
+                  {dueHere && <span className="lb-dash-bar-due" />}
+                  <span className="lb-dash-bar-val">
+                    {Math.round(total).toLocaleString('en-US')}
+                  </span>
+                  <div className="lb-dash-bar" />
+                  <span className="lb-dash-bar-label">{monthShort(m)}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {sinkingFunds.length > 0 && (
+            <div className="lb-dash-bar-note">
+              <span className="lb-dash-bar-note-dot" />
+              {sinkingFunds.map((f) => f.cat.name).join(', ')} actually leave
+              {sinkingFunds.length === 1 ? 's' : ''} then — the bars still show the flat set-aside
+            </div>
+          )}
+        </section>
+      </div>
+
+      {sinkingFunds.length > 0 && (
+        <section className="lb-dash-card" style={{ marginTop: 20 }}>
+          <h3>Non-recurring, coming up</h3>
+          <div className="lb-dash-card-sub" style={{ marginBottom: 18 }}>
+            Costs you&rsquo;re setting aside for a little each month
+          </div>
+
+          {sinkingFunds.map(({ cat, monthsToDue }) => {
+            const ticks = sinkTimeline(month, cat.sinking_due_month);
+            return (
+              <div key={cat.id} className="lb-dash-sink-card">
+                <div className="lb-dash-sink-top">
+                  <div>
+                    <div className="lb-dash-sink-name">{cat.name}</div>
+                    <div className="lb-dash-sink-meta">
+                      {fmtPhp(sinkingMonthly(cat))}/mo → {fmtPhp(cat.sinking_target_php)} target
+                    </div>
+                  </div>
+                  <div>
+                    <div className="lb-dash-sink-due">{monthLabel(cat.sinking_due_month)}</div>
+                    <div className="lb-dash-sink-due-sub">
+                      {monthsToDue === 0
+                        ? 'due this month'
+                        : `in ${monthsToDue} month${monthsToDue === 1 ? '' : 's'}`}
+                    </div>
+                  </div>
+                </div>
+
+                {ticks.length <= 6 && (
+                  <div className="lb-dash-sink-timeline">
+                    {ticks.map((t) => (
+                      <div key={t.key} className={`lb-dash-sink-tick${t.due ? ' is-due' : ''}`}>
+                        <div className="lb-dash-sink-tick-bar" />
+                        <span className="lb-dash-sink-tick-label">
+                          {t.label}
+                          {t.due ? ' ●' : ''}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </section>
+      )}
+    </>
   );
 }
 
