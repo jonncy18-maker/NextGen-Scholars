@@ -12,6 +12,7 @@ import { groupExpenses } from '../components/expenses/filterHelpers.js';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { ScholarIngestPanel } from '../components/ScholarIngestPanel.jsx';
 import { ExpenseAskWidget } from '../components/ExpenseAskWidget.jsx';
+import { parseAmount } from '../utils.js';
 import '../styles/entry.css';
 
 const SCHOLARS = Object.entries(NGS_DATA.scholars)
@@ -148,7 +149,7 @@ function PendingReview({ submissions, openComments, editingId, editMode, editDra
                       <select value={editDraft.cat} onChange={e => setEditDraft(d => ({ ...d, cat: e.target.value }))}>
                         {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}</select></label>
                     <label className="ef-edit-field"><span>Amount (₱)</span>
-                      <input type="number" step="0.01" min="0" value={editDraft.amount}
+                      <input type="text" inputMode="decimal" value={editDraft.amount}
                         onChange={e => setEditDraft(d => ({ ...d, amount: e.target.value }))} /></label>
                     <label className="ef-edit-field"><span>Qty</span>
                       <input type="number" min="1" value={editDraft.qty}
@@ -240,7 +241,7 @@ function ApprovedExpensesTable({ currentSem, semExpenses, groupBy, setGroupBy, e
                   <select value={editDraft.cat} onChange={ev => setEditDraft(d => ({ ...d, cat: ev.target.value }))}>
                     {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}</select></label>
                 <label className="ef-edit-field"><span>Amount (₱)</span>
-                  <input type="number" step="0.01" min="0" value={editDraft.amount} onChange={ev => setEditDraft(d => ({ ...d, amount: ev.target.value }))} /></label>
+                  <input type="text" inputMode="decimal" value={editDraft.amount} onChange={ev => setEditDraft(d => ({ ...d, amount: ev.target.value }))} /></label>
                 <label className="ef-edit-field"><span>Qty</span>
                   <input type="number" min="1" value={editDraft.qty} onChange={ev => setEditDraft(d => ({ ...d, qty: ev.target.value }))} /></label>
                 <label className="ef-edit-field"><span>Date</span>
@@ -402,7 +403,7 @@ function ExpenseForm({ scholar, onLogout }) {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const singleValid = form.item.trim() && form.amount &&
-    !isNaN(parseFloat(form.amount)) && parseFloat(form.amount) > 0;
+    !isNaN(parseAmount(form.amount)) && parseAmount(form.amount) > 0;
 
   async function handleSingleSubmit(e) {
     e.preventDefault();
@@ -412,7 +413,7 @@ function ExpenseForm({ scholar, onLogout }) {
       sem:    currentSem,
       item:   form.item.trim(),
       cat:    form.cat,
-      amount: parseFloat(form.amount),
+      amount: parseAmount(form.amount),
       qty:    parseInt(form.qty, 10) || 1,
       date:   form.date,
       avb:    form.avb,
@@ -435,7 +436,7 @@ function ExpenseForm({ scholar, onLogout }) {
     }
   }
 
-  const filledRows = multiRows.filter(r => r.item.trim() && r.amount && !isNaN(parseFloat(r.amount)) && parseFloat(r.amount) > 0);
+  const filledRows = multiRows.filter(r => r.item.trim() && r.amount && !isNaN(parseAmount(r.amount)) && parseAmount(r.amount) > 0);
 
   function updateMultiRow(idx, field, val) {
     setMultiRows(prev => prev.map((r, i) => i === idx ? { ...r, [field]: val } : r));
@@ -457,7 +458,7 @@ function ExpenseForm({ scholar, onLogout }) {
           sem:    currentSem,
           item:   r.item.trim(),
           cat:    r.cat,
-          amount: parseFloat(r.amount),
+          amount: parseAmount(r.amount),
           qty:    parseInt(r.qty, 10) || 1,
           date:   r.date,
           avb:    r.avb,
@@ -488,7 +489,7 @@ function ExpenseForm({ scholar, onLogout }) {
   function cancelEdit() { setEditingId(null); setEditDraft({}); }
   function saveEdit(originalExp) {
     const fields = { item: editDraft.item.trim(), cat: editDraft.cat, date: editDraft.date,
-      amount: parseFloat(editDraft.amount) || 0, qty: parseInt(editDraft.qty, 10) || 1,
+      amount: parseAmount(editDraft.amount) || 0, qty: parseInt(editDraft.qty, 10) || 1,
       avb: editDraft.avb, vendor: editDraft.vendor.trim() };
     const updated = { ...originalExp, ...fields };
     setExpensesBySem(prev => {
@@ -543,7 +544,7 @@ function ExpenseForm({ scholar, onLogout }) {
       sem:    currentSem,
       item:   resubmitDraft.item.trim(),
       cat:    resubmitDraft.cat,
-      amount: parseFloat(resubmitDraft.amount) || 0,
+      amount: parseAmount(resubmitDraft.amount) || 0,
       qty:    parseInt(resubmitDraft.qty, 10) || 1,
       date:   resubmitDraft.date,
       avb:    resubmitDraft.avb,
@@ -564,7 +565,7 @@ function ExpenseForm({ scholar, onLogout }) {
       ...(sub.expense_data || {}),
       item:   resubmitDraft.item.trim(),
       cat:    resubmitDraft.cat,
-      amount: parseFloat(resubmitDraft.amount) || 0,
+      amount: parseAmount(resubmitDraft.amount) || 0,
       qty:    parseInt(resubmitDraft.qty, 10) || 1,
       date:   resubmitDraft.date,
       avb:    resubmitDraft.avb,
@@ -589,7 +590,7 @@ function ExpenseForm({ scholar, onLogout }) {
     try {
       const current = {
         item:   resubmitDraft.item,
-        amount: Number(resubmitDraft.amount) || 0,
+        amount: parseAmount(resubmitDraft.amount) || 0,
         qty:    Number(resubmitDraft.qty) || 1,
         cat:    resubmitDraft.cat,
         date:   resubmitDraft.date,
@@ -742,7 +743,7 @@ function ExpenseForm({ scholar, onLogout }) {
               </div>
               <div className="ef-field">
                 <label>Amount (₱)</label>
-                <input type="number" step="0.01" min="0" placeholder="0.00" value={form.amount}
+                <input type="text" inputMode="decimal" placeholder="0.00" value={form.amount}
                   onChange={e => set('amount', e.target.value)} />
               </div>
               <div className="ef-field">
@@ -804,7 +805,7 @@ function ExpenseForm({ scholar, onLogout }) {
                             value={row.item} onChange={e => updateMultiRow(idx, 'item', e.target.value)} /></td>
                           <td><select className="ef-multi-input ef-multi-cat" value={row.cat} onChange={e => updateMultiRow(idx, 'cat', e.target.value)}>
                             {EXPENSE_CATS.map(c => <option key={c}>{c}</option>)}</select></td>
-                          <td><input className="ef-multi-input ef-multi-num" type="number" step="0.01" min="0" placeholder="0.00"
+                          <td><input className="ef-multi-input ef-multi-num" type="text" inputMode="decimal" placeholder="0.00"
                             value={row.amount} onChange={e => updateMultiRow(idx, 'amount', e.target.value)} /></td>
                           <td><input className="ef-multi-input ef-multi-sm" type="number" min="1"
                             value={row.qty} onChange={e => updateMultiRow(idx, 'qty', e.target.value)} /></td>

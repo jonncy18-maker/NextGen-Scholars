@@ -1,3 +1,5 @@
+import { parseAmount } from '../../utils.js';
+
 export const EMPTY_FILTERS = {
   item: '',
   buckets: [],
@@ -27,8 +29,8 @@ export function applyFilters(rows, f) {
     if (f.cats.length > 0 && !f.cats.includes(r.cat)) return false;
     if (f.dateFrom && r.date < f.dateFrom) return false;
     if (f.dateTo && r.date > f.dateTo) return false;
-    if (f.amtMin !== '' && r.amount < parseFloat(f.amtMin)) return false;
-    if (f.amtMax !== '' && r.amount > parseFloat(f.amtMax)) return false;
+    if (f.amtMin !== '' && r.amount < parseAmount(f.amtMin)) return false;
+    if (f.amtMax !== '' && r.amount > parseAmount(f.amtMax)) return false;
     if (f.statuses.length > 0 && !f.statuses.includes(r.status)) return false;
     if (f.sents.length > 0) {
       const normSent = r.sent ? r.sent.charAt(0).toUpperCase() + r.sent.slice(1).toLowerCase() : '';
