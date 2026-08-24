@@ -1156,6 +1156,12 @@
   font-family: var(--ngs-display);
   font-size: 19px;
   font-weight: 600;
+  /* .lb-modal's background is the static --ngs-surface (always light,
+     no dark-theme remap), but this heading had no color of its own — it
+     inherited the page's dark-mode text color and went near-invisible
+     on the light card. Every other modal text (.lb-modal-sub, .lb-field
+     input/select) already pins an explicit --ngs-* color for this reason. */
+  color: var(--ngs-ink);
 }
 .lb-modal-sub {
   font-family: var(--ngs-mono);

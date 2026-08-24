@@ -1454,7 +1454,7 @@ function BuilderModal({ cat, month, existingItems, currentAmount, busy, onCancel
             <>
               <div className="lb-simple-wrap">
                 <label className="lb-field">
-                  <span>Amount</span>
+                  <span>{cat.kind === 'sinking' ? 'Monthly set-aside' : 'Amount'}</span>
                   <input
                     type="number"
                     min="0"
@@ -1464,28 +1464,36 @@ function BuilderModal({ cat, month, existingItems, currentAmount, busy, onCancel
                     autoFocus
                   />
                 </label>
-                <label className="lb-field">
-                  <span>Per</span>
-                  <select value={simpleBasis} onChange={(e) => setSimpleBasis(e.target.value)}>
-                    {LIVING_BASES.map((b) => (
-                      <option key={b.key} value={b.key}>
-                        {b.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <div className="lb-simple-out">
-                {simpleBasis === 'month' ? (
-                  <>{fmtPhp(Number(simpleAmt) || 0)} a month</>
-                ) : (
-                  <>
-                    {fmtPhp(Number(simpleAmt) || 0)} × {simplePer.toFixed(2)} {simpleBasis}s
-                  </>
+                {/* A non-recurring cost is already expressed as a monthly
+                    set-aside — "per day/week" doesn't apply to it, so this
+                    selector (and the day/week conversion below) is for
+                    fixed/flexible categories only. */}
+                {cat.kind !== 'sinking' && (
+                  <label className="lb-field">
+                    <span>Per</span>
+                    <select value={simpleBasis} onChange={(e) => setSimpleBasis(e.target.value)}>
+                      {LIVING_BASES.map((b) => (
+                        <option key={b.key} value={b.key}>
+                          {b.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 )}
-                {' = '}
-                <b>{fmtPhp(simpleTotal)}</b> a month
               </div>
+              {cat.kind !== 'sinking' && (
+                <div className="lb-simple-out">
+                  {simpleBasis === 'month' ? (
+                    <>{fmtPhp(Number(simpleAmt) || 0)} a month</>
+                  ) : (
+                    <>
+                      {fmtPhp(Number(simpleAmt) || 0)} × {simplePer.toFixed(2)} {simpleBasis}s
+                    </>
+                  )}
+                  {' = '}
+                  <b>{fmtPhp(simpleTotal)}</b> a month
+                </div>
+              )}
             </>
           ) : (
             <>
