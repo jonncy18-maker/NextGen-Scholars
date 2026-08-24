@@ -10,6 +10,7 @@
     "format": "prettier --write \"src/**/*.{js,jsx,css}\" \"app/**/*.jsx\" \"scholars-data.js\""
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.120.0",
     "@neondatabase/serverless": "^1.1.0",
     "better-auth": "^1.6.23",
     "jose": "^6.2.3",

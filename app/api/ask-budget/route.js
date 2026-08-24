@@ -21,6 +21,9 @@ export const dynamic = 'force-dynamic';
 // The model still doesn't write. It proposes operations; the client shows them
 // for approval and applies them through /api/living/**, which re-checks
 // ownership on every call. This mirrors action.js and expense-edit.js.
+//
+// Authenticated (Better Auth), so this runs on Claude — the AI brain for
+// signed-in mentor/scholar accounts (see CLAUDE.md "AI layer").
 
 const MAX_BODY_BYTES = 32 * 1024;
 const MAX_TEXT_CHARS = 2000;
@@ -77,7 +80,7 @@ export const POST = withErrorHandling(async (request) => {
   const direct = looksLikeWriteIntent(text) ? null : resolveBudgetRead(text, state);
   if (direct) return json({ kind: 'answer', tier: 1, text: direct });
 
-  const apiKey = process.env.GOOGLE_AI_KEY;
+  const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return json({
       kind: 'answer',
