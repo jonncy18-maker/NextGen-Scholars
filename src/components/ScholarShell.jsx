@@ -46,17 +46,38 @@ export function isExpensesOnlyScholar(scholarKey) {
 // ScholarHome).
 export function scholarNavItems(scholarKey, active, isMentor) {
   const expensesOnly = isExpensesOnlyScholar(scholarKey);
+
+  // A mentor only gets the destinations they can actually reach. /budget is
+  // the ONE scholar route that admits a mentor (ScholarAuthGate's allowMentor
+  // — safe there because every fetch on it sends ?scholar=). Every other item
+  // below gates on the scholar's own key, so offering them to a mentor is a
+  // link straight into her sign-in screen: it reads as being kicked out to a
+  // login page, which is exactly what it is.
+  //
+  // Fixing that by spreading allowMentor to those screens is NOT the move —
+  // they don't scope their fetches (bootstrap/grades/english return every
+  // scholar's rows to a mentor caller), which is the cross-scholar corruption
+  // the note on mayView() describes. Scope a screen's fetches first, then it
+  // can join this list.
+  if (isMentor) {
+    return [
+      {
+        key: 'navigator',
+        href: '/navigator',
+        label: 'Back to Navigator',
+        icon: <IcnUsers size={16} />,
+      },
+      {
+        key: 'budget',
+        href: `/budget/${scholarKey}`,
+        label: 'Living Budget',
+        icon: <IcnPie size={16} />,
+      },
+      { key: 'site', href: '/', label: 'Public Site', icon: <IcnHome size={16} /> },
+    ].map((item) => (item.key === active ? { ...item, active: true } : item));
+  }
+
   return [
-    // Mentor viewing a scholar's own route (currently just /budget/:scholar,
-    // via ScholarAuthGate's allowMentor) gets a way back to Navigator pinned
-    // at the top of what is otherwise the scholar's own nav — without it,
-    // this sidebar is indistinguishable from actually being signed in as her.
-    isMentor && {
-      key: 'navigator',
-      href: '/navigator',
-      label: 'Back to Navigator',
-      icon: <IcnUsers size={16} />,
-    },
     {
       key: 'overview',
       href: `/home/${scholarKey}`,
@@ -146,14 +167,19 @@ export function ScholarShell({
         items={scholarNavItems(scholarKey, active, isMentor)}
         footer={
           <>
-            <div className="ds-identity" title={name}>
-              <span className="ds-avatar">{name?.[0]}</span>
+            {/* Signed-in identity, not the page's subject. Showing the
+                scholar's name over the word "Mentor" read as "you are Claire,
+                a mentor" — the exact confusion this whole flow is meant to
+                dispel. A mentor sees their own role as the name and whose
+                page they're on underneath. */}
+            <div className="ds-identity" title={isMentor ? `Mentor — viewing ${name}` : name}>
+              <span className="ds-avatar">{isMentor ? 'M' : name?.[0]}</span>
               <div className="ds-footer-label">
-                <div className="ds-identity-name">{name}</div>
-                {identityRole && (
-                  <div className={`ds-identity-role${isMentor ? ' is-mentor' : ''}`}>
-                    {identityRole}
-                  </div>
+                <div className="ds-identity-name">{isMentor ? 'Mentor' : name}</div>
+                {isMentor ? (
+                  <div className="ds-identity-role is-mentor">Viewing {name}</div>
+                ) : (
+                  identityRole && <div className="ds-identity-role">{identityRole}</div>
                 )}
               </div>
             </div>

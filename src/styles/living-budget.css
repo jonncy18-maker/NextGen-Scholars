@@ -263,24 +263,58 @@
   border-color: var(--ngs-gold);
 }
 
-.lb-flow {
-  flex: 1 1 100%;
+.lb-row-flowbtn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ds-rule);
+  background: var(--ds-surface);
+  color: var(--ds-muted);
+  font-size: 14px;
+  line-height: 1;
+  border-radius: 50%;
+  cursor: pointer;
 }
-.lb-flow-row {
+.lb-row-flowbtn:hover:not(:disabled) {
+  border-color: var(--ngs-gold);
+  color: var(--ngs-gold);
+}
+.lb-row-flowbtn[aria-pressed='true'] {
+  background: var(--ngs-gold);
+  border-color: var(--ngs-gold);
+  color: var(--ngs-navy);
+}
+.lb-row-flowbtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.lb-row-flowpanel {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 15px;
+  border-top: 1px solid var(--ds-rule);
+  background: var(--ds-surface-2);
+  font-size: 13px;
+  color: var(--ds-ink);
 }
-.lb-flow-row input {
-  flex: 1 1 auto;
+.lb-row-flowpanel input[type='month'] {
+  padding: 7px 9px;
+  border: 1px solid var(--ds-rule);
+  border-radius: 8px;
+  background: var(--ds-surface);
+  color: var(--ds-ink);
+  font-size: 13px;
+  font-family: var(--ngs-sans);
 }
-.lb-flow-row .lb-btn {
-  flex: 0 0 auto;
+.lb-row-flowpanel input[type='month']:focus {
+  outline: none;
+  border-color: var(--ngs-gold);
+}
+.lb-row-flowpanel .lb-btn {
   padding: 7px 14px;
   font-size: 12px;
-}
-.lb-field-hint {
-  font-size: 11px;
-  color: var(--ds-muted);
 }
 
 .lb-remove {
@@ -1830,4 +1864,139 @@
 .lb-dash-sink-tick.is-due .lb-dash-sink-tick-label {
   color: var(--ngs-red);
   font-weight: 700;
+}
+
+/* ── Push to Finances (mentor only) ──────────────────────────────────────── */
+.ptf-note {
+  font-size: 12.5px;
+  color: var(--ds-muted);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+.ptf-replaces {
+  border: 1px solid var(--ngs-amber);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ds-ink);
+}
+.ptf-table td,
+.ptf-table th {
+  vertical-align: middle;
+}
+.ptf-table tr.is-skipped {
+  opacity: 0.4;
+}
+.ptf-cat-name {
+  font-weight: 600;
+  font-size: 13px;
+}
+.ptf-cat-why {
+  font-size: 10.5px;
+  color: var(--ds-muted);
+  font-style: italic;
+}
+
+.ptf-sched {
+  border: 1px solid var(--ds-rule);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  background: var(--ds-surface);
+}
+.ptf-sched-hd {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.ptf-sched-name {
+  font-weight: 600;
+  font-size: 13.5px;
+}
+.ptf-sched-cat {
+  font-family: var(--ngs-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+}
+.ptf-sched-amt {
+  margin-left: auto;
+  font-family: var(--ngs-mono);
+  font-size: 13px;
+}
+.ptf-sched-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+.ptf-sched-row > select {
+  flex: 1 1 240px;
+  padding: 7px 9px;
+  border: 1px solid var(--ds-rule);
+  border-radius: 8px;
+  background: var(--ds-surface);
+  color: var(--ds-ink);
+  font-size: 13px;
+}
+.ptf-sched-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ptf-sched-field > span {
+  font-family: var(--ngs-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ds-muted);
+}
+.ptf-sched-field input,
+.ptf-sched-field select {
+  padding: 7px 9px;
+  border: 1px solid var(--ds-rule);
+  border-radius: 8px;
+  background: var(--ds-surface);
+  color: var(--ds-ink);
+  font-size: 13px;
+}
+.ptf-sched-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.ptf-chip {
+  font-family: var(--ngs-mono);
+  font-size: 10.5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--ds-rule);
+  color: var(--ds-muted);
+}
+.ptf-sched-missing {
+  font-size: 11.5px;
+  color: var(--ngs-red);
+}
+
+.ptf-done {
+  text-align: center;
+  padding: 26px 10px;
+}
+.ptf-done-big {
+  font-family: var(--ngs-display);
+  font-size: 26px;
+  color: var(--ds-ink);
+  margin-bottom: 8px;
+}
+.ptf-done-sub {
+  font-size: 13px;
+  color: var(--ds-muted);
+  line-height: 1.6;
+  max-width: 520px;
+  margin: 0 auto;
 }

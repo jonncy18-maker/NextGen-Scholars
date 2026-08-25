@@ -105,7 +105,11 @@ export async function deleteEnglishScenario(id) {
   api.afterWrite();
 }
 
-export async function updatePeriodWeeklyTargets(periodId, weeklyTargetHours, weeklyTargetByCategory) {
+export async function updatePeriodWeeklyTargets(
+  periodId,
+  weeklyTargetHours,
+  weeklyTargetByCategory
+) {
   await api.patch(`/english/periods/${periodId}`, {
     weekly_target_hours: weeklyTargetHours,
     weekly_target_by_category: weeklyTargetByCategory,
@@ -125,9 +129,12 @@ export async function updatePeriodWeeklyTargets(periodId, weeklyTargetHours, wee
 // The seed passes false so that re-opening a budget whose categories were all
 // archived doesn't resurrect them with the template's settings.
 export async function createLivingCategories(scholar, categories, { restoreArchived = true } = {}) {
-  const rows = await api.post('/living/categories', Array.isArray(categories)
-    ? { scholar, categories, restoreArchived }
-    : { scholar, ...categories, restoreArchived });
+  const rows = await api.post(
+    '/living/categories',
+    Array.isArray(categories)
+      ? { scholar, categories, restoreArchived }
+      : { scholar, ...categories, restoreArchived }
+  );
   api.afterWrite();
   return rows;
 }
@@ -170,6 +177,24 @@ export async function clearLivingItems({ month, category_id }) {
   const res = await api.del(
     `/living/items?category_id=${encodeURIComponent(category_id)}&month=${encodeURIComponent(month)}`
   );
+  api.afterWrite();
+  return res;
+}
+
+// ── Push to Finances (mentor only) ────────────────────────────────────────
+// Read-only: proposes how a scholar's budget maps onto the program's expense
+// categories. Writes nothing — the mentor approves first, exactly like the
+// Tier 4 agent's plan/confirm split.
+export async function planPushToFinances({ scholar, month }) {
+  return api.get(
+    `/living/push-to-finances?scholar=${encodeURIComponent(scholar)}&month=${encodeURIComponent(month)}`
+  );
+}
+
+// The confirm half. Sends schedules, NOT dates — the server re-derives every
+// date from the schedule so the preview can't diverge from what gets written.
+export async function confirmPushToFinances({ scholar, month, sem, lines }) {
+  const res = await api.post('/living/push-to-finances', { scholar, month, sem, lines });
   api.afterWrite();
   return res;
 }

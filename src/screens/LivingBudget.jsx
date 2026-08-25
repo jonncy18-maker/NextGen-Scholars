@@ -3,6 +3,7 @@ import { api } from '../lib/api.js';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { ScholarShell } from '../components/ScholarShell.jsx';
 import { BudgetAskPanel } from '../components/BudgetAskPanel.jsx';
+import { PushToFinancesModal } from '../components/PushToFinancesModal.jsx';
 import { useSessionExpired } from '../hooks/useSessionExpired.js';
 import {
   LIVING_KINDS,
@@ -130,6 +131,7 @@ export function LivingBudget({ scholarKey }) {
 
   const [addOpen, setAddOpen] = useState(false);
   const [builderFor, setBuilderFor] = useState(null); // category row
+  const [pushOpen, setPushOpen] = useState(false); // mentor-only push-to-finances
 
   // Seeding is a one-shot per scholar per session. Without this the seed
   // branch below re-fires on every month change for a scholar who has
@@ -507,6 +509,18 @@ export function LivingBudget({ scholarKey }) {
             </button>
           </div>
         )}
+        {/* Mentor-only, and deliberately always visible rather than tucked
+            into one tab: it writes to the PROGRAM ledger, which is the
+            mentor's book, not hers. A scholar never sees it. */}
+        {isMentor && (
+          <button
+            className="lb-btn lb-btn-ghost"
+            onClick={() => setPushOpen(true)}
+            title="Map this month's budget onto the program's expense categories"
+          >
+            Push to Finances →
+          </button>
+        )}
         {tab === 'build' && (
           <button className="lb-btn lb-btn-primary" onClick={() => setAddOpen(true)}>
             + Add category
@@ -643,6 +657,15 @@ export function LivingBudget({ scholarKey }) {
             const row = await addCategory(cat, { thenBuild });
             if (row) setAddOpen(false);
           }}
+        />
+      )}
+
+      {pushOpen && (
+        <PushToFinancesModal
+          scholarKey={scholarKey}
+          month={month}
+          onClose={() => setPushOpen(false)}
+          onPushed={refresh}
         />
       )}
 
@@ -1192,7 +1215,18 @@ function YearView({ groups, horizon, amountOf }) {
 
 // ── Build view ─────────────────────────────────────────────────────────────
 
-function BuildGroup({ group, items, plan, disabled, month, onAmount, onFlow, onBuild, onPatch, onRemove }) {
+function BuildGroup({
+  group,
+  items,
+  plan,
+  disabled,
+  month,
+  onAmount,
+  onFlow,
+  onBuild,
+  onPatch,
+  onRemove,
+}) {
   return (
     <section className={`lb-group is-${group.kind}`}>
       <div className="lb-group-hd is-static">
@@ -1229,9 +1263,21 @@ function BuildGroup({ group, items, plan, disabled, month, onAmount, onFlow, onB
   );
 }
 
-function BuildRow({ cat, value, items, disabled, month, onAmount, onFlow, onBuild, onPatch, onRemove }) {
+function BuildRow({
+  cat,
+  value,
+  items,
+  disabled,
+  month,
+  onAmount,
+  onFlow,
+  onBuild,
+  onPatch,
+  onRemove,
+}) {
   const [local, setLocal] = useState(value === '' ? '' : String(value));
   const [open, setOpen] = useState(false);
+  const [flowOpen, setFlowOpen] = useState(false);
   const [flowThrough, setFlowThrough] = useState('');
   const built = items.length;
   // Sinking (one-time) categories flow differently — via sinking_due_month —
@@ -1290,6 +1336,24 @@ function BuildRow({ cat, value, items, disabled, month, onAmount, onFlow, onBuil
         <button className="lb-row-build" onClick={onBuild} title="Open the builder">
           ⊞
         </button>
+        {cat.kind !== 'sinking' && (
+          <button
+            type="button"
+            className="lb-row-flowbtn"
+            disabled={!canFlow}
+            aria-pressed={flowOpen}
+            onClick={() => setFlowOpen((o) => !o)}
+            title={
+              canFlow
+                ? 'Flow this amount through future months'
+                : built > 0
+                  ? 'Built from items — use the builder to change future months instead'
+                  : 'Set an amount first'
+            }
+          >
+            →
+          </button>
+        )}
         <button
           className="lb-row-toggle"
           onClick={() => setOpen((o) => !o)}
@@ -1299,39 +1363,36 @@ function BuildRow({ cat, value, items, disabled, month, onAmount, onFlow, onBuil
         </button>
       </div>
 
+      {flowOpen && canFlow && (
+        <div className="lb-row-flowpanel">
+          <span>Flow {fmtPhp(value)} through</span>
+          <input
+            type="month"
+            min={month}
+            value={flowThrough}
+            autoFocus
+            onChange={(e) => setFlowThrough(e.target.value)}
+          />
+          <button
+            type="button"
+            className="lb-btn lb-btn-primary"
+            disabled={!flowThrough}
+            onClick={() => {
+              onFlow(value, flowThrough);
+              setFlowThrough('');
+              setFlowOpen(false);
+            }}
+          >
+            Apply
+          </button>
+          <button type="button" className="lb-btn lb-btn-ghost" onClick={() => setFlowOpen(false)}>
+            Cancel
+          </button>
+        </div>
+      )}
+
       {open && (
         <div className="lb-row-edit">
-          {cat.kind !== 'sinking' && (
-            <div className="lb-field lb-flow">
-              <span>Flow {fmtPhp(value)} through</span>
-              <div className="lb-flow-row">
-                <input
-                  type="month"
-                  min={month}
-                  value={flowThrough}
-                  disabled={!canFlow}
-                  onChange={(e) => setFlowThrough(e.target.value)}
-                />
-                <button
-                  type="button"
-                  className="lb-btn lb-btn-ghost"
-                  disabled={!canFlow || !flowThrough}
-                  onClick={() => {
-                    onFlow(value, flowThrough);
-                    setFlowThrough('');
-                  }}
-                >
-                  Apply
-                </button>
-              </div>
-              <span className="lb-field-hint">
-                {built > 0
-                  ? 'Built from items — open the builder to change future months instead.'
-                  : `Repeats this amount every month from ${monthLabel(month)} through the month you pick, so you don't have to re-enter it.`}
-              </span>
-            </div>
-          )}
-
           <label className="lb-field">
             <span>Name</span>
             <input
