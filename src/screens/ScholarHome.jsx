@@ -44,7 +44,7 @@ const SEM_LABELS = {
 const CAREER_STEPS = ['Trial Period', 'University', 'PNLE', 'OET', 'NCLEX', 'OSCE', 'AHPRA'];
 const CAREER_LABELS = {
   'Trial Period': 'Program Trial Admission',
-  'University': 'College Enrollment',
+  University: 'College Enrollment',
   PNLE: 'Nursing Licensure',
   OET: 'OET English',
   NCLEX: 'NCLEX',
@@ -131,11 +131,7 @@ function GpaTrend({ points, floor }) {
   const coords = points.map((p, i) => `${(pad + i * step).toFixed(1)},${y(p.gpa).toFixed(1)}`);
   return (
     <>
-      <svg
-        className="ds-trend-chart"
-        viewBox={`0 0 ${W} ${H}`}
-        style={{ maxHeight: 150 }}
-      >
+      <svg className="ds-trend-chart" viewBox={`0 0 ${W} ${H}`} style={{ maxHeight: 150 }}>
         {floor >= min && floor <= max && (
           <line className="ds-trend-floor" x1="0" x2={W} y1={y(floor)} y2={y(floor)} />
         )}
@@ -202,7 +198,9 @@ export function ScholarHome({ scholarKey }) {
     if (!isKnownScholar || !authed) return;
     async function loadFromNeon() {
       const [bootstrap, immersion, career] = await Promise.all([
-        api.get('/bootstrap?tables=scholars,academics,milestones,travels,expenses,deadlines,budgets'),
+        api.get(
+          '/bootstrap?tables=scholars,academics,milestones,travels,expenses,deadlines,budgets'
+        ),
         api.get('/immersion-hours'),
         // TESDA scholars have no career_steps rows; treat a failure here as
         // "no journey data" rather than sinking the whole dashboard.
@@ -363,7 +361,10 @@ export function ScholarHome({ scholarKey }) {
       <ScholarAuthGate
         scholarKey={scholarKey}
         name={config.name}
-        onUnlock={() => { setSessionExpired(false); setAuthed(true); }}
+        onUnlock={() => {
+          setSessionExpired(false);
+          setAuthed(true);
+        }}
         sessionExpired={sessionExpired}
       />
     );
@@ -386,13 +387,18 @@ export function ScholarHome({ scholarKey }) {
               <span className="ds-avatar">{config.name[0]}</span>
               <div className="ds-footer-label">
                 <div className="ds-identity-name">{config.name}</div>
-                <div className="ds-identity-role">{config.trackCode || 'Scholar'} · {liveStage}</div>
+                <div className="ds-identity-role">
+                  {config.trackCode || 'Scholar'} · {liveStage}
+                </div>
               </div>
             </div>
             <ThemeToggle />
             <SignOutButton
               className="ds-signout"
-              onSignOut={() => { setSessionExpired(false); setAuthed(false); }}
+              onSignOut={() => {
+                setSessionExpired(false);
+                setAuthed(false);
+              }}
             >
               <IcnSignOut size={13} /> <span className="ds-footer-label">Sign out</span>
             </SignOutButton>
@@ -402,9 +408,7 @@ export function ScholarHome({ scholarKey }) {
       <div className="ds-main">
         <header className="ds-topbar">
           <div>
-            <div className="ds-topbar-eyebrow">
-              {config.track}
-            </div>
+            <div className="ds-topbar-eyebrow">{config.track}</div>
             <h1 className="ds-topbar-title">
               {getGreeting()} {config.name}.
             </h1>
@@ -414,7 +418,9 @@ export function ScholarHome({ scholarKey }) {
             <button
               className={`ds-icon-btn${checkingUpdate ? ' is-loading' : updateAvailable ? ' has-update' : ''}`}
               onClick={checkForUpdate}
-              title={updateAvailable ? 'New version installed — tap to reload' : 'Check for app updates'}
+              title={
+                updateAvailable ? 'New version installed — tap to reload' : 'Check for app updates'
+              }
             >
               <IcnUpdate size={15} />
             </button>
@@ -482,14 +488,18 @@ export function ScholarHome({ scholarKey }) {
               <div className="ds-stat-label">Financial Health</div>
               {budgetHealth ? (
                 <div className={`ds-health ${budgetHealth.cls}`} style={{ display: 'block' }}>
-                  <div className="ds-health-status" style={{ fontSize: 22 }}>{budgetHealth.label}</div>
+                  <div className="ds-health-status" style={{ fontSize: 22 }}>
+                    {budgetHealth.label}
+                  </div>
                   <div className="ds-bar" style={{ margin: '10px 0 0' }}>
                     <div
                       className={`ds-bar-fill${budgetPct >= 100 ? ' is-bad' : budgetPct >= 90 ? ' is-warn' : ''}`}
                       style={{ width: `${Math.min(100, budgetPct)}%` }}
                     />
                   </div>
-                  <div className="ds-stat-sub">{budgetPct}% of budget used · {liveStage}</div>
+                  <div className="ds-stat-sub">
+                    {budgetPct}% of budget used · {liveStage}
+                  </div>
                 </div>
               ) : inv ? (
                 <>
@@ -532,7 +542,16 @@ export function ScholarHome({ scholarKey }) {
                         {i < journey.length - 1 && <span className="ds-journey-line" />}
                         <span className="ds-journey-node">
                           {s.status === 'passed' ? (
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                            <svg
+                              width="15"
+                              height="15"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2.4"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
                               <path d="M4.5 12.5l5 5 10-11" />
                             </svg>
                           ) : (
@@ -587,10 +606,18 @@ export function ScholarHome({ scholarKey }) {
               <div className="ds-sec">
                 <span className="ds-sec-title">Most Used</span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                  gap: 14,
+                }}
+              >
                 <Link className="ds-card" href={config.expensesHref}>
                   <div className="ds-stat-label">Enter Expenses</div>
-                  <div className="ds-stat-sub" style={{ marginTop: 2 }}>{lastEntry}</div>
+                  <div className="ds-stat-sub" style={{ marginTop: 2 }}>
+                    {lastEntry}
+                  </div>
                 </Link>
                 <Link className="ds-card" href={`/grades/${scholarKey}`}>
                   <div className="ds-stat-label">View Grades</div>
@@ -612,17 +639,19 @@ export function ScholarHome({ scholarKey }) {
                   <Link className="ds-card" href={`/milestones/${scholarKey}`}>
                     <div className="ds-stat-label">Rewards Tracker</div>
                     <div className="ds-stat-sub" style={{ marginTop: 2 }}>
-                      {nextMil ? `Next · ${nextMil.name}` : `${liveData?.rewardsCount ?? 0} unlocked`}
+                      {nextMil
+                        ? `Next · ${nextMil.name}`
+                        : `${liveData?.rewardsCount ?? 0} unlocked`}
                     </div>
                   </Link>
                 )}
               </div>
 
-              {/* ── AI chat ── */}
-              <div className="ds-sec">
-                <span className="ds-sec-title">Ask Navigator</span>
-              </div>
-              <ScholarChatPanel scholarKey={scholarKey} />
+              {/* The AI chat used to sit here, under an "Ask Navigator"
+                  heading at the bottom of this column — i.e. below a full
+                  screen of dashboard, where it read as missing. It now renders
+                  as a launcher pinned to the viewport (see ScholarChatPanel),
+                  so it is reachable without scrolling. */}
             </div>
 
             <div className="ds-col-rail">
@@ -646,7 +675,9 @@ export function ScholarHome({ scholarKey }) {
                           <div className="ds-dl-sub">{d.when_date}</div>
                         </div>
                         <div className="ds-dl-when">
-                          <div className={`ds-dl-days${d.days <= 7 ? ' is-urgent' : ''}`}>{d.days}</div>
+                          <div className={`ds-dl-days${d.days <= 7 ? ' is-urgent' : ''}`}>
+                            {d.days}
+                          </div>
                           <div className="ds-dl-days-lbl">days</div>
                         </div>
                       </div>
@@ -670,22 +701,37 @@ export function ScholarHome({ scholarKey }) {
                         centerLbl="of budget"
                         segments={[
                           { label: 'Used', value: semSpent, color: 'var(--ngs-gold)' },
-                          { label: 'Remaining', value: Math.max(0, semBudget - semSpent), color: 'var(--ngs-blue-nav)' },
+                          {
+                            label: 'Remaining',
+                            value: Math.max(0, semBudget - semSpent),
+                            color: 'var(--ngs-blue-nav)',
+                          },
                         ]}
                       />
                       <div className="ds-legend">
                         <div className="ds-legend-row">
-                          <span className="ds-legend-swatch" style={{ background: 'var(--ngs-gold)' }} />
+                          <span
+                            className="ds-legend-swatch"
+                            style={{ background: 'var(--ngs-gold)' }}
+                          />
                           <span className="ds-legend-lbl">Used</span>
                           <span className="ds-legend-val">{fmtPhp(semSpent)}</span>
                         </div>
                         <div className="ds-legend-row">
-                          <span className="ds-legend-swatch" style={{ background: 'var(--ngs-blue-nav)' }} />
+                          <span
+                            className="ds-legend-swatch"
+                            style={{ background: 'var(--ngs-blue-nav)' }}
+                          />
                           <span className="ds-legend-lbl">Remaining</span>
-                          <span className="ds-legend-val">{fmtPhp(Math.max(0, semBudget - semSpent))}</span>
+                          <span className="ds-legend-val">
+                            {fmtPhp(Math.max(0, semBudget - semSpent))}
+                          </span>
                         </div>
                         <div className="ds-legend-row">
-                          <span className="ds-legend-swatch" style={{ background: 'var(--ds-rule)' }} />
+                          <span
+                            className="ds-legend-swatch"
+                            style={{ background: 'var(--ds-rule)' }}
+                          />
                           <span className="ds-legend-lbl">Total · {liveStage}</span>
                           <span className="ds-legend-val">{fmtPhp(semBudget)}</span>
                         </div>
@@ -700,13 +746,19 @@ export function ScholarHome({ scholarKey }) {
                         ['Travel', inv.travel],
                       ].map(([lbl, amt]) => (
                         <div key={lbl} className="ds-legend-row">
-                          <span className="ds-legend-swatch" style={{ background: 'var(--ngs-gold)' }} />
+                          <span
+                            className="ds-legend-swatch"
+                            style={{ background: 'var(--ngs-gold)' }}
+                          />
                           <span className="ds-legend-lbl">{lbl}</span>
                           <span className="ds-legend-val">{fmtPhpShort(amt)}</span>
                         </div>
                       ))}
                       <div className="ds-legend-row" style={{ fontWeight: 700 }}>
-                        <span className="ds-legend-swatch" style={{ background: 'var(--ngs-navy)' }} />
+                        <span
+                          className="ds-legend-swatch"
+                          style={{ background: 'var(--ngs-navy)' }}
+                        />
                         <span className="ds-legend-lbl">Total investment</span>
                         <span className="ds-legend-val">{fmtPhpShort(inv.total)}</span>
                       </div>
@@ -722,6 +774,10 @@ export function ScholarHome({ scholarKey }) {
           <PublicAskWidget />
         </main>
       </div>
+
+      {/* Renders as a fixed launcher, so it sits outside the scrolling column
+          rather than at the end of it. */}
+      <ScholarChatPanel scholarKey={scholarKey} raised />
     </div>
   );
 }
