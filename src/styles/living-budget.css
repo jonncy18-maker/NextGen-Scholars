@@ -263,6 +263,26 @@
   border-color: var(--ngs-gold);
 }
 
+.lb-flow {
+  flex: 1 1 100%;
+}
+.lb-flow-row {
+  display: flex;
+  gap: 8px;
+}
+.lb-flow-row input {
+  flex: 1 1 auto;
+}
+.lb-flow-row .lb-btn {
+  flex: 0 0 auto;
+  padding: 7px 14px;
+  font-size: 12px;
+}
+.lb-field-hint {
+  font-size: 11px;
+  color: var(--ds-muted);
+}
+
 .lb-remove {
   flex: 0 0 auto;
   align-self: flex-end;

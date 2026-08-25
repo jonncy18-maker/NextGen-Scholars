@@ -293,6 +293,38 @@ export function LivingBudget({ scholarKey }) {
     }
   }
 
+  // "Flow through": write the SAME amount into living_plan for every month
+  // from the one she's viewing through a picked end month, so a fixed or
+  // flexible cost (rent, load & data) doesn't have to be re-typed each time
+  // she pages forward. Sinking categories don't get this — they're one-time
+  // by definition, driven by sinking_due_month instead (see BuildRow).
+  // Capped at 24 months so a mistyped year doesn't fan out hundreds of writes.
+  async function flowPlan(categoryId, amount, throughMonth) {
+    const amt = Math.max(0, Number(amount) || 0);
+    const span = monthsBetween(month, throughMonth);
+    if (!Number.isFinite(span) || span < 0) {
+      setError(`Pick a month on or after ${monthLabel(month)}.`);
+      return;
+    }
+    if (span > 23) {
+      setError('Flow through at most 24 months ahead.');
+      return;
+    }
+    const months = Array.from({ length: span + 1 }, (_, i) => shiftMonth(month, i));
+    setBusy(true);
+    try {
+      await Promise.all(
+        months.map((m) => setLivingPlan({ month: m, category_id: categoryId, planned_php: amt }))
+      );
+      await refresh();
+      setError(null);
+    } catch (err) {
+      setError(err?.message || 'Could not flow that amount forward.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const refresh = useCallback(async () => {
     try {
       const { catRows, planMap, itemMap } = await load();
@@ -560,7 +592,9 @@ export function LivingBudget({ scholarKey }) {
               items={items}
               plan={plan}
               disabled={loading}
+              month={month}
               onAmount={(id, v) => savePlan(id, v)}
+              onFlow={(id, amount, through) => flowPlan(id, amount, through)}
               onBuild={setBuilderFor}
               onPatch={patchCategory}
               onRemove={removeCategory}
@@ -1158,7 +1192,7 @@ function YearView({ groups, horizon, amountOf }) {
 
 // ── Build view ─────────────────────────────────────────────────────────────
 
-function BuildGroup({ group, items, plan, disabled, onAmount, onBuild, onPatch, onRemove }) {
+function BuildGroup({ group, items, plan, disabled, month, onAmount, onFlow, onBuild, onPatch, onRemove }) {
   return (
     <section className={`lb-group is-${group.kind}`}>
       <div className="lb-group-hd is-static">
@@ -1174,7 +1208,9 @@ function BuildGroup({ group, items, plan, disabled, onAmount, onBuild, onPatch, 
             value={plan[cat.id] ?? ''}
             items={items[cat.id] || []}
             disabled={disabled}
+            month={month}
             onAmount={(v) => onAmount(cat.id, v)}
+            onFlow={(amount, through) => onFlow(cat.id, amount, through)}
             onBuild={() => onBuild(cat)}
             onPatch={(fields) => onPatch(cat.id, fields)}
             onRemove={() => onRemove(cat.id)}
@@ -1193,10 +1229,17 @@ function BuildGroup({ group, items, plan, disabled, onAmount, onBuild, onPatch, 
   );
 }
 
-function BuildRow({ cat, value, items, disabled, onAmount, onBuild, onPatch, onRemove }) {
+function BuildRow({ cat, value, items, disabled, month, onAmount, onFlow, onBuild, onPatch, onRemove }) {
   const [local, setLocal] = useState(value === '' ? '' : String(value));
   const [open, setOpen] = useState(false);
+  const [flowThrough, setFlowThrough] = useState('');
   const built = items.length;
+  // Sinking (one-time) categories flow differently — via sinking_due_month —
+  // so this control is only offered for fixed/flexible ones. Also gated on
+  // no items, matching the amount input above: an itemised total belongs to
+  // its items, and flowing it forward would silently overwrite whatever
+  // breakdown (or lack of one) already sits in those future months.
+  const canFlow = cat.kind !== 'sinking' && built === 0 && Number(value) > 0;
 
   // Keep the input in step when the month changes underneath it.
   useEffect(() => {
@@ -1258,6 +1301,37 @@ function BuildRow({ cat, value, items, disabled, onAmount, onBuild, onPatch, onR
 
       {open && (
         <div className="lb-row-edit">
+          {cat.kind !== 'sinking' && (
+            <div className="lb-field lb-flow">
+              <span>Flow {fmtPhp(value)} through</span>
+              <div className="lb-flow-row">
+                <input
+                  type="month"
+                  min={month}
+                  value={flowThrough}
+                  disabled={!canFlow}
+                  onChange={(e) => setFlowThrough(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="lb-btn lb-btn-ghost"
+                  disabled={!canFlow || !flowThrough}
+                  onClick={() => {
+                    onFlow(value, flowThrough);
+                    setFlowThrough('');
+                  }}
+                >
+                  Apply
+                </button>
+              </div>
+              <span className="lb-field-hint">
+                {built > 0
+                  ? 'Built from items — open the builder to change future months instead.'
+                  : `Repeats this amount every month from ${monthLabel(month)} through the month you pick, so you don't have to re-enter it.`}
+              </span>
+            </div>
+          )}
+
           <label className="lb-field">
             <span>Name</span>
             <input
