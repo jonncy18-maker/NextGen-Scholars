@@ -3,6 +3,7 @@ import { api } from '../lib/api.js';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { ScholarShell } from '../components/ScholarShell.jsx';
 import { BudgetAskPanel } from '../components/BudgetAskPanel.jsx';
+import { PushToFinancesModal } from '../components/PushToFinancesModal.jsx';
 import { useSessionExpired } from '../hooks/useSessionExpired.js';
 import {
   LIVING_KINDS,
@@ -130,6 +131,7 @@ export function LivingBudget({ scholarKey }) {
 
   const [addOpen, setAddOpen] = useState(false);
   const [builderFor, setBuilderFor] = useState(null); // category row
+  const [pushOpen, setPushOpen] = useState(false); // mentor-only push-to-finances
 
   // Seeding is a one-shot per scholar per session. Without this the seed
   // branch below re-fires on every month change for a scholar who has
@@ -507,6 +509,18 @@ export function LivingBudget({ scholarKey }) {
             </button>
           </div>
         )}
+        {/* Mentor-only, and deliberately always visible rather than tucked
+            into one tab: it writes to the PROGRAM ledger, which is the
+            mentor's book, not hers. A scholar never sees it. */}
+        {isMentor && (
+          <button
+            className="lb-btn lb-btn-ghost"
+            onClick={() => setPushOpen(true)}
+            title="Map this month's budget onto the program's expense categories"
+          >
+            Push to Finances →
+          </button>
+        )}
         {tab === 'build' && (
           <button className="lb-btn lb-btn-primary" onClick={() => setAddOpen(true)}>
             + Add category
@@ -643,6 +657,15 @@ export function LivingBudget({ scholarKey }) {
             const row = await addCategory(cat, { thenBuild });
             if (row) setAddOpen(false);
           }}
+        />
+      )}
+
+      {pushOpen && (
+        <PushToFinancesModal
+          scholarKey={scholarKey}
+          month={month}
+          onClose={() => setPushOpen(false)}
+          onPushed={refresh}
         />
       )}
 
