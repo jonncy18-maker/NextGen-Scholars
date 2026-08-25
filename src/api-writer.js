@@ -181,6 +181,15 @@ export async function clearLivingItems({ month, category_id }) {
   return res;
 }
 
+// Move (or copy) a whole month's plan to another month — the one-action fix
+// for a month budgeted against the wrong month. Line-item breakdowns travel
+// with the amounts; see the route for why that matters.
+export async function moveLivingMonth({ scholar, from, to, mode = 'move' }) {
+  const res = await api.post('/living/plan/move', { scholar, from, to, mode });
+  api.afterWrite();
+  return res;
+}
+
 // ── Push to Finances (mentor only) ────────────────────────────────────────
 // Read-only: proposes how a scholar's budget maps onto the program's expense
 // categories. Writes nothing — the mentor approves first, exactly like the

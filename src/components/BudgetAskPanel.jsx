@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { api } from '../lib/api.js';
 import {
-  createLivingCategories, updateLivingCategory, deleteLivingCategory, setLivingPlan,
+  createLivingCategories,
+  updateLivingCategory,
+  deleteLivingCategory,
+  setLivingPlan,
+  moveLivingMonth,
 } from '../api-writer.js';
 import { LIVING_KINDS, LIVING_ROLLUPS } from '../constants.js';
 
@@ -20,17 +24,23 @@ function php(n) {
   return '₱' + Math.round(Number(n) || 0).toLocaleString('en-US');
 }
 
-const kindLabel = k => LIVING_KINDS.find(x => x.key === k)?.label ?? k;
-const rollupLabel = r => LIVING_ROLLUPS.find(x => x.key === r)?.label ?? r;
+const kindLabel = (k) => LIVING_KINDS.find((x) => x.key === k)?.label ?? k;
+const rollupLabel = (r) => LIVING_ROLLUPS.find((x) => x.key === r)?.label ?? r;
 
 // Turn one op into a sentence a person can check at a glance. Anything the
 // user can't read, they can't meaningfully approve.
 function describe(op, nameOf) {
   switch (op.op) {
     case 'create_category': {
-      const bits = [`Add "${op.name}"`, `as ${kindLabel(op.kind).toLowerCase()}`, `in ${rollupLabel(op.rollup)}`];
+      const bits = [
+        `Add "${op.name}"`,
+        `as ${kindLabel(op.kind).toLowerCase()}`,
+        `in ${rollupLabel(op.rollup)}`,
+      ];
       if (op.kind === 'sinking' && op.sinking_target_php) {
-        bits.push(`— ${php(op.sinking_target_php)} one-time${op.sinking_due_month ? `, due ${op.sinking_due_month}` : ''}`);
+        bits.push(
+          `— ${php(op.sinking_target_php)} one-time${op.sinking_due_month ? `, due ${op.sinking_due_month}` : ''}`
+        );
       }
       if (op.planned_php > 0) bits.push(`— ${php(op.planned_php)} this month`);
       return bits.join(' ');
@@ -41,23 +51,68 @@ function describe(op, nameOf) {
       if (op.kind) changes.push(`make it ${kindLabel(op.kind).toLowerCase()}`);
       if (op.rollup) changes.push(`move to ${rollupLabel(op.rollup)}`);
       if ('sinking_target_php' in op) {
-        changes.push(op.sinking_target_php == null ? 'clear the total cost' : `set total cost ${php(op.sinking_target_php)}`);
+        changes.push(
+          op.sinking_target_php == null
+            ? 'clear the total cost'
+            : `set total cost ${php(op.sinking_target_php)}`
+        );
       }
       if ('sinking_due_month' in op) {
-        changes.push(op.sinking_due_month == null ? 'clear the due month' : `due ${op.sinking_due_month}`);
+        changes.push(
+          op.sinking_due_month == null ? 'clear the due month' : `due ${op.sinking_due_month}`
+        );
       }
       return `${nameOf(op.id)}: ${changes.join(', ')}`;
     }
     case 'archive_category':
       return `Remove "${nameOf(op.id)}"`;
     case 'set_plan':
-      return `Set ${nameOf(op.category_id)} to ${php(op.planned_php)}`;
+      // The month is spelled out whenever it isn't the one on screen. A change
+      // landing in a month she isn't looking at is invisible after the fact,
+      // so it has to be visible before she approves it.
+      return `Set ${nameOf(op.category_id)} to ${php(op.planned_php)}${op.month ? ` in ${monthLabel(op.month)}` : ''}`;
+    case 'flow_plan':
+      return `Set ${nameOf(op.category_id)} to ${php(op.planned_php)} every month${op.from_month ? ` from ${monthLabel(op.from_month)}` : ''} through ${monthLabel(op.through_month)}`;
+    case 'push_to_finances':
+      return `Open the Push to Finances review for ${monthLabel(op.month)} — you'll set the dates there before anything is written`;
+    case 'move_month':
+      return op.mode === 'copy'
+        ? `Copy the whole ${monthLabel(op.from_month)} budget into ${monthLabel(op.to_month)} (${monthLabel(op.from_month)} stays as it is)`
+        : `Move the whole ${monthLabel(op.from_month)} budget to ${monthLabel(op.to_month)} — ${monthLabel(op.from_month)} is left empty`;
     default:
       return op.op;
   }
 }
 
-export function BudgetAskPanel({ scholarKey, month, categories, onApplied }) {
+function monthLabel(key) {
+  if (!key) return '';
+  const [y, m] = String(key).split('-').map(Number);
+  if (!y || !m) return String(key);
+  return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+// Every month from `from` through `to` inclusive, capped so a mistyped year
+// can't fan out hundreds of writes — the same 24-month ceiling the manual
+// flow-through control enforces in LivingBudget.jsx.
+function monthsFromThrough(from, to) {
+  const [fy, fm] = from.split('-').map(Number);
+  const [ty, tm] = to.split('-').map(Number);
+  const span = (ty - fy) * 12 + (tm - fm);
+  if (!Number.isFinite(span) || span < 0 || span > 23) return null;
+  return Array.from({ length: span + 1 }, (_, i) => {
+    const d = new Date(fy, fm - 1 + i, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
+}
+
+export function BudgetAskPanel({
+  scholarKey,
+  month,
+  categories,
+  onApplied,
+  isMentor,
+  onPushToFinances,
+}) {
   const [text, setText] = useState('');
   const [thinking, setThinking] = useState(false);
   const [answer, setAnswer] = useState(null);
@@ -65,7 +120,8 @@ export function BudgetAskPanel({ scholarKey, month, categories, onApplied }) {
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState(null);
 
-  const nameOf = (id) => categories.find(c => String(c.id) === String(id))?.name ?? 'that category';
+  const nameOf = (id) =>
+    categories.find((c) => String(c.id) === String(id))?.name ?? 'that category';
 
   async function ask(e) {
     e.preventDefault();
@@ -78,11 +134,21 @@ export function BudgetAskPanel({ scholarKey, month, categories, onApplied }) {
     setProposal(null);
 
     try {
-      const res = await api.post('/ask-budget', { scholar: scholarKey, month, text: q });
+      // A proposal on screen turns the next message into a CORRECTION of it,
+      // not a fresh request. Without this, fixing one wrong line means
+      // discarding the whole proposal and retyping the request from scratch
+      // with the fix worked into the original sentence — which is exactly
+      // when people give up and do it by hand instead.
+      const res = await api.post('/ask-budget', {
+        scholar: scholarKey,
+        month,
+        text: q,
+        ...(proposal ? { pending: { summary: proposal.summary, ops: proposal.ops } } : {}),
+      });
       // Freeze the month the proposal was generated against. She can page to a
       // different month between Ask and Apply, and writing September's changes
       // into October is both wrong and invisible.
-      if (res.kind === 'proposal') setProposal({ ...res, month });
+      if (res.kind === 'proposal') setProposal({ ...res, month: proposal?.month || month });
       else setAnswer(res.text);
       setText('');
     } catch (err) {
@@ -97,13 +163,14 @@ export function BudgetAskPanel({ scholarKey, month, categories, onApplied }) {
     setApplying(true);
     setError(null);
     const applyMonth = proposal.month || month;
+    let pushAfter = null;
 
     try {
       // Creates run first so a set_plan on a brand-new category has an id to
       // attach to. The model refers to new categories by name, not id (it
       // can't know an id that doesn't exist yet), so the create's own
       // planned_php carries the amount instead.
-      for (const op of proposal.ops.filter(o => o.op === 'create_category')) {
+      for (const op of proposal.ops.filter((o) => o.op === 'create_category')) {
         const rows = await createLivingCategories(scholarKey, {
           name: op.name,
           kind: op.kind,
@@ -118,7 +185,11 @@ export function BudgetAskPanel({ scholarKey, month, categories, onApplied }) {
           await updateLivingCategory(created.id, { sinking_due_month: op.sinking_due_month });
         }
         if (created?.id && op.planned_php > 0) {
-          await setLivingPlan({ month: applyMonth, category_id: created.id, planned_php: op.planned_php });
+          await setLivingPlan({
+            month: applyMonth,
+            category_id: created.id,
+            planned_php: op.planned_php,
+          });
         }
       }
 
@@ -129,17 +200,52 @@ export function BudgetAskPanel({ scholarKey, month, categories, onApplied }) {
         } else if (op.op === 'archive_category') {
           await deleteLivingCategory(op.id);
         } else if (op.op === 'set_plan') {
-          await setLivingPlan({ month: applyMonth, category_id: op.category_id, planned_php: op.planned_php });
+          // op.month wins when the model named a specific one; otherwise the
+          // month the proposal was generated against (frozen at Ask time).
+          await setLivingPlan({
+            month: op.month || applyMonth,
+            category_id: op.category_id,
+            planned_php: op.planned_php,
+          });
+        } else if (op.op === 'flow_plan') {
+          const months = monthsFromThrough(op.from_month || applyMonth, op.through_month);
+          if (!months) throw new Error('That flow spans more than 24 months — narrow the range.');
+          for (const m of months) {
+            await setLivingPlan({
+              month: m,
+              category_id: op.category_id,
+              planned_php: op.planned_php,
+            });
+          }
+        } else if (op.op === 'move_month') {
+          await moveLivingMonth({
+            scholar: scholarKey,
+            from: op.from_month,
+            to: op.to_month,
+            mode: op.mode,
+          });
+        } else if (op.op === 'push_to_finances') {
+          // Deliberately opens the review modal rather than writing. The push
+          // needs a real outflow DATE per line, which is a fact about the
+          // world the model cannot know — and it deletes the month's existing
+          // rows, so it is the last thing that should happen on a one-line
+          // say-so. The AI gets you to the right screen; you still confirm.
+          pushAfter = op.month || applyMonth;
         }
       }
 
       setProposal(null);
-      setAnswer('Done — your budget has been updated.');
+      setAnswer(
+        pushAfter
+          ? 'Done — opening the Push to Finances review so you can set the dates.'
+          : 'Done — your budget has been updated.'
+      );
       onApplied?.();
+      if (pushAfter) onPushToFinances?.(pushAfter);
     } catch (err) {
       setError(
         (err?.message || 'Some changes could not be applied.') +
-        ' Some changes may have gone through — check the list above and ask again for anything missing.'
+          ' Some changes may have gone through — check the list above and ask again for anything missing.'
       );
       // Clear the proposal even though it only partly applied. Leaving it on
       // screen with a live Apply button invites a retry that replays the ops
@@ -158,20 +264,24 @@ export function BudgetAskPanel({ scholarKey, month, categories, onApplied }) {
     <section className="lb-ask">
       <h3 className="lb-ask-title">Ask about your budget</h3>
       <p className="lb-ask-sub">
-        You can ask a question, or just say what you want changed — "add ₱300 for haircuts",
-        "registration is ₱2,400 a year", "rename Food to Groceries".
+        Ask a question, or just say what you want changed — "add ₱300 for haircuts", "make rent
+        4,500 every month through December", "I put all this in August but it should start in
+        September"
+        {isMentor ? ', "push September to finances"' : ''}.
       </p>
 
       <form className="lb-ask-form" onSubmit={ask}>
         <input
           className="lb-ask-input"
-          placeholder="Type your question or change…"
+          placeholder={
+            proposal ? 'Not quite right? Say what to fix…' : 'Type your question or change…'
+          }
           value={text}
-          onChange={e => setText(e.target.value)}
+          onChange={(e) => setText(e.target.value)}
           disabled={thinking || applying}
         />
         <button type="submit" disabled={thinking || applying || !text.trim()}>
-          {thinking ? '…' : 'Ask'}
+          {thinking ? '…' : proposal ? 'Revise' : 'Ask'}
         </button>
       </form>
 
@@ -189,13 +299,18 @@ export function BudgetAskPanel({ scholarKey, month, categories, onApplied }) {
           </ul>
           <div className="lb-proposal-actions">
             <button className="lb-apply" onClick={apply} disabled={applying}>
-              {applying ? 'Applying…' : `Apply ${proposal.ops.length} change${proposal.ops.length === 1 ? '' : 's'}`}
+              {applying
+                ? 'Applying…'
+                : `Apply ${proposal.ops.length} change${proposal.ops.length === 1 ? '' : 's'}`}
             </button>
             <button className="lb-discard" onClick={() => setProposal(null)} disabled={applying}>
               Discard
             </button>
           </div>
-          <div className="lb-proposal-note">Nothing changes until you tap Apply.</div>
+          <div className="lb-proposal-note">
+            Nothing changes until you tap Apply. If something above is wrong, type the correction in
+            the box and tap Revise — you don't have to start over.
+          </div>
         </div>
       )}
     </section>
