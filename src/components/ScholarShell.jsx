@@ -5,8 +5,18 @@ import { Sidebar } from './Sidebar.jsx';
 import { ThemeToggle } from './ThemeToggle.jsx';
 import { SignOutButton } from './SignOutButton.jsx';
 import {
-  IcnGrid, IcnWallet, IcnBook, IcnGlobe, IcnClock,
-  IcnStar, IcnPlane, IcnHome, IcnSignOut, IcnUpdate, IcnPie,
+  IcnGrid,
+  IcnWallet,
+  IcnBook,
+  IcnGlobe,
+  IcnClock,
+  IcnStar,
+  IcnPlane,
+  IcnHome,
+  IcnSignOut,
+  IcnUpdate,
+  IcnPie,
+  IcnUsers,
 } from './ShellIcons.jsx';
 import { useAppUpdate } from '../hooks/useAppUpdate.js';
 
@@ -34,19 +44,70 @@ export function isExpensesOnlyScholar(scholarKey) {
 // and every module below call this with their own `active` key, so the nav
 // can't drift between them (it previously existed only as an inline array in
 // ScholarHome).
-export function scholarNavItems(scholarKey, active) {
+export function scholarNavItems(scholarKey, active, isMentor) {
   const expensesOnly = isExpensesOnlyScholar(scholarKey);
   return [
-    { key: 'overview', href: `/home/${scholarKey}`, label: 'Overview', icon: <IcnGrid size={16} /> },
-    { key: 'finances', href: `/entry?scholar=${scholarKey}`, label: 'Finances', icon: <IcnWallet size={16} /> },
+    // Mentor viewing a scholar's own route (currently just /budget/:scholar,
+    // via ScholarAuthGate's allowMentor) gets a way back to Navigator pinned
+    // at the top of what is otherwise the scholar's own nav — without it,
+    // this sidebar is indistinguishable from actually being signed in as her.
+    isMentor && {
+      key: 'navigator',
+      href: '/navigator',
+      label: 'Back to Navigator',
+      icon: <IcnUsers size={16} />,
+    },
+    {
+      key: 'overview',
+      href: `/home/${scholarKey}`,
+      label: 'Overview',
+      icon: <IcnGrid size={16} />,
+    },
+    {
+      key: 'finances',
+      href: `/entry?scholar=${scholarKey}`,
+      label: 'Finances',
+      icon: <IcnWallet size={16} />,
+    },
     // The scholar's OWN living budget (her allowance), distinct from
     // 'finances' above, which is the sponsor-funded expense entry.
-    { key: 'budget', href: `/budget/${scholarKey}`, label: 'My Budget', icon: <IcnPie size={16} /> },
-    { key: 'academics', href: `/grades/${scholarKey}`, label: 'Academics', icon: <IcnBook size={16} /> },
-    !expensesOnly && { key: 'english', href: `/english/${scholarKey}`, label: 'English (OET)', icon: <IcnGlobe size={16} /> },
-    !expensesOnly && { key: 'immersion', href: 'https://next-gen-immersion.vercel.app/', label: 'Immersion App', icon: <IcnClock size={16} />, external: true },
-    !expensesOnly && { key: 'milestones', href: `/milestones/${scholarKey}`, label: 'Milestones', icon: <IcnStar size={16} /> },
-    !expensesOnly && { key: 'travel', href: `/vacation/${scholarKey}`, label: 'Travel', icon: <IcnPlane size={16} /> },
+    {
+      key: 'budget',
+      href: `/budget/${scholarKey}`,
+      label: 'My Budget',
+      icon: <IcnPie size={16} />,
+    },
+    {
+      key: 'academics',
+      href: `/grades/${scholarKey}`,
+      label: 'Academics',
+      icon: <IcnBook size={16} />,
+    },
+    !expensesOnly && {
+      key: 'english',
+      href: `/english/${scholarKey}`,
+      label: 'English (OET)',
+      icon: <IcnGlobe size={16} />,
+    },
+    !expensesOnly && {
+      key: 'immersion',
+      href: 'https://next-gen-immersion.vercel.app/',
+      label: 'Immersion App',
+      icon: <IcnClock size={16} />,
+      external: true,
+    },
+    !expensesOnly && {
+      key: 'milestones',
+      href: `/milestones/${scholarKey}`,
+      label: 'Milestones',
+      icon: <IcnStar size={16} />,
+    },
+    !expensesOnly && {
+      key: 'travel',
+      href: `/vacation/${scholarKey}`,
+      label: 'Travel',
+      icon: <IcnPlane size={16} />,
+    },
     { key: 'site', href: '/', label: 'Public Site', icon: <IcnHome size={16} /> },
   ]
     .filter(Boolean)
@@ -70,20 +131,30 @@ export function ScholarShell({
   children,
 }) {
   const { checking: checkingUpdate, available: updateAvailable, checkForUpdate } = useAppUpdate();
+  // A mentor viewing this scholar's own route (allowMentor on the auth gate)
+  // otherwise sits inside chrome that is visually identical to actually
+  // being signed in as her — same sidebar, same brand link, same name up
+  // top. isMentor drives a "Back to Navigator" way out plus a visible badge,
+  // rather than a 9px muted label buried in the footer.
+  const isMentor = identityRole === 'Mentor';
 
   return (
     <div className="sp-shell ds-shell">
       <Sidebar
-        brand={{ href: `/home/${scholarKey}` }}
+        brand={{ href: isMentor ? '/navigator' : `/home/${scholarKey}` }}
         subtitle="Pathway Navigator"
-        items={scholarNavItems(scholarKey, active)}
+        items={scholarNavItems(scholarKey, active, isMentor)}
         footer={
           <>
             <div className="ds-identity" title={name}>
               <span className="ds-avatar">{name?.[0]}</span>
               <div className="ds-footer-label">
                 <div className="ds-identity-name">{name}</div>
-                {identityRole && <div className="ds-identity-role">{identityRole}</div>}
+                {identityRole && (
+                  <div className={`ds-identity-role${isMentor ? ' is-mentor' : ''}`}>
+                    {identityRole}
+                  </div>
+                )}
               </div>
             </div>
             <ThemeToggle />
@@ -96,7 +167,12 @@ export function ScholarShell({
       <div className="ds-main">
         <header className="ds-topbar">
           <div>
-            {eyebrow && <div className="ds-topbar-eyebrow">{eyebrow}</div>}
+            {eyebrow && (
+              <div className="ds-topbar-eyebrow">
+                {isMentor && <span className="ds-mentor-badge">Mentor view</span>}
+                {eyebrow}
+              </div>
+            )}
             <h1 className="ds-topbar-title">{title}</h1>
             {subtitle && <div className="ds-topbar-sub">{subtitle}</div>}
           </div>
@@ -104,7 +180,9 @@ export function ScholarShell({
             <button
               className={`ds-icon-btn${checkingUpdate ? ' is-loading' : updateAvailable ? ' has-update' : ''}`}
               onClick={checkForUpdate}
-              title={updateAvailable ? 'New version installed — tap to reload' : 'Check for app updates'}
+              title={
+                updateAvailable ? 'New version installed — tap to reload' : 'Check for app updates'
+              }
             >
               <IcnUpdate size={15} />
             </button>
