@@ -2,7 +2,12 @@ import { sql } from '../../../lib/db.js';
 import { requireScholarOwn, AuthError } from '../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../lib/http.js';
 import { enforceRateLimit, readJsonBody } from '../../../lib/rate-limit.js';
-import { resolveBudgetRead, resolveBudgetOps, looksLikeWriteIntent } from '../../../lib/ai/budget.js';
+import {
+  resolveBudgetRead,
+  resolveBudgetOps,
+  looksLikeWriteIntent,
+  sanitizePending,
+} from '../../../lib/ai/budget.js';
 
 // Scoped per-caller — must never be cached by Next.js or the CDN.
 export const dynamic = 'force-dynamic';
@@ -56,7 +61,9 @@ export const POST = withErrorHandling(async (request) => {
   const month = String(body.month || '');
   if (!MONTH_RE.test(month)) return json({ error: 'month must be YYYY-MM' }, { status: 400 });
 
-  const text = String(body.text || '').trim().slice(0, MAX_TEXT_CHARS);
+  const text = String(body.text || '')
+    .trim()
+    .slice(0, MAX_TEXT_CHARS);
   if (!text) return json({ error: 'Missing required field: text' }, { status: 400 });
 
   // State is read from the database, not accepted from the client. A caller
@@ -68,8 +75,14 @@ export const POST = withErrorHandling(async (request) => {
   ]);
 
   const plan = {};
-  planRows.forEach(r => { plan[r.category_id] = Number(r.planned_php) || 0; });
-  const state = { categories, plan, month };
+  planRows.forEach((r) => {
+    plan[r.category_id] = Number(r.planned_php) || 0;
+  });
+  const isMentor = role === 'mentor';
+  const state = { categories, plan, month, isMentor };
+  // The proposal being corrected, re-validated against this caller's own
+  // categories rather than trusted as sent. See sanitizePending().
+  state.pending = sanitizePending(body.pending, state);
 
   // Tier 1: answer it here if we can. Free, instant, and the arithmetic is
   // done on real rows rather than guessed by a language model.
@@ -77,16 +90,24 @@ export const POST = withErrorHandling(async (request) => {
   // Skipped entirely when she's asking for a CHANGE. The read matchers are
   // substring tests, so "set my food total to 3000" would otherwise match
   // "total" and come back with her monthly total while changing nothing.
-  const direct = looksLikeWriteIntent(text) ? null : resolveBudgetRead(text, state);
+  //
+  // Also skipped while a proposal is being corrected: "no, make it 3000" is a
+  // revision, and answering it with a read would silently drop the pending
+  // changes she is in the middle of fixing.
+  const direct =
+    state.pending || looksLikeWriteIntent(text) ? null : resolveBudgetRead(text, state);
   if (direct) return json({ kind: 'answer', tier: 1, text: direct });
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    return json({
-      kind: 'answer',
-      tier: 1,
-      text: 'The AI assistant isn\'t configured yet, but you can still edit everything by hand on this page.',
-    }, { status: 200 });
+    return json(
+      {
+        kind: 'answer',
+        tier: 1,
+        text: "The AI assistant isn't configured yet, but you can still edit everything by hand on this page.",
+      },
+      { status: 200 }
+    );
   }
 
   const result = await resolveBudgetOps(text, state, apiKey);

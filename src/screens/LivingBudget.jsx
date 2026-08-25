@@ -21,6 +21,7 @@ import {
   deleteLivingCategory,
   setLivingPlan,
   setLivingItems,
+  moveLivingMonth,
 } from '../api-writer.js';
 import '../styles/living-budget.css';
 
@@ -132,6 +133,7 @@ export function LivingBudget({ scholarKey }) {
   const [addOpen, setAddOpen] = useState(false);
   const [builderFor, setBuilderFor] = useState(null); // category row
   const [pushOpen, setPushOpen] = useState(false); // mentor-only push-to-finances
+  const [moveOpen, setMoveOpen] = useState(false); // move/copy this month elsewhere
 
   // Seeding is a one-shot per scholar per session. Without this the seed
   // branch below re-fires on every month change for a scholar who has
@@ -396,6 +398,26 @@ export function LivingBudget({ scholarKey }) {
     }
   }
 
+  // Relocate a whole month's plan. The manual counterpart to the AI's
+  // move_month op — the same one-action fix for "I budgeted the wrong month",
+  // which otherwise takes one edit per category in each of two months.
+  async function moveMonth(to, mode) {
+    setBusy(true);
+    try {
+      await moveLivingMonth({ scholar: scholarKey, from: month, to, mode });
+      setMoveOpen(false);
+      setError(null);
+      // Follow the money: land on the month the plan now lives in, so the
+      // result is visible instead of leaving her staring at the month she
+      // just emptied wondering whether it worked.
+      setMonth(to);
+    } catch (err) {
+      setError(err?.message || 'Could not move that month.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function toggleGroup(kind) {
     setCollapsed((prev) => {
       const next = new Set(prev);
@@ -521,6 +543,15 @@ export function LivingBudget({ scholarKey }) {
             Push to Finances →
           </button>
         )}
+        {total > 0 && (
+          <button
+            className="lb-btn lb-btn-ghost"
+            onClick={() => setMoveOpen(true)}
+            title="Move or copy this whole month's plan to another month"
+          >
+            Move month…
+          </button>
+        )}
         {tab === 'build' && (
           <button className="lb-btn lb-btn-primary" onClick={() => setAddOpen(true)}>
             + Add category
@@ -615,15 +646,6 @@ export function LivingBudget({ scholarKey }) {
             />
           ))}
 
-          <BudgetAskPanel
-            scholarKey={scholarKey}
-            month={month}
-            // All categories, not just active ones, so an op naming an
-            // archived category still renders with its real name.
-            categories={cats ?? []}
-            onApplied={refresh}
-          />
-
           {openPrompts.length > 0 && (
             <section className="lb-prompts">
               <h3 className="lb-prompts-title">Easy to forget</h3>
@@ -649,6 +671,27 @@ export function LivingBudget({ scholarKey }) {
         </>
       )}
 
+      {/* Outside the tab switch on purpose. It used to live only inside Build,
+          so the fastest way to change anything was invisible from the two tabs
+          people actually look at — and a correction like "this should have
+          started in September" occurs to you while reading the Dashboard, not
+          while already in the editor. */}
+      {cats !== null && (
+        <BudgetAskPanel
+          scholarKey={scholarKey}
+          month={month}
+          // All categories, not just active ones, so an op naming an
+          // archived category still renders with its real name.
+          categories={cats ?? []}
+          onApplied={refresh}
+          isMentor={isMentor}
+          onPushToFinances={(m) => {
+            if (m && m !== month) setMonth(m);
+            setPushOpen(true);
+          }}
+        />
+      )}
+
       {addOpen && (
         <AddCategoryModal
           busy={busy}
@@ -657,6 +700,17 @@ export function LivingBudget({ scholarKey }) {
             const row = await addCategory(cat, { thenBuild });
             if (row) setAddOpen(false);
           }}
+        />
+      )}
+
+      {moveOpen && (
+        <MoveMonthModal
+          month={month}
+          total={total}
+          count={groups.reduce((n, g) => n + g.rows.length, 0)}
+          busy={busy}
+          onCancel={() => setMoveOpen(false)}
+          onMove={moveMonth}
         />
       )}
 
@@ -1460,6 +1514,91 @@ function BuildRow({
 }
 
 // ── Modals ─────────────────────────────────────────────────────────────────
+
+// Relocate a whole month's plan in one action.
+//
+// The mistake this repairs is common and completely undramatic: budgeting the
+// month you're looking at instead of the month you meant (planning August in
+// August when the dorm year starts in September). Every amount is right, every
+// category is right, only the month is wrong — and without this the repair is
+// retyping all of it into the correct month and zeroing all of it in the wrong
+// one, which is how you end up with two half-finished months instead of one
+// correct one.
+function MoveMonthModal({ month, total, count, busy, onCancel, onMove }) {
+  const [to, setTo] = useState(() => shiftMonth(month, 1));
+  const [mode, setMode] = useState('move');
+
+  const valid = /^\d{4}-(0[1-9]|1[0-2])$/.test(to) && to !== month;
+
+  return (
+    <Scrim onClose={onCancel} labelledBy="lb-move-title">
+      <div className="lb-modal">
+        <div className="lb-modal-hd">
+          <h3 id="lb-move-title">Move this month&rsquo;s budget</h3>
+          <span className="lb-modal-sub">
+            {monthLabel(month)} · {count} categor{count === 1 ? 'y' : 'ies'} · {fmtPhp(total)}
+          </span>
+        </div>
+
+        <div className="lb-modal-body">
+          <label className="lb-field">
+            <span>To which month?</span>
+            <input type="month" value={to} onChange={(e) => setTo(e.target.value)} autoFocus />
+          </label>
+
+          <div className="lb-field">
+            <span>What happens to {monthLabel(month)}?</span>
+            <div className="lb-kindpick" role="radiogroup" aria-label="Move or copy">
+              <button
+                type="button"
+                role="radio"
+                aria-checked={mode === 'move'}
+                className="lb-kindopt"
+                onClick={() => setMode('move')}
+              >
+                <span className="lb-kindopt-n">Move it</span>
+                <span className="lb-kindopt-h">{monthLabel(month)} is left empty</span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={mode === 'copy'}
+                className="lb-kindopt"
+                onClick={() => setMode('copy')}
+              >
+                <span className="lb-kindopt-n">Copy it</span>
+                <span className="lb-kindopt-h">{monthLabel(month)} stays as it is</span>
+              </button>
+            </div>
+          </div>
+
+          {valid && (
+            <div className="lb-field-note">
+              {mode === 'move'
+                ? `Every amount moves to ${monthLabel(to)}. Anything already budgeted there for the same categories is replaced.`
+                : `Every amount is copied into ${monthLabel(to)}, replacing whatever is there for the same categories.`}
+            </div>
+          )}
+        </div>
+
+        <div className="lb-modal-ft">
+          <span className="lb-ft-note">Line-item breakdowns come along too.</span>
+          <button className="lb-btn lb-btn-ghost" onClick={onCancel}>
+            Cancel
+          </button>
+          <button
+            className="lb-btn lb-btn-primary"
+            disabled={!valid || busy}
+            onClick={() => onMove(to, mode)}
+          >
+            {busy ? 'Working…' : mode === 'move' ? 'Move' : 'Copy'} to{' '}
+            {valid ? monthLabel(to) : '…'}
+          </button>
+        </div>
+      </div>
+    </Scrim>
+  );
+}
 
 function AddCategoryModal({ busy, onCancel, onSave }) {
   const [name, setName] = useState('');
