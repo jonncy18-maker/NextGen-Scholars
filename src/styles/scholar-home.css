@@ -1,16 +1,33 @@
 @import './tokens.css';
 
-*, *::before, *::after { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; min-height: 100%; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
 body {
   font-family: var(--ngs-sans);
-  font-feature-settings: 'ss01','cv11';
+  font-feature-settings: 'ss01', 'cv11';
   -webkit-font-smoothing: antialiased;
   background: var(--ngs-paper);
   color: var(--ngs-ink);
 }
-a { color: inherit; text-decoration: none; }
-button { font-family: inherit; cursor: pointer; border: 0; background: none; }
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: 0;
+  background: none;
+}
 
 /* ── sign-out button ─────────────────────────────────────────────────────────
    The only survivor of the old .sp-* standalone-page styles: it is
@@ -25,255 +42,451 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
    rules with zero JSX consumers, so they are removed here. .sp-shell (the
    theme scope further down this file) is unrelated and still live. */
 .sp-signout {
-  position: absolute; top: 20px; right: 24px; z-index: 2;
-  font-family: var(--ngs-mono); font-size: 11px; letter-spacing: 0.06em;
-  color: rgba(250,247,240,0.5); background: none;
-  border: 1px solid rgba(255,255,255,0.16); border-radius: 4px;
-  padding: 6px 10px; cursor: pointer; transition: color 0.15s, border-color 0.15s;
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  z-index: 2;
+  font-family: var(--ngs-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: rgba(250, 247, 240, 0.5);
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 4px;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
-.sp-signout:hover { color: rgba(250,247,240,0.85); border-color: rgba(255,255,255,0.32); }
-@media (min-width: 640px) { .sp-signout { top: 28px; right: 40px; } }
-@media (min-width: 1024px) { .sp-signout { top: 32px; right: 64px; } }
+.sp-signout:hover {
+  color: rgba(250, 247, 240, 0.85);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+@media (min-width: 640px) {
+  .sp-signout {
+    top: 28px;
+    right: 40px;
+  }
+}
+@media (min-width: 1024px) {
+  .sp-signout {
+    top: 32px;
+    right: 64px;
+  }
+}
 
 /* ════════════════ SCHOLAR AI PANEL (.sap-*) ════════════════ */
 
-@keyframes sap-dot-pulse { 0%, 80%, 100% { opacity: 0.2 } 40% { opacity: 1 } }
+@keyframes sap-dot-pulse {
+  0%,
+  80%,
+  100% {
+    opacity: 0.2;
+  }
+  40% {
+    opacity: 1;
+  }
+}
 
 .sap-panel {
   margin: 16px 0 8px;
   padding: 14px 16px 12px;
-  background: var(--ngs-paper-2, #F2EDE2);
+  background: var(--ngs-paper-2, #f2ede2);
   border-radius: 10px;
-  border: 1px solid var(--ngs-rule, #E5E0D8);
+  border: 1px solid var(--ngs-rule, #e5e0d8);
 }
 
 .sap-header {
-  display: flex; align-items: center; gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 12px;
 }
-.sap-header-left { display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0; }
+.sap-header-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+}
 .sap-badge {
   flex-shrink: 0;
   padding: 2px 7px;
-  background: var(--ngs-navy, #1B2A4A); color: var(--ngs-gold, #C9A84C);
-  font-family: var(--ngs-mono, 'IBM Plex Mono', monospace); font-size: 9.5px; font-weight: 700;
-  letter-spacing: 0.14em; border-radius: 3px;
+  background: var(--ngs-navy, #1b2a4a);
+  color: var(--ngs-gold, #c9a84c);
+  font-family: var(--ngs-mono, 'IBM Plex Mono', monospace);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  border-radius: 3px;
 }
 .sap-title {
-  font-family: var(--ngs-sans, 'Manrope', sans-serif); font-size: 13px; font-weight: 600;
-  color: var(--ngs-navy, #1B2A4A);
+  font-family: var(--ngs-sans, 'Manrope', sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ngs-navy, #1b2a4a);
 }
 .sap-upload-btn {
   flex-shrink: 0;
   padding: 5px 11px;
-  border: 1px solid var(--ngs-navy, #1B2A4A); border-radius: 5px;
-  background: transparent; color: var(--ngs-navy, #1B2A4A);
-  font-family: var(--ngs-mono, 'IBM Plex Mono', monospace); font-size: 11px; font-weight: 600;
-  cursor: pointer; white-space: nowrap;
-  transition: background 0.12s, color 0.12s;
+  border: 1px solid var(--ngs-navy, #1b2a4a);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ngs-navy, #1b2a4a);
+  font-family: var(--ngs-mono, 'IBM Plex Mono', monospace);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.12s,
+    color 0.12s;
 }
-.sap-upload-btn:hover { background: var(--ngs-navy, #1B2A4A); color: #fff; }
+.sap-upload-btn:hover {
+  background: var(--ngs-navy, #1b2a4a);
+  color: #fff;
+}
 
-.sap-form { display: flex; flex-direction: column; gap: 8px; }
+.sap-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
 
-.sap-row { display: flex; gap: 7px; }
+.sap-row {
+  display: flex;
+  gap: 7px;
+}
 
 .sap-input {
-  flex: 1; min-width: 0;
-  padding: 8px 11px; border-radius: 7px;
-  border: 1px solid var(--ngs-rule, #E5E0D8); background: var(--ngs-surface, #fff);
-  font-family: var(--ngs-sans, 'Manrope', sans-serif); font-size: 13.5px;
-  color: var(--ngs-ink, #1C2235);
+  flex: 1;
+  min-width: 0;
+  padding: 8px 11px;
+  border-radius: 7px;
+  border: 1px solid var(--ngs-rule, #e5e0d8);
+  background: var(--ngs-surface, #fff);
+  font-family: var(--ngs-sans, 'Manrope', sans-serif);
+  font-size: 13.5px;
+  color: var(--ngs-ink, #1c2235);
   transition: border-color 0.12s;
 }
-.sap-input:focus { outline: none; border-color: var(--ngs-navy, #1B2A4A); }
-.sap-input::placeholder { color: var(--ngs-muted, #9A9590); }
-.sap-input:disabled { background: var(--ngs-paper-2, #F2EDE2); color: var(--ngs-muted, #9A9590); }
+.sap-input:focus {
+  outline: none;
+  border-color: var(--ngs-navy, #1b2a4a);
+}
+.sap-input::placeholder {
+  color: var(--ngs-muted, #9a9590);
+}
+.sap-input:disabled {
+  background: var(--ngs-paper-2, #f2ede2);
+  color: var(--ngs-muted, #9a9590);
+}
 
 .sap-submit {
   flex-shrink: 0;
-  padding: 8px 18px; border-radius: 7px; border: none;
-  background: var(--ngs-navy, #1B2A4A); color: var(--ngs-gold, #C9A84C);
-  font-family: var(--ngs-mono, 'IBM Plex Mono', monospace); font-size: 12px; font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 7px;
+  border: none;
+  background: var(--ngs-navy, #1b2a4a);
+  color: var(--ngs-gold, #c9a84c);
+  font-family: var(--ngs-mono, 'IBM Plex Mono', monospace);
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
   transition: opacity 0.12s;
 }
-.sap-submit:disabled { opacity: 0.38; cursor: not-allowed; }
-.sap-submit:not(:disabled):hover { opacity: 0.82; }
+.sap-submit:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+.sap-submit:not(:disabled):hover {
+  opacity: 0.82;
+}
 
-.sap-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.sap-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
 .sap-chip {
   padding: 4px 10px;
-  border: 1px solid var(--ngs-rule, #E5E0D8); border-radius: 16px;
-  background: var(--ngs-surface, #fff); color: var(--ngs-navy, #1B2A4A);
-  font-family: var(--ngs-sans, 'Manrope', sans-serif); font-size: 11.5px; font-weight: 500;
-  cursor: pointer; white-space: nowrap;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  border: 1px solid var(--ngs-rule, #e5e0d8);
+  border-radius: 16px;
+  background: var(--ngs-surface, #fff);
+  color: var(--ngs-navy, #1b2a4a);
+  font-family: var(--ngs-sans, 'Manrope', sans-serif);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s;
 }
-.sap-chip:hover:not(:disabled) { background: var(--ngs-navy, #1B2A4A); color: #fff; border-color: var(--ngs-navy, #1B2A4A); }
-.sap-chip:disabled { opacity: 0.4; cursor: not-allowed; }
+.sap-chip:hover:not(:disabled) {
+  background: var(--ngs-navy, #1b2a4a);
+  color: #fff;
+  border-color: var(--ngs-navy, #1b2a4a);
+}
+.sap-chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 
 .sap-error {
-  margin-top: 8px; padding: 9px 12px; border-radius: 6px;
-  background: rgba(177,27,42,0.07); color: #B11B2A;
-  font-size: 13px; line-height: 1.4;
+  margin-top: 8px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  background: rgba(177, 27, 42, 0.07);
+  color: #b11b2a;
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 .sap-loading {
-  display: flex; gap: 5px; align-items: center; margin-top: 10px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin-top: 10px;
 }
 .sap-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--ngs-navy, #1B2A4A);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ngs-navy, #1b2a4a);
   animation: sap-dot-pulse 1.2s ease-in-out infinite;
 }
-.sap-dot:nth-child(2) { animation-delay: 0.2s; }
-.sap-dot:nth-child(3) { animation-delay: 0.4s; }
+.sap-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.sap-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
 
 /* ════════════════ SCHOLAR INGEST PANEL (.sip-*) ════════════════ */
 
 .sip-panel {
   margin: 24px 0 8px;
   padding: 16px 16px 14px;
-  background: var(--ngs-paper-2, #F2EDE2);
+  background: var(--ngs-paper-2, #f2ede2);
   border-radius: 10px;
-  border: 1px solid var(--ngs-rule, #E5E0D8);
+  border: 1px solid var(--ngs-rule, #e5e0d8);
   scroll-margin-top: 80px;
 }
 
 .sip-header {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 14px;
 }
 .sip-badge {
   padding: 2px 7px;
-  background: var(--ngs-navy, #1B2A4A); color: var(--ngs-gold, #C9A84C);
-  font-family: var(--ngs-mono, 'IBM Plex Mono', monospace); font-size: 9.5px; font-weight: 700;
-  letter-spacing: 0.14em; border-radius: 3px;
+  background: var(--ngs-navy, #1b2a4a);
+  color: var(--ngs-gold, #c9a84c);
+  font-family: var(--ngs-mono, 'IBM Plex Mono', monospace);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  border-radius: 3px;
 }
 .sip-title {
-  font-family: var(--ngs-sans, 'Manrope', sans-serif); font-size: 13px; font-weight: 600;
-  color: var(--ngs-navy, #1B2A4A);
+  font-family: var(--ngs-sans, 'Manrope', sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ngs-navy, #1b2a4a);
 }
 .sip-note {
-  font-family: var(--ngs-mono, 'IBM Plex Mono', monospace); font-size: 11px;
-  color: var(--ngs-muted, #9A9590);
+  font-family: var(--ngs-mono, 'IBM Plex Mono', monospace);
+  font-size: 11px;
+  color: var(--ngs-muted, #9a9590);
 }
 
 .sip-success {
-  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
-  padding: 12px 14px; border-radius: 7px;
-  background: rgba(47,125,85,0.09); color: #1a6635;
-  font-size: 13.5px; font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 7px;
+  background: rgba(47, 125, 85, 0.09);
+  color: #1a6635;
+  font-size: 13.5px;
+  font-weight: 500;
 }
 .sip-again-btn {
-  padding: 5px 11px; border-radius: 5px;
-  border: 1px solid currentColor; background: transparent; color: inherit;
-  font-size: 12px; font-weight: 600; cursor: pointer;
+  padding: 5px 11px;
+  border-radius: 5px;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
   transition: background 0.12s;
 }
-.sip-again-btn:hover { background: rgba(47,125,85,0.12); }
-
+.sip-again-btn:hover {
+  background: rgba(47, 125, 85, 0.12);
+}
 
 /* ════════════════ SCHOLAR CHAT PANEL (.scp-*) ════════════════ */
 
 .scp-panel {
   margin: 16px 0 8px;
-  background: var(--ngs-paper-2, #F2EDE2);
+  background: var(--ngs-paper-2, #f2ede2);
   border-radius: 10px;
-  border: 1px solid var(--ngs-rule, #E5E0D8);
-  display: flex; flex-direction: column;
+  border: 1px solid var(--ngs-rule, #e5e0d8);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
 .scp-header {
-  display: flex; align-items: center; gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 12px 16px 10px;
-  border-bottom: 1px solid var(--ngs-rule, #E5E0D8);
+  border-bottom: 1px solid var(--ngs-rule, #e5e0d8);
   flex-shrink: 0;
 }
-.scp-header-left { display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0; }
+.scp-header-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+}
 
 .scp-clear-btn {
   font-family: var(--ngs-mono, 'IBM Plex Mono', monospace);
-  font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-  padding: 3px 8px; border: 1px solid var(--ngs-rule, #E5E0D8);
-  border-radius: 4px; background: transparent; color: var(--ngs-muted, #9A9590); cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid var(--ngs-rule, #e5e0d8);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ngs-muted, #9a9590);
+  cursor: pointer;
 }
-.scp-clear-btn:hover { border-color: var(--ngs-muted, #9A9590); color: var(--ngs-ink, #1C2235); }
+.scp-clear-btn:hover {
+  border-color: var(--ngs-muted, #9a9590);
+  color: var(--ngs-ink, #1c2235);
+}
 
 /* Empty state */
-.scp-empty { padding: 14px 16px 10px; }
+.scp-empty {
+  padding: 14px 16px 10px;
+}
 .scp-empty-hint {
   font-family: var(--ngs-sans, 'Manrope', sans-serif);
-  font-size: 12px; color: var(--ngs-muted, #9A9590); margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--ngs-muted, #9a9590);
+  margin: 0 0 8px;
 }
 
 /* Thread */
 .scp-thread {
-  flex: 1; overflow-y: auto; max-height: 360px;
+  flex: 1;
+  overflow-y: auto;
+  max-height: 360px;
   padding: 12px 14px 6px;
-  display: flex; flex-direction: column; gap: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   scroll-behavior: smooth;
 }
 
 /* Individual messages */
-.scp-msg { display: flex; }
-.scp-msg-user      { justify-content: flex-end; }
-.scp-msg-assistant { justify-content: flex-start; }
+.scp-msg {
+  display: flex;
+}
+.scp-msg-user {
+  justify-content: flex-end;
+}
+.scp-msg-assistant {
+  justify-content: flex-start;
+}
 
 .scp-bubble {
   max-width: 86%;
   padding: 9px 13px;
   border-radius: 14px;
   font-family: var(--ngs-sans, 'Manrope', sans-serif);
-  font-size: 13px; line-height: 1.55;
+  font-size: 13px;
+  line-height: 1.55;
   word-break: break-word;
 }
 .scp-bubble-user {
-  background: var(--ngs-navy, #1B2A4A);
+  background: var(--ngs-navy, #1b2a4a);
   color: #fff;
   border-bottom-right-radius: 4px;
-  display: flex; align-items: flex-start;
+  display: flex;
+  align-items: flex-start;
 }
 .scp-bubble-assistant {
   background: var(--ngs-surface, #fff);
-  border: 1px solid var(--ngs-rule, #E5E0D8);
+  border: 1px solid var(--ngs-rule, #e5e0d8);
   border-bottom-left-radius: 4px;
-  color: var(--ngs-ink, #1C2235);
-  display: flex; align-items: flex-start;
+  color: var(--ngs-ink, #1c2235);
+  display: flex;
+  align-items: flex-start;
   /* allow ResultDisplay to fill */
   flex-direction: column;
 }
 .scp-bubble-assistant .sap-dot {
   display: inline-block;
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--ngs-navy, #1B2A4A);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ngs-navy, #1b2a4a);
   animation: sap-dot-pulse 1.2s ease-in-out infinite;
   margin-right: 5px;
 }
-.scp-bubble-assistant .sap-dot:nth-child(2) { animation-delay: 0.2s; }
-.scp-bubble-assistant .sap-dot:nth-child(3) { animation-delay: 0.4s; margin-right: 0; }
-.scp-bubble-err { color: #B11B2A; background: rgba(177,27,42,0.05); }
+.scp-bubble-assistant .sap-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.scp-bubble-assistant .sap-dot:nth-child(3) {
+  animation-delay: 0.4s;
+  margin-right: 0;
+}
+.scp-bubble-err {
+  color: #b11b2a;
+  background: rgba(177, 27, 42, 0.05);
+}
 
 .scp-answer {
-  margin: 0; white-space: pre-wrap;
-  font-size: 13px; line-height: 1.55; color: var(--ngs-ink, #1C2235);
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ngs-ink, #1c2235);
 }
 
 /* Input form */
 .scp-form {
-  display: flex; gap: 7px;
+  display: flex;
+  gap: 7px;
   padding: 10px 14px;
-  border-top: 1px solid var(--ngs-rule, #E5E0D8);
+  border-top: 1px solid var(--ngs-rule, #e5e0d8);
   flex-shrink: 0;
-  background: var(--ngs-paper-2, #F2EDE2);
+  background: var(--ngs-paper-2, #f2ede2);
 }
-.scp-send-btn { min-width: 42px; padding: 8px 12px; }
+.scp-send-btn {
+  min-width: 42px;
+  padding: 8px 12px;
+}
 
 /* Compact quick-prompt bar below input */
 .scp-chips-bar {
-  display: flex; flex-wrap: wrap; gap: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
   padding: 0 14px 10px;
 }
 .scp-chip-sm {
@@ -282,27 +495,36 @@ button { font-family: inherit; cursor: pointer; border: 0; background: none; }
   border-radius: 12px !important;
 }
 
-
 /* ── Scholar Documents page (.sd-*) ── */
 .sd-loading {
   color: var(--ngs-muted);
-  font-family: var(--ngs-mono); font-size: 12px;
-  letter-spacing: 0.1em; text-transform: uppercase;
+  font-family: var(--ngs-mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   padding: 8px 2px;
 }
 
 .sd-header {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; margin-bottom: 14px; flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
 }
 
 .sd-count {
-  font-family: var(--ngs-mono); font-size: 12px;
-  color: var(--ngs-muted); letter-spacing: 0.06em;
+  font-family: var(--ngs-mono);
+  font-size: 12px;
+  color: var(--ngs-muted);
+  letter-spacing: 0.06em;
 }
 
 .sd-header-actions {
-  display: flex; align-items: center; gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 /* ════════════════ DASHBOARD SHELL VARIANT (2026-07 redesign) ════════════════
@@ -330,16 +552,123 @@ html[data-theme='dark'] .sp-shell {
   --ngs-muted: var(--ngs-dark-muted);
   --ngs-surface: var(--ngs-dark-surface);
   /* text-role colors, same rationale as the .nav-app dark block */
-  --ngs-navy-text: #A9BEE8;
-  --ngs-blue-nav: #82A8E8;
-  --ngs-green: #5CB884;
-  --ngs-red: #E06A76;
-  --ngs-amber: #D9A94E;
-  --ngs-warn: #D9A94E;
+  --ngs-navy-text: #a9bee8;
+  --ngs-blue-nav: #82a8e8;
+  --ngs-green: #5cb884;
+  --ngs-red: #e06a76;
+  --ngs-amber: #d9a94e;
+  --ngs-warn: #d9a94e;
 }
 /* user chat bubble: navy-on-navy has no contrast in dark — flip to gold */
 html[data-theme='dark'] .sp-shell .scp-bubble-user {
   background: rgba(201, 168, 76, 0.18);
   color: var(--ngs-gold-soft);
 }
-.sp-shell .scp-panel { margin: 0; }
+.sp-shell .scp-panel {
+  margin: 0;
+}
+
+/* ── Assistant launcher + docked panel ───────────────────────────────────── */
+/* Pinned to the viewport rather than placed in the page flow. Inline, this sat
+   at the bottom of a long scrolling dashboard where it read as absent — and no
+   amount of moving it up fixes that on a page that scrolls. Mirrors the living
+   budget's .lb-ask-fab / .lb-ask.is-docked. */
+.scp-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 18px 11px 12px;
+  border: 1px solid var(--ngs-gold, #c9a84c);
+  border-radius: 999px;
+  background: var(--ngs-navy, #1c2235);
+  color: #f5f0e4;
+  font-family: var(--ngs-sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 6px 22px -6px rgba(0, 0, 0, 0.45);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+.scp-fab:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.55);
+}
+.scp-fab .sap-badge {
+  flex: none;
+}
+.scp-fab.has-thread {
+  border-color: var(--ngs-amber, #d9a94e);
+}
+
+.scp-panel.is-docked {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 60;
+  width: min(430px, calc(100vw - 32px));
+  max-height: min(76vh, 720px);
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  box-shadow: 0 14px 40px -10px rgba(0, 0, 0, 0.45);
+}
+/* The thread is the only part that should grow; the header and composer stay
+   put so the input never scrolls out of reach mid-conversation. */
+.scp-panel.is-docked .scp-thread {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+.scp-close {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border: none;
+  background: transparent;
+  color: var(--ngs-muted, #9a9590);
+  font-size: 19px;
+  line-height: 1;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.scp-close:hover {
+  color: var(--ngs-ink, #1c2235);
+}
+
+@media (max-width: 720px) {
+  .scp-fab {
+    right: 16px;
+    bottom: 16px;
+  }
+  .scp-panel.is-docked {
+    right: 8px;
+    left: 8px;
+    bottom: 8px;
+    width: auto;
+    max-height: 82vh;
+  }
+}
+
+/* Clears PublicAskWidget (.paw-root), which is fixed to the same corner at a
+   higher z-index on ScholarHome. Without this the two simply overlap and the
+   scholar's own assistant is the one that disappears. */
+.scp-fab.is-raised {
+  bottom: 92px;
+}
+.scp-panel.is-docked.is-raised {
+  bottom: 92px;
+}
+@media (max-width: 720px) {
+  .scp-fab.is-raised {
+    bottom: 80px;
+  }
+  .scp-panel.is-docked.is-raised {
+    bottom: 76px;
+  }
+}

@@ -113,6 +113,7 @@ export function BudgetAskPanel({
   isMentor,
   onPushToFinances,
 }) {
+  const [open, setOpen] = useState(false);
   const [text, setText] = useState('');
   const [thinking, setThinking] = useState(false);
   const [answer, setAnswer] = useState(null);
@@ -260,9 +261,51 @@ export function BudgetAskPanel({
     }
   }
 
+  // Collapsed by default into a launcher pinned to the viewport corner.
+  //
+  // This panel used to render inline at the bottom of the page. Moving it out
+  // of the Build tab made it reachable from all three tabs in principle, but
+  // in practice it sat below a full screen of dashboard — so on the tab people
+  // actually land on, the assistant was invisible and looked absent. An inline
+  // block cannot fix that: any page long enough to scroll will bury it. A
+  // fixed launcher is visible from every tab at every scroll position.
+  if (!open) {
+    return (
+      <button
+        type="button"
+        className={`lb-ask-fab${proposal ? ' has-pending' : ''}`}
+        onClick={() => setOpen(true)}
+        aria-expanded="false"
+        title={proposal ? 'You have changes waiting for approval' : 'Ask about this budget'}
+      >
+        <span className="lb-ask-fab-badge">AI</span>
+        <span className="lb-ask-fab-label">
+          {/* Closing the dock keeps an un-applied proposal in state. Without
+              saying so, those pending changes are silently stranded behind a
+              button that looks like a fresh start. */}
+          {proposal
+            ? `${proposal.ops.length} change${proposal.ops.length === 1 ? '' : 's'} to review`
+            : 'Ask about this budget'}
+        </span>
+      </button>
+    );
+  }
+
   return (
-    <section className="lb-ask">
-      <h3 className="lb-ask-title">Ask about your budget</h3>
+    <section className="lb-ask is-docked">
+      <div className="lb-ask-hd">
+        <span className="lb-ask-fab-badge">AI</span>
+        <h3 className="lb-ask-title">Ask about this budget</h3>
+        <button
+          type="button"
+          className="lb-ask-close"
+          onClick={() => setOpen(false)}
+          aria-label="Close the assistant"
+        >
+          ×
+        </button>
+      </div>
+
       <p className="lb-ask-sub">
         Ask a question, or just say what you want changed — "add ₱300 for haircuts", "make rent
         4,500 every month through December", "I put all this in August but it should start in

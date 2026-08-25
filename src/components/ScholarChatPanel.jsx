@@ -31,7 +31,12 @@ function resultToText(result) {
   return '';
 }
 
-export function ScholarChatPanel({ scholarKey, onGoToIngestion, ingestionLabel }) {
+// `raised` lifts the launcher clear of another fixed bottom-right widget on
+// the same page — ScholarHome also renders PublicAskWidget (.paw-root), which
+// occupies the identical corner at a higher z-index and would simply cover
+// this one.
+export function ScholarChatPanel({ scholarKey, onGoToIngestion, ingestionLabel, raised = false }) {
+  const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -105,8 +110,32 @@ export function ScholarChatPanel({ scholarKey, onGoToIngestion, ingestionLabel }
 
   const hasThread = messages.length > 0;
 
+  // Collapsed into a launcher pinned to the viewport corner, matching the
+  // living budget's assistant.
+  //
+  // Inline placement put this at the bottom of a long scrolling page on
+  // ScholarHome, where it read as absent — the same complaint the budget panel
+  // drew. Any page long enough to scroll buries an inline block, so the fix is
+  // to take it out of the flow entirely rather than move it further up.
+  if (!open) {
+    return (
+      <button
+        type="button"
+        className={`scp-fab${hasThread ? ' has-thread' : ''}${raised ? ' is-raised' : ''}`}
+        onClick={() => setOpen(true)}
+        aria-expanded="false"
+        title="Ask or update your progress"
+      >
+        <span className="sap-badge">AI</span>
+        <span className="scp-fab-label">
+          {hasThread ? 'Back to your chat' : 'Ask or update your progress'}
+        </span>
+      </button>
+    );
+  }
+
   return (
-    <div className="scp-panel">
+    <div className={`scp-panel is-docked${raised ? ' is-raised' : ''}`}>
       {/* Header */}
       <div className="scp-header">
         <div className="scp-header-left">
@@ -119,10 +148,28 @@ export function ScholarChatPanel({ scholarKey, onGoToIngestion, ingestionLabel }
           </button>
         )}
         {onGoToIngestion && (
-          <button className="sap-upload-btn" type="button" onClick={onGoToIngestion}>
+          <button
+            className="sap-upload-btn"
+            type="button"
+            onClick={() => {
+              // The upload target is on the page BEHIND this dock, so the
+              // scroll it triggers is invisible until the dock is out of the
+              // way. Close first, then jump.
+              setOpen(false);
+              onGoToIngestion();
+            }}
+          >
             {ingestionLabel || 'Upload document'} →
           </button>
         )}
+        <button
+          type="button"
+          className="scp-close"
+          onClick={() => setOpen(false)}
+          aria-label="Close the assistant"
+        >
+          ×
+        </button>
       </div>
 
       {/* Empty state: quick prompts only */}
