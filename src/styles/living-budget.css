@@ -1376,6 +1376,27 @@
   font-size: 12.5px;
   text-align: right;
 }
+/* At the phone width this modal actually runs at, 68px isn't wide enough to
+   show a 3-digit qty or unit price at once — the box itself clips it, not
+   just the font. Rather than widen the column permanently (there's no room:
+   Item/Qty/Unit/Per/Total all share one row), pop the box outward only while
+   it's the one being edited — bigger, elevated above its neighbors, briefly
+   overlapping the next cell if it has to. It returns to its normal size the
+   moment focus leaves. */
+@media (max-width: 720px) {
+  .lb-i-in:focus {
+    position: relative;
+    z-index: 3;
+    width: 84px;
+    max-width: none;
+    padding: 7px 9px;
+    font-size: 15px;
+    border-color: var(--ngs-gold);
+    outline: 2px solid var(--ngs-gold);
+    outline-offset: -1px;
+    box-shadow: 0 6px 18px -4px rgba(0, 0, 0, 0.35);
+  }
+}
 .lb-items select {
   padding: 5px 6px;
   border: 1px solid var(--ngs-rule);
