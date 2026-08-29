@@ -1,6 +1,7 @@
 import { requireMcpKey, McpAuthError } from '../../../lib/mcp-auth.js';
 import { toolsForRole, runTool, describeCall } from '../../../lib/ai/tools.js';
 import { toJsonSchema } from '../../../lib/mcp/json-schema.js';
+import { getAppUrl } from '../../../lib/app-url.js';
 
 // The MCP endpoint — lets an MCP client (Claude Desktop, Claude Code, any
 // other MCP host) act with full mentor capability: every tool in
@@ -32,8 +33,6 @@ function rpcResult(id, result) {
 function rpcError(id, code, message) {
   return { jsonrpc: '2.0', id, error: { code, message } };
 }
-
-const APP_URL = 'https://next-gen-scholars-jonncy18.vercel.app';
 
 function respond(body, status = 200, extraHeaders = {}) {
   return new Response(body == null ? null : JSON.stringify(body), {
@@ -127,7 +126,7 @@ export async function POST(request) {
       // Points an OAuth-aware MCP client at the protected-resource metadata
       // (RFC 9728) so it can discover /oauth/authorize and self-serve a
       // token instead of needing a manually-pasted key — see docs/MCP.md.
-      const headers = { 'www-authenticate': `Bearer resource_metadata="${APP_URL}/.well-known/oauth-protected-resource"` };
+      const headers = { 'www-authenticate': `Bearer resource_metadata="${getAppUrl()}/.well-known/oauth-protected-resource"` };
       return respond(rpcError(null, -32001, err.message), err.status, headers);
     }
     throw err;

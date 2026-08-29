@@ -1,13 +1,13 @@
 import { json } from '../../../lib/http.js';
+import { getAppUrl } from '../../../lib/app-url.js';
 
 // RFC 8414 authorization-server metadata — advertises the endpoints backing
 // the flow in lib/oauth.js. authorization_endpoint is a real page (renders
 // the mentor sign-in + consent UI); token/registration are API routes.
 export const dynamic = 'force-dynamic';
 
-const APP_URL = 'https://next-gen-scholars-jonncy18.vercel.app';
-
 export async function GET() {
+  const APP_URL = getAppUrl();
   return json({
     issuer: APP_URL,
     authorization_endpoint: `${APP_URL}/oauth/authorize`,
