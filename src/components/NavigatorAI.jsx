@@ -327,7 +327,7 @@ export function ResultDisplay({ result }) {
       return (
         <div className="nai-result nai-result-escalate">
           <div className="nai-result-meta">
-            <span className="nai-tier-badge nai-tier-2">Tier 2 · Gemini</span>
+            <span className="nai-tier-badge nai-tier-2">Tier 2 · Claude</span>
             {result.model && <span className="nai-intent">{result.model}</span>}
           </div>
           <p className="nai-answer-text nai-gemini-answer">{result.answer}</p>
@@ -341,11 +341,11 @@ export function ResultDisplay({ result }) {
       return (
         <div className="nai-result nai-result-escalate">
           <div className="nai-result-meta">
-            <span className="nai-tier-badge nai-tier-2">Tier 2 · Gemini</span>
+            <span className="nai-tier-badge nai-tier-2">Tier 2 · Claude</span>
           </div>
           <p className="nai-escalate-msg">
-            Gemini key not configured — add <code>GOOGLE_AI_KEY</code> to the Vercel project's env
-            vars.
+            Claude key not configured — add <code>ANTHROPIC_API_KEY</code> to the Vercel project's
+            env vars.
           </p>
         </div>
       );
@@ -353,10 +353,10 @@ export function ResultDisplay({ result }) {
     return (
       <div className="nai-result nai-result-escalate">
         <div className="nai-result-meta">
-          <span className="nai-tier-badge nai-tier-2">Tier 2 · Gemini</span>
+          <span className="nai-tier-badge nai-tier-2">Tier 2 · Claude</span>
         </div>
         <p className="nai-escalate-msg nai-error">
-          {result.error ?? 'Gemini returned an unexpected response.'}
+          {result.error ?? 'Claude returned an unexpected response.'}
         </p>
       </div>
     );
@@ -443,7 +443,7 @@ export function ReviewCard({ items: initialItems, model, scholar, sem, onDiscard
   return (
     <div className="nai-review">
       <div className="nai-review-header">
-        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Gemini</span>
+        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Claude</span>
         <span className="nai-review-title">
           {items.length} expense{items.length !== 1 ? 's' : ''} extracted — review before saving
         </span>
@@ -748,7 +748,7 @@ export function GradeReviewCard({
   return (
     <div className="nai-review">
       <div className="nai-review-header">
-        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Gemini</span>
+        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Claude</span>
         <span className="nai-review-title">
           {grades.length} subject{grades.length !== 1 ? 's' : ''} extracted — review before saving
         </span>
@@ -964,11 +964,11 @@ export function GradeReviewCard({
             className="nai-tier-badge nai-tier-2"
             style={{ marginBottom: 6, display: 'inline-block' }}
           >
-            Gemini · Analysis
+            Claude · Analysis
           </span>
           {geminiLoading ? (
             <p className="nai-gemini-analysis-text" style={{ color: 'var(--ngs-muted)' }}>
-              Gemini is reviewing the grades…
+              Claude is reviewing the grades…
             </p>
           ) : (
             <p className="nai-gemini-analysis-text">{geminiAnalysis}</p>
@@ -1064,9 +1064,9 @@ export function GradeIngestPanel({ scholar, scholarKeys }) {
         sem,
         file: { base64: file.base64, mime: file.mime },
       });
-      if (!Array.isArray(json.grades)) throw new Error('Unexpected response from Gemini.');
+      if (!Array.isArray(json.grades)) throw new Error('Unexpected response from Claude.');
       if (json.grades.length === 0) {
-        setError('Gemini found no grade entries in this document.');
+        setError('Claude found no grade entries in this document.');
         return;
       }
       setReview({ grades: json.grades, model: json.model });
@@ -1168,7 +1168,7 @@ export function GradeIngestPanel({ scholar, scholarKeys }) {
             <span className="nai-loading-dot" />
             <span className="nai-loading-dot" />
             <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>
-              Gemini is reading the grade report…
+              Claude is reading the grade report…
             </span>
           </div>
         )}
@@ -1273,8 +1273,8 @@ export function IngestPanel({ scholar, scholarKeys }) {
     setSuccess(null);
     try {
       const allItems = [];
-      let usedModel = 'gemini-2.5-flash';
-      const modelLabel = 'Gemini';
+      let usedModel = 'claude-sonnet-5';
+      const modelLabel = 'Claude';
 
       if (pasteText.trim()) {
         setProgress('Processing pasted text…');
@@ -1459,7 +1459,7 @@ export function IngestPanel({ scholar, scholarKeys }) {
             <span className="nai-loading-dot" />
             <span className="nai-loading-dot" />
             <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>
-              {progress || 'Gemini is reading the document…'}
+              {progress || 'Claude is reading the document…'}
             </span>
           </div>
         )}
@@ -1507,7 +1507,7 @@ export function WeeklyReportPanel({ scholarKeys }) {
         scholars: scholarKeys,
         type: 'weekly_report',
       });
-      if (!json.report) throw new Error(json.error || 'Gemini returned an empty report.');
+      if (!json.report) throw new Error(json.error || 'Claude returned an empty report.');
       setReport(json.report);
       setModel(json.model);
     } catch (err) {
@@ -1532,7 +1532,7 @@ export function WeeklyReportPanel({ scholarKeys }) {
       <div className="section-head">
         <h2 className="section-title">Weekly report</h2>
         <span className="section-note">
-          Gemini drafts a shareable cohort update from every scholar's live data
+          Claude drafts a shareable cohort update from every scholar's live data
         </span>
       </div>
 
@@ -1552,7 +1552,7 @@ export function WeeklyReportPanel({ scholarKeys }) {
             <span className="nai-loading-dot" />
             <span className="nai-loading-dot" />
             <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>
-              Gemini is reviewing the cohort…
+              Claude is reviewing the cohort…
             </span>
           </div>
         )}
@@ -1563,7 +1563,7 @@ export function WeeklyReportPanel({ scholarKeys }) {
       {report && (
         <div className="nai-result nai-result-escalate" style={{ marginTop: 12 }}>
           <div className="nai-result-meta">
-            <span className="nai-tier-badge nai-tier-2">Tier 2 · Gemini</span>
+            <span className="nai-tier-badge nai-tier-2">Tier 2 · Claude</span>
             {model && <span className="nai-intent">{model}</span>}
             <button
               type="button"

@@ -188,7 +188,7 @@ export function ExpenseEditPanel({
               <span className="nai-loading-dot" />
               <span className="nai-loading-dot" />
               <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>
-                Gemini is working out the changes…
+                Claude is working out the changes…
               </span>
             </div>
           )}
@@ -198,7 +198,7 @@ export function ExpenseEditPanel({
           {proposal && (
             <div className="nai-review" style={{ marginTop: 12 }}>
               <div className="nai-review-header">
-                <span className="nai-tier-badge nai-tier3-badge">Gemini</span>
+                <span className="nai-tier-badge nai-tier3-badge">Claude</span>
                 <span className="nai-review-title">
                   {proposal.edits.length} edit{proposal.edits.length !== 1 ? 's' : ''}
                   {proposal.deletes.length > 0
