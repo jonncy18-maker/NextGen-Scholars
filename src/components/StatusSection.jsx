@@ -10,18 +10,21 @@ const SEM_WEEKS = 16;
 function computeTrajectory(s) {
   const sem = s.currentSem;
   if (!sem) return null;
-  const semExps = (s.expenses?.[sem] || []).filter(e => e.avb === 'Actual');
+  const semExps = (s.expenses?.[sem] || []).filter((e) => e.avb === 'Actual');
   if (semExps.length === 0) return null;
   const budget = s.budgets?.[sem] || 0;
   if (budget <= 0) return null;
   const currentSpend = semExps.reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
-  const sortedDates = semExps.map(e => e.date).filter(Boolean).sort();
+  const sortedDates = semExps
+    .map((e) => e.date)
+    .filter(Boolean)
+    .sort();
   if (!sortedDates[0]) return null;
-  const msPerWeek    = 7 * 24 * 60 * 60 * 1000;
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
   const weeksElapsed = Math.max(0.5, (Date.now() - new Date(sortedDates[0]).getTime()) / msPerWeek);
-  const weeksLeft    = Math.max(0, SEM_WEEKS - weeksElapsed);
-  const weeklyBurn   = currentSpend / weeksElapsed;
-  const projected    = currentSpend + weeklyBurn * weeksLeft;
+  const weeksLeft = Math.max(0, SEM_WEEKS - weeksElapsed);
+  const weeklyBurn = currentSpend / weeksElapsed;
+  const projected = currentSpend + weeklyBurn * weeksLeft;
   return { projected, budget, overspend: projected - budget, currentSpend };
 }
 
@@ -34,7 +37,7 @@ function gpaClass(gpa, floor) {
 
 function latestGpa(s, liveGpa) {
   if (liveGpa[s._key] != null) return liveGpa[s._key];
-  const closed = (s.academics || []).filter(a => a.gpa != null);
+  const closed = (s.academics || []).filter((a) => a.gpa != null);
   return closed.length ? closed[closed.length - 1].gpa : null;
 }
 
@@ -60,22 +63,28 @@ function CoachModal({ scholarName, text, onClose }) {
   return (
     <div
       className="mgroup-backdrop"
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div className="mgroup-modal coach-modal">
         <div className="mgroup-header">
           <div className="mgroup-title">Coaching note · {scholarName}</div>
-          <button className="mgroup-close" onClick={onClose}>✕</button>
+          <button className="mgroup-close" onClick={onClose}>
+            ✕
+          </button>
         </div>
         <div className="coach-modal-body">
-          <span className="nai-tier-badge nai-tier-2">Tier 2 · Gemini</span>
+          <span className="nai-tier-badge nai-tier-2">Tier 2 · Claude</span>
           <p className="coach-modal-text">{text}</p>
         </div>
         <div className="coach-modal-footer">
           <button className="nai-confirm-btn" onClick={handleCopy}>
             {copied ? '✓ Copied' : 'Copy to clipboard'}
           </button>
-          <button className="nai-discard-btn" onClick={onClose}>Close</button>
+          <button className="nai-discard-btn" onClick={onClose}>
+            Close
+          </button>
         </div>
       </div>
     </div>
@@ -88,20 +97,25 @@ function ScholarCard({ sk, currency, liveGpa, onSemesterChange }) {
   const s = { ...D.scholars[sk], _key: sk };
   const gpa = latestGpa(s, liveGpa);
   const tot = scholarTotals(s);
-  const budgetPct = tot.allocated ? Math.min(100, Math.round(tot.total / tot.allocated * 100)) : 0;
+  const budgetPct = tot.allocated
+    ? Math.min(100, Math.round((tot.total / tot.allocated) * 100))
+    : 0;
   const next = nextMilestone(s);
   const pillCls = { active: 'active', trial: 'trial' }[s.status] || 'paused';
   const pillTxt = { active: 'Active', trial: 'Trial' }[s.status] || 'Paused';
 
   const trajectory = computeTrajectory(s);
-  const trajColor  = !trajectory ? null
-    : trajectory.overspend > 0               ? 'red'
-    : trajectory.projected > trajectory.budget * 0.9 ? 'amber'
-    : 'green';
+  const trajColor = !trajectory
+    ? null
+    : trajectory.overspend > 0
+      ? 'red'
+      : trajectory.projected > trajectory.budget * 0.9
+        ? 'amber'
+        : 'green';
 
   const [noteLoading, setNoteLoading] = useState(false);
-  const [noteText, setNoteText]       = useState(null);
-  const [noteError, setNoteError]     = useState(null);
+  const [noteText, setNoteText] = useState(null);
+  const [noteError, setNoteError] = useState(null);
 
   async function handleDraftNote() {
     setNoteLoading(true);
@@ -128,24 +142,45 @@ function ScholarCard({ sk, currency, liveGpa, onSemesterChange }) {
         <div className="metric-grid">
           <div className="metric">
             <div className="metric-val">{s.currentSem || '—'}</div>
-            <div className="metric-lbl">Current<br />Sem</div>
+            <div className="metric-lbl">
+              Current
+              <br />
+              Sem
+            </div>
           </div>
           <div className="metric">
-            <div className={`metric-val ${gpaClass(gpa, s.gpaFloor)}`}>{gpa != null ? gpa.toFixed(2) + '%' : '—'}</div>
-            <div className="metric-lbl">Last<br />GPA</div>
+            <div className={`metric-val ${gpaClass(gpa, s.gpaFloor)}`}>
+              {gpa != null ? gpa.toFixed(2) + '%' : '—'}
+            </div>
+            <div className="metric-lbl">
+              Last
+              <br />
+              GPA
+            </div>
           </div>
           <div className="metric">
             <div className="metric-val">{$fmt(tot.total, currency)}</div>
-            <div className="metric-lbl">Total<br />Invested</div>
+            <div className="metric-lbl">
+              Total
+              <br />
+              Invested
+            </div>
           </div>
           <div className="metric">
             <div className="metric-val">{budgetPct}%</div>
-            <div className="metric-lbl">Budget<br />Used</div>
+            <div className="metric-lbl">
+              Budget
+              <br />
+              Used
+            </div>
           </div>
         </div>
-        <div className="scard-prog"><ProgBar pct={budgetPct} /></div>
+        <div className="scard-prog">
+          <ProgBar pct={budgetPct} />
+        </div>
         <div className="scard-prog-lbl">
-          {s.gpaFloor != null ? `Floor ${s.gpaFloor}% · ` : ''}{budgetPct}% of allocation deployed
+          {s.gpaFloor != null ? `Floor ${s.gpaFloor}% · ` : ''}
+          {budgetPct}% of allocation deployed
         </div>
         {trajectory && (
           <div className={`scard-trajectory scard-traj-${trajColor}`}>
@@ -160,38 +195,34 @@ function ScholarCard({ sk, currency, liveGpa, onSemesterChange }) {
           <div className="scard-next-detail">{next.detail}</div>
         </div>
         <div className="scard-sem-row">
-          <label className="scard-sem-lbl" htmlFor={`sem-${sk}`}>Active semester</label>
+          <label className="scard-sem-lbl" htmlFor={`sem-${sk}`}>
+            Active semester
+          </label>
           <select
             id={`sem-${sk}`}
             className="scard-sem-select"
             value={s.currentSem || ''}
-            onChange={e => onSemesterChange(sk, e.target.value)}
+            onChange={(e) => onSemesterChange(sk, e.target.value)}
           >
             {s.currentSem && !SEMESTER_OPTIONS.includes(s.currentSem) && (
               <option value={s.currentSem}>{s.currentSem}</option>
             )}
-            {SEMESTER_OPTIONS.map(opt => (
-              <option key={opt} value={opt}>{opt}</option>
+            {SEMESTER_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
             ))}
           </select>
         </div>
         <div className="scard-draft-row">
-          <button
-            className="scard-draft-btn"
-            onClick={handleDraftNote}
-            disabled={noteLoading}
-          >
+          <button className="scard-draft-btn" onClick={handleDraftNote} disabled={noteLoading}>
             {noteLoading ? 'Drafting…' : 'Draft coaching note'}
           </button>
           {noteError && <div className="scard-draft-err">{noteError}</div>}
         </div>
       </div>
       {noteText && (
-        <CoachModal
-          scholarName={s.firstName}
-          text={noteText}
-          onClose={() => setNoteText(null)}
-        />
+        <CoachModal scholarName={s.firstName} text={noteText} onClose={() => setNoteText(null)} />
       )}
     </article>
   );
@@ -204,7 +235,11 @@ export function StatusSection({ currency, liveGpa, onSemesterChange, id, collaps
       <div className="eyebrow">
         Scholar Status
         <span className="eyebrow-rule" />
-        <button className="section-collapse-btn" onClick={onToggle} title={collapsed ? 'Expand section' : 'Collapse section'}>
+        <button
+          className="section-collapse-btn"
+          onClick={onToggle}
+          title={collapsed ? 'Expand section' : 'Collapse section'}
+        >
           {collapsed ? '▶' : '▼'}
         </button>
       </div>
@@ -215,8 +250,14 @@ export function StatusSection({ currency, liveGpa, onSemesterChange, id, collaps
             <span className="section-note">Live academic &amp; investment snapshot.</span>
           </div>
           <div className="status-grid">
-            {scholarKeys.map(k => (
-              <ScholarCard key={k} sk={k} currency={currency} liveGpa={liveGpa} onSemesterChange={onSemesterChange} />
+            {scholarKeys.map((k) => (
+              <ScholarCard
+                key={k}
+                sk={k}
+                currency={currency}
+                liveGpa={liveGpa}
+                onSemesterChange={onSemesterChange}
+              />
             ))}
           </div>
         </>
