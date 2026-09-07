@@ -714,12 +714,20 @@ table.exp thead th.sort-active { color: var(--ngs-navy-text); }
   color: var(--ngs-amber);
 }
 .pending-due-empty { font-size: 13px; color: var(--ngs-ink-soft); }
-.pending-due-rows { display: flex; flex-direction: column; gap: 6px; }
+/* Rows scroll horizontally within this card only — the item description
+   gets a real min-width instead of an ellipsis, so reading it is a quick
+   left/right swipe on the row itself rather than the whole page needing
+   to zoom/scroll. */
+.pending-due-rows {
+  display: flex; flex-direction: column; gap: 6px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
 .pending-due-row {
-  display: grid; grid-template-columns: 110px 1fr auto auto auto;
+  display: grid; grid-template-columns: 110px minmax(150px, 1fr) auto auto auto;
   gap: 10px; align-items: center;
   font-size: 13px; color: var(--ngs-ink);
   padding: 6px 8px; border-radius: 5px; background: rgba(181,134,42,0.05);
+  min-width: max-content;
 }
 .pending-due-mark-sent {
   font-family: var(--ngs-mono); font-size: 10px; font-weight: 600;
@@ -733,7 +741,7 @@ table.exp thead th.sort-active { color: var(--ngs-navy-text); }
   font-family: var(--ngs-mono); font-size: 10.5px; font-weight: 600;
   color: var(--ngs-amber); white-space: nowrap;
 }
-.pending-due-item { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pending-due-item { white-space: nowrap; }
 .pending-due-cat {
   font-family: var(--ngs-mono); font-size: 10.5px; color: var(--ngs-ink-soft);
   white-space: nowrap;
@@ -741,6 +749,9 @@ table.exp thead th.sort-active { color: var(--ngs-navy-text); }
 .pending-due-amt {
   font-family: var(--ngs-mono); font-size: 12px; font-weight: 600;
   color: var(--ngs-navy-text); white-space: nowrap; text-align: right;
+}
+@media (max-width: 640px) {
+  .pending-due-row { grid-template-columns: 90px minmax(180px, 1fr) auto auto auto; }
 }
 
 .exp-table-card { background: var(--ngs-surface); border: 1px solid var(--ngs-rule); border-radius: 8px; overflow: hidden; box-shadow: var(--ngs-card-shadow, none); }
@@ -3659,6 +3670,11 @@ a:focus-visible { outline: 2px solid var(--ngs-gold); outline-offset: 2px; }
   font-size: 12px; font-weight: 600;
   background: var(--ngs-red); color: var(--ngs-surface);
   padding: 2px 8px; border-radius: 20px;
+}
+.sub-modal-amount {
+  font-family: var(--ngs-mono); font-size: 12px; font-weight: 600;
+  color: var(--ngs-amber); background: rgba(181,134,42,0.1);
+  padding: 2px 9px; border-radius: 20px; white-space: nowrap;
 }
 .sub-modal-close {
   background: none; border: none; cursor: pointer;
