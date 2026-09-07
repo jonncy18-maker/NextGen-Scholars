@@ -124,6 +124,11 @@ export function SubmissionBanner({
   const feedCount = feed?.length         || 0;
   const total     = subCount + feedCount;
   const hasPending = total > 0;
+  const pendingAmount = (submissions || []).reduce((sum, sub) => {
+    const exp = sub.expense_data || {};
+    return sum + (exp.amount || 0) * (exp.qty || 1);
+  }, 0);
+  const pendingAmountLabel = `₱${Math.round(pendingAmount).toLocaleString('en-US')}`;
 
   return (
     <>
@@ -137,7 +142,8 @@ export function SubmissionBanner({
         {hasPending
           ? <>
               <span className="sub-banner-dot" />
-              {total} scholar update{total !== 1 ? 's' : ''} pending review — click to review
+              {total} scholar update{total !== 1 ? 's' : ''} pending review
+              {subCount > 0 ? ` · ${pendingAmountLabel} pending approval` : ''} — click to review
             </>
           : <>
               <span className="sub-banner-check">✓</span>
@@ -151,6 +157,7 @@ export function SubmissionBanner({
           <div className="sub-modal" onClick={e => e.stopPropagation()}>
             <div className="sub-modal-hd">
               <span className="sub-modal-title">Scholar Updates</span>
+              {subCount > 0 && <span className="sub-modal-amount">{pendingAmountLabel} pending</span>}
               <span className="sub-modal-count">{total} pending</span>
               <button className="sub-modal-close" onClick={() => setOpen(false)}>×</button>
             </div>
