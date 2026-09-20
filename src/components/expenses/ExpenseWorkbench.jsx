@@ -21,6 +21,11 @@ function slimRow(r) {
     vendor: r.vendor ?? '',
     sem: r.sem ?? '',
     status: r.status ?? r.avb ?? 'Actual',
+    // Read-only context, not in EDIT_FIELDS: tells the AI which rows are still
+    // pending GCash disbursement (the app's own "due"/"past due" notion — see
+    // ExpenseSection.jsx's pendingRows filter) vs. already sent. Never a
+    // proposed-edit target itself.
+    sent: r.sent ?? 'No',
   };
 }
 
