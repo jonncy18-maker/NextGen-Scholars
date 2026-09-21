@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "nextgen-scholars": {
+      "type": "http",
+      "url": "https://next-gen-scholars-jonncy18.vercel.app/api/mcp",
+      "headers": {
+        "Authorization": "Bearer ${NGS_MCP_TOKEN}"
+      }
+    }
+  }
+}
