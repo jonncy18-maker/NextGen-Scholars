@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { authClient, signIn, invalidateToken } from '../lib/auth-client.js';
 import { api } from '../lib/api.js';
+import { SignInFrame, SignInField, PasswordInput } from '../components/SignInFrame.jsx';
 
 // Generic sign-in for the nav "Login" button — no name/person is picked up
 // front. Real auth happens first; GET /api/me (role/scholar_key resolved
@@ -32,17 +33,28 @@ export function LoginPage() {
     let cancelled = false;
     const controller = new AbortController();
     mountCheckAbortRef.current = controller;
-    authClient.getSession({ fetchOptions: { cache: 'no-store', signal: controller.signal } }).then(async ({ data }) => {
-      if (cancelled) return;
-      if (!data?.session) { setCheckingSession(false); return; }
-      try {
-        const me = await api.get('/me');
-        if (!cancelled) router.replace(destinationFor(me));
-      } catch {
+    authClient
+      .getSession({ fetchOptions: { cache: 'no-store', signal: controller.signal } })
+      .then(async ({ data }) => {
+        if (cancelled) return;
+        if (!data?.session) {
+          setCheckingSession(false);
+          return;
+        }
+        try {
+          const me = await api.get('/me');
+          if (!cancelled) router.replace(destinationFor(me));
+        } catch {
+          if (!cancelled) setCheckingSession(false);
+        }
+      })
+      .catch(() => {
         if (!cancelled) setCheckingSession(false);
-      }
-    }).catch(() => { if (!cancelled) setCheckingSession(false); });
-    return () => { cancelled = true; controller.abort(); };
+      });
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [router]);
 
   useEffect(() => {
@@ -81,45 +93,56 @@ export function LoginPage() {
   if (checkingSession) return null;
 
   return (
-    <div className="el-lock">
-      <div className="el-lock-bg" />
-      <div className="el-lock-inner">
-        <div className="el-badge"><span>N</span><span>G</span><span>S</span></div>
-        <h1 className="el-title">Welcome <em>back</em></h1>
-        <p className="el-sub">Sign in to continue</p>
-        <form className={`el-form${error ? ' is-error' : ''}`} onSubmit={handleSubmit} autoComplete="off">
-          <div className="el-field">
-            <label className="el-label" htmlFor="login-email">Email</label>
-            <input
-              id="login-email"
-              ref={inputRef}
-              className="el-input"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={e => { setEmail(e.target.value); setError(null); }}
-              autoComplete="email"
-            />
-          </div>
-          <div className="el-field">
-            <label className="el-label" htmlFor="login-pw">Password</label>
-            <input
-              id="login-pw"
-              className="el-input"
-              type="password"
-              placeholder="Your password"
-              value={password}
-              onChange={e => { setPassword(e.target.value); setError(null); }}
-              autoComplete="current-password"
-            />
-          </div>
-          <div className={`el-err${error ? ' show' : ''}`}>{error}</div>
-          <button type="submit" disabled={!email || !password || loading} className="el-btn">
-            {loading ? 'Signing in…' : 'Sign in →'}
-          </button>
-        </form>
-        <Link href="/" className="el-back">← Back to NextGen Scholars</Link>
-      </div>
-    </div>
+    <SignInFrame
+      eyebrow="Sign in"
+      title="Welcome back"
+      subtitle="One sign-in for mentors and scholars. We'll open the right dashboard for you."
+      footer={
+        <>
+          <p>Trouble signing in? Message your mentor.</p>
+          <Link href="/" className="si-back">
+            ← Back to NextGen Scholars
+          </Link>
+        </>
+      }
+    >
+      <form
+        className={`si-form${error ? ' is-error' : ''}`}
+        onSubmit={handleSubmit}
+        autoComplete="off"
+      >
+        <SignInField id="login-email" label="Email">
+          <input
+            id="login-email"
+            ref={inputRef}
+            className="si-input"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setError(null);
+            }}
+            autoComplete="email"
+          />
+        </SignInField>
+        <SignInField id="login-pw" label="Password">
+          <PasswordInput
+            id="login-pw"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setError(null);
+            }}
+          />
+        </SignInField>
+        <div className={`si-err${error ? ' show' : ''}`} role="alert">
+          {error}
+        </div>
+        <button type="submit" disabled={!email || !password || loading} className="si-btn">
+          {loading ? 'Signing in…' : 'Sign in'}
+        </button>
+      </form>
+    </SignInFrame>
   );
 }
