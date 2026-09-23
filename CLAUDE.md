@@ -125,6 +125,8 @@ all of them in Vercel's project env vars only.
 | `app/api/public/profile/[key]/route.js` | Public, unauthenticated curated whitelist backing the public profile pages — see "Public-profile dataset leak" below. |
 | `app/api/me/route.js` | Returns `{ role, scholarKey }` for the caller's own token — used by `ScholarAuthGate.jsx` (scholar pages) and `navigator.jsx` (mentor gate) to verify a session actually matches the expected role/scholar before trusting it. |
 | `app/api/{ask,ask-scholar,ask-public}/route.js` | AI orchestrators. `ask` is mentor-only (Claude); `ask-scholar`/`ask-public` are unauthenticated by design and stay on Gemini (see "Key Rules for Claude Code" and "Provider routing" above). |
+| `src/components/TopBar.jsx` | Shared top-bar shell (People-first redesign, 2026-09) for the Navigator and every scholar screen: grouped nav with a tabs row for the active group, an avatar account menu (theme toggle, update check, public site, sign out), and a menu drawer below 1000px. Replaced the old left `Sidebar.jsx`. Mentor groups live in `NAV_GROUPS` (`navigator.jsx`), scholar groups in `scholarNavGroups()` (`ScholarShell.jsx`); section slugs/URLs are unchanged. |
+| `src/components/SignInFrame.jsx` | Split-screen sign-in layout (pathway panel + form card, `PasswordInput` with show/hide) shared by `/login`, `ScholarAuthGate` and the Navigator `LockScreen`. Draws only; each caller keeps its own auth logic. Styles: `.si-*` in `entry.css`. |
 | `src/components/ScholarAuthGate.jsx` | Real Better Auth sign-in gate for all scholar-facing pages. Admits a scholar for **her own** key, and the **mentor for any** scholar (a mentor's `scholar_key` is null by design, so the old equality check locked the mentor out of every scholar route). Both the mount-time session check and the sign-in path use the same `mayView()` test. |
 | `app/api/ask-budget/route.js` + `lib/ai/budget.js` | AI for the living budget. **Authenticated** (`requireScholarOwn`) — unlike `ask-scholar`, because it can propose mutations. Deterministic Tier-1 reads answer common questions with no LLM call; anything else goes to Claude, which **proposes operations only**. The client shows them for approval and applies them via `/api/living/**`, so the AI path has no privilege the manual path lacks. Budget state is read server-side from Neon, never accepted from the caller. |
 | `src/lib/auth-client.js` | Better Auth React client (`createAuthClient` + `jwtClient()` plugin) pointed at the Neon Auth base URL. `getToken()` reads the JWT off the `set-auth-jwt` response header. |
@@ -454,16 +456,15 @@ A change small enough to skip the loop is still governed by the profile.
 
 ## Wide-screen layout
 
-`ScholarHome` (`src/styles/scholar-home.css`) and the expense-entry page
-(`src/styles/entry.css`) switch to a two-column CSS grid layout at
-`min-width: 1200px` (`grid-template-areas`, no JSX changes needed) — below
-that they're the original single centered column. On `ScholarHome` the AI
-chat panel becomes a sticky right rail next to the action cards/trackers; on
-the entry page, chat/form/receipt-upload sit in a left rail next to the
-pending-review list and expense table. The breakpoint was originally 1440px
-but was lowered to 1200px (PR #186) since 1440px didn't reliably trigger on
-real laptop displays once OS display scaling / browser zoom reduces the
-effective CSS viewport width below the physical resolution.
+`ScholarHome` (`.sh-*` in `src/styles/scholar-home.css`) is a two-column grid
+(pathway hero card beside the stat cards and lists) above 1100px and a single
+column below it; the Navigator Portfolio (`.mh-*` in `shell.css`) is a
+responsive grid of scholar cards. The expense-entry page (`src/styles/entry.css`)
+still switches to its own two-column grid at wide sizes (`grid-template-areas`),
+with chat/form/receipt-upload in a left rail next to the pending-review list and
+expense table. Default theme is **dark** (the pre-paint script in
+`app/layout.jsx` falls back to dark when `ngs_theme` isn't set); light mode is a
+warm-paper palette defined by the `--ds-*` tokens in `shell.css`.
 
 ## Native app (PWA → Play Store) — PLANNED
 

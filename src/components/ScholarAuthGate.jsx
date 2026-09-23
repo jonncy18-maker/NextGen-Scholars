@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { authClient, signIn, invalidateToken } from '../lib/auth-client.js';
 import { api } from '../lib/api.js';
+import { SignInFrame, SignInField, PasswordInput } from './SignInFrame.jsx';
 
 // Real Neon Auth (Better Auth) sign-in gate for scholar-facing pages —
 // replaces ScholarLockGate's cosmetic shared password for scholars who have
@@ -37,7 +38,13 @@ function mayView(me, scholarKey, allowMentor) {
   return me?.scholarKey === scholarKey;
 }
 
-export function ScholarAuthGate({ scholarKey, name, onUnlock, sessionExpired, allowMentor = false }) {
+export function ScholarAuthGate({
+  scholarKey,
+  name,
+  onUnlock,
+  sessionExpired,
+  allowMentor = false,
+}) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -56,19 +63,30 @@ export function ScholarAuthGate({ scholarKey, name, onUnlock, sessionExpired, al
     let cancelled = false;
     const controller = new AbortController();
     mountCheckAbortRef.current = controller;
-    authClient.getSession({ fetchOptions: { cache: 'no-store', signal: controller.signal } }).then(async ({ data }) => {
-      if (cancelled) return;
-      if (!data?.session) { setCheckingSession(false); return; }
-      try {
-        const me = await api.get('/me');
-        if (!cancelled && mayView(me, scholarKey, allowMentor)) onUnlock(me);
-      } catch {
-        // fall through to the sign-in form
-      } finally {
+    authClient
+      .getSession({ fetchOptions: { cache: 'no-store', signal: controller.signal } })
+      .then(async ({ data }) => {
+        if (cancelled) return;
+        if (!data?.session) {
+          setCheckingSession(false);
+          return;
+        }
+        try {
+          const me = await api.get('/me');
+          if (!cancelled && mayView(me, scholarKey, allowMentor)) onUnlock(me);
+        } catch {
+          // fall through to the sign-in form
+        } finally {
+          if (!cancelled) setCheckingSession(false);
+        }
+      })
+      .catch(() => {
         if (!cancelled) setCheckingSession(false);
-      }
-    }).catch(() => { if (!cancelled) setCheckingSession(false); });
-    return () => { cancelled = true; controller.abort(); };
+      });
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [scholarKey, onUnlock, allowMentor]);
 
   useEffect(() => {
@@ -119,48 +137,62 @@ export function ScholarAuthGate({ scholarKey, name, onUnlock, sessionExpired, al
   if (checkingSession) return null;
 
   return (
-    <div className="el-lock" data-scholar={scholarKey}>
-      <div className="el-lock-bg" />
-      <div className="el-lock-inner">
-        <div className="el-badge"><span>N</span><span>G</span><span>S</span></div>
-        <h1 className="el-title">Welcome, <em>{name}</em></h1>
-        <p className="el-sub">Sign in to continue</p>
-        {sessionExpired && (
-          <div className="el-session-expired">Your session expired — sign in again to see the latest updates.</div>
-        )}
-        <form className={`el-form${error ? ' is-error' : ''}`} onSubmit={handleSubmit} autoComplete="off">
-          <div className="el-field">
-            <label className="el-label" htmlFor="sag-email">Email</label>
-            <input
-              id="sag-email"
-              ref={inputRef}
-              className="el-input"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={e => { setEmail(e.target.value); setError(null); }}
-              autoComplete="email"
-            />
-          </div>
-          <div className="el-field">
-            <label className="el-label" htmlFor="sag-pw">Password</label>
-            <input
-              id="sag-pw"
-              className="el-input"
-              type="password"
-              placeholder="Your password"
-              value={password}
-              onChange={e => { setPassword(e.target.value); setError(null); }}
-              autoComplete="current-password"
-            />
-          </div>
-          <div className={`el-err${error ? ' show' : ''}`}>{error}</div>
-          <button type="submit" disabled={!email || !password || loading} className="el-btn">
-            {loading ? 'Signing in…' : `Continue as ${name} →`}
-          </button>
-        </form>
-        <Link href="/" className="el-back">← Back to NextGen Scholars</Link>
-      </div>
-    </div>
+    <SignInFrame
+      scholar={scholarKey}
+      eyebrow="Sign in"
+      title={
+        <>
+          Welcome, <em>{name}</em>
+        </>
+      }
+      subtitle="Sign in to open your dashboard."
+      notice={sessionExpired && 'Your session expired — sign in again to see the latest updates.'}
+      footer={
+        <>
+          <p>Trouble signing in? Message your mentor.</p>
+          <Link href="/" className="si-back">
+            ← Back to NextGen Scholars
+          </Link>
+        </>
+      }
+    >
+      <form
+        className={`si-form${error ? ' is-error' : ''}`}
+        onSubmit={handleSubmit}
+        autoComplete="off"
+      >
+        <SignInField id="sag-email" label="Email">
+          <input
+            id="sag-email"
+            ref={inputRef}
+            className="si-input"
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setError(null);
+            }}
+            autoComplete="email"
+          />
+        </SignInField>
+        <SignInField id="sag-pw" label="Password">
+          <PasswordInput
+            id="sag-pw"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              setError(null);
+            }}
+          />
+        </SignInField>
+        <div className={`si-err${error ? ' show' : ''}`} role="alert">
+          {error}
+        </div>
+        <button type="submit" disabled={!email || !password || loading} className="si-btn">
+          {loading ? 'Signing in…' : `Continue as ${name}`}
+        </button>
+      </form>
+    </SignInFrame>
   );
 }

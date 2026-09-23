@@ -3,9 +3,8 @@ import Link from 'next/link';
 import { api } from '../lib/api.js';
 import { useData } from '../context/DataContext.jsx';
 import { SEMESTER_OPTIONS } from '../constants.js';
-import { daysSinceLastExpense, monthlySpendTrend } from '../utils.js';
-import { Ring, Donut, Sparkline, MiniSteps } from './ShellViz.jsx';
-import { IcnClock, IcnStar, IcnSparkle, IcnWallet, IcnGlobe } from './ShellIcons.jsx';
+import { allExpenses, daysSinceLastExpense, monthlySpendTrend } from '../utils.js';
+import { Sparkline } from './ShellViz.jsx';
 
 const SEM_DISPLAY = {
   TG11S1: 'G11·S1',
@@ -38,15 +37,6 @@ function semBudgetPct(scholar, sem) {
     .reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
   const budget = typeof scholar.budgets?.[sem] === 'number' ? scholar.budgets[sem] : 0;
   return budget > 0 ? Math.round((expenses / budget) * 100) : null;
-}
-
-function semSpendAndBudget(scholar, sem) {
-  if (!sem) return { spent: 0, budget: 0 };
-  const spent = (scholar.expenses?.[sem] || [])
-    .filter((e) => e.avb === 'Actual')
-    .reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0);
-  const budget = typeof scholar.budgets?.[sem] === 'number' ? scholar.budgets[sem] : 0;
-  return { spent, budget };
 }
 
 function riskLevel(scholar, budgetPct) {
@@ -99,7 +89,7 @@ function semRank(sem = '') {
   return `${group}${sem}`;
 }
 
-// GPA series (oldest → newest) for the glance-row sparkline — pulled from the
+// GPA series (oldest → newest) for the scholar-card sparkline — pulled from the
 // scholar's academics history, which bootstrap loads in full.
 function gpaSeries(scholar) {
   return (scholar.academics || [])
@@ -115,25 +105,26 @@ function fmtPhp(n) {
   return '₱' + Math.round(n).toLocaleString('en-US');
 }
 
-function TrendArrow({ current, previous, higherIsBetter = true, fmt = (v) => v }) {
-  if (current == null || previous == null) return null;
-  const diff = current - previous;
-  if (Math.abs(diff) < 0.05) return null;
-  const isUp = diff > 0;
-  const isGood = isUp === higherIsBetter;
-  return (
-    <span className={`ds-stat-trend ${isGood ? 'is-good' : 'is-bad'}`}>
-      {isUp ? '▴' : '▾'} {fmt(Math.abs(diff))}
-    </span>
-  );
+// One status label per scholar card, most urgent first: a red risk (GPA
+// warning or over budget) beats a quiet week, which beats an amber budget.
+function cardStatus(r) {
+  if (r.risk === 'red') return { cls: 'is-bad', label: 'Needs you' };
+  if (r.daysSince != null && r.daysSince >= 7)
+    return { cls: 'is-bad', label: `Quiet ${r.daysSince} days` };
+  if (r.risk === 'amber') return { cls: 'is-warn', label: 'Watch budget' };
+  return { cls: 'is-good', label: 'On track' };
+}
+
+const ENG_STATUS = { ON_TRACK: 'On track', AT_RISK: 'At risk', PENDING: 'Pending' };
+
+function daysUntil(sort) {
+  return Math.max(0, Math.ceil((new Date(sort) - new Date()) / 86400000));
 }
 
 export function MentorHome({
+  greeting,
   liveGpa,
-  prevGpa,
-  onOpenDrawer,
   pendingSubmissions = [],
-  activityCount = 0,
   dbAlerts = [],
   onSemesterChange,
   unlocked = false,
@@ -163,8 +154,9 @@ export function MentorHome({
   }, [unlocked]);
 
   const today = new Date().toISOString().slice(0, 10);
+  const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
 
-  // ── Per-scholar snapshot the glance rows + hero both read ──
+  // ── Per-scholar snapshot the cards read ──
   const rows = scholarKeys
     .map((key) => {
       const s = D.scholars[key];
@@ -172,13 +164,13 @@ export function MentorHome({
       const sem = s.currentSem || '';
       const budgetPct = semBudgetPct(s, sem);
       const risk = riskLevel(s, budgetPct);
-      // D.deadlines rows use {when, sort} (see api-loader.js / scholars-data.js)
-      // — the old MentorHome read d.sort_date/d.when_date here, which never
-      // matched, so its "next deadline" was permanently empty. Fixed.
+      // D.deadlines rows use {when, sort} (see api-loader.js / scholars-data.js).
       const nextDl = (D.deadlines || [])
         .filter((d) => (d.scholar === key || !d.scholar) && (d.sort || '') >= today)
         .sort((a, b) => (a.sort || '').localeCompare(b.sort || ''))[0];
-      const daysSince = daysSinceActivity(s, key, pendingSubmissions);
+      const weekExpenses = allExpenses(s).filter(
+        (e) => e.avb === 'Actual' && e.date && e.date >= weekAgo
+      );
       return {
         key,
         s,
@@ -186,79 +178,24 @@ export function MentorHome({
         budgetPct,
         risk,
         nextDl,
-        daysSince,
+        daysSince: daysSinceActivity(s, key, pendingSubmissions),
         stage: pathwayStage(career, key),
         gpa: liveGpa?.[key] ?? null,
-        gpaPrev: prevGpa?.[key] ?? null,
         series: gpaSeries(s),
         eng: engData[key],
+        week: {
+          count: weekExpenses.length,
+          total: weekExpenses.reduce((t, e) => t + (e.amount || 0) * (e.qty || 1), 0),
+        },
       };
     })
     .filter(Boolean);
 
-  // ── Hero numbers ──
-  const greenCount = rows.filter((r) => r.risk === 'green').length;
-  const redCount = rows.filter((r) => r.risk === 'red').length;
-  const attentionCount = rows.length - greenCount;
-  const health =
-    redCount > 0
-      ? { cls: 'is-risk', label: 'At Risk', sub: `${redCount} scholar${redCount !== 1 ? 's' : ''} in the red — review now.` }
-      : attentionCount > 0
-        ? { cls: 'is-watch', label: 'Watch', sub: `${attentionCount} scholar${attentionCount !== 1 ? 's' : ''} drifting off plan.` }
-        : { cls: '', label: 'Excellent', sub: 'Everything is progressing according to plan.' };
-  const healthPct = rows.length ? Math.round((greenCount / rows.length) * 100) : null;
-
-  const cohortSpend = scholarKeys.reduce(
-    (acc, key) => {
-      const { thisMonth, lastMonth } = monthlySpendTrend(D.scholars[key]);
-      acc.thisMonth += thisMonth;
-      acc.lastMonth += lastMonth;
-      return acc;
-    },
-    { thisMonth: 0, lastMonth: 0 }
-  );
-  const spendDeltaPct =
-    cohortSpend.lastMonth > 0
-      ? Math.round(((cohortSpend.thisMonth - cohortSpend.lastMonth) / cohortSpend.lastMonth) * 100)
-      : null;
-
-  const gpaVals = rows.map((r) => r.gpa).filter((v) => v != null);
-  const avgGpa = gpaVals.length ? gpaVals.reduce((t, v) => t + v, 0) / gpaVals.length : null;
-
-  // ── Insights strip (deterministic, from live data) ──
-  const deadlinesNext14 = (D.deadlines || []).filter((d) => {
-    if (!d.sort || d.sort < today) return false;
-    return Math.ceil((new Date(d.sort) - new Date()) / 86400000) <= 14;
-  }).length;
-  const cohortEngHrsThisWeek = Object.values(engData).reduce(
-    (t, e) => t + (e.hoursThisWeek || 0),
+  const needYou = rows.filter((r) => cardStatus(r).cls === 'is-bad').length;
+  const spentThisMonth = scholarKeys.reduce(
+    (t, key) => t + monthlySpendTrend(D.scholars[key]).thisMonth,
     0
   );
-  const insights = [];
-  if (spendDeltaPct != null) {
-    insights.push({
-      icon: <IcnWallet size={13} />,
-      text: `Spending ${spendDeltaPct >= 0 ? 'up' : 'down'} ${Math.abs(spendDeltaPct)}% vs last month (${fmtPhp(cohortSpend.thisMonth)}).`,
-    });
-  }
-  if (cohortEngHrsThisWeek > 0) {
-    insights.push({
-      icon: <IcnGlobe size={13} />,
-      text: `Cohort logged ${cohortEngHrsThisWeek.toFixed(1)}h of English immersion this week.`,
-    });
-  }
-  if (deadlinesNext14 > 0) {
-    insights.push({
-      icon: <IcnClock size={13} />,
-      text: `${deadlinesNext14} deadline${deadlinesNext14 !== 1 ? 's' : ''} in the next 14 days.`,
-    });
-  }
-  if (activityCount > 0) {
-    insights.push({
-      icon: <IcnSparkle size={13} />,
-      text: `${activityCount} unread activity event${activityCount !== 1 ? 's' : ''} from scholars.`,
-    });
-  }
 
   // ── Needs attention (critical alerts + approvals) — unchanged logic ──
   const attentionItems = dbAlerts.map((a) => ({
@@ -291,353 +228,212 @@ export function MentorHome({
   }
   attentionItems.sort((a, b) => a.rank - b.rank);
 
-  // ── Rail: upcoming deadlines + next milestones + financial overview ──
   const upcoming = (D.deadlines || [])
     .filter((d) => (d.sort || '') >= today)
     .sort((a, b) => (a.sort || '').localeCompare(b.sort || ''))
-    .slice(0, 5)
-    .map((d) => {
-      const days = Math.max(0, Math.ceil((new Date(d.sort) - new Date()) / 86400000));
-      const who = d.scholar ? D.scholars[d.scholar]?.firstName || d.scholar : 'Program';
-      return { ...d, days, who };
-    });
-
-  const nextMilestones = scholarKeys
-    .map((key) => {
-      const s = D.scholars[key];
-      const next = (s?.milestones || []).find((m) => m.state !== 'done');
-      return next ? { key, name: s?.firstName || key, milestone: next } : null;
-    })
-    .filter(Boolean);
-
-  const fin = rows.reduce(
-    (acc, r) => {
-      const { spent, budget } = semSpendAndBudget(r.s, r.sem);
-      acc.spent += spent;
-      acc.budget += budget;
-      return acc;
-    },
-    { spent: 0, budget: 0 }
-  );
-  const finRemaining = Math.max(0, fin.budget - fin.spent);
-  const finPct = fin.budget > 0 ? Math.round((fin.spent / fin.budget) * 100) : null;
+    .slice(0, 4)
+    .map((d) => ({
+      ...d,
+      days: daysUntil(d.sort),
+      who: d.scholar ? D.scholars[d.scholar]?.firstName || d.scholar : 'Program',
+    }));
 
   return (
     <section className="mh">
-      {/* ── Hero: portfolio health + stat tiles ── */}
-      <div className="ds-hero">
-        <div className={`ds-card ds-card--accent ds-health ${health.cls}`}>
-          <div className="ds-health-body">
-            <div className="ds-stat-label">Portfolio Health</div>
-            <div className="ds-health-status">{health.label}</div>
-            <div className="ds-health-sub">{health.sub}</div>
-          </div>
-          <Ring pct={healthPct} size={62} stroke={4.5}>
-            <IcnSparkle size={18} />
-          </Ring>
+      <header className="mh-head">
+        <div>
+          <div className="ds-topbar-eyebrow">{greeting}</div>
+          <h1 className="ds-topbar-title">Your scholars</h1>
         </div>
-        <div className="ds-card">
-          <div className="ds-stat-label">Total Scholars</div>
-          <div className="ds-stat-val">{rows.length}</div>
-          <div className="ds-stat-sub">Active in program</div>
-        </div>
-        <div className="ds-card">
-          <div className="ds-stat-label">Spent This Month</div>
-          <div className="ds-stat-val">
-            {fmtPhp(cohortSpend.thisMonth)}
-            {spendDeltaPct != null && (
-              <span className={`ds-stat-trend ${spendDeltaPct <= 0 ? 'is-good' : 'is-bad'}`}>
-                {spendDeltaPct > 0 ? '▴' : '▾'} {Math.abs(spendDeltaPct)}%
-              </span>
-            )}
-          </div>
-          <div className="ds-stat-sub">Scholarship support · cohort</div>
-        </div>
-        <div className="ds-card">
-          <div className="ds-stat-label">Avg Academic Standing</div>
-          <div className="ds-stat-val">{avgGpa != null ? `${avgGpa.toFixed(1)}%` : '—'}</div>
-          <div className="ds-stat-sub">Across all scholars</div>
-        </div>
-        <div className="ds-card">
-          <div className="ds-stat-label">Requiring Attention</div>
-          <div className={`ds-stat-val${attentionCount > 0 ? ' is-flag' : ''}`}>
-            {attentionCount}
-          </div>
-          <div className="ds-stat-sub">
-            {attentionCount > 0 ? 'Scholars need support' : 'All on track'}
-          </div>
-        </div>
+        <p className="mh-summary">
+          {fmtPhp(spentThisMonth)} spent this month
+          {needYou > 0 && (
+            <>
+              {' · '}
+              <b className="is-bad">
+                {needYou} need{needYou === 1 ? 's' : ''} you
+              </b>
+            </>
+          )}
+        </p>
+      </header>
+
+      <div className="mh-cards">
+        {rows.map((r) => {
+          const status = cardStatus(r);
+          const name = r.s.firstName || r.s.name || r.key;
+          const isTesda = r.s.track === 'TESDA';
+          return (
+            <article
+              key={r.key}
+              className={`mh-card${status.cls === 'is-bad' ? ' is-flagged' : ''}`}
+            >
+              <div className="mh-card-head">
+                <span className="ds-avatar mh-avatar">{name[0].toUpperCase()}</span>
+                <div className="mh-card-who">
+                  <div className="mh-card-name">{name}</div>
+                  <div className="mh-card-sub">
+                    {r.s.track || '—'}
+                    {r.stage ? ` · ${r.stage.label}` : ''}
+                  </div>
+                </div>
+                <span className={`mh-status ${status.cls}`}>{status.label}</span>
+              </div>
+
+              <label className="mh-sem">
+                <span>Semester</span>
+                {onSemesterChange ? (
+                  <select
+                    className="mh-sem-select"
+                    value={r.sem}
+                    onChange={(e) => onSemesterChange(r.key, e.target.value)}
+                  >
+                    {r.sem && !SEMESTER_OPTIONS.includes(r.sem) && (
+                      <option value={r.sem}>{SEM_DISPLAY[r.sem] || r.sem}</option>
+                    )}
+                    {SEMESTER_OPTIONS.map((o) => (
+                      <option key={o} value={o}>
+                        {SEM_DISPLAY[o] || o}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <b>{SEM_DISPLAY[r.sem] || r.sem || '—'}</b>
+                )}
+              </label>
+
+              {r.stage && (
+                <div
+                  className="mh-path"
+                  style={{ gridTemplateColumns: `repeat(${r.stage.total}, minmax(0, 1fr))` }}
+                  aria-label={`Pathway: ${r.stage.passedCount} of ${r.stage.total} steps passed`}
+                >
+                  {Array.from({ length: r.stage.total }).map((_, i) => (
+                    <span
+                      key={i}
+                      className={
+                        i < r.stage.passedCount
+                          ? 'is-done'
+                          : i === r.stage.passedCount
+                            ? 'is-current'
+                            : ''
+                      }
+                    />
+                  ))}
+                </div>
+              )}
+
+              <div className="mh-metrics">
+                <div>
+                  <span className="mh-metric-lbl">GPA</span>
+                  <span className="mh-metric-val">
+                    {r.gpa != null ? `${Number(r.gpa).toFixed(1)}%` : '—'}
+                  </span>
+                  <Sparkline values={r.series} width={84} height={20} />
+                </div>
+                <div>
+                  <span className="mh-metric-lbl">Budget</span>
+                  <span
+                    className={`mh-metric-val${r.budgetPct >= 100 ? ' is-bad' : r.budgetPct >= 90 ? ' is-warn' : ''}`}
+                  >
+                    {r.budgetPct != null ? `${r.budgetPct}%` : '—'}
+                  </span>
+                  {r.budgetPct != null && (
+                    <span className="mh-bar">
+                      <span
+                        className={
+                          r.budgetPct >= 100 ? 'is-bad' : r.budgetPct >= 90 ? 'is-warn' : ''
+                        }
+                        style={{ width: `${Math.min(100, r.budgetPct)}%` }}
+                      />
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <span className="mh-metric-lbl">English</span>
+                  <span className="mh-metric-val">
+                    {isTesda ? 'n/a' : r.eng ? `${Math.round(r.eng.currentHours)} h` : '—'}
+                  </span>
+                  <span className="mh-metric-note">
+                    {isTesda
+                      ? 'Not in track'
+                      : r.eng
+                        ? ENG_STATUS[r.eng.status] || r.eng.status
+                        : 'No Immersion account'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mh-card-foot">
+                {r.nextDl ? (
+                  <>
+                    Next: {r.nextDl.event} in{' '}
+                    <b className={daysUntil(r.nextDl.sort) <= 7 ? 'is-bad' : ''}>
+                      {daysUntil(r.nextDl.sort)} days
+                    </b>
+                  </>
+                ) : (
+                  'Nothing on the calendar'
+                )}
+              </div>
+            </article>
+          );
+        })}
       </div>
 
-      {/* ── AI insights strip ── */}
-      {insights.length > 0 && (
-        <div className="ds-card ds-insights">
-          <span className="ds-insights-tag">
-            <IcnSparkle size={13} /> Insights
-          </span>
-          {insights.slice(0, 3).map((ins, i) => (
-            <span key={i} className="ds-insight">
-              <span className="ds-insight-icon">{ins.icon}</span>
-              {ins.text}
-            </span>
-          ))}
-          <button className="ds-insight-link" onClick={() => onOpenDrawer('query')}>
-            Ask AI →
-          </button>
-        </div>
-      )}
-
-      {/* ── Needs attention ── */}
-      {attentionItems.length > 0 && (
-        <>
-          <div className="ds-sec">
-            <span className="ds-sec-title">Needs Attention</span>
-          </div>
-          {attentionItems.slice(0, 3).map((item, i) => (
-            <div key={i} className={`ds-attn${item.severity === 'critical' ? ' ds-attn--critical' : ''}`}>
-              <span className="ds-attn-sev">{item.severity === 'critical' ? 'Critical' : 'Watch'}</span>
-              <span className="ds-attn-text">
-                {item.title}
-                {item.sub && <span className="ds-attn-sub"> — {item.sub}</span>}
+      <div className="mh-lower">
+        <div className="ds-card mh-panel">
+          <h2 className="mh-panel-title">Needs attention</h2>
+          {attentionItems.length === 0 && (
+            <div className="ds-empty">Nothing needs you right now.</div>
+          )}
+          {attentionItems.slice(0, 4).map((item, i) => (
+            <div key={i} className="mh-attn">
+              <span className={`mh-sev${item.severity === 'critical' ? ' is-bad' : ' is-warn'}`}>
+                {item.severity === 'critical' ? 'Critical' : 'Watch'}
               </span>
-              <Link className="ds-attn-act" href={item.href}>
+              <span className="mh-attn-text">
+                {item.title}
+                {item.sub && <span className="mh-attn-sub"> — {item.sub}</span>}
+              </span>
+              <Link className="mh-link" href={item.href}>
                 {item.actionLabel}
               </Link>
             </div>
           ))}
-        </>
-      )}
-
-      <div className="ds-cols">
-        {/* ── Scholars at a glance ── */}
-        <div className="ds-col-main">
-          <div className="ds-sec">
-            <span className="ds-sec-title">Scholars at a Glance</span>
-            <Link className="ds-sec-link" href="/navigator/progress">
-              View journey map →
-            </Link>
-          </div>
-          <div className="ds-card ds-glance">
-            <div className="ds-glance-head">
-              <span>Scholar</span>
-              <span>Journey Stage</span>
-              <span>Academic</span>
-              <span>Financial</span>
-              <span>Risk</span>
-              <span>Next Up</span>
-            </div>
-            {rows.map((r) => {
-              const finChip =
-                r.budgetPct == null
-                  ? { cls: 'ds-chip--muted', label: 'No budget' }
-                  : r.budgetPct >= 100
-                    ? { cls: 'ds-chip--bad', label: `${r.budgetPct}% over` }
-                    : r.budgetPct >= 90
-                      ? { cls: 'ds-chip--warn', label: `${r.budgetPct}% used` }
-                      : { cls: 'ds-chip--good', label: `${r.budgetPct}% used` };
-              const riskChip =
-                r.risk === 'red'
-                  ? { cls: 'ds-chip--bad', label: 'High' }
-                  : r.risk === 'amber'
-                    ? { cls: 'ds-chip--warn', label: 'Med' }
-                    : { cls: 'ds-chip--good', label: 'Low' };
-              const isStale = r.daysSince != null && r.daysSince >= 7;
-              return (
-                <div key={r.key} className="ds-glance-row">
-                  <div className="ds-who">
-                    <span className="ds-avatar">{(r.s.firstName || r.key)[0].toUpperCase()}</span>
-                    <div>
-                      <div className="ds-who-name">{r.s.firstName || r.s.name || r.key}</div>
-                      <div className="ds-who-sub">
-                        <span>{r.s.track || '—'}</span>
-                        {onSemesterChange ? (
-                          <select
-                            className="ds-sem-select"
-                            value={r.sem}
-                            onChange={(e) => onSemesterChange(r.key, e.target.value)}
-                          >
-                            {r.sem && !SEMESTER_OPTIONS.includes(r.sem) && (
-                              <option value={r.sem}>{SEM_DISPLAY[r.sem] || r.sem}</option>
-                            )}
-                            {SEMESTER_OPTIONS.map((o) => (
-                              <option key={o} value={o}>
-                                {SEM_DISPLAY[o] || o}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <span>{SEM_DISPLAY[r.sem] || r.sem || '—'}</span>
-                        )}
-                        {isStale && (
-                          <span style={{ color: 'var(--ds-bad)' }}>· quiet {r.daysSince}d</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    {r.stage ? (
-                      <>
-                        <MiniSteps total={r.stage.total} done={r.stage.passedCount} />
-                        <div className="ds-steps-lbl">{r.stage.label}</div>
-                      </>
-                    ) : (
-                      <span className="ds-who-sub">—</span>
-                    )}
-                  </div>
-                  <div className="ds-metric">
-                    <span className="ds-metric-val">
-                      {r.gpa != null ? `${r.gpa.toFixed(1)}%` : '—'}
-                      <TrendArrow current={r.gpa} previous={r.gpaPrev} fmt={(v) => v.toFixed(1)} />
-                    </span>
-                    <Sparkline values={r.series} />
-                  </div>
-                  <span className={`ds-chip ${finChip.cls}`}>{finChip.label}</span>
-                  <span className={`ds-chip ${riskChip.cls}`}>{riskChip.label}</span>
-                  <div className="ds-metric">
-                    {r.nextDl ? (
-                      <>
-                        <span className="ds-metric-val" style={{ whiteSpace: 'normal', fontSize: 11.5 }}>
-                          {r.nextDl.event}
-                        </span>
-                        <span className="ds-who-sub">{r.nextDl.when}</span>
-                      </>
-                    ) : (
-                      <span className="ds-who-sub">No deadlines</span>
-                    )}
-                    <button className="ds-mini-btn" onClick={() => onOpenDrawer('query', r.key)}>
-                      Ask AI →
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-            <div className="ds-glance-foot">
-              <span>
-                Showing {rows.length} scholar{rows.length !== 1 ? 's' : ''}
-              </span>
-              <span>
-                {rows
-                  .filter((r) => r.eng && r.s.track !== 'TESDA')
-                  .map((r) =>
-                    r.eng.targetHours != null
-                      ? `${r.s.firstName} ${r.eng.currentHours}/${r.eng.targetHours}h`
-                      : `${r.s.firstName} ${r.eng.currentHours}h`
-                  )
-                  .join(' · ') || ''}
-              </span>
-            </div>
-          </div>
         </div>
 
-        {/* ── Rail ── */}
-        <div className="ds-col-rail">
-          <div>
-            <div className="ds-sec">
-              <span className="ds-sec-title">Upcoming Deadlines</span>
-              <Link className="ds-sec-link" href="/navigator/deadlines">
-                View all
-              </Link>
+        <div className="ds-card mh-panel">
+          <h2 className="mh-panel-title">This week</h2>
+          {rows.map((r) => (
+            <div key={r.key} className={`mh-row${r.week.count === 0 ? ' is-muted' : ''}`}>
+              <span>
+                {r.s.firstName || r.key} ·{' '}
+                {r.week.count === 0
+                  ? 'no expenses'
+                  : `${r.week.count} expense${r.week.count !== 1 ? 's' : ''}`}
+              </span>
+              <b>{r.week.count ? fmtPhp(r.week.total) : '—'}</b>
             </div>
-            <div className="ds-card">
-              <div className="ds-dl-list">
-                {upcoming.length === 0 && <div className="ds-empty">Nothing on the calendar.</div>}
-                {upcoming.map((d, i) => (
-                  <div key={d.id ?? i} className="ds-dl">
-                    <span className={`ds-dl-icon${d.days <= 7 ? ' is-urgent' : ''}`}>
-                      <IcnClock size={14} />
-                    </span>
-                    <div className="ds-dl-body">
-                      <div className="ds-dl-title">{d.event}</div>
-                      <div className="ds-dl-sub">
-                        {d.who} · {d.when}
-                      </div>
-                    </div>
-                    <div className="ds-dl-when">
-                      <div className={`ds-dl-days${d.days <= 7 ? ' is-urgent' : ''}`}>{d.days}</div>
-                      <div className="ds-dl-days-lbl">days</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          ))}
+        </div>
 
-          <div>
-            <div className="ds-sec">
-              <span className="ds-sec-title">Financial Overview</span>
-              <Link className="ds-sec-link" href="/navigator/expenses">
-                View finances
-              </Link>
+        <div className="ds-card mh-panel">
+          <h2 className="mh-panel-title">
+            Coming up
+            <Link className="mh-link" href="/navigator/deadlines">
+              Calendar →
+            </Link>
+          </h2>
+          {upcoming.length === 0 && <div className="ds-empty">Nothing on the calendar.</div>}
+          {upcoming.map((d, i) => (
+            <div key={d.id ?? i} className="mh-row">
+              <span>
+                {d.who} · {d.event}
+              </span>
+              <b className={d.days <= 7 ? 'is-bad' : 'mh-days'}>{d.days} days</b>
             </div>
-            <div className="ds-card">
-              {fin.budget > 0 ? (
-                <div className="ds-donut-wrap">
-                  <Donut
-                    size={118}
-                    stroke={15}
-                    centerVal={finPct != null ? `${finPct}%` : '—'}
-                    centerLbl="of budget"
-                    segments={[
-                      { label: 'Spent', value: fin.spent, color: 'var(--ngs-gold)' },
-                      { label: 'Remaining', value: finRemaining, color: 'var(--ngs-blue-nav)' },
-                    ]}
-                  />
-                  <div className="ds-legend">
-                    <div className="ds-legend-row">
-                      <span className="ds-legend-swatch" style={{ background: 'var(--ngs-gold)' }} />
-                      <span className="ds-legend-lbl">Spent</span>
-                      <span className="ds-legend-val">{fmtPhp(fin.spent)}</span>
-                    </div>
-                    <div className="ds-legend-row">
-                      <span className="ds-legend-swatch" style={{ background: 'var(--ngs-blue-nav)' }} />
-                      <span className="ds-legend-lbl">Remaining</span>
-                      <span className="ds-legend-val">{fmtPhp(finRemaining)}</span>
-                    </div>
-                    <div className="ds-legend-row">
-                      <span className="ds-legend-swatch" style={{ background: 'var(--ds-rule)' }} />
-                      <span className="ds-legend-lbl">Budget · current sems</span>
-                      <span className="ds-legend-val">{fmtPhp(fin.budget)}</span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="ds-empty">No budgets set for the current semesters.</div>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <div className="ds-sec">
-              <span className="ds-sec-title">Next Milestones</span>
-              <Link className="ds-sec-link" href="/navigator/milestones">
-                View all
-              </Link>
-            </div>
-            <div className="ds-card">
-              <div className="ds-dl-list">
-                {nextMilestones.length === 0 && (
-                  <div className="ds-empty">Every milestone is complete.</div>
-                )}
-                {nextMilestones.map(({ key, name, milestone }) => (
-                  <div key={key} className="ds-dl">
-                    <span className="ds-dl-icon">
-                      <IcnStar size={14} />
-                    </span>
-                    <div className="ds-dl-body">
-                      <div className="ds-dl-title">{milestone.name}</div>
-                      <div className="ds-dl-sub">
-                        {name}
-                        {milestone.sem ? ` · expected ${milestone.sem}` : ''}
-                      </div>
-                    </div>
-                    <span className={`ds-chip ${milestone.state === 'active' ? 'ds-chip--warn' : 'ds-chip--muted'}`}>
-                      {milestone.state}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </section>

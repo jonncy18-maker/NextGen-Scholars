@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { signIn } from '../lib/auth-client.js';
+import { SignInFrame, SignInField, PasswordInput } from './SignInFrame.jsx';
 
 // Real Neon Auth (Better Auth) sign-in — was Supabase Auth's
 // signInWithPassword() before the neon-migration branch. Role (mentor vs.
@@ -51,39 +52,54 @@ export function LockScreen({ isHiding, onUnlock, sessionExpired }) {
 
   return (
     <div id="lock" className={isHiding ? 'is-hidden' : ''}>
-      <div className="lock-bg" />
-      <div className="lock-inner">
-        <div className="lock-badge"><span>N</span><span>G</span><span>S</span></div>
-        <h1 className="lock-title">Pathway <em>Navigator</em></h1>
-        <div className="lock-sub">Mentor access only</div>
-        {sessionExpired && (
-          <div className="lock-session-expired">Your session expired — sign in again to see the latest updates.</div>
-        )}
-        <form className={`lock-form${error ? ' is-error' : ''}`} onSubmit={handleSubmit} autoComplete="off">
-          <input
-            ref={inputRef}
-            className="lock-input"
-            type="email"
-            placeholder="Email"
-            aria-label="Email"
-            value={email}
-            onChange={e => { setEmail(e.target.value); setError(false); }}
-          />
-          <input
-            className="lock-input"
-            type="password"
-            placeholder="Password"
-            aria-label="Password"
-            value={password}
-            onChange={e => { setPassword(e.target.value); setError(false); }}
-          />
-          <div className={`lock-err${error ? ' show' : ''}`}>Incorrect credentials — try again.</div>
-          <button className="lock-btn" type="submit" disabled={loading}>
+      <SignInFrame
+        eyebrow="Mentor access only"
+        title={
+          <>
+            Pathway <em>Navigator</em>
+          </>
+        }
+        subtitle="The private operations console for NextGen Scholars."
+        notice={sessionExpired && 'Your session expired — sign in again to see the latest updates.'}
+      >
+        <form
+          className={`si-form${error ? ' is-error' : ''}`}
+          onSubmit={handleSubmit}
+          autoComplete="off"
+        >
+          <SignInField id="lock-email" label="Email">
+            <input
+              id="lock-email"
+              ref={inputRef}
+              className="si-input"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError(false);
+              }}
+              autoComplete="email"
+            />
+          </SignInField>
+          <SignInField id="lock-pw" label="Password">
+            <PasswordInput
+              id="lock-pw"
+              value={password}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                setError(false);
+              }}
+            />
+          </SignInField>
+          <div className={`si-err${error ? ' show' : ''}`} role="alert">
+            {error && 'Incorrect credentials — try again.'}
+          </div>
+          <button className="si-btn" type="submit" disabled={loading}>
             {loading ? 'Signing in…' : 'Unlock dashboard'}
           </button>
         </form>
-        <div className="lock-hint">Private operations console · NextGen Scholars · Phase 1</div>
-      </div>
+      </SignInFrame>
     </div>
   );
 }

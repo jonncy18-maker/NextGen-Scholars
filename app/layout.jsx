@@ -41,7 +41,7 @@ export default function RootLayout({ children }) {
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{var t=localStorage.getItem('ngs_theme');if(t!=='light'&&t!=='dark'){t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}document.documentElement.dataset.theme=t}catch(e){}",
+              "try{var t=localStorage.getItem('ngs_theme');if(t!=='light'&&t!=='dark'){t='dark'}document.documentElement.dataset.theme=t}catch(e){}",
           }}
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

@@ -232,6 +232,22 @@ PASS.
 
 ---
 
+## Phase 7 — "People first" redesign (2026-09)
+
+Designed on a Claude Design canvas (four sign-in directions → three post-sign-in
+directions → the chosen "People first" look), then built through the Agentic
+Loop with an approved build plan.
+
+| Step | State | Notes |
+|---|---|---|
+| Sign-in screens | ✅ Built | `/login`, `ScholarAuthGate` and the Navigator `LockScreen` share `SignInFrame.jsx`: pathway panel + form card, show-password toggle, "Message your mentor" instead of a password reset (there is no reset flow). |
+| Shell | ✅ Built | Left sidebar → `TopBar.jsx`. Mentor nav is 4 groups (Scholars · Money · Calendar · Program) with tabs; scholar nav is Home · Money · Grades · English · Rewards. All section URLs unchanged. Dark is the default theme; light is warm paper. |
+| Scholar home | ✅ Built | Pathway ring + stage list hero, four stat cards (GPA, English, budget left, rewards — "invested in you" for TESDA), Coming up, Recent expenses. Same data loads as before; `authed` guard unchanged. |
+| Mentor Portfolio | ✅ Built | One card per scholar (status label, semester picker, pathway bar, GPA sparkline, budget, English, next deadline) + Needs attention, This week, Coming up. Dropped: stat tiles, insights strip, glance table, financial donut, next-milestones list. |
+| Inner pages | 🔵 Designed, not built | Scholar Money/Grades (phone), mentor Money › Expenses, and a new per-scholar profile page are drawn on the canvas. They currently inherit the new colors and shell with their old layouts. |
+
+---
+
 ## AI Intelligence Layer
 
 Tiered system — Tier 1 (smart query, no LLM) handles ~80%, escalates to

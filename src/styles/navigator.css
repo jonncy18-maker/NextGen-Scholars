@@ -4,16 +4,14 @@
 :root { --ngs-ink-soft: #4A4E5E; }
 
 /* ════════════════ NAV-APP SURFACE (redesign) ════════════════
-   Navigator is a private mentor tool, not public-facing brand copy, so it
-   gets its own cool-neutral canvas instead of the site's warm cream paper —
-   scoped to .nav-app (wraps the whole Navigator render tree in
-   navigator.jsx) so the public site and scholar dashboards are untouched.
-   Navy/gold identity colors are unchanged; only the canvas, card surfaces,
-   borders, and resting elevation change. */
+   Scoped to .nav-app (wraps the whole Navigator render tree in
+   navigator.jsx). Light values match the shell's warm-paper --ds-* palette
+   (People-first redesign, 2026-09) so the legacy sections that still read
+   --ngs-* sit on the same ground as the new top bar and cards. */
 .nav-app {
-  --ngs-paper: #F0F2F5;
-  --ngs-paper-2: #F7F8FA;
-  --ngs-rule: #E1E4EA;
+  --ngs-paper: #F5F2EA;
+  --ngs-paper-2: #FAF7F0;
+  --ngs-rule: #E3DCCB;
   --ngs-ink: #10182B;
   --ngs-ink-soft: #3A3F4C;
   --ngs-muted: #667085;
@@ -27,7 +25,7 @@
 
 /* Dark theme (2026-07 redesign): remap the same scoped tokens the legacy
    section styles already read, so every Navigator section inherits dark
-   surfaces without per-rule overrides. Shell chrome (sidebar/topbar/cards)
+   surfaces without per-rule overrides. Shell chrome (top bar/cards)
    themes itself via --ds-* in shell.css. */
 html[data-theme='dark'] .nav-app {
   --ngs-paper: var(--ngs-dark-canvas);
@@ -67,87 +65,12 @@ html[data-theme='dark'] .nav-app {
 .ngs-mark.on-navy { background: rgba(201,168,76,0.12); }
 
 /* ════════════════ LOCK SCREEN ════════════════ */
+/* Layout comes from SignInFrame (.si, entry.css); #lock only fades it out. */
 #lock {
   position: fixed; inset: 0; z-index: 200;
-  background: var(--ngs-navy-ink);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 0; padding: 24px;
   transition: opacity 0.6s ease, visibility 0.6s ease;
 }
 #lock.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
-.lock-bg {
-  position: absolute; inset: 0; pointer-events: none;
-  background:
-    radial-gradient(60% 45% at 50% 30%, rgba(201,168,76,0.10), transparent 60%),
-    radial-gradient(50% 40% at 50% 100%, rgba(177,27,42,0.06), transparent 70%);
-}
-.lock-inner {
-  position: relative; z-index: 1;
-  display: flex; flex-direction: column; align-items: center;
-  text-align: center; max-width: 380px; width: 100%;
-}
-.lock-badge {
-  display: inline-flex; padding: 12px 16px;
-  background: rgba(201,168,76,0.10);
-  border: 1px solid rgba(201,168,76,0.3);
-  color: var(--ngs-gold); border-radius: 6px;
-  font-family: var(--ngs-display); font-size: 20px; font-weight: 600;
-  letter-spacing: 0.2em; margin-bottom: 32px;
-}
-.lock-title {
-  font-family: var(--ngs-display);
-  font-size: 40px; line-height: 1.05; font-weight: 400;
-  color: var(--ngs-paper); margin-bottom: 14px;
-}
-.lock-title em { color: var(--ngs-gold); font-style: italic; }
-.lock-sub {
-  font-family: var(--ngs-mono); font-size: 11px;
-  text-transform: uppercase; letter-spacing: 0.22em;
-  color: rgba(228,201,122,0.7); margin-bottom: 40px;
-}
-.lock-form { display: flex; flex-direction: column; gap: 14px; width: 100%; }
-.lock-input {
-  width: 100%; text-align: center;
-  padding: 15px 16px; font-size: 16px;
-  color: var(--ngs-paper);
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.16);
-  border-radius: 5px; outline: none;
-  letter-spacing: 0.18em;
-  transition: border-color 0.2s ease, background 0.2s ease;
-}
-.lock-input::placeholder { color: rgba(250,247,240,0.32); letter-spacing: 0.12em; }
-.lock-input:focus { border-color: var(--ngs-gold); background: rgba(255,255,255,0.08); }
-.lock-form.is-error .lock-input { border-color: var(--ngs-red); animation: shake 0.4s ease; }
-@keyframes shake {
-  10%,90% { transform: translateX(-2px); }
-  20%,80% { transform: translateX(4px); }
-  30%,50%,70% { transform: translateX(-7px); }
-  40%,60% { transform: translateX(7px); }
-}
-.lock-btn {
-  width: 100%; padding: 14px;
-  background: var(--ngs-gold); color: var(--ngs-navy);
-  font-weight: 600; font-size: 14px; letter-spacing: 0.03em;
-  border-radius: 5px; transition: transform 0.15s ease, background 0.2s ease;
-}
-.lock-btn:hover { background: var(--ngs-gold-soft); }
-.lock-btn:active { transform: scale(0.98); }
-.lock-err {
-  font-family: var(--ngs-mono); font-size: 11px; letter-spacing: 0.08em;
-  color: #E88; min-height: 16px; opacity: 0; transition: opacity 0.2s ease;
-}
-.lock-session-expired {
-  font-size: 12.5px; color: var(--ngs-gold-soft); text-align: center;
-  background: rgba(212,175,89,0.12); border: 1px solid rgba(212,175,89,0.28);
-  border-radius: 5px; padding: 8px 14px; margin: 10px 0 4px;
-}
-.lock-err.show { opacity: 1; }
-.lock-hint {
-  margin-top: 22px; font-family: var(--ngs-mono);
-  font-size: 10.5px; letter-spacing: 0.06em;
-  color: rgba(250,247,240,0.4);
-}
 
 /* ════════════════ LAYOUT ════════════════ */
 .section { padding: 52px 0 8px; scroll-margin-top: 150px; }

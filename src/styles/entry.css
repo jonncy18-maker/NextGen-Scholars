@@ -43,197 +43,373 @@ select {
   font-family: inherit;
 }
 
-/* ── badge / monogram ── */
-.el-badge {
-  display: inline-flex;
-  padding: 10px 14px;
-  background: rgba(201, 168, 76, 0.12);
-  border: 1px solid rgba(201, 168, 76, 0.3);
-  color: var(--ngs-gold);
-  border-radius: 6px;
-  font-family: var(--ngs-display);
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  margin-bottom: 28px;
-}
+/* ════════════════ SIGN-IN (SignInFrame.jsx) ════════════════
+   Shared by /login, ScholarAuthGate and the Navigator LockScreen. The
+   pathway panel stays navy in both themes; the form side follows the
+   light/dark toggle (html[data-theme]). */
+.si {
+  --si-canvas: #f5f2ea;
+  --si-card: #ffffff;
+  --si-rule: #d9d1be;
+  --si-ink: #10182b;
+  --si-soft: #4a4f5c;
+  --si-field: #ffffff;
+  --si-accent: #8a6200;
+  --si-err: #b91c1c;
+  --si-err-tint: #fbeaea;
 
-/* ════════════════ LOCK SCREEN ════════════════ */
-.el-lock {
   position: fixed;
   inset: 0;
-  background: var(--ngs-navy-ink);
+  z-index: 200;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: minmax(360px, 44%) minmax(0, 1fr);
+  background: var(--si-canvas);
+  color: var(--si-ink);
+  font-family: var(--ngs-sans);
+}
+html[data-theme='dark'] .si {
+  --si-canvas: var(--ngs-dark-canvas);
+  --si-card: var(--ngs-dark-surface);
+  --si-rule: #3a4a6e;
+  --si-ink: var(--ngs-dark-ink);
+  --si-soft: var(--ngs-dark-ink-soft);
+  --si-field: var(--ngs-dark-canvas);
+  --si-accent: var(--ngs-gold-soft);
+  --si-err: #e06a76;
+  --si-err-tint: rgba(224, 106, 118, 0.13);
+}
+.si-story {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+  padding: 48px 56px;
+  background: var(--ngs-navy);
+  color: #faf7f0;
+}
+html[data-theme='dark'] .si-story {
+  background: var(--ngs-dark-canvas);
+  border-right: 1px solid var(--ngs-dark-surface-2);
+}
+.si-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.si-mark {
+  padding: 6px 10px;
+  border: 1px solid rgba(201, 168, 76, 0.45);
+  border-radius: 6px;
+  color: var(--ngs-gold);
+  font-family: var(--ngs-display);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+}
+.si-brand-name {
+  font-family: var(--ngs-display);
+  font-size: 18px;
+}
+.si-pitch {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+.si-headline {
+  margin: 0;
+  font-family: var(--ngs-display);
+  font-size: 44px;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+.si-headline em,
+.si-title em {
+  color: var(--ngs-gold);
+}
+.si-title em {
+  color: var(--si-accent);
+}
+.si-path {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.si-path li {
+  display: flex;
+  gap: 18px;
+  position: relative;
+  padding-bottom: 30px;
+}
+.si-path li:last-child {
+  padding-bottom: 0;
+}
+.si-path li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 16px;
+  bottom: 2px;
+  width: 2px;
+  background: rgba(201, 168, 76, 0.35);
+}
+.si-path-dot {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  margin-top: 3px;
+  border-radius: 50%;
+  border: 2px solid var(--ngs-gold);
+  box-sizing: border-box;
+}
+.si-path li.is-first .si-path-dot {
+  background: var(--ngs-gold);
+}
+.si-path-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.si-path-text b {
+  font-size: 15px;
+}
+.si-path-text span {
+  font-size: 13.5px;
+  color: #b8c1d6;
+}
+.si-foot {
+  font-family: var(--ngs-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #8a96b0;
+}
+.si-main {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 40px 24px;
 }
-.el-lock-bg {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  transition: background 0.4s;
-  background:
-    radial-gradient(60% 45% at 50% 30%, rgba(201, 168, 76, 0.09), transparent 60%),
-    radial-gradient(50% 40% at 50% 100%, rgba(177, 27, 42, 0.05), transparent 70%);
-}
-[data-scholar='april'] .el-lock-bg {
-  background:
-    radial-gradient(60% 45% at 50% 30%, rgba(0, 56, 168, 0.13), transparent 60%),
-    radial-gradient(50% 40% at 50% 100%, rgba(0, 56, 168, 0.05), transparent 70%);
-}
-
-.el-lock-inner {
-  position: relative;
-  z-index: 1;
+.si-card {
+  width: 100%;
+  max-width: 420px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  max-width: 400px;
-  width: 100%;
+  gap: 22px;
 }
-
-/* The old "Who's signing in?" scholar-picker (.el-scholar-*) is gone — the
-   generic /login resolves the destination from credentials via GET /api/me,
-   so the lock screen no longer asks you to pick a person up front. */
-
-.el-title {
-  font-family: var(--ngs-display);
-  font-size: 38px;
-  line-height: 1.05;
-  font-weight: 400;
-  color: var(--ngs-paper);
-  margin-bottom: 10px;
+html[data-theme='dark'] .si-card {
+  padding: 36px;
+  background: var(--si-card);
+  border: 1px solid var(--ngs-dark-rule);
+  border-radius: 18px;
 }
-.el-title em {
-  color: var(--ngs-gold);
-  font-style: italic;
+.si-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-[data-scholar='april'] .el-title em {
-  color: #8fbaef;
-}
-
-.el-sub {
+.si-eyebrow {
   font-family: var(--ngs-mono);
   font-size: 11px;
-  text-transform: uppercase;
   letter-spacing: 0.2em;
-  color: rgba(228, 201, 122, 0.6);
-  margin-bottom: 32px;
-}
-[data-scholar='april'] .el-sub {
-  color: rgba(107, 159, 232, 0.6);
-}
-
-.el-form {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  width: 100%;
-}
-.el-field {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  text-align: left;
-}
-.el-label {
-  font-size: 11px;
-  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: rgba(228, 201, 122, 0.7);
+  color: var(--si-accent);
 }
-[data-scholar='april'] .el-label {
-  color: rgba(107, 159, 232, 0.7);
+.si-title {
+  margin: 0;
+  font-family: var(--ngs-display);
+  font-size: 38px;
+  font-weight: 400;
+  line-height: 1.05;
+  color: var(--si-ink);
 }
-
-.el-input {
+.si-sub {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--si-soft);
+}
+.si-notice {
+  font-size: 13px;
+  color: var(--si-accent);
+  background: rgba(201, 168, 76, 0.12);
+  border: 1px solid rgba(201, 168, 76, 0.32);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+.si-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.si-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.si-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--si-ink);
+}
+.si-input,
+.si-pw {
   width: 100%;
-  padding: 11px 14px;
-  border-radius: 6px;
-  font-size: 15px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  color: var(--ngs-paper);
-  outline: none;
+  min-height: 48px;
+  border-radius: 10px;
+  border: 1px solid var(--si-rule);
+  background: var(--si-field);
+  color: var(--si-ink);
+  font: inherit;
+  font-size: 16px;
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
 }
-.el-input:focus {
+.si-input {
+  padding: 0 14px;
+}
+.si-input:focus,
+.si-pw:focus-within {
+  outline: none;
   border-color: var(--ngs-gold);
-  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.12);
+  box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.2);
 }
-[data-scholar='april'] .el-input:focus {
-  border-color: #6b9fe8;
-  box-shadow: 0 0 0 3px rgba(0, 56, 168, 0.14);
+.si-pw {
+  display: flex;
+  align-items: center;
 }
-.el-form.is-error .el-input {
-  border-color: var(--ngs-red);
+.si-pw .si-input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
-
-.el-err {
-  font-size: 12.5px;
-  color: #e07070;
+.si-pw-toggle {
+  width: 48px;
+  height: 46px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--si-soft);
+  border-radius: 10px;
+}
+.si-pw-toggle:hover {
+  color: var(--si-ink);
+}
+.si-form.is-error .si-input:not(.si-pw .si-input),
+.si-form.is-error .si-pw {
+  border-color: var(--si-err);
+}
+.si-err {
   display: none;
-  text-align: left;
-  background: rgba(177, 27, 42, 0.1);
-  border: 1px solid rgba(177, 27, 42, 0.22);
-  border-radius: 5px;
-  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--si-err);
+  background: var(--si-err-tint);
+  border-radius: 8px;
+  padding: 10px 14px;
 }
-.el-err.show {
+.si-err.show {
   display: block;
 }
-
-.el-session-expired {
-  font-size: 12.5px;
-  color: #b8892e;
-  text-align: center;
-  background: rgba(212, 175, 89, 0.12);
-  border: 1px solid rgba(212, 175, 89, 0.28);
-  border-radius: 5px;
-  padding: 8px 14px;
-  margin: -4px 0 4px;
-}
-
-.el-btn {
-  margin-top: 4px;
-  padding: 13px;
-  border-radius: 6px;
+.si-btn {
+  min-height: 50px;
+  border-radius: 12px;
+  background: var(--ngs-navy);
+  color: #faf7f0;
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
+  transition: background 0.15s;
+}
+html[data-theme='dark'] .si-btn {
   background: var(--ngs-gold);
   color: var(--ngs-navy-ink);
-  transition:
-    opacity 0.15s,
-    transform 0.1s;
 }
-.el-btn:not(:disabled):hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
+.si-btn:not(:disabled):hover {
+  background: var(--ngs-navy-deep);
 }
-[data-scholar='april'] .el-btn:not(:disabled) {
-  background: #4a7dc8;
-  color: #fff;
+html[data-theme='dark'] .si-btn:not(:disabled):hover {
+  background: var(--ngs-gold-soft);
 }
-.el-btn:disabled {
-  opacity: 0.4;
+.si-btn:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
-
-.el-back {
-  margin-top: 28px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.3);
-  font-family: var(--ngs-mono);
-  letter-spacing: 0.05em;
-  transition: color 0.15s;
+.si-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--si-soft);
+  text-align: center;
 }
-.el-back:hover {
-  color: rgba(255, 255, 255, 0.6);
+.si-back {
+  padding: 8px 0;
+  color: var(--si-soft);
+}
+.si-back:hover {
+  color: var(--si-ink);
+}
+
+@media (max-width: 860px) {
+  .si {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .si-story {
+    gap: 18px;
+    padding: 24px 20px 26px;
+  }
+  .si-foot,
+  .si-path-text span {
+    display: none;
+  }
+  .si-headline {
+    font-size: 28px;
+  }
+  .si-pitch {
+    gap: 18px;
+  }
+  /* The vertical timeline becomes a four-part bar on phones. */
+  .si-path {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .si-path li {
+    flex-direction: column;
+    gap: 8px;
+    padding-bottom: 0;
+  }
+  .si-path li::after {
+    display: none;
+  }
+  .si-path-dot {
+    width: 100%;
+    height: 4px;
+    margin: 0;
+    border: 0;
+    border-radius: 2px;
+    background: rgba(201, 168, 76, 0.35);
+  }
+  .si-path-text b {
+    font-size: 11.5px;
+  }
+  .si-main {
+    align-items: stretch;
+    padding: 0;
+  }
+  .si-card,
+  html[data-theme='dark'] .si-card {
+    max-width: none;
+    padding: 28px 20px 32px;
+    border-radius: 0;
+    border: 0;
+    background: var(--si-card);
+  }
 }
 
 /* ════════════════ EXPENSE FORM PAGE ════════════════ */

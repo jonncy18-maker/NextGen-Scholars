@@ -21,25 +21,8 @@ import { FxCtx, useFxState } from '../context/FxContext.jsx';
 import { DataCtx } from '../context/DataContext.jsx';
 import { LockScreen } from '../components/LockScreen.jsx';
 import { SectionErrorBoundary } from '../components/SectionErrorBoundary.jsx';
-import { Sidebar } from '../components/Sidebar.jsx';
-import { ThemeToggle } from '../components/ThemeToggle.jsx';
-import {
-  IcnGrid,
-  IcnWallet,
-  IcnBook,
-  IcnGlobe,
-  IcnClock,
-  IcnRoute,
-  IcnStar,
-  IcnPlane,
-  IcnPie,
-  IcnDoc,
-  IcnSparkle,
-  IcnRefresh,
-  IcnUpdate,
-  IcnSignOut,
-  IcnHome,
-} from '../components/ShellIcons.jsx';
+import { TopBar } from '../components/TopBar.jsx';
+import { IcnSparkle, IcnRefresh, IcnSignOut } from '../components/ShellIcons.jsx';
 import { useAppUpdate } from '../hooks/useAppUpdate.js';
 import { SubmissionBanner } from '../components/expenses/SubmissionBanner.jsx';
 import { ExpenseSection } from '../components/expenses/ExpenseSection.jsx';
@@ -63,22 +46,37 @@ if (!NGS_DATA || !NGS_DATA.config) {
 
 const STATIC_SCHOLAR_KEYS = ['claire', 'april', 'janndilyne'];
 
-// Sidebar sections. Slugs are unchanged from the pre-redesign tab strip —
-// only the labels adopted the mockup vocabulary (Portfolio, Finances,
-// Academics, Journey Map) so old bookmarks keep working.
+// Navigator sections. Slugs are unchanged from the pre-redesign tab strip,
+// so old bookmarks keep working; only how they're grouped in the top bar
+// changed (People-first redesign: 11 sidebar items → 4 groups with tabs).
 const SECTIONS = [
-  { key: '', label: 'Portfolio', icon: <IcnGrid size={16} /> },
-  { key: 'expenses', label: 'Finances', icon: <IcnWallet size={16} /> },
-  { key: 'grades', label: 'Academics', icon: <IcnBook size={16} /> },
-  { key: 'english', label: 'English', icon: <IcnGlobe size={16} /> },
-  { key: 'deadlines', label: 'Deadlines', icon: <IcnClock size={16} /> },
-  { key: 'progress', label: 'Journey Map', icon: <IcnRoute size={16} /> },
-  { key: 'milestones', label: 'Milestones', icon: <IcnStar size={16} /> },
-  { key: 'travel', label: 'Travel', icon: <IcnPlane size={16} /> },
-  { key: 'budget', label: 'Budget', icon: <IcnPie size={16} /> },
-  { key: 'living-budget', label: 'Living Budget', icon: <IcnWallet size={16} /> },
-  { key: 'program-details', label: 'Program Details', icon: <IcnDoc size={16} /> },
+  { key: '', label: 'Portfolio' },
+  { key: 'progress', label: 'Journey Map' },
+  { key: 'grades', label: 'Academics' },
+  { key: 'english', label: 'English' },
+  { key: 'milestones', label: 'Milestones' },
+  { key: 'expenses', label: 'Finances' },
+  { key: 'budget', label: 'Program Budget' },
+  { key: 'living-budget', label: 'Living Budgets' },
+  { key: 'travel', label: 'Travel' },
+  { key: 'deadlines', label: 'Deadlines' },
+  { key: 'program-details', label: 'Program Details' },
 ];
+
+const NAV_GROUPS = [
+  {
+    key: 'scholars',
+    label: 'Scholars',
+    sections: ['', 'progress', 'grades', 'english', 'milestones'],
+  },
+  { key: 'money', label: 'Money', sections: ['expenses', 'budget', 'living-budget', 'travel'] },
+  { key: 'calendar', label: 'Calendar', sections: ['deadlines'] },
+  { key: 'program', label: 'Program', sections: ['program-details'] },
+];
+
+function sectionHref(key) {
+  return key ? `/navigator/${key}` : '/navigator';
+}
 
 const CONN_LABEL = {
   loading: { text: 'Neon · Syncing…', cls: 'is-syncing' },
@@ -100,30 +98,26 @@ function bucketFor(cat, fallback) {
   return raw === 'trial' ? 'college' : raw;
 }
 
-// Compute per-scholar GPA (as %) from the most recent sem in grade_entries,
-// plus the sem before it (prev) so the dashboard can show a trend arrow.
+// Compute per-scholar GPA (as %) from the most recent graded sem in
+// grade_entries.
 function computeLiveGpa(rows) {
   const byScholar = {};
   rows.forEach((r) => {
     (byScholar[r.scholar] ??= []).push(r);
   });
   const result = {};
-  const prevResult = {};
   Object.entries(byScholar).forEach(([sk, list]) => {
     const sems = [...new Set(list.map((r) => r.sem))].sort((a, b) => b.localeCompare(a));
-    const found = [];
     for (const sem of sems) {
       const semRows = list.filter((r) => r.sem === sem && r.pct_equiv != null && r.units);
-      if (!semRows.length) continue;
       const totalUnits = semRows.reduce((s, r) => s + r.units, 0);
-      if (totalUnits)
-        found.push(semRows.reduce((s, r) => s + r.pct_equiv * r.units, 0) / totalUnits);
-      if (found.length === 2) break;
+      if (totalUnits) {
+        result[sk] = semRows.reduce((s, r) => s + r.pct_equiv * r.units, 0) / totalUnits;
+        break;
+      }
     }
-    if (found.length > 0) result[sk] = found[0];
-    if (found.length > 1) prevResult[sk] = found[1];
   });
-  return { result, prevResult };
+  return result;
 }
 
 export function Navigator({ slug = [] }) {
@@ -181,7 +175,6 @@ export function Navigator({ slug = [] }) {
     if (c === 'USD') handleModeChange('market');
   }
   const [liveGpa, setLiveGpa] = useState({});
-  const [prevGpa, setPrevGpa] = useState({});
   const [connStatus, setConnStatus] = useState('loading');
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -230,9 +223,7 @@ export function Navigator({ slug = [] }) {
       .get('/grades')
       .then((data) => {
         if (!data) return;
-        const { result, prevResult } = computeLiveGpa(data);
-        setLiveGpa(result);
-        setPrevGpa(prevResult);
+        setLiveGpa(computeLiveGpa(data));
       })
       .catch(() => {});
   }
@@ -626,69 +617,29 @@ export function Navigator({ slug = [] }) {
             }}
             sessionExpired={sessionExpired}
           />
-          <Sidebar
-            brand={{ href: '/navigator' }}
-            subtitle="Pathway Navigator"
-            items={[
-              ...SECTIONS.map((s) => ({
-                key: s.key || 'portfolio',
-                href: s.key ? `/navigator/${s.key}` : '/navigator',
-                label: s.label,
-                icon: s.icon,
-                active: section === s.key,
-                badge: s.key === 'expenses' ? pendingSubmissions.length : undefined,
-              })),
-              { key: 'site', href: '/', label: 'Public Site', icon: <IcnHome size={16} /> },
-            ]}
-            footer={
+          <TopBar
+            brand={{ href: '/navigator', label: 'Navigator' }}
+            groups={NAV_GROUPS.map((g) => {
+              const items = g.sections.map((key) => ({
+                key: key || 'portfolio',
+                label: SECTIONS.find((x) => x.key === key).label,
+                href: sectionHref(key),
+                active: section === key,
+                badge: key === 'expenses' ? pendingSubmissions.length : undefined,
+              }));
+              return {
+                key: g.key,
+                label: g.label,
+                href: items[0].href,
+                active: g.sections.includes(section),
+                badge: items.reduce((t, i) => t + (i.badge || 0), 0),
+                items,
+              };
+            })}
+            actions={
               <>
-                <div className="ds-identity" title={mentorName}>
-                  <span className="ds-avatar">{mentorName[0]}</span>
-                  <div className="ds-footer-label">
-                    <div className="ds-identity-name">{mentorName}</div>
-                    <div className="ds-identity-role">Mentor · NGS</div>
-                  </div>
-                </div>
-                <div className={`ds-conn ${conn.cls}`} title={conn.text}>
-                  <span className="ds-conn-dot" />
-                  <span className="ds-footer-label">
-                    {conn.text}
-                    {writeError && <span style={{ color: 'var(--ds-bad)' }}> · Write failed</span>}
-                  </span>
-                </div>
-                <ThemeToggle />
-                <button className="ds-signout" onClick={handleSignOut} title="Sign out">
-                  <IcnSignOut size={13} /> <span className="ds-footer-label">Sign out</span>
-                </button>
-              </>
-            }
-          />
-          <NavigatorAIDrawer
-            open={aiDrawerOpen}
-            onClose={() => setAiDrawerOpen(false)}
-            defaultScholar={aiDrawerDefaultScholar}
-            writers={{
-              onEditExpense: handleEditExpense,
-              onDeleteExpense: handleDeleteExpenseFromTable,
-              onRecordSend: handleRecordSend,
-            }}
-          />
-          <div className="ds-main">
-            <header className="ds-topbar">
-              <div>
-                <div className="ds-topbar-eyebrow">{activeSection.label}</div>
-                <h1 className="ds-topbar-title">
-                  {section === '' ? `${greeting()}, ${mentorName}.` : activeSection.label}
-                </h1>
-                <div className="ds-topbar-sub">
-                  {section === ''
-                    ? `Here's your portfolio overview for ${todayLong}.`
-                    : `${greeting()}, ${mentorName} — ${todayLong}.`}
-                </div>
-              </div>
-              <div className="ds-topbar-actions">
                 <button
-                  className={`ds-ai-btn${aiDrawerOpen ? ' is-active' : ''}`}
+                  className={`ds-btn ds-btn--ghost is-keep${aiDrawerOpen ? ' is-active' : ''}`}
                   onClick={() => setAiDrawerOpen((v) => !v)}
                   title="Open Navigator AI"
                 >
@@ -704,32 +655,71 @@ export function Navigator({ slug = [] }) {
                     checkForUpdate({ force: false });
                   }}
                   title="Reload data from Neon (also checks for a newer app deployment)"
+                  aria-label="Reload data"
                 >
                   <IcnRefresh size={15} />
                 </button>
-                <button
-                  className={`ds-icon-btn${checkingUpdate ? ' is-loading' : updateAvailable ? ' has-update' : ''}`}
-                  onClick={checkForUpdate}
-                  title={
-                    updateAvailable
-                      ? 'New version installed — tap to reload'
-                      : 'Check for app updates'
-                  }
-                >
-                  <IcnUpdate size={15} />
+              </>
+            }
+            account={{
+              initial: mentorName[0],
+              name: mentorName,
+              role: `Mentor · updated ${D.config.lastUpdated}`,
+              status: (
+                <div className={`ds-conn ${conn.cls}`} title={conn.text}>
+                  <span className="ds-conn-dot" />
+                  {conn.text}
+                  {writeError && <span style={{ color: 'var(--ds-bad)' }}> · Write failed</span>}
+                </div>
+              ),
+              links: [
+                {
+                  key: 'update',
+                  label: updateAvailable
+                    ? 'Update ready — tap to reload'
+                    : checkingUpdate
+                      ? 'Checking for updates…'
+                      : 'Check for app update',
+                  onClick: checkForUpdate,
+                },
+                { key: 'site', label: 'Public site', href: '/' },
+              ],
+              signOut: (
+                <button className="ds-signout" onClick={handleSignOut}>
+                  <IcnSignOut size={14} /> Sign out
                 </button>
-                <span className="ds-updated">Updated · {D.config.lastUpdated}</span>
-              </div>
-            </header>
+              ),
+            }}
+          />
+          <NavigatorAIDrawer
+            open={aiDrawerOpen}
+            onClose={() => setAiDrawerOpen(false)}
+            defaultScholar={aiDrawerDefaultScholar}
+            writers={{
+              onEditExpense: handleEditExpense,
+              onDeleteExpense: handleDeleteExpenseFromTable,
+              onRecordSend: handleRecordSend,
+            }}
+          />
+          <div className="ds-main">
+            {section !== '' && (
+              <header className="ds-topbar">
+                <div>
+                  <div className="ds-topbar-eyebrow">
+                    {NAV_GROUPS.find((g) => g.sections.includes(section))?.label}
+                  </div>
+                  <h1 className="ds-topbar-title">{activeSection.label}</h1>
+                  <div className="ds-topbar-sub">{`${greeting()}, ${mentorName} — ${todayLong}.`}</div>
+                </div>
+              </header>
+            )}
             <main className="ds-content">
               {section === '' && (
                 <SectionErrorBoundary name="MentorHome">
                   <MentorHome
+                    greeting={`${greeting()}, ${mentorName}`}
                     liveGpa={liveGpa}
-                    prevGpa={prevGpa}
-                    onOpenDrawer={openDrawer}
                     pendingSubmissions={pendingSubmissions}
-                    activityCount={activityFeed.length}
                     dbAlerts={dbAlerts}
                     onSemesterChange={handleSemesterChange}
                     unlocked={unlocked}
