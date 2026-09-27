@@ -125,38 +125,33 @@ export const PUT = withErrorHandling(async (request) => {
     cleaned.map((it) => ({ qty: it.qty, unit_php: it.unit, basis: it.basis }))
   );
 
-  // Neon's HTTP driver has no interactive transaction, so this is a delete +
-  // insert + upsert sequence rather than a BEGIN block. Safe here: the delete
-  // is scoped to exactly the (category, month) being rewritten, and a failure
-  // between steps leaves the items gone but living_plan unchanged — visibly
-  // wrong in the builder (which reloads) rather than silently wrong in a total.
-  await sql`
-    delete from living_plan_item
-    where category_id = ${cat.id} and month = ${month}
-  `;
-
-  const rows = [];
-  for (let i = 0; i < cleaned.length; i++) {
-    const it = cleaned[i];
-    const [row] = await sql`
+  // Save the breakdown and its total together: a failure restores the old
+  // items and plan instead of leaving either side partially replaced.
+  const client = sql;
+  const results = await client.transaction([
+    client`
+      delete from living_plan_item
+      where category_id = ${cat.id} and month = ${month}
+    `,
+    ...cleaned.map((it, i) => client`
       insert into living_plan_item
         (scholar, category_id, month, name, qty, unit_php, basis, sort_order)
       values
         (${cat.scholar}, ${cat.id}, ${month}, ${it.name}, ${it.qty},
          ${it.unit}, ${it.basis}, ${i})
       returning *
-    `;
-    rows.push(row);
-  }
-
-  const [plan] = await sql`
-    insert into living_plan (scholar, month, category_id, planned_php)
-    values (${cat.scholar}, ${month}, ${cat.id}, ${total})
-    on conflict (category_id, month) do update set
-      planned_php = excluded.planned_php,
-      updated_at  = now()
-    returning *
-  `;
+    `),
+    client`
+      insert into living_plan (scholar, month, category_id, planned_php)
+      values (${cat.scholar}, ${month}, ${cat.id}, ${total})
+      on conflict (category_id, month) do update set
+        planned_php = excluded.planned_php,
+        updated_at  = now()
+      returning *
+    `,
+  ]);
+  const rows = results.slice(1, -1).flat();
+  const [plan] = results[results.length - 1];
 
   return json({ items: rows, plan, total });
 });
