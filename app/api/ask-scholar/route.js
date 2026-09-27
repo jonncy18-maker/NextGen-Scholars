@@ -1,3 +1,4 @@
+import { requireScholarOwn } from '../../../lib/auth.js';
 import { json, withErrorHandling } from '../../../lib/http.js';
 import { enforceRateLimit, readJsonBody } from '../../../lib/rate-limit.js';
 import { tier1Resolve } from '../../../lib/ai/tier1.js';
@@ -9,10 +10,8 @@ import { tier3Ingest, tier3GradeIngest, tier3EnglishIngest } from '../../../lib/
 export const dynamic = 'force-dynamic';
 
 // Port of supabase/functions/ask-scholar/index.ts — scholar-scoped AI
-// endpoint for student-facing pages. Unauthenticated by design (accepted
-// risk, see CLAUDE.md "Known issues" -- trusts a client-supplied scholar
-// key, same as before this migration). Not gated behind Better Auth because
-// scholar accounts/sign-in aren't wired into these pages yet.
+// endpoint for student-facing pages. Ingest/edit/analysis paths remain
+// anonymous; private queries require a scholar assignment from Better Auth.
 
 const VALID_SCHOLARS = ['claire', 'april'];
 
@@ -34,8 +33,8 @@ async function geminiJson(prompt, apiKey, opts = {}) {
   return gJson?.candidates?.[0]?.content?.parts?.[0]?.text;
 }
 
-// Unauthenticated by design (see the header comment above), so the same two
-// guards as /api/ask-public apply — but the ceiling here is much larger,
+// Anonymous ingest/edit/analysis calls retain the same two guards as
+// /api/ask-public — but the ceiling here is much larger,
 // because the ingest paths legitimately carry a base64 receipt or grade report.
 // 6MB of base64 is roughly a 4.5MB image, comfortably above a phone photo and
 // far below anything that would be worth uploading in bulk. The rate limit is
@@ -55,7 +54,12 @@ export const POST = withErrorHandling(async (request) => {
   if (bodyError) return bodyError;
   if (!body) return json({ error: 'Invalid JSON body' }, { status: 400 });
 
-  const { scholar, type = 'query', text, sem, file, messages, grades, items, categories } = body;
+  const { scholar: requestedScholar, type = 'query', text, sem, file, messages, grades, items, categories } = body;
+  const publicTypes = ['ingest', 'english_ingest', 'grade_ingest', 'grade_edit', 'expense_edit', 'grade_analysis'];
+  // All paths reaching the private resolvers use the verified assignment.
+  const scholar = publicTypes.includes(type)
+    ? requestedScholar
+    : (await requireScholarOwn(request)).scholarKey;
 
   if (!scholar || !VALID_SCHOLARS.includes(scholar)) {
     return json({ error: 'Invalid or missing scholar key' }, { status: 400 });
