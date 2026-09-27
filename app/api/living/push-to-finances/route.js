@@ -148,28 +148,27 @@ export const POST = withErrorHandling(async (request) => {
   // push of this month, and the lump-sum allowance outflow this itemisation
   // supersedes. allowance.expense_id is ON DELETE SET NULL, so dropping the
   // expense clears the link on its own.
-  await sql`delete from expenses where scholar = ${scholar} and group_id = ${groupId}`;
-
-  const [allowanceRow] = await sql`
-    select expense_id from allowance where scholar = ${scholar} and month = ${month}
-  `;
-  let replacedAllowance = false;
-  if (allowanceRow?.expense_id) {
-    await sql`delete from expenses where id = ${allowanceRow.expense_id}`;
-    replacedAllowance = true;
-  }
-
-  const inserted = [];
-  for (const [i, row] of planned.entries()) {
-    const id = `${scholar}_${month}_push_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 7)}`;
-    const [saved] = await sql`
-      insert into expenses (id, scholar, sem, item, cat, bucket, amount, qty, date, avb, sent, vendor, group_id)
-      values (${id}, ${scholar}, ${sem}, ${row.item}, ${row.cat}, ${row.bucket},
-              ${row.amount}, 1, ${row.date}, 'Actual', 'No', '', ${groupId})
-      returning *
-    `;
-    inserted.push(saved);
-  }
+  const client = sql;
+  const results = await client.transaction([
+    client`delete from expenses where scholar = ${scholar} and group_id = ${groupId}`,
+    client`
+      delete from expenses where id in (
+        select expense_id from allowance where scholar = ${scholar} and month = ${month}
+      )
+      returning id
+    `,
+    ...planned.map((row, i) => {
+      const id = `${scholar}_${month}_push_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 7)}`;
+      return client`
+        insert into expenses (id, scholar, sem, item, cat, bucket, amount, qty, date, avb, sent, vendor, group_id)
+        values (${id}, ${scholar}, ${sem}, ${row.item}, ${row.cat}, ${row.bucket},
+                ${row.amount}, 1, ${row.date}, 'Actual', 'No', '', ${groupId})
+        returning *
+      `;
+    }),
+  ]);
+  const replacedAllowance = results[1].length > 0;
+  const inserted = results.slice(2).flat();
 
   return json(
     {

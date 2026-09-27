@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ResultDisplay } from './NavigatorAI.jsx';
 import { AgentResult, agentPlan } from './AgentPanel.jsx';
+import { api } from '../lib/api.js';
 
 const QUICK_PROMPTS = [
   { label: 'My spending', text: 'How much have I spent this semester?' },
@@ -76,22 +77,16 @@ export function ScholarChatPanel({ scholarKey, onGoToIngestion, ingestionLabel, 
       try {
         data = await agentPlan({ text: trimmed, messages: history });
       } catch (err) {
-        // Not signed in (401), or the AI key isn't configured (503) — fall
-        // back to the older unauthenticated read-only route so the panel
-        // still answers questions rather than going dark.
-        if (err.status !== 401 && err.status !== 503) throw err;
-        const res = await fetch('/api/ask-scholar', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            scholar: scholarKey,
-            type: 'query',
-            text: trimmed,
-            messages: history,
-          }),
+        if (err.status === 401) {
+          throw new Error('Please sign in again to ask about your progress.');
+        }
+        if (err.status !== 503) throw err;
+        // The legacy query fallback is also authenticated and server-scoped.
+        data = await api.post('/ask-scholar', {
+          type: 'query',
+          text: trimmed,
+          messages: history,
         });
-        data = await res.json();
-        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       }
       setMessages((prev) =>
         prev.map((m) =>
