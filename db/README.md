@@ -33,3 +33,8 @@ auditing the schema.
 The Deno Edge Functions that used to live in `supabase/functions/` were
 ported to `app/api/{ask,ask-scholar,ask-public}/route.js` in Phase B5 and
 are not preserved here — see those files for the current implementation.
+
+- `mcp_auth_codes.sql` — single-use OAuth codes for the MCP server
+  (`app/api/mcp/ngs`, `lib/mcp-oauth.js`). **Was applied to Neon at the time
+  it was written** (2026-09-27, same day as the MCP server itself), same as
+  `living_budget.sql` above — repo and live database agree.

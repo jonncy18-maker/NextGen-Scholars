@@ -65,6 +65,7 @@ Env vars are `NEXT_PUBLIC_*` (not Vite's `VITE_*`) — see `.env.example`.
 | `GOOGLE_AI_KEY` | none | Server only (`lib/ai/*`, `app/api/{ask-scholar,ask-public}/*`) | Gemini API key — powers the two **unauthenticated, public-facing** AI routes only. Quota abuse risk if exposed client-side. |
 | `ANTHROPIC_API_KEY` | none | Server only (`lib/ai/*`, `app/api/{ask,ask-budget,agent}/*`) | Claude API key — the AI brain for **signed-in mentor/scholar accounts**. Quota abuse risk if exposed client-side. |
 | `IMMERSION_DATABASE_URL` | none | Server only (`lib/immersion-db.js`, `app/api/immersion-hours/route.js`) | Read-only connection to the separate NextGen Immersion app's Neon project, using a dedicated `ngs_scholars_reader` role — see "Immersion hours integration" below. |
+| `NGS_MCP_TOKEN` | none | Server only (`lib/mcp-server.js`, `app/api/mcp/ngs/*`, `app/api/chatgpt/mcp`) | Bearer secret gating the mentor-role MCP server — full read/write access to every Tier 4 tool (`lib/ai/tools.js`). Never sent to the client; also doubles as the OAuth handshake's access/refresh token for claude.ai's connector (see "MCP server" below) — there is no second credential. |
 
 **Rule:** anything that touches the Neon database directly or calls Gemini/Claude
 runs only in `app/api/**` route handlers; the browser calls those routes,
@@ -236,6 +237,58 @@ intent in `NavigatorAIConsole.jsx`, also selectable manually); `ScholarChatPanel
 uses it as its primary path on all scholar pages, falling back to the older
 unauthenticated `/api/ask-scholar` only on 401/503. Existing expense ingest/bulk-edit
 flows keep their purpose-built review cards and are unchanged.
+
+### MCP server (2026-09-27) — `app/api/mcp/ngs`, ported from Personal-Dashboard
+
+The Tier 4 tool registry (`lib/ai/tools.js`) is also exposed over the Model
+Context Protocol, so claude.ai/Claude Desktop and ChatGPT can operate the
+dashboard directly — "the MCP should be able to do everything a mentor can do
+manually" was the ask, and the registry already is that list, so no second
+catalog was written. `lib/ai/mcp-tools.js` re-keys `TOOLS` (Gemini-shaped
+`parameters`) to MCP's `inputSchema` + `annotations` (`readOnlyHint` for
+non-mutating tools, `destructiveHint` for `delete_*`) the same way
+`lib/ai/agent.js`'s `claudeTools()` re-keys it for Claude's `input_schema` —
+one registry, three wire shapes, never three tool lists.
+
+- **Always authenticates as the mentor role, unscoped.** This is the
+  operational surface (every scholar, not one), matching the sibling
+  Personal-Dashboard repo's own single-bearer-token MCP servers rather than
+  Neon Auth's per-user JWTs — a real account login isn't the right shape for
+  an always-on connector credential. Gated by `NGS_MCP_TOKEN` (Vercel env
+  var, both Production and Preview).
+- **Every tool — reads and writes alike — is callable directly**, unlike the
+  in-app agent's plan/confirm split. That split exists because an LLM
+  *inside this app* proposes calls a human then approves; here the
+  connecting client's own model calls tools directly and its own
+  tool-approval UI (Claude Desktop/claude.ai's per-call confirmation,
+  ChatGPT's own) is the confirmation step instead. `destructiveHint` on
+  every `delete_*` tool is what that UI keys off of.
+- **Transport + OAuth are `lib/mcp-server.js` / `lib/mcp-oauth.js`, ported
+  near-verbatim from Personal-Dashboard**, which proved this approach first:
+  one JSON-RPC POST handler (`initialize`/`tools/list`/`tools/call`) behind a
+  bearer check, plus a full OAuth 2.1 + dynamic-client-registration handshake
+  (`/authorize`, `/token`, `/register`, the `.well-known/oauth-*` metadata
+  routes) purely so claude.ai's hosted "Add custom connector" flow — which
+  hard-requires OAuth — can reach it. The token that handshake ultimately
+  hands back **is** `NGS_MCP_TOKEN` itself; there is no second credential.
+  Auth codes live in `mcp_auth_codes` (`db/mcp_auth_codes.sql`, applied to
+  Neon the same day) — single-use, PKCE-checked, scoped by a `server` column
+  in case a second MCP server is ever added here.
+- **`app/api/chatgpt/mcp/route.js` is a one-line re-export of the same
+  handler**, purely because ChatGPT's connector UI hard-requires the URL to
+  end in `/mcp` — an OpenAI constraint, not an MCP-spec one. ChatGPT's
+  "Access token / API key" connector mode sends `NGS_MCP_TOKEN` as a bare
+  bearer header, so it needs no OAuth wrapper — set it up as: Settings →
+  Apps & Connectors → Developer Mode → Create → URL
+  `https://next-gen-scholars-jonncy18.vercel.app/api/chatgpt/mcp`, auth
+  "Access token / API key" with `NGS_MCP_TOKEN`'s value. Requires a paid
+  ChatGPT plan (Developer Mode isn't on the free tier). claude.ai instead
+  uses "Add custom connector" with the plain `/api/mcp/ngs` URL and goes
+  through the OAuth flow above.
+- **House rules travel via the MCP `initialize` response's `instructions`
+  field** (`ngsMcpInstructions()` in `lib/ai/mcp-tools.js`) — the closest
+  MCP-native equivalent of `lib/ai/agent.js`'s system prompt, since an
+  externally-connected client's own model never sees that prompt.
 
 ## Immersion hours integration (2026-07-06)
 
