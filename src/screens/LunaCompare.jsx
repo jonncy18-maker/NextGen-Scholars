@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
+import { getToken } from '../lib/auth-client.js';
 
 // TEMPORARY — see app/api/luna-compare/route.js. Mentor-only (the API call
 // carries the signed-in mentor's token and the route requires the mentor role).
@@ -108,6 +109,44 @@ export function LunaCompare() {
   const [status, setStatus] = useState('');
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
+  // What the page can tell about the sign-in, so a failure says which step broke.
+  const [session, setSession] = useState({ state: 'checking', detail: '' });
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      let next;
+      try {
+        const token = await getToken();
+        if (!token) {
+          next = {
+            state: 'bad',
+            detail:
+              'The sign-in service did not give this page a token. You may be signed out, or the session is not reaching this page.',
+          };
+        } else {
+          const me = await api.get('/me');
+          next =
+            me?.role === 'mentor'
+              ? { state: 'ok', detail: 'Signed in as the mentor.' }
+              : {
+                  state: 'bad',
+                  detail: `Signed in, but as ${me?.role || 'an unknown role'}${me?.scholarKey ? ` (${me.scholarKey})` : ''}, not the mentor.`,
+                };
+        }
+      } catch (e) {
+        next = {
+          state: 'bad',
+          detail:
+            `A token was found, but the server rejected it: ${e.status || ''} ${e.message}`.trim(),
+        };
+      }
+      if (alive) setSession(next);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   async function pick(e) {
     const f = e.target.files?.[0];
@@ -144,11 +183,7 @@ export function LunaCompare() {
       setResult(data);
       setStatus('Done. Nothing was saved.');
     } catch (e) {
-      setStatus(
-        e.status === 401 || e.status === 403
-          ? 'Not signed in as the mentor. Open the Navigator, sign in, then come back to this page.'
-          : `Stopped: ${e.message}`
-      );
+      setStatus(`Stopped${e.status ? ` (${e.status})` : ''}: ${e.message}`);
     }
     setBusy(false);
   }
@@ -179,6 +214,20 @@ export function LunaCompare() {
         Upload one real receipt, or type a description the way you would in the console. The app
         extracts the expense lines with Claude (what runs today) and with Luna and shows both.
         Nothing is saved. Cells that differ between the two are highlighted.
+      </p>
+
+      <p
+        role="status"
+        style={{
+          margin: '10px 0 0',
+          padding: '6px 10px',
+          borderRadius: 6,
+          fontSize: 14,
+          background:
+            session.state === 'ok' ? '#dff3e4' : session.state === 'bad' ? '#fbe3df' : '#eef1f4',
+        }}
+      >
+        {session.state === 'checking' ? 'Checking your sign-in…' : session.detail}
       </p>
 
       <label htmlFor="receipt" style={{ display: 'block', marginTop: 12, fontWeight: 600 }}>

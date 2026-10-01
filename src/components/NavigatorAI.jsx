@@ -4,6 +4,7 @@ import { useData } from '../context/DataContext.jsx';
 import { writeExpense } from '../api-writer.js';
 import { EXPENSE_CATS, SEMESTER_OPTIONS } from '../constants.js';
 import { uvToPct } from '../screens/GradeEntry.jsx';
+import { ASK_SCHOLAR_LABEL, modelLabel } from '../modelLabel.js';
 
 function gradeAvg(prelim, midterm, finalGrade) {
   const vals = [prelim, midterm, finalGrade].map((v) => parseFloat(v)).filter((v) => !isNaN(v));
@@ -397,7 +398,10 @@ export function ReviewCard({ items: initialItems, model, scholar, sem, onDiscard
         setItems(data.items.map((it) => ({ ...it })));
         setChatLog((prev) => [
           ...prev,
-          { role: 'ai', text: 'Done — expenses updated. Review the table above.' },
+          {
+            role: 'ai',
+            text: `Done — expenses updated by ${modelLabel(data.model, ASK_SCHOLAR_LABEL)}. Review the table above.`,
+          },
         ]);
       } else {
         setChatLog((prev) => [
@@ -443,7 +447,7 @@ export function ReviewCard({ items: initialItems, model, scholar, sem, onDiscard
   return (
     <div className="nai-review">
       <div className="nai-review-header">
-        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Claude</span>
+        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · {modelLabel(model)}</span>
         <span className="nai-review-title">
           {items.length} expense{items.length !== 1 ? 's' : ''} extracted — review before saving
         </span>
@@ -664,6 +668,7 @@ export function GradeReviewCard({
   const [chatBusy, setChatBusy] = useState(false);
   const [geminiAnalysis, setGeminiAnalysis] = useState(null);
   const [geminiLoading, setGeminiLoading] = useState(false);
+  const [analysisModel, setAnalysisModel] = useState(null);
 
   useEffect(() => {
     if (!initialGrades.length) return;
@@ -672,6 +677,7 @@ export function GradeReviewCard({
       .post('/ask-scholar', { scholar, sem, type: 'grade_analysis', grades: initialGrades })
       .then((data) => {
         if (data.analysis) setGeminiAnalysis(data.analysis);
+        if (data.model) setAnalysisModel(data.model);
       })
       .catch(() => {})
       .finally(() => setGeminiLoading(false));
@@ -698,7 +704,10 @@ export function GradeReviewCard({
         setGrades(data.grades.map((g) => ({ ...g })));
         setChatLog((prev) => [
           ...prev,
-          { role: 'ai', text: 'Done — grades updated. Review the table above.' },
+          {
+            role: 'ai',
+            text: `Done — grades updated by ${modelLabel(data.model, ASK_SCHOLAR_LABEL)}. Review the table above.`,
+          },
         ]);
       } else {
         setChatLog((prev) => [
@@ -748,7 +757,7 @@ export function GradeReviewCard({
   return (
     <div className="nai-review">
       <div className="nai-review-header">
-        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · Claude</span>
+        <span className="nai-tier-badge nai-tier3-badge">Tier 3 · {modelLabel(model)}</span>
         <span className="nai-review-title">
           {grades.length} subject{grades.length !== 1 ? 's' : ''} extracted — review before saving
         </span>
@@ -964,11 +973,11 @@ export function GradeReviewCard({
             className="nai-tier-badge nai-tier-2"
             style={{ marginBottom: 6, display: 'inline-block' }}
           >
-            Claude · Analysis
+            {modelLabel(analysisModel, ASK_SCHOLAR_LABEL)} · Analysis
           </span>
           {geminiLoading ? (
             <p className="nai-gemini-analysis-text" style={{ color: 'var(--ngs-muted)' }}>
-              Claude is reviewing the grades…
+              {ASK_SCHOLAR_LABEL} is reviewing the grades…
             </p>
           ) : (
             <p className="nai-gemini-analysis-text">{geminiAnalysis}</p>
@@ -1274,7 +1283,6 @@ export function IngestPanel({ scholar, scholarKeys }) {
     try {
       const allItems = [];
       let usedModel = 'claude-sonnet-5';
-      const modelLabel = 'Claude';
 
       if (pasteText.trim()) {
         setProgress('Processing pasted text…');
@@ -1293,7 +1301,7 @@ export function IngestPanel({ scholar, scholarKeys }) {
         setProgress(
           files.length > 1
             ? `Processing file ${i + 1} of ${files.length}…`
-            : `${modelLabel} is reading the document…`
+            : 'Reading the document…'
         );
         const json = await api.post('/ask', {
           scholar: ingestScholar,
@@ -1459,7 +1467,7 @@ export function IngestPanel({ scholar, scholarKeys }) {
             <span className="nai-loading-dot" />
             <span className="nai-loading-dot" />
             <span style={{ fontSize: 12, color: 'var(--ngs-muted)', marginLeft: 4 }}>
-              {progress || 'Claude is reading the document…'}
+              {progress || 'Reading the document…'}
             </span>
           </div>
         )}

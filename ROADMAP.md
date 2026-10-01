@@ -5,6 +5,22 @@
 Ship the scholar app to the Play Store via the **Internal Testing** track. The PWA foundation shipped 2026-07-11; next is packaging it as a TWA (Bubblewrap — stable package id + `.well-known/assetlinks.json`), verifying the Bearer-JWT auth flow inside the installed app on a real device, then a Play Console Internal Testing release with a mentor + scholar email allowlist. Code is Claude Code's; Play Console, signing, and device testing are John's.
 
 
+## Truthful model labels, and a self-diagnosing compare page (Oct 2026)
+
+John noticed the AI status text names a model, and asked that it always name the right one now that models are changing. Audit of every place the UI names a model:
+
+- **Wrong today:** the mentor grade analysis (`NavigatorAI.jsx`) said "Claude · Analysis" and "Claude is reviewing the grades…", but it calls `/api/ask-scholar`, which is Gemini-only by design, so Gemini answered. Likewise the "Fix →" box on the expense and grade review cards calls `/api/ask-scholar`, so the fix was made by Gemini while the card's badge said Claude (the badge refers to the extraction, which runs on `/api/ask`).
+- **Would go wrong when ingestion moves to Luna:** the review-card badges ("Tier 3 · Claude") and "Claude is reading the document…" were hard-coded to Claude.
+- **Correct, left alone:** the scholar-facing screens (`ScholarIngestPanel`, `GradeEntry`, `EnglishIngestPanel`, `ExpenseAskWidget`) say Gemini and do use `/api/ask-scholar`; the mentor Tier 2 / cohort report / grade-ingest / bulk-edit labels say Claude and do use `/api/ask` or the Claude-only helpers.
+
+What changed: `src/modelLabel.js` maps the `model` field an answer carries to a display name (`claude-*` → Claude, `gpt-6-luna` → Luna, `gemini-*` → Gemini, otherwise "AI"). The review-card badges now use the model the extraction actually reported. `/api/ask-scholar` now returns `model` on the three answers that lacked it (grade edit, expense edit, grade analysis), so the "Done — … updated by Gemini" message and the analysis badge come from the response. Text shown while a request is still in flight names the model only where the route is fixed (`ASK_SCHOLAR_LABEL`, Gemini), and names none for expense document ingestion ("Reading the document…"), because that is the path that may move to Luna and the answering model isn't known until it replies.
+
+The `/luna-compare` page now checks the sign-in on load and says which step failed (no token from the sign-in service, a token the server rejected, or signed in as a scholar), and a failed comparison shows the real HTTP status and server message instead of one generic line. John saw "Not signed in as the mentor" there while signed in; the old page used that message for every 401 and 403, so the true cause is not yet known.
+
+**Verified:** `modelLabel` unit checks; `next build`; the compare page driven in headless Chromium through five states (no token, mentor, scholar, token rejected, compare rejected). **Not verified:** the mentor review cards and grade analysis in a signed-in browser (the sandbox cannot reach the sign-in service), and why the token did not reach `/luna-compare` for John.
+
+---
+
 ## Luna for expense ingestion — comparison tool (Oct 2026)
 
 John wants expense ingestion (receipt photos, PDFs and typed descriptions, `tier3Ingest` in `lib/ai/tier3.js`) on GPT-6 Luna to cut cost. It is the one part of the Sonnet-era AI layer that is bounded extraction with a mentor review card before anything is saved. Grade and English-session ingestion in the same file, the GCash matcher, bulk expense edit, push-to-finances, the Tier 4 agent and Q&A are **not** part of this and stay on Claude.

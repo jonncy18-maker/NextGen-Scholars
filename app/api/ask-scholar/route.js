@@ -15,7 +15,8 @@ export const dynamic = 'force-dynamic';
 
 const VALID_SCHOLARS = ['claire', 'april'];
 
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 async function geminiJson(prompt, apiKey, opts = {}) {
   const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
@@ -122,7 +123,7 @@ export const POST = withErrorHandling(async (request) => {
     const match = raw.match(/\[[\s\S]*\]/);
     if (!match) return json({ error: 'Could not parse corrected grades from AI response' }, { status: 502 });
     const corrected = JSON.parse(match[0]);
-    return json({ grades: corrected });
+    return json({ grades: corrected, model: GEMINI_MODEL });
   }
 
   if (type === 'expense_edit') {
@@ -137,7 +138,7 @@ export const POST = withErrorHandling(async (request) => {
     const match = raw.match(/\[[\s\S]*\]/);
     if (!match) return json({ error: 'Could not parse corrected items from AI response' }, { status: 502 });
     const corrected = JSON.parse(match[0]);
-    return json({ items: corrected });
+    return json({ items: corrected, model: GEMINI_MODEL });
   }
 
   if (type === 'grade_analysis') {
@@ -176,7 +177,7 @@ Write a concise 2–3 sentence academic analysis. Cover: overall performance lev
 
     const analysis = await geminiJson(prompt, apiKey, { maxOutputTokens: 512, temperature: 0.7 });
     if (!analysis) return json({ error: 'AI returned no response' }, { status: 502 });
-    return json({ analysis: analysis.trim() });
+    return json({ analysis: analysis.trim(), model: GEMINI_MODEL });
   }
 
   // Query — Tier 1 (deterministic DB) then Tier 2 (Gemini advisory)
