@@ -65,6 +65,7 @@ Env vars are `NEXT_PUBLIC_*` (not Vite's `VITE_*`) — see `.env.example`.
 | `GOOGLE_AI_KEY` | none | Server only (`lib/ai/*`, `app/api/{ask-scholar,ask-public}/*`) | Gemini API key — powers the two **unauthenticated, public-facing** AI routes only. Quota abuse risk if exposed client-side. |
 | `ANTHROPIC_API_KEY` | none | Server only (`lib/ai/*`, `app/api/{ask,ask-budget,agent}/*`) | Claude API key — the AI brain for **signed-in mentor/scholar accounts**. Quota abuse risk if exposed client-side. |
 | `IMMERSION_DATABASE_URL` | none | Server only (`lib/immersion-db.js`, `app/api/immersion-hours/route.js`) | Read-only connection to the separate NextGen Immersion app's Neon project, using a dedicated `ngs_scholars_reader` role — see "Immersion hours integration" below. |
+| `OPENAI_API_KEY` | none | Server only (`lib/ai/luna.js`, `app/api/luna-compare/route.js`) | OPTIONAL. GPT-6 Luna for expense ingestion (`tier3Ingest`, provider `'luna'`). Receipts and typed expense descriptions are sent to OpenAI when it is used. Same exposure risk as the other AI keys. |
 | `NGS_MCP_TOKEN` | none | Server only (`lib/mcp-server.js`, `app/api/mcp/ngs/*`, `app/api/chatgpt/mcp`) | Bearer secret gating the mentor-role MCP server — full read/write access to every Tier 4 tool (`lib/ai/tools.js`). Never sent to the client; also doubles as the OAuth handshake's access/refresh token for claude.ai's connector (see "MCP server" below) — there is no second credential. |
 
 **Rule:** anything that touches the Neon database directly or calls Gemini/Claude
