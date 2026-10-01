@@ -27,7 +27,11 @@ async function geminiJson(prompt, apiKey, opts = {}) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { maxOutputTokens: opts.maxOutputTokens ?? 2048, temperature: opts.temperature ?? 0.1, thinkingConfig: { thinkingBudget: 0 } },
+      generationConfig: {
+        maxOutputTokens: opts.maxOutputTokens ?? 2048,
+        temperature: opts.temperature ?? 0.1,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
     }),
   });
   const gJson = await res.json();
@@ -55,8 +59,25 @@ export const POST = withErrorHandling(async (request) => {
   if (bodyError) return bodyError;
   if (!body) return json({ error: 'Invalid JSON body' }, { status: 400 });
 
-  const { scholar: requestedScholar, type = 'query', text, sem, file, messages, grades, items, categories } = body;
-  const publicTypes = ['ingest', 'english_ingest', 'grade_ingest', 'grade_edit', 'expense_edit', 'grade_analysis'];
+  const {
+    scholar: requestedScholar,
+    type = 'query',
+    text,
+    sem,
+    file,
+    messages,
+    grades,
+    items,
+    categories,
+  } = body;
+  const publicTypes = [
+    'ingest',
+    'english_ingest',
+    'grade_ingest',
+    'grade_edit',
+    'expense_edit',
+    'grade_analysis',
+  ];
   // All paths reaching the private resolvers use the verified assignment.
   const scholar = publicTypes.includes(type)
     ? requestedScholar
@@ -72,7 +93,11 @@ export const POST = withErrorHandling(async (request) => {
   if (typeof text === 'string' && text.length > MAX_TEXT_CHARS) {
     return json({ error: `Text must be under ${MAX_TEXT_CHARS} characters` }, { status: 413 });
   }
-  for (const [name, list] of [['grades', grades], ['items', items], ['categories', categories]]) {
+  for (const [name, list] of [
+    ['grades', grades],
+    ['items', items],
+    ['categories', categories],
+  ]) {
     if (Array.isArray(list) && list.length > MAX_LIST_ITEMS) {
       return json({ error: `Too many ${name} — max ${MAX_LIST_ITEMS}` }, { status: 413 });
     }
@@ -92,9 +117,10 @@ export const POST = withErrorHandling(async (request) => {
 
   if (type === 'english_ingest') {
     if (!text?.trim()) return json({ error: 'english_ingest requires text' }, { status: 400 });
-    const cats = Array.isArray(categories) && categories.length
-      ? categories
-      : ['Free Conversation', 'Travel', 'Visa Interview', 'Medical English'];
+    const cats =
+      Array.isArray(categories) && categories.length
+        ? categories
+        : ['Free Conversation', 'Travel', 'Visa Interview', 'Medical English'];
     const apiKey = process.env.GOOGLE_AI_KEY;
     if (!apiKey) return json({ tier: 3, status: 'not_configured' }, { status: 503 });
     const t3 = await tier3EnglishIngest(text, cats, apiKey);
@@ -103,7 +129,8 @@ export const POST = withErrorHandling(async (request) => {
   }
 
   if (type === 'grade_ingest') {
-    if (!file && !text) return json({ error: 'Grade ingest requires file or text' }, { status: 400 });
+    if (!file && !text)
+      return json({ error: 'Grade ingest requires file or text' }, { status: 400 });
     const apiKey = process.env.GOOGLE_AI_KEY;
     if (!apiKey) return json({ tier: 3, status: 'not_configured' }, { status: 503 });
     const t3 = await tier3GradeIngest({ text, file }, scholar, apiKey);
@@ -112,8 +139,10 @@ export const POST = withErrorHandling(async (request) => {
   }
 
   if (type === 'grade_edit') {
-    if (!text?.trim()) return json({ error: 'grade_edit requires instruction text' }, { status: 400 });
-    if (!Array.isArray(grades)) return json({ error: 'grade_edit requires grades array' }, { status: 400 });
+    if (!text?.trim())
+      return json({ error: 'grade_edit requires instruction text' }, { status: 400 });
+    if (!Array.isArray(grades))
+      return json({ error: 'grade_edit requires grades array' }, { status: 400 });
     const apiKey = process.env.GOOGLE_AI_KEY;
     if (!apiKey) return json({ error: 'AI not configured' }, { status: 503 });
 
@@ -121,14 +150,17 @@ export const POST = withErrorHandling(async (request) => {
     const raw = await geminiJson(prompt, apiKey);
     if (!raw) return json({ error: 'AI returned no response' }, { status: 502 });
     const match = raw.match(/\[[\s\S]*\]/);
-    if (!match) return json({ error: 'Could not parse corrected grades from AI response' }, { status: 502 });
+    if (!match)
+      return json({ error: 'Could not parse corrected grades from AI response' }, { status: 502 });
     const corrected = JSON.parse(match[0]);
     return json({ grades: corrected, model: GEMINI_MODEL });
   }
 
   if (type === 'expense_edit') {
-    if (!text?.trim()) return json({ error: 'expense_edit requires instruction text' }, { status: 400 });
-    if (!Array.isArray(items)) return json({ error: 'expense_edit requires items array' }, { status: 400 });
+    if (!text?.trim())
+      return json({ error: 'expense_edit requires instruction text' }, { status: 400 });
+    if (!Array.isArray(items))
+      return json({ error: 'expense_edit requires items array' }, { status: 400 });
     const apiKey = process.env.GOOGLE_AI_KEY;
     if (!apiKey) return json({ error: 'AI not configured' }, { status: 503 });
 
@@ -136,33 +168,46 @@ export const POST = withErrorHandling(async (request) => {
     const raw = await geminiJson(prompt, apiKey);
     if (!raw) return json({ error: 'AI returned no response' }, { status: 502 });
     const match = raw.match(/\[[\s\S]*\]/);
-    if (!match) return json({ error: 'Could not parse corrected items from AI response' }, { status: 502 });
+    if (!match)
+      return json({ error: 'Could not parse corrected items from AI response' }, { status: 502 });
     const corrected = JSON.parse(match[0]);
     return json({ items: corrected, model: GEMINI_MODEL });
   }
 
   if (type === 'grade_analysis') {
-    if (!Array.isArray(grades) || grades.length === 0) return json({ error: 'grade_analysis requires non-empty grades array' }, { status: 400 });
+    if (!Array.isArray(grades) || grades.length === 0)
+      return json({ error: 'grade_analysis requires non-empty grades array' }, { status: 400 });
     const apiKey = process.env.GOOGLE_AI_KEY;
     if (!apiKey) return json({ error: 'AI not configured' }, { status: 503 });
 
-    const gradeList = grades.map(g => {
+    const gradeList = grades.map((g) => {
       const prelim = g.prelim != null ? parseFloat(g.prelim) : null;
       const midterm = g.midterm != null ? parseFloat(g.midterm) : null;
       const finalGrade = g.final_grade != null ? parseFloat(g.final_grade) : null;
-      const vals = [prelim, midterm, finalGrade].filter(v => v != null && !isNaN(v));
+      const vals = [prelim, midterm, finalGrade].filter((v) => v != null && !isNaN(v));
       const avg = vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
-      return { subject: g.subject, units: g.units, school: g.school, prelim, midterm, final: finalGrade, avg };
+      return {
+        subject: g.subject,
+        units: g.units,
+        school: g.school,
+        prelim,
+        midterm,
+        final: finalGrade,
+        avg,
+      };
     });
 
     const totalUnits = gradeList.reduce((s, g) => s + (parseFloat(g.units) || 0), 0);
-    const validForWA = gradeList.filter(g => g.avg != null && g.units);
-    const weightedAvg = validForWA.length && totalUnits
-      ? validForWA.reduce((s, g) => s + g.avg * (parseFloat(g.units) || 0), 0) / totalUnits
-      : null;
+    const validForWA = gradeList.filter((g) => g.avg != null && g.units);
+    const weightedAvg =
+      validForWA.length && totalUnits
+        ? validForWA.reduce((s, g) => s + g.avg * (parseFloat(g.units) || 0), 0) / totalUnits
+        : null;
 
-    const isUV = gradeList.some(g => g.school === 'uv');
-    const scaleNote = isUV ? '(UV scale: 1.0 = highest, 5.0 = failing)' : '(K-12 percentage scale: 100% = highest)';
+    const isUV = gradeList.some((g) => g.school === 'uv');
+    const scaleNote = isUV
+      ? '(UV scale: 1.0 = highest, 5.0 = failing)'
+      : '(K-12 percentage scale: 100% = highest)';
 
     const prompt = `You are an academic advisor for NextGen Scholars, a program supporting Filipino nursing students on a pathway to international licensure.
 
@@ -170,7 +215,7 @@ Scholar: ${scholar}${sem ? `, Semester: ${sem}` : ''}
 Grade scale: ${scaleNote}
 
 Subjects uploaded:
-${gradeList.map(g => `- ${g.subject} (${g.units} units): Prelim=${g.prelim ?? '—'}, Mid=${g.midterm ?? '—'}, Final=${g.final ?? '—'}, Period Avg=${g.avg != null ? g.avg.toFixed(2) : '—'}`).join('\n')}
+${gradeList.map((g) => `- ${g.subject} (${g.units} units): Prelim=${g.prelim ?? '—'}, Mid=${g.midterm ?? '—'}, Final=${g.final ?? '—'}, Period Avg=${g.avg != null ? g.avg.toFixed(2) : '—'}`).join('\n')}
 ${weightedAvg != null ? `\nWeighted Average: ${weightedAvg.toFixed(2)}` : ''}
 
 Write a concise 2–3 sentence academic analysis. Cover: overall performance level, any subjects that stand out (strong or at-risk), and a brief encouraging observation. Be specific to these grades. Professional and warm tone. Plain text only — no markdown, no bullet points, no headers.`;
@@ -184,9 +229,9 @@ Write a concise 2–3 sentence academic analysis. Cover: overall performance lev
   if (!text?.trim()) return json({ error: 'Query requires text' }, { status: 400 });
 
   // Privacy guard: decline any query that mentions another scholar by name
-  const otherScholars = VALID_SCHOLARS.filter(s => s !== scholar);
+  const otherScholars = VALID_SCHOLARS.filter((s) => s !== scholar);
   const lowerText = text.toLowerCase();
-  if (otherScholars.some(name => lowerText.includes(name))) {
+  if (otherScholars.some((name) => lowerText.includes(name))) {
     return json({
       tier: 1,
       answered: true,
@@ -203,10 +248,10 @@ Write a concise 2–3 sentence academic analysis. Cover: overall performance lev
 
   const ctx = await buildContext(scholar);
   const history = (messages || [])
-    .filter(m => m.role === 'user' || m.role === 'model')
+    .filter((m) => m.role === 'user' || m.role === 'model')
     // Most recent turns only — see the same cap in ask-public.
     .slice(-MAX_HISTORY_MESSAGES)
-    .map(m => ({ role: m.role, text: m.text }));
+    .map((m) => ({ role: m.role, text: m.text }));
   const t2 = await tier2Ask(text, ctx, apiKey, history.length ? history : undefined);
 
   if (t2.answered) return json({ tier: 2, answer: t2.answer, model: t2.model });
