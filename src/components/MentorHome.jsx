@@ -135,7 +135,7 @@ export function MentorHome({
   const [engData, setEngData] = useState({});
   const [career, setCareer] = useState([]);
 
-  // Gated on `unlocked` (CLAUDE.md rule): this component mounts behind
+  // Gated on `unlocked` (AGENTS.md rule): this component mounts behind
   // LockScreen, so an ungated fetch would run with whatever session cookie
   // the browser already has — possibly a scholar's — and cache its scoped
   // response without ever re-fetching after the mentor signs in.

@@ -10,7 +10,7 @@ on every push like the rest of the app, and `GOOGLE_AI_KEY` lives in
 Vercel's project env vars instead of Supabase secrets. Historical step
 descriptions below still say "Edge Function" / "Supabase secrets" / "RLS"
 where that was true *at the time the step shipped* — read those as history,
-not current architecture. See `CLAUDE.md` → "AI layer" for the current state.
+not current architecture. See `docs/ARCHITECTURE.md` → "AI layer" for the current state.
 
 ## Vision
 
@@ -81,7 +81,7 @@ program config — plus read tools for every one of those tables.
 
 **Writes never execute inside the model loop.** The loop runs read tools freely;
 the first mutating call halts it and returns a proposal card. Saving requires a
-separate confirmed request. See `CLAUDE.md` → "Tier 4 — the agent" for the three
+separate confirmed request. See `AGENTS.md` → "Tier 4 — the agent" for the three
 invariants (no in-loop writes · untrusted model args · scholar-key pinning) that
 any new tool must preserve.
 

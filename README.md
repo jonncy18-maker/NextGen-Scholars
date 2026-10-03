@@ -91,7 +91,7 @@ db/                            # Reference SQL schema (not applied automatically
 gh-pages-redirect/             # Frozen GitHub Pages redirect stub, forwards old bookmarks to Vercel
 ```
 
-See `CLAUDE.md` for the full file table and current architecture notes.
+See `docs/ARCHITECTURE.md` for the full file table and current architecture notes.
 
 ## Data architecture
 
@@ -137,5 +137,5 @@ server-only `DATABASE_URL` (Neon connection string) and `GOOGLE_AI_KEY`
 - **Headless browser testing:** Chromium at
   `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` via
   `/opt/node22/lib/node_modules/playwright` (CommonJS `require`).
-- See `CLAUDE.md` for full project context, conventions, and known issues.
+- See `AGENTS.md` for full project context, conventions, and known issues.
 - See `ROADMAP.md` and `ROADMAP-AI.md` for the tech-debt and AI feature backlogs.

@@ -22,7 +22,7 @@ export const dynamic = 'force-dynamic';
 //   type=query                   -> Tier 1, escalates to Tier 2 if unresolved
 //
 // This route is mentor-only (requireMentor above), so every LLM call here
-// runs on Claude — the AI brain for signed-in accounts (see CLAUDE.md "AI
+// runs on Claude — the AI brain for signed-in accounts (see docs/ARCHITECTURE.md "AI
 // layer"). Only the public, unauthenticated ask-public/ask-scholar routes
 // stay on Gemini.
 

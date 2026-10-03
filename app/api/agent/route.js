@@ -7,7 +7,7 @@ import { toolsForRole } from '../../../lib/ai/tools.js';
 export const dynamic = 'force-dynamic';
 
 // The agent endpoint — the AI's parity path with the manual UI. Runs on
-// Claude, the AI brain for signed-in mentor/scholar accounts (see CLAUDE.md
+// Claude, the AI brain for signed-in mentor/scholar accounts (see docs/ARCHITECTURE.md
 // "AI layer").
 //
 // Unlike app/api/ask/route.js (mentor-only, fixed `type`s, read-only), this

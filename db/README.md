@@ -2,7 +2,7 @@
 
 Historical/reference SQL for the Neon database (`patient-flower-81986836`),
 moved here from the old `supabase/` directory as part of the Phase D
-Supabase decommission (see `CLAUDE.md`'s "Migration history"). These are
+Supabase decommission (see `ROADMAP.md` → "Phase 5"). These are
 **not applied automatically** — nothing in the app runs these files; they
 document what's live on Neon for anyone setting up a fresh environment or
 auditing the schema.

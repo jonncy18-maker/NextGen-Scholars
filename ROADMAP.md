@@ -148,7 +148,7 @@ Postgres) + Neon Auth (Better Auth). **All phases done**, including Phase D
   role-check in both `navigator.jsx` and `app/api/bootstrap/route.js`).
 - **AI (Gemini tiered layer)** ported to `app/api/{ask,ask-scholar,
   ask-public}/route.js`. `ask` is mentor-only; `ask-scholar`/`ask-public`
-  unauthenticated by design (see CLAUDE.md "Known issues"). Along the way,
+  unauthenticated by design (see AGENTS.md "Key rules"). Along the way,
   found and fixed several call sites still silently writing to (or reading
   stale data from) the orphaned Supabase tables post-cutover-prep:
   `EnglishIngestPanel.jsx`, `ScholarIngestPanel.jsx`, `ExpenseAskWidget.jsx`,
@@ -214,6 +214,26 @@ Postgres) + Neon Auth (Better Auth). **All phases done**, including Phase D
   (data retained, restorable anytime). Still open: drop plaintext passwords
   from `scholars-data.js`'s `config` (now unused dead weight, not a live
   risk); swap April/Janndilyne's placeholder emails for real ones.
+
+### Post-cutover cleanups (2026-07, moved from CLAUDE.md)
+
+- **Stale "Sheets" vocabulary removed (2026-07-12).** State/props/CSS that dated back
+  to the pre-Supabase Google Sheets backend (`sheetsStatus`, `SHEETS_LABEL`,
+  `sheets-pill`/`sheets-live`/etc. CSS classes, `sheetsOverrides`, `sheetsEvents`) were
+  renamed to reflect the actual Neon backend (`connStatus`, `CONN_LABEL`, `conn-pill`
+  CSS classes, `deadlineOverrides`, `dbEvents`) across `navigator.jsx`, `NavBar.jsx`,
+  `NavFooter.jsx`, `DeadlinesSection.jsx`, `DataContext.jsx`, and `navigator.css`. No
+  remaining references to Google Sheets anywhere in the codebase.
+- **Doc cleanup pass (2026-07-05) done.** `README.md` was rewritten for the
+  current Next.js/Neon architecture (routes, source layout, data flow all
+  updated). `ROADMAP.md` and `ROADMAP-AI.md` had their still-"pending"-looking
+  sections (Security audit follow-ups, Accepted risks, RLS hardening,
+  Documents/Drive steps, the `ask` edge-function-deploy notes) corrected to
+  reflect what Phase 5 actually resolved, dropped, or made moot — the
+  chronological Phase 1–5 history itself was left intact as accurate record.
+  `docs/SPA-MIGRATION-ROADMAP.md` got a superseded banner (its plan was
+  replaced wholesale by the Next.js App Router cutover, never executed as
+  written) but the file is kept for historical context.
 
 ---
 
@@ -288,7 +308,7 @@ function-deploy step, they ship on every push like the rest of the app.
 
 **Current position:** Steps 1–17, 19–21 complete. Step 13 (documents tracker)
 and Step 22 (Google Drive storage) were dropped rather than ported — see
-CLAUDE.md. Step 18 (RLS hardening) is moot post-migration; the
+docs/ARCHITECTURE.md. Step 18 (RLS hardening) is moot post-migration; the
 `ask-scholar` unauthenticated-by-design risk it was meant to mitigate is
 tracked instead under "Accepted risks" above.
 
@@ -327,7 +347,7 @@ deploy step). Kept here for audit history only.
 | `drive-proxy` IDOR (Google Drive document proxy) | Moot — Google Drive document storage was dropped entirely during Phase 5; no proxy exists anymore. |
 | `scholar-summary` `qty=0` inflated totals to 1 | ✅ Carried forward correctly — `lib/ai/context.js` (the Neon-era replacement) does not have this bug. |
 | `.env` was tracked in git; now untracked + gitignored, `.env.example` added | ✅ Done, still true today. |
-| **`ask-scholar` is unauthenticated** — trusts a client-supplied `scholar` key | 🟡 **Still an accepted risk today**, carried into `app/api/ask-scholar/route.js` by design (see CLAUDE.md "Key Rules for Claude Code"). Not fixed by the migration; a real scholar-scoped-auth upgrade is still open work. |
+| **`ask-scholar` is unauthenticated** — trusts a client-supplied `scholar` key | 🟡 **Still an accepted risk today**, carried into `app/api/ask-scholar/route.js` by design (see AGENTS.md "Key rules"). Not fixed by the migration; a real scholar-scoped-auth upgrade is still open work. |
 | GPA risk trigger scale-awareness (`scholars.gpa_scale`, `uvToPct` guard) | ✅ Ported to Neon verbatim during Phase 5 (`db/gpa_risk_trigger.sql`) — live today, no pending deploy. |
 | Tier 3 standardised on Gemini (Claude code paths removed) | ✅ Carried into the Neon-era `lib/ai/tier3.js` — `ANTHROPIC_KEY` remains unused. |
 
@@ -349,7 +369,7 @@ records, IDs, or anything the scholars would not want publicly indexed.
 
 `app/api/ask-scholar/route.js` trusts a client-supplied `scholar` key with no
 auth check — matches the pre-migration Supabase Edge Function's behavior
-exactly (see CLAUDE.md "Key Rules for Claude Code"), not a regression from
+exactly (see AGENTS.md "Key rules"), not a regression from
 the Neon cutover. Accepted risk for now; do not store sensitive PII before
 this route gets real scholar-scoped auth.
 

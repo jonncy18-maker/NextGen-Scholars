@@ -3,7 +3,7 @@
 -- app ever exposes — `server` (the token env var name, e.g. 'NGS_MCP_TOKEN')
 -- scopes each code to the server that issued it, so a code minted for one
 -- server can't be redeemed at another's /token. Applied 2026-09-27 alongside
--- the MCP server itself (see CLAUDE.md "AI layer" / "MCP server").
+-- the MCP server itself (see docs/ARCHITECTURE.md "AI layer" / "MCP server").
 create table if not exists mcp_auth_codes (
   code                    text primary key,
   server                  text not null,
