@@ -786,157 +786,36 @@ html[data-theme='dark'] .sp-shell .sip-badge {
   color: var(--ds-muted);
 }
 
-/* ════════════════ SCHOLAR HOME (People-first redesign) ════════════════
-   Full-width header strip (greeting + next milestone + pathway), one row of
-   equal KPI tiles, then a 2-up Coming up | Recent row. Every gap is
-   --ds-gap, so rows never butt against each other and nothing is orphaned.
-   Reads the shell's --ds-* tokens, so light/dark follow the toggle. */
+/* ════════════════ SCHOLAR HOME — phone-first ════════════════
+   Greeting, a slim pathway strip (only for scholars on a track), the money card
+   as the primary action, then compact evidence / coming-up / recent cards.
+   One column on phones; from 1000px (the shell's drawer breakpoint) the strip
+   goes full width and the cards sit in a 2x2 grid. Every gap is --ds-gap, so
+   nothing butts or orphans. Reads the shell's --ds-* tokens, so light/dark
+   follow the toggle. */
 .sh {
   display: flex;
   flex-direction: column;
-  gap: var(--ds-gap);
-  padding-top: 30px;
+  gap: 14px;
+  padding-top: 18px;
 }
-.sh-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
-  align-items: center;
-  gap: 18px 32px;
-  padding: 26px 30px;
-  background: var(--ds-surface);
-  border: 1px solid var(--ds-rule);
-  border-radius: 18px;
-  box-shadow: var(--ds-shadow);
+.sh-greet {
+  padding: 0 2px;
 }
 .sh-name {
-  margin: 0;
+  margin: 2px 0 0;
   font-family: var(--ngs-display);
   font-weight: 400;
-  font-size: 38px;
-  line-height: 1.05;
-  color: var(--ds-ink);
-}
-.sh-stage {
-  margin-top: 6px;
-  font-size: 14px;
-  color: var(--ds-muted);
-}
-.sh-tagline {
-  margin: 10px 0 0;
-  font-size: 15px;
-  color: var(--ds-soft);
-}
-/* Pathway: ring + stage list share a full-width second row of the strip. */
-.sh-path {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  padding-top: 18px;
-  border-top: 1px solid var(--ds-rule);
-}
-.sh-ring {
-  flex: none;
-  width: 150px;
-}
-.sh-ring-seg {
-  fill: none;
-  stroke: var(--ds-rule);
-  stroke-width: 14;
-  stroke-linecap: round;
-}
-.sh-ring-seg.is-done {
-  stroke: var(--ngs-gold);
-}
-.sh-ring-seg.is-current {
-  stroke: color-mix(in srgb, var(--ngs-gold) 45%, var(--ds-rule));
-}
-.sh-ring-seg.is-failed {
-  stroke: var(--ds-bad);
-}
-/* The ring is drawn in a 240-unit viewBox but shown at 150px, so its text is
-   sized up here to land at a readable ~10px / ~19px. */
-.sh-ring-kicker {
-  fill: var(--ds-muted);
-  font-family: var(--ngs-mono);
-  font-size: 16px;
-  letter-spacing: 1px;
-}
-.sh-ring-step {
-  fill: var(--ds-ink);
-  font-family: var(--ngs-display);
   font-size: 30px;
+  line-height: 1.08;
+  color: var(--ds-ink);
 }
-.sh-steps {
-  list-style: none;
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  column-gap: 28px;
-}
-.sh-steps li {
+.sh-eyebrow {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 38px;
-  border-bottom: 1px solid var(--ds-rule);
-  font-size: 14px;
-  color: var(--ds-soft);
-}
-.sh-step-dot {
-  width: 10px;
-  height: 10px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  border: 2px solid var(--ds-rule);
-}
-.sh-step-name {
-  flex: 1;
-}
-.sh-step-state {
-  font-size: 12.5px;
-  color: var(--ds-muted);
-  text-transform: capitalize;
-}
-.sh-steps li.is-done .sh-step-dot {
-  background: var(--ngs-gold);
-  border-color: var(--ngs-gold);
-}
-.sh-steps li.is-current {
-  color: var(--ds-ink);
-  font-weight: 700;
-}
-.sh-steps li.is-current .sh-step-dot {
-  border-color: var(--ngs-gold);
-}
-.sh-steps li.is-current .sh-step-state {
-  color: var(--ds-accent-text);
-}
-.sh-steps li.is-failed .sh-step-dot {
-  border-color: var(--ds-bad);
-}
-.sh-steps li.is-failed .sh-step-state {
-  color: var(--ds-bad);
-}
-/* Next milestone — gold accent (tint + gold edge) rather than a neutral grey
-   box, which read as out-of-palette on the navy surface. */
-.sh-next {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 14px 18px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--ngs-gold) 12%, var(--ds-surface));
-  border: 1px solid color-mix(in srgb, var(--ngs-gold) 70%, transparent);
-  border-left: 4px solid var(--ngs-gold);
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--ds-ink);
-}
-.sh-next-lbl {
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 10px;
   font-family: var(--ngs-mono);
   font-size: 10.5px;
   font-weight: 500;
@@ -944,68 +823,162 @@ html[data-theme='dark'] .sp-shell .sip-badge {
   text-transform: uppercase;
   color: var(--ds-accent-text);
 }
-.sh-stats {
-  display: grid;
-  grid-template-columns: repeat(var(--sh-cols, 4), minmax(0, 1fr));
-  gap: var(--ds-gap);
+.sh-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
-.sh-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 20px;
+
+/* ── pathway strip ── */
+.sh-path {
+  padding: 14px 16px 16px;
   background: var(--ds-surface);
   border: 1px solid var(--ds-rule);
   border-radius: 16px;
   box-shadow: var(--ds-shadow);
-  color: var(--ds-ink);
 }
-a.sh-stat {
-  transition:
-    box-shadow var(--dur-default),
-    transform var(--dur-default);
+.sh-path-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
 }
-a.sh-stat:hover {
-  box-shadow: var(--ds-shadow-hover);
-  transform: translateY(-1px);
+.sh-path-head .sh-eyebrow {
+  margin: 0;
 }
-.sh-stat-lbl {
-  font-size: 12.5px;
+.sh-path-count {
+  font-size: 12px;
   color: var(--ds-muted);
 }
-.sh-stat-val {
-  font-family: var(--ngs-display);
-  font-size: 36px;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
+.sh-stepper {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
 }
-.sh-stat-note {
-  font-size: 12.5px;
+.sh-st {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  text-align: center;
+}
+/* connector to the previous node; gold once that stage is done */
+.sh-st + .sh-st::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  right: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--ds-rule);
+}
+.sh-st.is-done + .sh-st::before,
+.sh-st.is-done + .sh-st.is-current::before {
+  background: var(--ngs-gold);
+}
+.sh-st-node {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--ds-muted);
+  background: var(--ds-surface);
+  color: var(--ngs-navy);
+  box-sizing: border-box;
+}
+.sh-st.is-done .sh-st-node {
+  background: var(--ngs-gold);
+  border-color: var(--ngs-gold);
+}
+/* current: ringed, left half filled */
+.sh-st.is-current .sh-st-node {
+  border-color: var(--ngs-gold);
+  background: linear-gradient(90deg, var(--ngs-gold) 50%, var(--ds-surface) 50%);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ngs-gold) 22%, transparent);
+}
+.sh-st-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ds-muted);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sh-st.is-done .sh-st-label {
   color: var(--ds-soft);
 }
-.sh-stat-note.is-good {
-  color: var(--ds-good);
-  font-weight: 700;
+.sh-st.is-current .sh-st-label {
+  color: var(--ds-ink);
 }
-.sh-stat-note.is-bad {
-  color: var(--ds-bad);
-  font-weight: 700;
+.sh-path-line {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--ds-rule);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ds-ink);
 }
-.sh-stat-note.is-accent {
-  color: var(--ds-accent-text);
-  font-weight: 700;
+
+/* ── grid: single column on phones, in reading order ── */
+.sh-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+
+/* ── money card ── */
+.sh-money {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 18px 18px;
+  border-top: 3px solid var(--ngs-gold);
+}
+.sh-money-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  color: var(--ds-ink);
+}
+.sh-money-amt {
+  font-family: var(--ngs-display);
+  font-size: 40px;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+.sh-money-left {
+  font-size: 15px;
+  color: var(--ds-soft);
+}
+.sh-money-none {
+  padding: 6px 0 4px;
+  font-size: 15px;
+  color: var(--ds-soft);
 }
 .sh-bar {
   display: flex;
-  height: 5px;
-  margin: 6px 0;
-  border-radius: 3px;
+  height: 8px;
+  margin: 12px 0 8px;
+  border-radius: 4px;
   background: var(--ds-rule);
   overflow: hidden;
 }
 .sh-bar > span {
   background: var(--ngs-gold);
-  border-radius: 3px;
+  border-radius: 4px;
 }
 .sh-bar > span.is-warn {
   background: var(--ds-warn);
@@ -1013,64 +986,126 @@ a.sh-stat:hover {
 .sh-bar > span.is-bad {
   background: var(--ds-bad);
 }
-.sh-lists {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--ds-gap);
-  align-items: stretch;
-}
-.sh-panel {
-  padding: 20px 22px;
-  border-radius: 16px;
-}
-.sh-panel-title {
+.sh-money-meta {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   gap: 12px;
-  margin: 0 0 8px;
-  font-family: var(--ngs-display);
-  font-size: 22px;
-  font-weight: 400;
+  font-size: 13px;
+  color: var(--ds-muted);
+}
+.sh-money-meta b {
   color: var(--ds-ink);
+  font-weight: 700;
 }
-.sh-panel-actions {
+.sh-money-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 16px;
+}
+.sh-btn {
   display: inline-flex;
   align-items: center;
-  gap: 14px;
-  flex-shrink: 0;
-}
-.sh-panel-title .mh-link {
-  flex-shrink: 0;
-  padding: 10px 0;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--ds-rule);
+  background: var(--ds-surface-2);
+  color: var(--ds-ink);
   font-family: var(--ngs-sans);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 700;
-  color: var(--ds-accent-text);
-}
-/* "+ Add" replaces the old top-bar "+ Log expense" button. */
-.sh-add {
-  display: inline-flex;
-  align-items: center;
-  height: 32px;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: var(--ngs-gold);
-  color: var(--ngs-navy);
-  font-family: var(--ngs-sans);
-  font-size: 13px;
-  font-weight: 700;
+  cursor: pointer;
   transition: background var(--dur-default);
 }
-.sh-add:hover {
+.sh-btn:hover {
+  background: var(--ds-gold-tint);
+}
+.sh-btn.is-primary {
+  background: var(--ngs-gold);
+  border-color: var(--ngs-gold);
+  color: var(--ngs-navy);
+}
+.sh-btn.is-primary:hover {
   background: var(--ngs-gold-soft);
+}
+.sh-btn:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+.sh-file {
+  display: none;
+}
+
+/* ── compact cards ── */
+.sh-panel {
+  padding: 16px 18px 8px;
+  border-radius: 16px;
+}
+.sh-all {
+  font-family: var(--ngs-sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ds-accent-text);
+}
+.sh-ev-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  border-bottom: 1px solid var(--ds-rule);
+  color: var(--ds-ink);
+}
+.sh-ev-row:last-child {
+  border-bottom: 0;
+}
+a.sh-ev-row:hover .sh-ev-chev {
+  color: var(--ds-ink);
+}
+.sh-ev-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sh-ev-label {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+.sh-ev-sub {
+  font-size: 12.5px;
+  color: var(--ds-muted);
+}
+.sh-ev-sub.is-good {
+  color: var(--ds-good);
+  font-weight: 700;
+}
+.sh-ev-sub.is-bad {
+  color: var(--ds-bad);
+  font-weight: 700;
+}
+.sh-ev-val {
+  flex-shrink: 0;
+  font-family: var(--ngs-display);
+  font-size: 22px;
+  font-variant-numeric: tabular-nums;
+}
+.sh-ev-chev {
+  flex-shrink: 0;
+  color: var(--ds-muted);
 }
 .sh-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  min-height: 56px;
+  min-height: 52px;
+  padding: 6px 0;
   border-bottom: 1px solid var(--ds-rule);
 }
 .sh-row:last-child {
@@ -1102,50 +1137,87 @@ a.sh-stat:hover {
   font-variant-numeric: tabular-nums;
 }
 
-/* tablet: 2 tiles across; an odd last tile spans the row so there is no hole */
-@media (max-width: 1000px) {
-  .sh-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .sh-stats > :last-child:nth-child(odd) {
-    grid-column: 1 / -1;
-  }
-  .sh-hero {
-    grid-template-columns: 1fr;
-  }
-}
-@media (max-width: 760px) {
-  .sh-path {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .sh-ring {
-    align-self: center;
-  }
-  .sh-steps {
-    grid-template-columns: 1fr;
-  }
-}
-/* phone: one tile per row */
-@media (max-width: 640px) {
+/* ── desktop: same content, widened ── */
+@media (min-width: 1000px) {
   .sh {
-    padding-top: 18px;
-    gap: 16px;
-  }
-  .sh-hero {
-    padding: 22px 20px;
+    gap: var(--ds-gap);
+    padding-top: 30px;
   }
   .sh-name {
-    font-size: 32px;
+    font-size: 38px;
   }
-  .sh-stats {
-    grid-template-columns: 1fr;
-    gap: 12px;
+  .sh-path {
+    padding: 20px 28px 22px;
   }
-  .sh-stat {
-    padding: 16px;
+  .sh-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ds-gap);
+    grid-template-areas:
+      'money evidence'
+      'recent upcoming';
   }
-  .sh-lists {
-    grid-template-columns: 1fr;
+  .sh-money {
+    grid-area: money;
+    padding: 22px 24px;
   }
+  .sh-evidence {
+    grid-area: evidence;
+  }
+  .sh-upcoming {
+    grid-area: upcoming;
+  }
+  .sh-recent {
+    grid-area: recent;
+  }
+  .sh-panel {
+    padding: 20px 24px 10px;
+  }
+  /* Cards in a row share one height; let their rows share the slack so the
+     card fills evenly instead of leaving a blank band at the bottom. */
+  .sh-evidence,
+  .sh-upcoming,
+  .sh-recent {
+    display: flex;
+    flex-direction: column;
+  }
+  .sh-evidence > .sh-ev-row,
+  .sh-upcoming > .sh-row,
+  .sh-recent > .sh-row {
+    flex: 1 1 auto;
+  }
+  .sh-money-amt {
+    font-size: 46px;
+  }
+  .sh-st-label {
+    font-size: 13px;
+  }
+  .sh-btn {
+    font-size: 15px;
+  }
+}
+
+/* ── phones: bottom tab bar + launcher clearance ──
+   Below the shell's drawer breakpoint the tab bar (shell.css .ds-tabbar) is
+   pinned to the bottom, so the floating assistant launcher is lifted above it
+   (never over it) and page content reserves room for both. */
+@media (max-width: 999px) {
+  .sp-shell .scp-fab,
+  .sp-shell .scp-fab.is-raised {
+    bottom: calc(var(--ds-tabbar-h) + env(safe-area-inset-bottom, 0px) + 12px);
+  }
+  .sp-shell .scp-panel.is-docked,
+  .sp-shell .scp-panel.is-docked.is-raised {
+    bottom: calc(var(--ds-tabbar-h) + env(safe-area-inset-bottom, 0px) + 8px);
+    max-height: calc(100dvh - var(--ds-tabbar-h) - env(safe-area-inset-bottom, 0px) - 24px);
+  }
+  /* tab bar + safe area + launcher (~46px) + breathing room */
+  .sp-shell .ds-content {
+    padding-bottom: calc(var(--ds-tabbar-h) + env(safe-area-inset-bottom, 0px) + 46px + 36px);
+  }
+}
+
+/* The extracted-items review table is wider than a phone; scroll it inside the
+   card rather than clipping the Category / Date columns. */
+.sp-shell .nai-review {
+  overflow-x: auto;
 }

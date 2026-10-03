@@ -3,6 +3,7 @@ import { api } from '../lib/api.js';
 import { writeSubmission } from '../api-writer.js';
 import { EXPENSE_CATS, SEMESTER_OPTIONS } from '../constants.js';
 import { uvToPct } from '../screens/GradeEntry.jsx';
+import { takePendingReceipt } from '../lib/pendingReceipt.js';
 
 const ACCEPTED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
 
@@ -382,7 +383,10 @@ function StudentGradeReviewCard({ grades: initialGrades, model, scholarKey, sem,
 
 // ── Main export ───────────────────────────────────────────────────────────────
 
-export function ScholarIngestPanel({ id, type, scholarKey, sem }) {
+// `takePending` (Home's "Snap receipt" lands here via /entry?snap=1): pick up the
+// photo Home just took and run the normal extract on it. The result still stops
+// at the review card — nothing is submitted without the scholar's confirm.
+export function ScholarIngestPanel({ id, type, scholarKey, sem, takePending = false }) {
   const isExpense = type === 'expenses';
   const [file, setFile]       = useState(null);
   const [isDragOver, setOver] = useState(false);
@@ -417,16 +421,24 @@ export function ScholarIngestPanel({ id, type, scholarKey, sem }) {
     handleFileDrop(new File([raw], `screenshot-${Date.now()}.${ext}`, { type: raw.type }));
   }
 
-  async function handleExtract(e) {
+  useEffect(() => {
+    if (!takePending) return;
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const pending = takePendingReceipt();
+    if (pending) { setFile(pending); handleExtract(null, pending); }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleExtract(e, fileArg) {
     e?.preventDefault();
-    if (loading || !file) return;
+    const f = fileArg || file;
+    if (loading || !f) return;
     setLoading(true); setError(null); setReview(null); setSuccess(null);
     try {
       const ingestType = isExpense ? 'ingest' : 'grade_ingest';
       const res = await fetch('/api/ask-scholar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scholar: scholarKey, type: ingestType, sem, file }),
+        body: JSON.stringify({ scholar: scholarKey, type: ingestType, sem, file: f }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
