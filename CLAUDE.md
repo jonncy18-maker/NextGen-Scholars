@@ -531,9 +531,15 @@ A change small enough to skip the loop is still governed by the profile.
 
 ## Wide-screen layout
 
-`ScholarHome` (`.sh-*` in `src/styles/scholar-home.css`) is a two-column grid
-(pathway hero card beside the stat cards and lists) above 1100px and a single
-column below it; the Navigator Portfolio (`.mh-*` in `shell.css`) is a
+`ScholarHome` (`.sh-*` in `src/styles/scholar-home.css`) is phone-first: greeting,
+a slim pathway stepper (`src/lib/pathway.js` derives stages per track — NGN / NGH,
+and no strip for a scholar not on a track), the money card with "Snap receipt" /
+"+ Add", then compact Progress / Coming up / Recent cards; from 1000px (the
+drawer breakpoint) the cards sit in a 2x2 grid. Below 1000px scholar screens get
+a bottom tab bar (`TopBar` `tabBar`, derived from `scholarNavGroups()`) and the
+floating AI launcher sits above it. The mentor sets a scholar's track
+(NGN / NGH / none → NULL) on the Navigator portfolio card, via
+`PATCH /api/scholars/[key]` or the `set_scholar_track` tool. Navigator Portfolio (`.mh-*` in `shell.css`) is a
 responsive grid of scholar cards. The expense-entry page (`src/styles/entry.css`)
 still switches to its own two-column grid at wide sizes (`grid-template-areas`),
 with chat/form/receipt-upload in a left rail next to the pending-review list and

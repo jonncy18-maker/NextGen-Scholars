@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '../lib/api.js';
 import { NGS_DATA } from '../../scholars-data.js';
 import { ScholarShell } from '../components/ScholarShell.jsx';
 import { Sparkline } from '../components/ShellViz.jsx';
+import { IcnCamera, IcnChevron } from '../components/ShellIcons.jsx';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { CAT_TO_BUCKET } from '../constants.js';
 import { useSessionExpired } from '../hooks/useSessionExpired.js';
+import { derivePathway } from '../lib/pathway.js';
+import { fileToReceiptPayload, setPendingReceipt } from '../lib/pendingReceipt.js';
 
 // All three scholars have real Neon Auth accounts (see CLAUDE.md).
 // app/home/[scholar]/page.jsx passes scholarKey straight from the URL with
@@ -33,53 +36,14 @@ const SEM_LABELS = {
   TG12S2: 'Grade 12 · Semester 2',
 };
 
-// Mirrors CareerSection.jsx / MentorHome.jsx — nursing-track licensure
-// pipeline, rendered as the pathway ring + stage list.
-const CAREER_STEPS = ['Trial Period', 'University', 'PNLE', 'OET', 'NCLEX', 'OSCE', 'AHPRA'];
-const CAREER_LABELS = {
-  'Trial Period': 'Program Trial Admission',
-  University: 'College Enrollment',
-  PNLE: 'Nursing Licensure',
-  OET: 'OET English',
-  NCLEX: 'NCLEX',
-  OSCE: 'OSCE',
-  AHPRA: 'AHPRA Registration',
-};
-
-// tagline is portal copy — stage and englishTarget now come from live Neon data
-const CONFIGS = {
-  claire: {
-    tagline: (
-      <>
-        Four semesters to clear — <em>steady as you go.</em>
-      </>
-    ),
-  },
-  april: {
-    tagline: (
-      <>
-        Trial period in progress — <em>one step at a time.</em>
-      </>
-    ),
-  },
-  demo: {
-    tagline: (
-      <>
-        Test account — <em>not a real scholar.</em>
-      </>
-    ),
-  },
-};
-
 function buildConfig(key) {
   const s = NGS_DATA.scholars[key] || {};
   return {
     name: s.firstName || key,
-    track: s.publicProfile?.trackName || s.track || '',
     trackCode: s.track || '',
     staticSemKey: s.currentSem || '',
     expensesHref: `/entry?scholar=${key}`,
-    ...(CONFIGS[key] || {}),
+    staticStatus: s.status || '',
   };
 }
 
@@ -109,54 +73,152 @@ function formatDate(iso) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-// Pathway ring: one arc per career step, gold when passed, a softer gold
-// for the step in progress, red for a failed attempt. Colors come from
-// shell.css (.sh-ring-*) so both themes stay in one place.
-function PathwayRing({ steps, current }) {
-  const size = 240;
-  const r = 100;
-  const c = size / 2;
-  const gap = 5;
-  const span = 360 / steps.length;
-  const pt = (deg) => {
-    const rad = ((deg - 90) * Math.PI) / 180;
-    return `${(c + r * Math.cos(rad)).toFixed(2)} ${(c + r * Math.sin(rad)).toFixed(2)}`;
-  };
-  const doneCount = steps.filter((st) => st.status === 'passed').length;
-  const idx = current ? steps.indexOf(current) + 1 : steps.length;
+// Slim horizontal stepper for the scholar's pathway (see src/lib/pathway.js).
+// done = filled gold, current = half-filled ring, future = outline. State is
+// also spelled out for screen readers, never colour alone.
+function PathwayStrip({ pathway }) {
+  const { stages, summary, doneCount } = pathway;
   return (
-    <svg
-      className="sh-ring"
-      viewBox={`0 0 ${size} ${size}`}
-      role="img"
-      aria-label={`Pathway: ${doneCount} of ${steps.length} steps complete`}
-    >
-      {steps.map((st, i) => {
-        const from = i * span + gap / 2;
-        const to = (i + 1) * span - gap / 2;
-        const cls =
-          st.status === 'passed'
-            ? 'is-done'
-            : st.status === 'failed'
-              ? 'is-failed'
-              : st === current
-                ? 'is-current'
-                : '';
-        return (
-          <path
-            key={st.step}
-            className={`sh-ring-seg ${cls}`}
-            d={`M ${pt(from)} A ${r} ${r} 0 0 1 ${pt(to)}`}
-          />
-        );
-      })}
-      <text className="sh-ring-kicker" x={c} y={c - 26} textAnchor="middle">
-        {current ? `STEP ${idx} OF ${steps.length}` : 'COMPLETE'}
-      </text>
-      <text className="sh-ring-step" x={c} y={c + 10} textAnchor="middle">
-        {current ? current.step : 'AHPRA'}
-      </text>
-    </svg>
+    <section className="sh-path" aria-label="Your pathway">
+      <div className="sh-path-head">
+        <h2 className="sh-eyebrow">Your pathway</h2>
+        <span className="sh-path-count">
+          {doneCount} of {stages.length} done
+        </span>
+      </div>
+      <ol className="sh-stepper">
+        {stages.map((st) => (
+          <li
+            key={st.key}
+            className={`sh-st is-${st.state}`}
+            aria-current={st.state === 'current' ? 'step' : undefined}
+          >
+            <span className="sh-st-node" aria-hidden="true">
+              {st.state === 'done' && (
+                <svg viewBox="0 0 12 12" width="10" height="10">
+                  <path
+                    d="M2.5 6.2l2.3 2.3 4.7-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </span>
+            <span className="sh-st-label">{st.label}</span>
+            <span className="sh-sr">
+              {st.state === 'done'
+                ? ', completed'
+                : st.state === 'current'
+                  ? ', current stage'
+                  : ''}
+            </span>
+          </li>
+        ))}
+      </ol>
+      <p className="sh-path-line">{summary}</p>
+    </section>
+  );
+}
+
+// Money card — the page's primary action. "Snap receipt" opens the phone
+// camera, then hands the photo to the Money page's existing receipt flow
+// (ScholarIngestPanel → review card → submit for approval); nothing is saved
+// from here.
+function MoneyCard({ scholarKey, expensesHref, stage, semBudget, semSpent }) {
+  const router = useRouter();
+  const fileRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const pct = semBudget > 0 ? Math.round((semSpent / semBudget) * 100) : null;
+  const left = Math.max(0, semBudget - semSpent);
+
+  async function onPicked(e) {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (!f) return;
+    setBusy(true);
+    try {
+      setPendingReceipt(await fileToReceiptPayload(f));
+    } catch {
+      // Couldn't read the photo: still open the Money page, which has its own
+      // upload box to try again.
+    }
+    router.push(`${expensesHref}&snap=1`);
+  }
+
+  return (
+    <section className="ds-card sh-money" aria-label="Money">
+      <h2 className="sh-eyebrow">This semester</h2>
+      {semBudget > 0 ? (
+        <>
+          <Link className="sh-money-main" href={expensesHref}>
+            <span className="sh-money-amt">{fmtPhp(left)}</span>
+            <span className="sh-money-left">left this semester</span>
+          </Link>
+          <span
+            className="sh-bar"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.min(100, pct)}
+            aria-label="Budget used"
+          >
+            <span
+              className={pct >= 100 ? 'is-bad' : pct >= 90 ? 'is-warn' : ''}
+              style={{ width: `${Math.min(100, pct)}%` }}
+            />
+          </span>
+          <div className="sh-money-meta">
+            <b>{pct}% used</b>
+            <span>
+              {fmtPhp(semSpent)} of {fmtPhp(semBudget)}
+            </span>
+          </div>
+        </>
+      ) : (
+        <div className="sh-money-none">No budget set for {stage}</div>
+      )}
+      <div className="sh-money-actions">
+        <button
+          type="button"
+          className="sh-btn is-primary"
+          onClick={() => fileRef.current?.click()}
+          disabled={busy}
+        >
+          <IcnCamera size={18} />
+          {busy ? 'Preparing…' : 'Snap receipt'}
+        </button>
+        <Link className="sh-btn" href={expensesHref}>
+          + Add
+        </Link>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="sh-file"
+          tabIndex={-1}
+          aria-hidden="true"
+          onChange={onPicked}
+        />
+      </div>
+    </section>
+  );
+}
+
+function EvidenceRow({ href, label, sub, value, tone, children }) {
+  return (
+    <Link className="sh-ev-row" href={href}>
+      <span className="sh-ev-main">
+        <span className="sh-ev-label">{label}</span>
+        <span className={`sh-ev-sub${tone ? ` is-${tone}` : ''}`}>{sub}</span>
+      </span>
+      {children}
+      <span className="sh-ev-val">{value}</span>
+      <IcnChevron size={14} className="sh-ev-chev" />
+    </Link>
   );
 }
 
@@ -205,21 +267,18 @@ export function ScholarHome({ scholarKey }) {
     if (!isKnownScholar || !authed) return;
     async function loadFromNeon() {
       const [bootstrap, immersion, career] = await Promise.all([
-        api.get(
-          '/bootstrap?tables=scholars,academics,milestones,travels,expenses,deadlines,budgets'
-        ),
+        api.get('/bootstrap?tables=scholars,academics,expenses,deadlines,budgets'),
         api.get('/immersion-hours'),
-        // TESDA scholars have no career_steps rows; treat a failure here as
-        // "no journey data" rather than sinking the whole dashboard.
+        // Scholars with no pathway have no career_steps rows; treat a failure
+        // here as "no recorded steps" rather than sinking the whole dashboard.
         api.get('/career').catch(() => []),
       ]);
 
-      const liveSem = bootstrap.scholars?.[0]?.current_sem || config.staticSemKey;
+      const scholarRow = bootstrap.scholars?.[0] ?? null;
+      const liveSem = scholarRow?.current_sem || config.staticSemKey;
       const eng = immersion?.[scholarKey] ?? null;
 
       const academics = bootstrap.academics || [];
-      const milestones = bootstrap.milestones || [];
-      const travels = bootstrap.travels || [];
       const expenses = bootstrap.expenses || [];
       const deadlines = bootstrap.deadlines || [];
       const budgets = bootstrap.budgets || [];
@@ -228,10 +287,6 @@ export function ScholarHome({ scholarKey }) {
         .slice()
         .sort((a, b) => b.id - a.id)
         .find((a) => a.gpa != null);
-      const doneMilestones = milestones.filter((m) => m.state === 'done');
-      const nextMilestone =
-        milestones.filter((m) => m.state !== 'done').sort((a, b) => a.id - b.id)[0] || null;
-
       const byBucket = {};
       expenses
         .filter((e) => e.avb === 'Actual')
@@ -257,16 +312,6 @@ export function ScholarHome({ scholarKey }) {
       const semSpent = expenses
         .filter((e) => e.avb === 'Actual' && e.sem === liveSem)
         .reduce((t, e) => t + (Number(e.amount) || 0) * (Number(e.qty) || 1), 0);
-
-      // Journey stepper from career_steps (nursing track only)
-      const stepStatus = Object.fromEntries(career.map((r) => [r.step, r.status]));
-      const journeySteps = career.length
-        ? CAREER_STEPS.map((step) => ({
-            step,
-            label: CAREER_LABELS[step] || step,
-            status: stepStatus[step] || 'pending',
-          }))
-        : null;
 
       // GPA history for the trend chart (oldest → newest; raw select order
       // isn't guaranteed, so order by insertion id)
@@ -298,17 +343,20 @@ export function ScholarHome({ scholarKey }) {
         latestGpa: gradedAcad?.gpa != null ? Number(gradedAcad.gpa) : null,
         latestGpaSem: gradedAcad?.sem ?? null,
         gpaStatus: gradedAcad?.status ?? null,
-        rewardsCount: doneMilestones.length,
         englishHours: eng?.currentHours ?? null,
         englishTargetHours: eng?.targetHours ?? null,
         englishStatus: eng?.status ?? null,
         hasImmersionAccount: !!eng,
         liveSem,
         investmentTotals,
-        nextMilestone,
         semBudget,
         semSpent,
-        journeySteps,
+        // A row from Neon is authoritative even when track is NULL ("not on a
+        // track", set by the mentor) — only fall back to the static file when
+        // there is no row at all.
+        track: scholarRow ? scholarRow.track : config.trackCode,
+        status: scholarRow ? scholarRow.status : config.staticStatus,
+        careerSteps: Array.isArray(career) ? career : [],
         gpaPoints,
         upcomingDeadlines,
       };
@@ -325,11 +373,19 @@ export function ScholarHome({ scholarKey }) {
   const latestGpa = liveData?.latestGpa ?? null;
   const gpaFloor = NGS_DATA.scholars[scholarKey]?.gpaFloor ?? 81;
   const inv = liveData?.investmentTotals ?? null;
-  const nextMil = liveData?.nextMilestone ?? null;
 
-  // Journey progress
-  const journey = liveData?.journeySteps ?? null;
-  const journeyCurrent = journey ? journey.find((s) => s.status !== 'passed') : null;
+  // Pathway: derived from real data only (src/lib/pathway.js). null = not on a
+  // track, so the strip is omitted entirely. Not drawn until the live row has
+  // loaded — the static file's track could be stale.
+  const liveTrack = liveData && 'track' in liveData ? liveData.track : config.trackCode;
+  const pathway = liveData
+    ? derivePathway({
+        track: liveTrack,
+        status: liveData.status ?? config.staticStatus,
+        currentSem: liveSem,
+        careerSteps: liveData.careerSteps,
+      })
+    : null;
 
   // English immersion
   const engDisplay = (() => {
@@ -338,16 +394,8 @@ export function ScholarHome({ scholarKey }) {
     return h % 1 === 0 ? String(h) : h.toFixed(1);
   })();
 
-  // Budget
   const semBudget = liveData?.semBudget || 0;
   const semSpent = liveData?.semSpent || 0;
-  const budgetPct = semBudget > 0 ? Math.round((semSpent / semBudget) * 100) : null;
-  const budgetLeft = Math.max(0, semBudget - semSpent);
-
-  // Tiles actually rendered below (GPA + Budget always; English for everyone
-  // but the expenses-only TESDA scholar; Rewards/Invested always). The grid
-  // sizes itself to this so a missing tile never leaves a hole.
-  const statCount = isExpensesOnly ? 3 : 4;
 
   if (!isKnownScholar) return null; // redirecting home, see effect above
 
@@ -365,159 +413,90 @@ export function ScholarHome({ scholarKey }) {
     );
   }
 
-  const stepState = (st) =>
-    st.status === 'passed'
-      ? 'Completed'
-      : st.status === 'failed'
-        ? 'Needs retake'
-        : st === journeyCurrent
-          ? st.status === 'pending'
-            ? 'Up next'
-            : st.status.replace(/_/g, ' ')
-          : 'Upcoming';
-
   return (
     <ScholarShell
       scholarKey={scholarKey}
       name={config.name}
       active="overview"
-      identityRole={`${config.trackCode || 'Scholar'} · ${liveStage}`}
+      identityRole={`${(typeof liveTrack === 'string' && liveTrack) || 'Scholar'} · ${liveStage}`}
       onSignOut={() => {
         setSessionExpired(false);
         setAuthed(false);
       }}
     >
       <div className="sh">
-        <section className="sh-hero">
-          <div className="sh-hello">
-            <div className="ds-topbar-eyebrow">{getGreeting()}</div>
-            <h1 className="sh-name">{config.name}</h1>
-            <div className="sh-stage">
-              {config.track}
-              {liveStage !== config.trackCode && ` · ${liveStage}`}
-            </div>
-            {!journey && config.tagline && <p className="sh-tagline">{config.tagline}</p>}
-          </div>
+        <header className="sh-greet">
+          <div className="ds-topbar-eyebrow">{getGreeting()}</div>
+          <h1 className="sh-name">{config.name}</h1>
+        </header>
 
-          {(nextMil || journeyCurrent) && (
-            <div className="sh-next">
-              <span className="sh-next-lbl">Next milestone</span>
-              <span className="sh-next-val">
-                {nextMil ? nextMil.name : journeyCurrent?.label}
-                {nextMil?.sem ? ` · expected ${nextMil.sem}` : ''}
-              </span>
-            </div>
-          )}
+        {pathway && <PathwayStrip pathway={pathway} />}
 
-          {journey && (
-            <div className="sh-path">
-              <PathwayRing steps={journey} current={journeyCurrent} />
-              <ol className="sh-steps">
-                {journey.map((st) => (
-                  <li
-                    key={st.step}
-                    className={
-                      st.status === 'passed'
-                        ? 'is-done'
-                        : st.status === 'failed'
-                          ? 'is-failed'
-                          : st === journeyCurrent
-                            ? 'is-current'
-                            : ''
-                    }
-                  >
-                    <span className="sh-step-dot" />
-                    <span className="sh-step-name">{st.label}</span>
-                    <span className="sh-step-state">{stepState(st)}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-        </section>
+        <div className="sh-grid">
+          <MoneyCard
+            scholarKey={scholarKey}
+            expensesHref={config.expensesHref}
+            stage={liveStage}
+            semBudget={semBudget}
+            semSpent={semSpent}
+          />
 
-        <div className="sh-stats" style={{ '--sh-cols': statCount }}>
-          <Link className="sh-stat" href={`/grades/${scholarKey}`}>
-            <span className="sh-stat-lbl">
-              GPA{liveData?.latestGpaSem ? ` · ${liveData.latestGpaSem}` : ''}
-            </span>
-            <span className="sh-stat-val">
-              {latestGpa != null ? `${latestGpa.toFixed(1)}%` : '—'}
-            </span>
-            <Sparkline
-              values={(liveData?.gpaPoints || []).map((p) => p.gpa)}
-              width={120}
-              height={24}
-            />
-            <span
-              className={`sh-stat-note${latestGpa == null ? '' : latestGpa >= gpaFloor ? ' is-good' : ' is-bad'}`}
+          <section className="ds-card sh-panel sh-evidence" aria-label="Progress">
+            <h2 className="sh-eyebrow">Progress</h2>
+            <EvidenceRow
+              href={`/grades/${scholarKey}`}
+              label={`GPA${liveData?.latestGpaSem ? ` · ${liveData.latestGpaSem}` : ''}`}
+              value={latestGpa != null ? `${latestGpa.toFixed(1)}%` : '—'}
+              tone={latestGpa == null ? null : latestGpa >= gpaFloor ? 'good' : 'bad'}
+              sub={
+                latestGpa == null
+                  ? 'No grades recorded yet'
+                  : latestGpa >= gpaFloor
+                    ? `+${(latestGpa - gpaFloor).toFixed(1)} over the ${gpaFloor}% floor`
+                    : `${(gpaFloor - latestGpa).toFixed(1)} under the ${gpaFloor}% floor`
+              }
             >
-              {latestGpa == null
-                ? 'No grades recorded yet'
-                : latestGpa >= gpaFloor
-                  ? `+${(latestGpa - gpaFloor).toFixed(1)} over the ${gpaFloor}% floor`
-                  : `${(gpaFloor - latestGpa).toFixed(1)} under the ${gpaFloor}% floor`}
-            </span>
-          </Link>
+              <Sparkline
+                values={(liveData?.gpaPoints || []).map((p) => p.gpa)}
+                width={64}
+                height={22}
+              />
+            </EvidenceRow>
 
-          {!isExpensesOnly && (
-            <Link className="sh-stat" href={`/english/${scholarKey}`}>
-              <span className="sh-stat-lbl">English</span>
-              <span className="sh-stat-val">{engDisplay != null ? `${engDisplay} h` : '—'}</span>
-              <span className="sh-stat-note">
-                {liveData?.hasImmersionAccount
-                  ? liveData.englishTargetHours
-                    ? `of ${liveData.englishTargetHours} h target`
-                    : 'Logged in Immersion'
-                  : 'No Immersion account linked yet'}
-              </span>
-              {liveData?.englishStatus && (
-                <span
-                  className={`sh-stat-note${liveData.englishStatus === 'AT_RISK' ? ' is-bad' : ' is-good'}`}
-                >
-                  {ENG_STATUS[liveData.englishStatus] || liveData.englishStatus}
-                </span>
-              )}
-            </Link>
-          )}
-
-          <Link className="sh-stat" href={config.expensesHref}>
-            <span className="sh-stat-lbl">Budget left</span>
-            <span className="sh-stat-val">{semBudget > 0 ? fmtPhpShort(budgetLeft) : '—'}</span>
-            {budgetPct != null && (
-              <span className="sh-bar">
-                <span
-                  className={budgetPct >= 100 ? 'is-bad' : budgetPct >= 90 ? 'is-warn' : ''}
-                  style={{ width: `${Math.min(100, budgetPct)}%` }}
-                />
-              </span>
+            {!isExpensesOnly && (
+              <EvidenceRow
+                href={`/english/${scholarKey}`}
+                label="English"
+                value={engDisplay != null ? `${engDisplay} h` : '—'}
+                tone={liveData?.englishStatus === 'AT_RISK' ? 'bad' : null}
+                sub={
+                  liveData?.hasImmersionAccount
+                    ? [
+                        liveData.englishTargetHours
+                          ? `of ${liveData.englishTargetHours} h target`
+                          : 'Logged in Immersion',
+                        ENG_STATUS[liveData.englishStatus],
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')
+                    : 'No Immersion account linked yet'
+                }
+              />
             )}
-            <span className="sh-stat-note">
-              {semBudget > 0
-                ? `${budgetPct}% of ${fmtPhpShort(semBudget)} used`
-                : `No budget set for ${liveStage}`}
-            </span>
-          </Link>
 
-          {isExpensesOnly ? (
-            <div className="sh-stat">
-              <span className="sh-stat-lbl">Invested in you</span>
-              <span className="sh-stat-val">{inv ? fmtPhpShort(inv.total) : '—'}</span>
-              <span className="sh-stat-note">Since you joined the program</span>
-            </div>
-          ) : (
-            <Link className="sh-stat" href={`/milestones/${scholarKey}`}>
-              <span className="sh-stat-lbl">Rewards</span>
-              <span className="sh-stat-val">{liveData?.rewardsCount ?? '—'}</span>
-              <span className="sh-stat-note">Unlocked so far</span>
-              {nextMil && <span className="sh-stat-note is-accent">Next: {nextMil.name}</span>}
-            </Link>
-          )}
-        </div>
+            {isExpensesOnly && (
+              <div className="sh-ev-row is-static">
+                <span className="sh-ev-main">
+                  <span className="sh-ev-label">Invested in you</span>
+                  <span className="sh-ev-sub">Since you joined the program</span>
+                </span>
+                <span className="sh-ev-val">{inv ? fmtPhpShort(inv.total) : '—'}</span>
+              </div>
+            )}
+          </section>
 
-        <div className="sh-lists">
-          <div className="ds-card sh-panel">
-            <h2 className="sh-panel-title">Coming up</h2>
+          <section className="ds-card sh-panel sh-upcoming" aria-label="Coming up">
+            <h2 className="sh-eyebrow">Coming up</h2>
             {!liveData?.upcomingDeadlines?.length && (
               <div className="ds-empty">Nothing due — you're all caught up.</div>
             )}
@@ -530,18 +509,14 @@ export function ScholarHome({ scholarKey }) {
                 <span className={`sh-days${d.days <= 7 ? ' is-bad' : ''}`}>{d.days} days</span>
               </div>
             ))}
-          </div>
-          <div className="ds-card sh-panel">
-            <h2 className="sh-panel-title">
-              Recent
-              <span className="sh-panel-actions">
-                <Link className="sh-add" href={config.expensesHref}>
-                  + Add
-                </Link>
-                <Link className="mh-link" href={config.expensesHref}>
-                  All expenses →
-                </Link>
-              </span>
+          </section>
+
+          <section className="ds-card sh-panel sh-recent" aria-label="Recent expenses">
+            <h2 className="sh-eyebrow">
+              Recent expenses
+              <Link className="sh-all" href={config.expensesHref}>
+                All expenses →
+              </Link>
             </h2>
             {!liveData?.recentExpenses?.length && <div className="ds-empty">No expenses yet.</div>}
             {(liveData?.recentExpenses || []).map((e) => (
@@ -557,13 +532,12 @@ export function ScholarHome({ scholarKey }) {
                 </span>
               </div>
             ))}
-          </div>
+          </section>
         </div>
       </div>
-      {/* The one floating AI entry point on this page. (PublicAskWidget, the
-          unauthenticated program-FAQ bot, used to stack under it — wrong
-          audience for a signed-in page.) Fixed launcher, so it sits outside
-          the page grid; .ds-content reserves bottom space for it. */}
+      {/* The one floating AI entry point on this page. Fixed launcher, so it
+          sits outside the page grid; on phones it floats above the bottom tab
+          bar and .ds-content reserves space for both. */}
       <ScholarChatPanel scholarKey={scholarKey} />
     </ScholarShell>
   );

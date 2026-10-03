@@ -575,6 +575,7 @@ function ApprovedExpensesTable({
 }
 
 function ExpenseForm({ scholar, onLogout }) {
+  const snapParams = useSearchParams();
   const [currentSem, setCurrentSem] = useState(scholar.defaultSem);
 
   const [form, setForm] = useState({
@@ -1319,6 +1320,7 @@ function ExpenseForm({ scholar, onLogout }) {
             type="expenses"
             scholarKey={scholar.key}
             sem={currentSem}
+            takePending={snapParams.get('snap') === '1'}
           />
         </main>
       </div>

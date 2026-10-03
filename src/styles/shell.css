@@ -61,6 +61,8 @@ html[data-theme='dark'] .ds-shell {
   position: sticky;
   top: 0;
   z-index: 100;
+  /* 0 except on notched phones, now that the viewport covers the full screen */
+  padding-top: env(safe-area-inset-top, 0px);
   background: var(--ds-canvas);
   border-bottom: 1px solid var(--ds-rule);
 }
@@ -974,6 +976,16 @@ a.ds-card:hover {
   }
 }
 
+/* ── phone bottom tab bar (TopBar `tabBar`) ──
+   Hidden on desktop; below 1000px (same breakpoint as the drawer) it is fixed
+   to the bottom, padded for the iPhone home indicator. */
+.ds-shell {
+  --ds-tabbar-h: 60px;
+}
+.ds-tabbar {
+  display: none;
+}
+
 @media (max-width: 999px) {
   .ds-top-inner {
     gap: 12px;
@@ -1007,6 +1019,45 @@ a.ds-card:hover {
   }
   .ds-content {
     padding: 0 18px 44px;
+  }
+  .ds-tabbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 70;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    height: calc(var(--ds-tabbar-h) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--ds-surface);
+    border-top: 1px solid var(--ds-rule);
+    box-shadow: 0 -6px 18px -10px rgba(0, 0, 0, 0.35);
+  }
+  .ds-tabbar-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: var(--ds-muted);
+    font-family: var(--ngs-sans);
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ds-tabbar-item.is-active {
+    color: var(--ds-accent-text);
+    box-shadow: inset 0 2px 0 var(--ngs-gold);
+  }
+  .ds-tabbar-item:focus-visible {
+    outline: 2px solid var(--ngs-gold);
+    outline-offset: -3px;
   }
 }
 

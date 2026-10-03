@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { IcnMenu, IcnX, IcnExternal } from './ShellIcons.jsx';
+import { IcnMenu, IcnX, IcnExternal, IcnMore } from './ShellIcons.jsx';
 import { ThemeToggle } from './ThemeToggle.jsx';
 
 // Shared top-bar shell for the mentor Navigator and every scholar screen
@@ -15,10 +15,15 @@ import { ThemeToggle } from './ThemeToggle.jsx';
 // the bar collapses to brand + menu button, and the drawer lists every group
 // with its items so nothing is more than one tap deeper than on desktop.
 //
+// `tabBar` (optional, scholar screens): [{ key, label, href, active, icon }] —
+// a bottom tab bar shown only below the same breakpoint as the drawer. It always
+// ends with a "More" tab that opens this drawer, so it needs no destinations of
+// its own: the caller derives tabs from `groups`, never a hardcoded list.
+//
 // `account` fills the avatar menu: { initial, name, role, status, links,
 // signOut } — `status` and `signOut` are nodes because the mentor and
 // scholar shells own different sign-out flows and connection indicators.
-export function TopBar({ brand, groups, actions, account }) {
+export function TopBar({ brand, groups, actions, account, tabBar }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const activeGroup = groups.find((g) => g.active);
   const tabs = activeGroup?.items?.length > 1 ? activeGroup.items : null;
@@ -57,6 +62,32 @@ export function TopBar({ brand, groups, actions, account }) {
           </nav>
         )}
       </header>
+
+      {tabBar && tabBar.length > 0 && (
+        <nav className="ds-tabbar" aria-label="Primary">
+          {tabBar.map((t) => (
+            <Link
+              key={t.key}
+              href={t.href}
+              className={`ds-tabbar-item${t.active ? ' is-active' : ''}`}
+              aria-current={t.active ? 'page' : undefined}
+            >
+              {t.icon}
+              <span>{t.label}</span>
+            </Link>
+          ))}
+          <button
+            type="button"
+            className={`ds-tabbar-item${tabBar.moreActive ? ' is-active' : ''}`}
+            onClick={() => setDrawerOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={drawerOpen}
+          >
+            <IcnMore size={22} />
+            <span>More</span>
+          </button>
+        </nav>
+      )}
 
       {drawerOpen && (
         <div className="ds-drawer-scrim" onClick={() => setDrawerOpen(false)}>

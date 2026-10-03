@@ -26,6 +26,13 @@ export async function writeSemester(scholar, sem) {
   api.afterWrite();
 }
 
+// `track` is 'NGN' | 'NGH' | null (null = not on a track). The route
+// validates; mentor-only.
+export async function writeTrack(scholar, track) {
+  await api.patch(`/scholars/${scholar}`, { track });
+  api.afterWrite();
+}
+
 export async function writeActivityLog({ scholar, type, expense_id, expense_data, changes }) {
   await api.post('/activity', { scholar, type, expense_id, expense_data, changes });
   api.afterWrite();
