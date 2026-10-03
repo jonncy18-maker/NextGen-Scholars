@@ -10,7 +10,13 @@ const QUICK_PROMPTS = [
 // Floating button that turns plain-language text into draft expenses.
 // Reuses the ask-scholar `ingest` endpoint (text mode) + the shared review card,
 // so the scholar can confirm/edit before it's submitted for mentor approval.
-export function ExpenseAskWidget({ scholarKey, sem }) {
+//
+// variant='card' renders the trigger as an in-page option card (same look as
+// the Single/Batch cards) instead of a floating FAB, so the page keeps exactly
+// one floating AI entry point (the scholar chat launcher). The dialog it opens
+// is the same either way.
+export function ExpenseAskWidget({ scholarKey, sem, variant = 'fab' }) {
+  const isCard = variant === 'card';
   const [open,    setOpen]    = useState(false);
   const [input,   setInput]   = useState('');
   const [busy,    setBusy]    = useState(false);
@@ -71,7 +77,58 @@ export function ExpenseAskWidget({ scholarKey, sem }) {
     setSuccess(`${count} expense${count !== 1 ? 's' : ''} submitted for mentor approval.`);
   }
 
-  return (
+  const trigger = isCard ? (
+    <button
+      type="button"
+      className="ef-mode-card"
+      onClick={() => setOpen(true)}
+      aria-haspopup="dialog"
+      aria-expanded={open}
+    >
+      <svg
+        className="ef-mode-card-icon"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M12 3C7.03 3 3 6.58 3 11c0 2.3 1.05 4.37 2.75 5.87L5 21l4.5-1.8C10.6 19.71 11.29 20 12 20c4.97 0 9-3.58 9-8s-4.03-9-9-9z"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+      </svg>
+      <span className="ef-mode-card-label">Describe it</span>
+      <span className="ef-mode-card-desc">Type it in plain words · AI drafts it</span>
+    </button>
+  ) : (
+    <button
+      className={`paw-fab${open ? ' is-open' : ''}`}
+      onClick={open ? handleClose : () => setOpen(true)}
+      aria-label="Add an expense with AI"
+      aria-expanded={open}
+    >
+      <span className="paw-fab-icon">
+        {open ? (
+          '✕'
+        ) : (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M12 3C7.03 3 3 6.58 3 11c0 2.3 1.05 4.37 2.75 5.87L5 21l4.5-1.8C10.6 19.71 11.29 20 12 20c4.97 0 9-3.58 9-8s-4.03-9-9-9z"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
+      </span>
+      {!open && <span className="paw-fab-label">Add with AI</span>}
+    </button>
+  );
+
+  const sheet = (
     <div className="paw-root">
       {open && (
         <>
@@ -148,22 +205,15 @@ export function ExpenseAskWidget({ scholarKey, sem }) {
         </>
       )}
 
-      <button
-        className={`paw-fab${open ? ' is-open' : ''}`}
-        onClick={open ? handleClose : () => setOpen(true)}
-        aria-label="Add an expense with AI"
-        aria-expanded={open}
-      >
-        <span className="paw-fab-icon">
-          {open ? '✕' : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M12 3C7.03 3 3 6.58 3 11c0 2.3 1.05 4.37 2.75 5.87L5 21l4.5-1.8C10.6 19.71 11.29 20 12 20c4.97 0 9-3.58 9-8s-4.03-9-9-9z"
-                    stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/>
-            </svg>
-          )}
-        </span>
-        {!open && <span className="paw-fab-label">Add with AI</span>}
-      </button>
+      {!isCard && trigger}
     </div>
+  );
+
+  if (!isCard) return sheet;
+  return (
+    <>
+      {trigger}
+      {open && sheet}
+    </>
   );
 }
