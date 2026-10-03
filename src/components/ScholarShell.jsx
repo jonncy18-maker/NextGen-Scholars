@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { TopBar } from './TopBar.jsx';
 import { SignOutButton } from './SignOutButton.jsx';
-import { IcnSignOut } from './ShellIcons.jsx';
+import { IcnSignOut, IcnHome, IcnWallet, IcnBook } from './ShellIcons.jsx';
 import { useAppUpdate } from '../hooks/useAppUpdate.js';
 
 // Shared scholar-side shell — the same top-bar chrome ScholarHome got
@@ -95,6 +95,34 @@ export function scholarNavGroups(scholarKey, active, isMentor) {
   });
 }
 
+// Phone bottom tab bar: Home, Money, Grades + a "More" tab that opens the
+// drawer (TopBar adds that one). Derived from the SAME groups the top bar and
+// drawer use, so a tab can never point at a screen this scholar can't open —
+// a group that isn't in `groups` simply gets no tab. A mentor's groups
+// (Navigator / Living Budget) match none of these keys, so a mentor viewing a
+// scholar route gets no tab bar at all.
+const TAB_ICONS = {
+  overview: <IcnHome size={22} />,
+  money: <IcnWallet size={22} />,
+  academics: <IcnBook size={22} />,
+};
+export function scholarTabBar(groups) {
+  const tabs = ['overview', 'money', 'academics']
+    .map((key) => groups.find((g) => g.key === key))
+    .filter(Boolean)
+    .map((g) => ({
+      key: g.key,
+      label: g.label,
+      href: g.href,
+      active: g.active,
+      icon: TAB_ICONS[g.key],
+    }));
+  if (!tabs.length) return null;
+  // "More" reads as active when the current page lives in a group without a tab.
+  tabs.moreActive = groups.some((g) => g.active && !tabs.some((t) => t.key === g.key));
+  return tabs;
+}
+
 // `active` selects the highlighted nav item; `eyebrow`/`title`/`subtitle`
 // fill the topbar (ScholarHome uses a time-of-day greeting there, the
 // modules use the module name). `identityRole` is the small line under the
@@ -118,6 +146,7 @@ export function ScholarShell({
   // being signed in as her — same bar, same brand link, same name up top.
   // isMentor drives a "Back to Navigator" way out plus a visible badge.
   const isMentor = identityRole === 'Mentor';
+  const groups = scholarNavGroups(scholarKey, active, isMentor);
 
   return (
     <div className="sp-shell ds-shell">
@@ -126,7 +155,8 @@ export function ScholarShell({
           href: isMentor ? '/navigator' : `/home/${scholarKey}`,
           label: 'NextGen Scholars',
         }}
-        groups={scholarNavGroups(scholarKey, active, isMentor)}
+        groups={groups}
+        tabBar={scholarTabBar(groups)}
         actions={actions}
         account={{
           // Signed-in identity, not the page's subject. Showing the

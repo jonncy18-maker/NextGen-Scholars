@@ -29,6 +29,9 @@ export const metadata = {
 
 export const viewport = {
   themeColor: '#1B2A4A', // --ngs-navy
+  // Lets env(safe-area-inset-bottom) report the iPhone home-indicator inset, so
+  // the phone tab bar clears it (see .ds-tabbar in shell.css).
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }) {
