@@ -45,6 +45,12 @@
      scopes remap this to a readable light navy while true navy backgrounds
      keep --ngs-navy. */
   --ngs-navy-text: var(--ngs-navy);
+
+  /* Layout rhythm + card elevation shared by the scholar screens, so Home
+     and Money use one gap and one shadow instead of per-page literals. */
+  --ngs-gap: 20px;
+  --ngs-card-shadow: 0 1px 2px rgba(16, 24, 43, 0.08), 0 4px 14px -4px rgba(16, 24, 43, 0.12);
+  --ngs-card-shadow-hover: 0 10px 26px -8px rgba(16, 24, 43, 0.22);
 }
 
 /* ── Dark theme ─────────────────────────────────────────────────────────────
@@ -53,11 +59,15 @@
    scholar-home.css / shell.css key off html[data-theme='dark']). The values
    live here so both trees share one palette. */
 html[data-theme='dark'] {
-  --ngs-dark-canvas: #0D1526;
-  --ngs-dark-surface: #16203A;
-  --ngs-dark-surface-2: #1C2845;
-  --ngs-dark-rule: #2A3757;
-  --ngs-dark-ink: #E8ECF5;
-  --ngs-dark-ink-soft: #B8C1D6;
-  --ngs-dark-muted: #8A96B0;
+  /* Canvas is pushed well below the card surfaces (2026-10 contrast pass) so
+     cards read as raised panels, not as a faint border on the same navy. */
+  --ngs-dark-canvas: #080d1a;
+  --ngs-dark-surface: #1b2747;
+  --ngs-dark-surface-2: #25345b;
+  --ngs-dark-rule: #3d4e78;
+  --ngs-dark-ink: #eef1f8;
+  --ngs-dark-ink-soft: #c5cde0;
+  --ngs-dark-muted: #9eaac6;
+  --ngs-card-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 6px 18px -6px rgba(0, 0, 0, 0.7);
+  --ngs-card-shadow-hover: 0 12px 28px -8px rgba(0, 0, 0, 0.8);
 }

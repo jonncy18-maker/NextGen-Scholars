@@ -9,17 +9,18 @@
    ════════════════════════════════════════════════════════════════════════ */
 
 .ds-shell {
-  --ds-canvas: #f5f2ea;
+  --ds-canvas: #ebe6d8;
   --ds-surface: #ffffff;
-  --ds-surface-2: #faf7f0;
-  --ds-rule: #e3dccb;
+  --ds-surface-2: #f6f2e7;
+  --ds-rule: #cdc4ad;
   --ds-ink: #10182b;
   --ds-soft: #3f4453;
   --ds-muted: #62677a;
   --ds-gold-tint: rgba(201, 168, 76, 0.12);
   --ds-accent-text: #8a6200;
-  --ds-shadow: 0 1px 2px rgba(16, 24, 43, 0.05);
-  --ds-shadow-hover: 0 8px 24px -8px rgba(16, 24, 43, 0.16), 0 2px 6px rgba(16, 24, 43, 0.05);
+  --ds-shadow: var(--ngs-card-shadow);
+  --ds-shadow-hover: var(--ngs-card-shadow-hover);
+  --ds-gap: var(--ngs-gap);
   --ds-good: var(--ngs-green);
   --ds-warn: var(--ngs-amber);
   --ds-bad: var(--ngs-red);
@@ -45,8 +46,8 @@ html[data-theme='dark'] .ds-shell {
   --ds-muted: var(--ngs-dark-muted);
   --ds-gold-tint: rgba(201, 168, 76, 0.14);
   --ds-accent-text: var(--ngs-gold-soft);
-  --ds-shadow: none;
-  --ds-shadow-hover: 0 8px 24px -8px rgba(0, 0, 0, 0.55);
+  --ds-shadow: var(--ngs-card-shadow);
+  --ds-shadow-hover: var(--ngs-card-shadow-hover);
   --ds-good: #5cb884;
   --ds-warn: #d9a94e;
   --ds-bad: #e06a76;
