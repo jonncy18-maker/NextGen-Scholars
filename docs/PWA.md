@@ -1,6 +1,6 @@
 # PWA Foundation — Installable App Groundwork
 
-**Status: SHIPPED (2026-07-11).** The PWA foundation described below is built:
+**Status: SHIPPED (2026-07-11).** Written while the app ran Next 14; it now runs Next 16, so the Next 14 compatibility notes below are history. The PWA foundation described below is built:
 `app/manifest.js` (manifest metadata route), `public/sw.js` (the minimal
 hand-rolled service worker option — Serwist was skipped to avoid Next 14
 compatibility friction), `public/icons/` (192/512 + maskable 512, gold-on-navy
