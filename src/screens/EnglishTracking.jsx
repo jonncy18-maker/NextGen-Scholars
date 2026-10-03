@@ -12,7 +12,7 @@ import '../styles/english-tracking.css';
 const FALLBACK = {
   claire: { name: 'Claire', semKey: 'Y2S2', homeHref: '/home/claire' },
   april: { name: 'April', semKey: 'TG11S1', homeHref: '/home/april' },
-  // Test account (jbshaw.cpa@gmail.com, scholar_key='demo' — see CLAUDE.md).
+  // Test account (jbshaw.cpa@gmail.com, scholar_key='demo' — see scholars-data.js DEMO).
   demo: { name: 'John', semKey: 'Y1S1', homeHref: '/home/demo' },
 };
 

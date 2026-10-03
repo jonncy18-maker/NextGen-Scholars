@@ -40,7 +40,7 @@ const FALLBACK = {
   claire: { name: 'Claire' },
   april: { name: 'April' },
   janndilyne: { name: 'Janndilyne' },
-  // Test account (jbshaw.cpa@gmail.com, scholar_key='demo' — see CLAUDE.md).
+  // Test account (jbshaw.cpa@gmail.com, scholar_key='demo' — see scholars-data.js DEMO).
   // Falling through to FALLBACK.claire below showed "Welcome, Claire" on a
   // page that has nothing to do with Claire.
   demo: { name: 'John' },
@@ -184,7 +184,7 @@ export function LivingBudget({ scholarKey }) {
   // cookie the browser already has (i.e. the PREVIOUS scholar's, if they
   // navigated straight here from another scholar's dashboard). That is the
   // documented cause of the "scholar sees another scholar's numbers" bug —
-  // see CLAUDE.md.
+  // see AGENTS.md.
   useEffect(() => {
     if (!authed) return;
     let cancelled = false;

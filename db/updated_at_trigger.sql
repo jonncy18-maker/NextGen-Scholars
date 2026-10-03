@@ -1,5 +1,5 @@
 -- Shared touch trigger backing app/api/changes/route.js's polling (replaces
--- the old Supabase realtime channels — see CLAUDE.md's Migration history).
+-- the old Supabase realtime channels — see ROADMAP.md "Phase 5").
 -- Recovered from the live Neon database (Phase D audit, 2026-07): like
 -- grade_entries.sql, this was only ever applied live, never committed here.
 --

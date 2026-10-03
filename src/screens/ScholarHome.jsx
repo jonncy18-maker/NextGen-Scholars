@@ -13,7 +13,7 @@ import { useSessionExpired } from '../hooks/useSessionExpired.js';
 import { derivePathway } from '../lib/pathway.js';
 import { fileToReceiptPayload, setPendingReceipt } from '../lib/pendingReceipt.js';
 
-// All three scholars have real Neon Auth accounts (see CLAUDE.md).
+// All three scholars have real Neon Auth accounts.
 // app/home/[scholar]/page.jsx passes scholarKey straight from the URL with
 // no server-side whitelist, so anything outside this set redirects home
 // instead of falling through to a scholar dashboard for a key that doesn't

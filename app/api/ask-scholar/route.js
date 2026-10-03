@@ -22,7 +22,7 @@ async function geminiJson(prompt, apiKey, opts = {}) {
   const res = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
     method: 'POST',
     // Bypass Next's Data Cache — a POST fetch from a route handler is cached
-    // by url+body otherwise (see CLAUDE.md "Neon driver ... Data Cache").
+    // by url+body otherwise (see AGENTS.md "Neon driver ... Data Cache").
     cache: 'no-store',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

@@ -37,7 +37,7 @@ already), and a viewport meta (Next default covers it).
   a hash-router SPA like Immersion). Routes: `/`, `/login`, `/navigator/*`,
   `/home/:scholar`, `/english/:scholar`, `/grades/:scholar`, `/vacation/:scholar`,
   `/milestones/:scholar`, `/claire`, `/april`, `/janndilyne`, `/entry`. See
-  `CLAUDE.md` → Routes.
+  `docs/ARCHITECTURE.md` → Routes.
 - **`start_url` = `/`** (the public homepage). `scope` = `/` so the installed
   app can navigate the whole route tree. Real routes mean the SW can/should
   cache navigations (App Router server components) — more surface than
@@ -53,7 +53,7 @@ already), and a viewport meta (Next default covers it).
   **never** cache `/api/bootstrap` or any scholar-scoped API response. Cache
   only static assets and (optionally) the public shell. Getting this wrong
   reintroduces the exact "scholar sees another scholar's numbers" class of bug
-  documented in `CLAUDE.md`.
+  documented in `AGENTS.md`.
 
 ---
 

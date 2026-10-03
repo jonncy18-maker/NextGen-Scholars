@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 // Neon Auth account system — there's no shared scholar identifier between
 // the two apps. This maps our scholar keys to Immersion's users.id (a
 // Neon-Auth-issued uuid), looked up once by hand via the Neon console
-// (see CLAUDE.md "Immersion hours integration"). Janndilyne isn't listed —
+// (see docs/ARCHITECTURE.md "Immersion hours integration"). Janndilyne isn't listed —
 // she's TESDA-track and has no Immersion account; EnglishSection.jsx
 // already excludes TESDA scholars from the English section entirely.
 const IMMERSION_USER_ID = {
@@ -49,7 +49,7 @@ export const GET = withErrorHandling(async (request) => {
     const r = byUserId[userId];
     if (!r) continue;
     // Neon returns NUMERIC columns as strings — coerce before handing back
-    // (same gotcha documented in CLAUDE.md for gpa/amount_php/grade_entries).
+    // (same gotcha documented in AGENTS.md for gpa/amount_php/grade_entries).
     result[sk] = {
       currentHours: Number(r.current_hours),
       targetHours: r.target_hours != null ? Number(r.target_hours) : null,

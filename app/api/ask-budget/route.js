@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 //
 // ── Why this is not part of /api/ask-scholar ────────────────────────────────
 // ask-scholar is UNAUTHENTICATED by design and trusts a client-supplied
-// `scholar` key (a documented accepted risk in CLAUDE.md). That is tolerable
+// `scholar` key (a documented accepted risk in AGENTS.md). That is tolerable
 // for the read/advisory surface it has today. It is NOT tolerable for a
 // capability that mutates a budget: any anonymous caller could POST
 // {scholar:'claire'} and rewrite her categories and amounts. So this route
@@ -28,7 +28,7 @@ export const dynamic = 'force-dynamic';
 // ownership on every call. This mirrors action.js and expense-edit.js.
 //
 // Authenticated (Better Auth), so this runs on Claude — the AI brain for
-// signed-in mentor/scholar accounts (see CLAUDE.md "AI layer").
+// signed-in mentor/scholar accounts (see docs/ARCHITECTURE.md "AI layer").
 
 const MAX_BODY_BYTES = 32 * 1024;
 const MAX_TEXT_CHARS = 2000;

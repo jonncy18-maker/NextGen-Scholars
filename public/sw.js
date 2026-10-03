@@ -3,7 +3,7 @@
  * THE ONE RULE THAT MATTERS: /api/** is strictly network-only. This app
  * serves per-scholar data from those routes, and different scholars sign in
  * on the same device — a cached /api/bootstrap response served to the wrong
- * scholar is the exact bug class documented in CLAUDE.md ("scholar sees
+ * scholar is the exact bug class documented in AGENTS.md ("scholar sees
  * another scholar's numbers"). When in doubt, cache less.
  *
  * Strategy:

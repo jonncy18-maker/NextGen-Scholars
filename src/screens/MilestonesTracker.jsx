@@ -17,7 +17,7 @@ const FALLBACK = {
   claire: { name: 'Claire', homeHref: '/home/claire' },
   april: { name: 'April', homeHref: '/home/april' },
   janndilyne: { name: 'Janndilyne', homeHref: '/home/janndilyne' },
-  // Test account (jbshaw.cpa@gmail.com, scholar_key='demo' — see CLAUDE.md).
+  // Test account (jbshaw.cpa@gmail.com, scholar_key='demo' — see scholars-data.js DEMO).
   demo: { name: 'John', homeHref: '/home/demo' },
 };
 

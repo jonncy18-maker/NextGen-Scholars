@@ -11,7 +11,7 @@ export function modelLabel(model, fallback = 'AI') {
 }
 
 // /api/ask-scholar is the public, unauthenticated route and is Gemini-only by
-// design (CLAUDE.md "Provider routing"). Text shown while a request to it is
+// design (AGENTS.md "Provider routing"). Text shown while a request to it is
 // still in flight uses this, because the answering model isn't known until the
 // response arrives. Keep it in step with that route.
 export const ASK_SCHOLAR_LABEL = 'Gemini';
