@@ -13,48 +13,66 @@ function gradeAvg(prelim, midterm, finalGrade, school) {
   // double-counts it and drags the result toward the earlier quarters.
   const f = parseFloat(finalGrade);
   if (school === 'k12' && !isNaN(f)) return f;
-  const vals = [prelim, midterm, finalGrade].map(v => parseFloat(v)).filter(v => !isNaN(v));
+  const vals = [prelim, midterm, finalGrade].map((v) => parseFloat(v)).filter((v) => !isNaN(v));
   return vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : null;
 }
 
 // ── Expense review card (submits to expense_submissions for mentor approval) ──
 
-export function StudentReviewCard({ items: initialItems, model, scholarKey, sem, onDiscard, onConfirmed }) {
-  const [items, setItems]     = useState(initialItems.map(it => ({ ...it })));
-  const [saving, setSaving]   = useState(false);
+export function StudentReviewCard({
+  items: initialItems,
+  model,
+  scholarKey,
+  sem,
+  onDiscard,
+  onConfirmed,
+}) {
+  const [items, setItems] = useState(initialItems.map((it) => ({ ...it })));
+  const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
-  const [chatLog, setChatLog]   = useState([]);
+  const [chatLog, setChatLog] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [chatBusy, setChatBusy] = useState(false);
 
   function updateItem(idx, field, value) {
-    setItems(prev => prev.map((it, i) => i === idx ? { ...it, [field]: value } : it));
+    setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, [field]: value } : it)));
   }
   function removeItem(idx) {
-    setItems(prev => prev.filter((_, i) => i !== idx));
+    setItems((prev) => prev.filter((_, i) => i !== idx));
   }
 
   async function handleChat() {
     const instruction = chatInput.trim();
     if (!instruction || chatBusy) return;
-    setChatLog(prev => [...prev, { role: 'user', text: instruction }]);
+    setChatLog((prev) => [...prev, { role: 'user', text: instruction }]);
     setChatInput('');
     setChatBusy(true);
     try {
       const res = await fetch('/api/ask-scholar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scholar: scholarKey, type: 'expense_edit', items, text: instruction }),
+        body: JSON.stringify({
+          scholar: scholarKey,
+          type: 'expense_edit',
+          items,
+          text: instruction,
+        }),
       });
       const data = await res.json();
       if (data.items) {
-        setItems(data.items.map(it => ({ ...it })));
-        setChatLog(prev => [...prev, { role: 'ai', text: 'Done — expenses updated. Review the table above.' }]);
+        setItems(data.items.map((it) => ({ ...it })));
+        setChatLog((prev) => [
+          ...prev,
+          { role: 'ai', text: 'Done — expenses updated. Review the table above.' },
+        ]);
       } else {
-        setChatLog(prev => [...prev, { role: 'ai', text: data.error ?? 'Could not apply the edit.' }]);
+        setChatLog((prev) => [
+          ...prev,
+          { role: 'ai', text: data.error ?? 'Could not apply the edit.' },
+        ]);
       }
     } catch (err) {
-      setChatLog(prev => [...prev, { role: 'ai', text: err.message ?? 'Request failed.' }]);
+      setChatLog((prev) => [...prev, { role: 'ai', text: err.message ?? 'Request failed.' }]);
     } finally {
       setChatBusy(false);
     }
@@ -66,18 +84,20 @@ export function StudentReviewCard({ items: initialItems, model, scholarKey, sem,
     setSaveError(null);
     try {
       await Promise.all(
-        items.map(it => writeSubmission(scholarKey, {
-          id:     `${scholarKey}_${sem}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-          sem,
-          item:   it.item,
-          amount: Number(it.amount),
-          qty:    Number(it.qty) || 1,
-          cat:    it.cat,
-          date:   it.date,
-          avb:    'Actual',
-          sent:   'No',
-          vendor: it.vendor || '',
-        }))
+        items.map((it) =>
+          writeSubmission(scholarKey, {
+            id: `${scholarKey}_${sem}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            sem,
+            item: it.item,
+            amount: Number(it.amount),
+            qty: Number(it.qty) || 1,
+            cat: it.cat,
+            date: it.date,
+            avb: 'Actual',
+            sent: 'No',
+            vendor: it.vendor || '',
+          })
+        )
       );
       onConfirmed(items.length);
     } catch (err) {
@@ -100,76 +120,189 @@ export function StudentReviewCard({ items: initialItems, model, scholarKey, sem,
       <table className="nai-review-table">
         <thead>
           <tr>
-            <th>Item</th><th>Amount (₱)</th><th>Qty</th><th>Category</th>
-            <th>Date</th><th>Vendor</th><th></th>
+            <th>Item</th>
+            <th>Amount (₱)</th>
+            <th>Qty</th>
+            <th>Category</th>
+            <th>Date</th>
+            <th>Vendor</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
           {items.map((it, idx) => (
             <tr key={idx}>
-              <td><input className="nai-review-input" value={it.item} onChange={e => updateItem(idx, 'item', e.target.value)} /></td>
-              <td><input className="nai-review-input" type="number" min="0" step="0.01" value={it.amount} onChange={e => updateItem(idx, 'amount', e.target.value)} style={{ width: 90 }} /></td>
-              <td><input className="nai-review-input" type="number" min="1" step="1" value={it.qty} onChange={e => updateItem(idx, 'qty', e.target.value)} style={{ width: 50 }} /></td>
               <td>
-                <select className="nai-review-select" value={it.cat} onChange={e => updateItem(idx, 'cat', e.target.value)}>
-                  {EXPENSE_CATS.map(c => <option key={c} value={c}>{c}</option>)}
+                <input
+                  className="nai-review-input"
+                  value={it.item}
+                  onChange={(e) => updateItem(idx, 'item', e.target.value)}
+                />
+              </td>
+              <td>
+                <input
+                  className="nai-review-input"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={it.amount}
+                  onChange={(e) => updateItem(idx, 'amount', e.target.value)}
+                  style={{ width: 90 }}
+                />
+              </td>
+              <td>
+                <input
+                  className="nai-review-input"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={it.qty}
+                  onChange={(e) => updateItem(idx, 'qty', e.target.value)}
+                  style={{ width: 50 }}
+                />
+              </td>
+              <td>
+                <select
+                  className="nai-review-select"
+                  value={it.cat}
+                  onChange={(e) => updateItem(idx, 'cat', e.target.value)}
+                >
+                  {EXPENSE_CATS.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
                 </select>
               </td>
-              <td><input className="nai-review-input" type="date" value={it.date} onChange={e => updateItem(idx, 'date', e.target.value)} style={{ width: 130 }} /></td>
-              <td><input className="nai-review-input" value={it.vendor} onChange={e => updateItem(idx, 'vendor', e.target.value)} /></td>
-              <td><button type="button" onClick={() => removeItem(idx)} style={{ color: 'var(--ngs-muted)', fontSize: 14, padding: '2px 6px' }}>✕</button></td>
+              <td>
+                <input
+                  className="nai-review-input"
+                  type="date"
+                  value={it.date}
+                  onChange={(e) => updateItem(idx, 'date', e.target.value)}
+                  style={{ width: 130 }}
+                />
+              </td>
+              <td>
+                <input
+                  className="nai-review-input"
+                  value={it.vendor}
+                  onChange={(e) => updateItem(idx, 'vendor', e.target.value)}
+                />
+              </td>
+              <td>
+                <button
+                  type="button"
+                  onClick={() => removeItem(idx)}
+                  style={{ color: 'var(--ngs-muted)', fontSize: 14, padding: '2px 6px' }}
+                >
+                  ✕
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
-        {items.length > 0 && (() => {
-          const total = items.reduce((s, it) => s + Number(it.amount) * (Number(it.qty) || 1), 0);
-          return (
-            <tfoot>
-              <tr>
-                <td colSpan={6} style={{ padding: '8px 8px', borderTop: '2px solid var(--ngs-rule)', fontWeight: 700, fontSize: 13, color: 'var(--ngs-navy)', textAlign: 'right', fontFamily: 'var(--ngs-mono)' }}>
-                  Total
-                </td>
-                <td style={{ padding: '8px 8px', borderTop: '2px solid var(--ngs-rule)', fontWeight: 700, fontSize: 13, color: 'var(--ngs-navy)', fontFamily: 'var(--ngs-mono)' }}>
-                  ₱{total.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </td>
-              </tr>
-            </tfoot>
-          );
-        })()}
+        {items.length > 0 &&
+          (() => {
+            const total = items.reduce((s, it) => s + Number(it.amount) * (Number(it.qty) || 1), 0);
+            return (
+              <tfoot>
+                <tr>
+                  <td
+                    colSpan={6}
+                    style={{
+                      padding: '8px 8px',
+                      borderTop: '2px solid var(--ngs-rule)',
+                      fontWeight: 700,
+                      fontSize: 13,
+                      color: 'var(--ngs-navy)',
+                      textAlign: 'right',
+                      fontFamily: 'var(--ngs-mono)',
+                    }}
+                  >
+                    Total
+                  </td>
+                  <td
+                    style={{
+                      padding: '8px 8px',
+                      borderTop: '2px solid var(--ngs-rule)',
+                      fontWeight: 700,
+                      fontSize: 13,
+                      color: 'var(--ngs-navy)',
+                      fontFamily: 'var(--ngs-mono)',
+                    }}
+                  >
+                    ₱
+                    {total.toLocaleString('en-PH', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </td>
+                </tr>
+              </tfoot>
+            );
+          })()}
       </table>
 
       <div className="nai-rev-chat">
         {chatLog.length > 0 && (
           <div className="nai-rev-chat-log">
             {chatLog.map((m, i) => (
-              <div key={i} className={`nai-rev-chat-msg ${m.role === 'user' ? 'nai-rev-chat-user' : 'nai-rev-chat-ai'}`}>
+              <div
+                key={i}
+                className={`nai-rev-chat-msg ${m.role === 'user' ? 'nai-rev-chat-user' : 'nai-rev-chat-ai'}`}
+              >
                 {m.text}
               </div>
             ))}
           </div>
         )}
-        <form className="nai-rev-chat-form" onSubmit={e => { e.preventDefault(); handleChat(); }}>
+        <form
+          className="nai-rev-chat-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleChat();
+          }}
+        >
           <input
             className="nai-rev-chat-input"
             value={chatInput}
-            onChange={e => setChatInput(e.target.value)}
+            onChange={(e) => setChatInput(e.target.value)}
             placeholder="e.g. Change tuition amount to 5000, remove the last item…"
             disabled={chatBusy}
           />
-          <button className="nai-rev-chat-send" type="submit" disabled={chatBusy || !chatInput.trim()}>
+          <button
+            className="nai-rev-chat-send"
+            type="submit"
+            disabled={chatBusy || !chatInput.trim()}
+          >
             {chatBusy ? '…' : 'Fix →'}
           </button>
         </form>
       </div>
 
-      {saveError && <div className="nai-error" style={{ marginBottom: 10 }}>{saveError}</div>}
+      {saveError && (
+        <div className="nai-error" style={{ marginBottom: 10 }}>
+          {saveError}
+        </div>
+      )}
 
       <div className="nai-review-actions">
-        <button className="nai-confirm-btn" onClick={handleSubmit} disabled={saving || !items.length}>
-          {saving ? 'Submitting…' : `Submit ${items.length} item${items.length !== 1 ? 's' : ''} for approval`}
+        <button
+          className="nai-confirm-btn"
+          onClick={handleSubmit}
+          disabled={saving || !items.length}
+        >
+          {saving
+            ? 'Submitting…'
+            : `Submit ${items.length} item${items.length !== 1 ? 's' : ''} for approval`}
         </button>
-        <button className="nai-discard-btn" onClick={onDiscard} disabled={saving}>Discard</button>
-        <span className="nai-confirm-note">Your mentor will review before expenses are recorded.</span>
+        <button className="nai-discard-btn" onClick={onDiscard} disabled={saving}>
+          Discard
+        </button>
+        <span className="nai-confirm-note">
+          Your mentor will review before expenses are recorded.
+        </span>
       </div>
     </div>
   );
@@ -177,11 +310,18 @@ export function StudentReviewCard({ items: initialItems, model, scholarKey, sem,
 
 // ── Grade review card (saves directly to grade_entries) ──
 
-function StudentGradeReviewCard({ grades: initialGrades, model, scholarKey, sem, onDiscard, onConfirmed }) {
-  const [grades, setGrades]   = useState(initialGrades.map(g => ({ ...g })));
-  const [saving, setSaving]   = useState(false);
+function StudentGradeReviewCard({
+  grades: initialGrades,
+  model,
+  scholarKey,
+  sem,
+  onDiscard,
+  onConfirmed,
+}) {
+  const [grades, setGrades] = useState(initialGrades.map((g) => ({ ...g })));
+  const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
-  const [chatLog, setChatLog]   = useState([]);
+  const [chatLog, setChatLog] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [chatBusy, setChatBusy] = useState(false);
   const [geminiAnalysis, setGeminiAnalysis] = useState(null);
@@ -193,42 +333,60 @@ function StudentGradeReviewCard({ grades: initialGrades, model, scholarKey, sem,
     fetch('/api/ask-scholar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ scholar: scholarKey, sem, type: 'grade_analysis', grades: initialGrades }),
+      body: JSON.stringify({
+        scholar: scholarKey,
+        sem,
+        type: 'grade_analysis',
+        grades: initialGrades,
+      }),
     })
-      .then(r => r.json())
-      .then(data => { if (data.analysis) setGeminiAnalysis(data.analysis); })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.analysis) setGeminiAnalysis(data.analysis);
+      })
       .catch(() => {})
       .finally(() => setGeminiLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function updateGrade(idx, field, value) {
-    setGrades(prev => prev.map((g, i) => i === idx ? { ...g, [field]: value } : g));
+    setGrades((prev) => prev.map((g, i) => (i === idx ? { ...g, [field]: value } : g)));
   }
   function removeGrade(idx) {
-    setGrades(prev => prev.filter((_, i) => i !== idx));
+    setGrades((prev) => prev.filter((_, i) => i !== idx));
   }
 
   async function handleChat() {
     const instruction = chatInput.trim();
     if (!instruction || chatBusy) return;
-    setChatLog(prev => [...prev, { role: 'user', text: instruction }]);
+    setChatLog((prev) => [...prev, { role: 'user', text: instruction }]);
     setChatInput('');
     setChatBusy(true);
     try {
       const res = await fetch('/api/ask-scholar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scholar: scholarKey, type: 'grade_edit', grades, text: instruction }),
+        body: JSON.stringify({
+          scholar: scholarKey,
+          type: 'grade_edit',
+          grades,
+          text: instruction,
+        }),
       });
       const data = await res.json();
       if (data.grades) {
-        setGrades(data.grades.map(g => ({ ...g })));
-        setChatLog(prev => [...prev, { role: 'ai', text: 'Done — grades updated. Review the table above.' }]);
+        setGrades(data.grades.map((g) => ({ ...g })));
+        setChatLog((prev) => [
+          ...prev,
+          { role: 'ai', text: 'Done — grades updated. Review the table above.' },
+        ]);
       } else {
-        setChatLog(prev => [...prev, { role: 'ai', text: data.error ?? 'Could not apply the edit.' }]);
+        setChatLog((prev) => [
+          ...prev,
+          { role: 'ai', text: data.error ?? 'Could not apply the edit.' },
+        ]);
       }
     } catch (err) {
-      setChatLog(prev => [...prev, { role: 'ai', text: err.message ?? 'Request failed.' }]);
+      setChatLog((prev) => [...prev, { role: 'ai', text: err.message ?? 'Request failed.' }]);
     } finally {
       setChatBusy(false);
     }
@@ -239,21 +397,22 @@ function StudentGradeReviewCard({ grades: initialGrades, model, scholarKey, sem,
     setSaving(true);
     setSaveError(null);
     try {
-      const entries = grades.map(g => {
-        const p   = g.prelim      != null ? parseFloat(g.prelim)      : null;
-        const m   = g.midterm     != null ? parseFloat(g.midterm)     : null;
-        const f   = g.final_grade != null ? parseFloat(g.final_grade) : null;
+      const entries = grades.map((g) => {
+        const p = g.prelim != null ? parseFloat(g.prelim) : null;
+        const m = g.midterm != null ? parseFloat(g.midterm) : null;
+        const f = g.final_grade != null ? parseFloat(g.final_grade) : null;
         const avg = gradeAvg(p, m, f, g.school || 'uv');
         return {
-          scholar: scholarKey, sem,
-          school:      g.school || 'uv',
-          subject:     g.subject,
-          units:       parseFloat(g.units) || 3,
-          prelim:      isNaN(p) ? null : p,
-          midterm:     isNaN(m) ? null : m,
+          scholar: scholarKey,
+          sem,
+          school: g.school || 'uv',
+          subject: g.subject,
+          units: parseFloat(g.units) || 3,
+          prelim: isNaN(p) ? null : p,
+          midterm: isNaN(m) ? null : m,
           final_grade: isNaN(f) ? null : f,
-          period_avg:  avg,
-          pct_equiv:   avg != null ? (g.school === 'k12' ? avg : uvToPct(avg)) : null,
+          period_avg: avg,
+          pct_equiv: avg != null ? (g.school === 'k12' ? avg : uvToPct(avg)) : null,
         };
       });
       await api.post('/grades', { entries });
@@ -276,7 +435,17 @@ function StudentGradeReviewCard({ grades: initialGrades, model, scholarKey, sem,
       </div>
       <table className="nai-review-table">
         <thead>
-          <tr><th>Subject</th><th>Units</th><th>Scale</th><th>Prelim</th><th>Mid</th><th>Final</th><th>Avg</th><th>%</th><th></th></tr>
+          <tr>
+            <th>Subject</th>
+            <th>Units</th>
+            <th>Scale</th>
+            <th>Prelim</th>
+            <th>Mid</th>
+            <th>Final</th>
+            <th>Avg</th>
+            <th>%</th>
+            <th></th>
+          </tr>
         </thead>
         <tbody>
           {grades.map((g, idx) => {
@@ -284,97 +453,222 @@ function StudentGradeReviewCard({ grades: initialGrades, model, scholarKey, sem,
             const pct = avg != null ? (g.school === 'k12' ? avg : uvToPct(avg)) : null;
             return (
               <tr key={idx}>
-                <td><input className="nai-review-input" value={g.subject} onChange={e => updateGrade(idx, 'subject', e.target.value)} /></td>
-                <td><input className="nai-review-input" type="number" min="0.5" max="9" step="0.5" value={g.units ?? 3} onChange={e => updateGrade(idx, 'units', e.target.value)} style={{ width: 50 }} /></td>
                 <td>
-                  <select className="nai-review-select" value={g.school || 'uv'} onChange={e => updateGrade(idx, 'school', e.target.value)}>
+                  <input
+                    className="nai-review-input"
+                    value={g.subject}
+                    onChange={(e) => updateGrade(idx, 'subject', e.target.value)}
+                  />
+                </td>
+                <td>
+                  <input
+                    className="nai-review-input"
+                    type="number"
+                    min="0.5"
+                    max="9"
+                    step="0.5"
+                    value={g.units ?? 3}
+                    onChange={(e) => updateGrade(idx, 'units', e.target.value)}
+                    style={{ width: 50 }}
+                  />
+                </td>
+                <td>
+                  <select
+                    className="nai-review-select"
+                    value={g.school || 'uv'}
+                    onChange={(e) => updateGrade(idx, 'school', e.target.value)}
+                  >
                     <option value="uv">UV</option>
                     <option value="k12">K-12</option>
                   </select>
                 </td>
-                <td><input className="nai-review-input" type="number" value={g.prelim ?? ''} onChange={e => updateGrade(idx, 'prelim', e.target.value === '' ? null : e.target.value)} style={{ width: 65 }} /></td>
-                <td><input className="nai-review-input" type="number" value={g.midterm ?? ''} onChange={e => updateGrade(idx, 'midterm', e.target.value === '' ? null : e.target.value)} style={{ width: 65 }} /></td>
-                <td><input className="nai-review-input" type="number" value={g.final_grade ?? ''} onChange={e => updateGrade(idx, 'final_grade', e.target.value === '' ? null : e.target.value)} style={{ width: 65 }} /></td>
+                <td>
+                  <input
+                    className="nai-review-input"
+                    type="number"
+                    value={g.prelim ?? ''}
+                    onChange={(e) =>
+                      updateGrade(idx, 'prelim', e.target.value === '' ? null : e.target.value)
+                    }
+                    style={{ width: 65 }}
+                  />
+                </td>
+                <td>
+                  <input
+                    className="nai-review-input"
+                    type="number"
+                    value={g.midterm ?? ''}
+                    onChange={(e) =>
+                      updateGrade(idx, 'midterm', e.target.value === '' ? null : e.target.value)
+                    }
+                    style={{ width: 65 }}
+                  />
+                </td>
+                <td>
+                  <input
+                    className="nai-review-input"
+                    type="number"
+                    value={g.final_grade ?? ''}
+                    onChange={(e) =>
+                      updateGrade(idx, 'final_grade', e.target.value === '' ? null : e.target.value)
+                    }
+                    style={{ width: 65 }}
+                  />
+                </td>
                 <td className="nai-review-computed">{avg != null ? avg.toFixed(2) : '—'}</td>
                 <td className="nai-review-computed">{pct != null ? `${pct.toFixed(1)}%` : '—'}</td>
-                <td><button type="button" onClick={() => removeGrade(idx)} style={{ color: 'var(--ngs-muted)', fontSize: 14, padding: '2px 6px' }}>✕</button></td>
+                <td>
+                  <button
+                    type="button"
+                    onClick={() => removeGrade(idx)}
+                    style={{ color: 'var(--ngs-muted)', fontSize: 14, padding: '2px 6px' }}
+                  >
+                    ✕
+                  </button>
+                </td>
               </tr>
             );
           })}
         </tbody>
-        {grades.length > 1 && (() => {
-          const valid = grades.filter(g => {
-            const avg = gradeAvg(g.prelim, g.midterm, g.final_grade, g.school || 'uv');
-            return avg != null && parseFloat(g.units) > 0;
-          });
-          const totalUnits = valid.reduce((s, g) => s + (parseFloat(g.units) || 0), 0);
-          const wa = totalUnits ? valid.reduce((s, g) => {
-            const avg = gradeAvg(g.prelim, g.midterm, g.final_grade, g.school || 'uv');
-            return s + avg * (parseFloat(g.units) || 0);
-          }, 0) / totalUnits : null;
-          const isK12 = valid.every(g => g.school === 'k12');
-          const waPct = wa != null ? (isK12 ? wa : uvToPct(wa)) : null;
-          if (wa == null) return null;
-          return (
-            <tfoot>
-              <tr>
-                <td style={{ padding: '8px 8px', borderTop: '2px solid var(--ngs-rule)', fontWeight: 700, fontSize: 12, color: 'var(--ngs-navy)', fontFamily: 'var(--ngs-mono)' }}>
-                  Weighted Avg
-                </td>
-                <td style={{ padding: '8px 8px', borderTop: '2px solid var(--ngs-rule)', fontWeight: 700, fontSize: 12, color: 'var(--ngs-navy)', fontFamily: 'var(--ngs-mono)' }}>
-                  {totalUnits} u
-                </td>
-                <td colSpan={4} style={{ borderTop: '2px solid var(--ngs-rule)' }} />
-                <td className="nai-review-computed" style={{ borderTop: '2px solid var(--ngs-rule)', fontWeight: 700, color: 'var(--ngs-navy)' }}>
-                  {wa.toFixed(2)}
-                </td>
-                <td className="nai-review-computed" style={{ borderTop: '2px solid var(--ngs-rule)', fontWeight: 700, color: 'var(--ngs-navy)' }}>
-                  {waPct != null ? `${waPct.toFixed(1)}%` : '—'}
-                </td>
-                <td style={{ borderTop: '2px solid var(--ngs-rule)' }} />
-              </tr>
-            </tfoot>
-          );
-        })()}
+        {grades.length > 1 &&
+          (() => {
+            const valid = grades.filter((g) => {
+              const avg = gradeAvg(g.prelim, g.midterm, g.final_grade, g.school || 'uv');
+              return avg != null && parseFloat(g.units) > 0;
+            });
+            const totalUnits = valid.reduce((s, g) => s + (parseFloat(g.units) || 0), 0);
+            const wa = totalUnits
+              ? valid.reduce((s, g) => {
+                  const avg = gradeAvg(g.prelim, g.midterm, g.final_grade, g.school || 'uv');
+                  return s + avg * (parseFloat(g.units) || 0);
+                }, 0) / totalUnits
+              : null;
+            const isK12 = valid.every((g) => g.school === 'k12');
+            const waPct = wa != null ? (isK12 ? wa : uvToPct(wa)) : null;
+            if (wa == null) return null;
+            return (
+              <tfoot>
+                <tr>
+                  <td
+                    style={{
+                      padding: '8px 8px',
+                      borderTop: '2px solid var(--ngs-rule)',
+                      fontWeight: 700,
+                      fontSize: 12,
+                      color: 'var(--ngs-navy)',
+                      fontFamily: 'var(--ngs-mono)',
+                    }}
+                  >
+                    Weighted Avg
+                  </td>
+                  <td
+                    style={{
+                      padding: '8px 8px',
+                      borderTop: '2px solid var(--ngs-rule)',
+                      fontWeight: 700,
+                      fontSize: 12,
+                      color: 'var(--ngs-navy)',
+                      fontFamily: 'var(--ngs-mono)',
+                    }}
+                  >
+                    {totalUnits} u
+                  </td>
+                  <td colSpan={4} style={{ borderTop: '2px solid var(--ngs-rule)' }} />
+                  <td
+                    className="nai-review-computed"
+                    style={{
+                      borderTop: '2px solid var(--ngs-rule)',
+                      fontWeight: 700,
+                      color: 'var(--ngs-navy)',
+                    }}
+                  >
+                    {wa.toFixed(2)}
+                  </td>
+                  <td
+                    className="nai-review-computed"
+                    style={{
+                      borderTop: '2px solid var(--ngs-rule)',
+                      fontWeight: 700,
+                      color: 'var(--ngs-navy)',
+                    }}
+                  >
+                    {waPct != null ? `${waPct.toFixed(1)}%` : '—'}
+                  </td>
+                  <td style={{ borderTop: '2px solid var(--ngs-rule)' }} />
+                </tr>
+              </tfoot>
+            );
+          })()}
       </table>
       <div className="nai-rev-chat">
         {chatLog.length > 0 && (
           <div className="nai-rev-chat-log">
             {chatLog.map((m, i) => (
-              <div key={i} className={`nai-rev-chat-msg ${m.role === 'user' ? 'nai-rev-chat-user' : 'nai-rev-chat-ai'}`}>
+              <div
+                key={i}
+                className={`nai-rev-chat-msg ${m.role === 'user' ? 'nai-rev-chat-user' : 'nai-rev-chat-ai'}`}
+              >
                 {m.text}
               </div>
             ))}
           </div>
         )}
-        <form className="nai-rev-chat-form" onSubmit={e => { e.preventDefault(); handleChat(); }}>
+        <form
+          className="nai-rev-chat-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleChat();
+          }}
+        >
           <input
             className="nai-rev-chat-input"
             value={chatInput}
-            onChange={e => setChatInput(e.target.value)}
+            onChange={(e) => setChatInput(e.target.value)}
             placeholder="e.g. Change Nursing Science units to 5…"
             disabled={chatBusy}
           />
-          <button className="nai-rev-chat-send" type="submit" disabled={chatBusy || !chatInput.trim()}>
+          <button
+            className="nai-rev-chat-send"
+            type="submit"
+            disabled={chatBusy || !chatInput.trim()}
+          >
             {chatBusy ? '…' : 'Fix →'}
           </button>
         </form>
       </div>
       {(geminiLoading || geminiAnalysis) && (
         <div className="nai-gemini-analysis">
-          <span className="nai-tier-badge nai-tier-2" style={{ marginBottom: 6, display: 'inline-block' }}>Gemini · Analysis</span>
-          {geminiLoading
-            ? <p className="nai-gemini-analysis-text" style={{ color: 'var(--ngs-muted)' }}>Gemini is reviewing the grades…</p>
-            : <p className="nai-gemini-analysis-text">{geminiAnalysis}</p>
-          }
+          <span
+            className="nai-tier-badge nai-tier-2"
+            style={{ marginBottom: 6, display: 'inline-block' }}
+          >
+            Gemini · Analysis
+          </span>
+          {geminiLoading ? (
+            <p className="nai-gemini-analysis-text" style={{ color: 'var(--ngs-muted)' }}>
+              Gemini is reviewing the grades…
+            </p>
+          ) : (
+            <p className="nai-gemini-analysis-text">{geminiAnalysis}</p>
+          )}
         </div>
       )}
-      {saveError && <div className="nai-error" style={{ marginBottom: 10 }}>{saveError}</div>}
+      {saveError && (
+        <div className="nai-error" style={{ marginBottom: 10 }}>
+          {saveError}
+        </div>
+      )}
       <div className="nai-review-actions">
-        <button className="nai-confirm-btn" onClick={handleSave} disabled={saving || !grades.length}>
+        <button
+          className="nai-confirm-btn"
+          onClick={handleSave}
+          disabled={saving || !grades.length}
+        >
           {saving ? 'Saving…' : `Save ${grades.length} subject${grades.length !== 1 ? 's' : ''}`}
         </button>
-        <button className="nai-discard-btn" onClick={onDiscard} disabled={saving}>Discard</button>
+        <button className="nai-discard-btn" onClick={onDiscard} disabled={saving}>
+          Discard
+        </button>
         <span className="nai-confirm-note">Edits above are applied before saving.</span>
       </div>
     </div>
@@ -388,32 +682,45 @@ function StudentGradeReviewCard({ grades: initialGrades, model, scholarKey, sem,
 // at the review card — nothing is submitted without the scholar's confirm.
 export function ScholarIngestPanel({ id, type, scholarKey, sem, takePending = false }) {
   const isExpense = type === 'expenses';
-  const [file, setFile]       = useState(null);
+  const [file, setFile] = useState(null);
   const [isDragOver, setOver] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState(null);
-  const [review, setReview]   = useState(null);  // { items/grades, model }
+  const [error, setError] = useState(null);
+  const [review, setReview] = useState(null); // { items/grades, model }
   const [success, setSuccess] = useState(null);
   const fileInputRef = useRef(null);
 
-  const readFileAsBase64 = (f) => new Promise((res, rej) => {
-    const reader = new FileReader();
-    reader.onload = () => res({ name: f.name, base64: reader.result.split(',')[1], mime: f.type });
-    reader.onerror = rej;
-    reader.readAsDataURL(f);
-  });
+  const readFileAsBase64 = (f) =>
+    new Promise((res, rej) => {
+      const reader = new FileReader();
+      reader.onload = () =>
+        res({ name: f.name, base64: reader.result.split(',')[1], mime: f.type });
+      reader.onerror = rej;
+      reader.readAsDataURL(f);
+    });
 
   async function handleFileDrop(f) {
     if (!f) return;
-    if (!ACCEPTED_MIME.includes(f.type)) { setError(`Unsupported file type: ${f.type}.`); return; }
-    setError(null); setReview(null); setSuccess(null);
+    if (!ACCEPTED_MIME.includes(f.type)) {
+      setError(`Unsupported file type: ${f.type}.`);
+      return;
+    }
+    setError(null);
+    setReview(null);
+    setSuccess(null);
     setFile(await readFileAsBase64(f));
   }
 
-  function onDrop(e) { e.preventDefault(); setOver(false); handleFileDrop(e.dataTransfer.files?.[0]); }
+  function onDrop(e) {
+    e.preventDefault();
+    setOver(false);
+    handleFileDrop(e.dataTransfer.files?.[0]);
+  }
 
   function handlePaste(e) {
-    const item = Array.from(e.clipboardData?.items || []).find(i => i.kind === 'file' && i.type.startsWith('image/'));
+    const item = Array.from(e.clipboardData?.items || []).find(
+      (i) => i.kind === 'file' && i.type.startsWith('image/')
+    );
     if (!item) return;
     e.preventDefault();
     const raw = item.getAsFile();
@@ -425,14 +732,20 @@ export function ScholarIngestPanel({ id, type, scholarKey, sem, takePending = fa
     if (!takePending) return;
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     const pending = takePendingReceipt();
-    if (pending) { setFile(pending); handleExtract(null, pending); }
+    if (pending) {
+      setFile(pending);
+      handleExtract(null, pending);
+    }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleExtract(e, fileArg) {
     e?.preventDefault();
     const f = fileArg || file;
     if (loading || !f) return;
-    setLoading(true); setError(null); setReview(null); setSuccess(null);
+    setLoading(true);
+    setError(null);
+    setReview(null);
+    setSuccess(null);
     try {
       const ingestType = isExpense ? 'ingest' : 'grade_ingest';
       const res = await fetch('/api/ask-scholar', {
@@ -442,7 +755,8 @@ export function ScholarIngestPanel({ id, type, scholarKey, sem, takePending = fa
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      if (data.status === 'not_configured') throw new Error('AI not configured — contact your mentor.');
+      if (data.status === 'not_configured')
+        throw new Error('AI not configured — contact your mentor.');
       if (data.status === 'error') throw new Error(data.error || 'Extraction failed.');
       setReview(data);
     } catch (err) {
@@ -452,18 +766,27 @@ export function ScholarIngestPanel({ id, type, scholarKey, sem, takePending = fa
     }
   }
 
-  function handleDiscard() { setReview(null); setFile(null); setSuccess(null); }
+  function handleDiscard() {
+    setReview(null);
+    setFile(null);
+    setSuccess(null);
+  }
 
   function handleConfirmed(count) {
-    setReview(null); setFile(null);
-    setSuccess(isExpense
-      ? `${count} expense${count !== 1 ? 's' : ''} submitted for mentor approval.`
-      : `${count} subject${count !== 1 ? 's' : ''} saved to your grade record.`
+    setReview(null);
+    setFile(null);
+    setSuccess(
+      isExpense
+        ? `${count} expense${count !== 1 ? 's' : ''} submitted for mentor approval.`
+        : `${count} subject${count !== 1 ? 's' : ''} saved to your grade record.`
     );
   }
 
   const dragHandlers = {
-    onDragOver:  e => { e.preventDefault(); setOver(true); },
+    onDragOver: (e) => {
+      e.preventDefault();
+      setOver(true);
+    },
     onDragLeave: () => setOver(false),
     onDrop,
   };
@@ -475,13 +798,17 @@ export function ScholarIngestPanel({ id, type, scholarKey, sem, takePending = fa
       <div className="sip-header">
         <span className="sip-badge">AI</span>
         <span className="sip-title">{isExpense ? 'Upload receipt' : 'Upload grade report'}</span>
-        <span className="sip-note">Gemini extracts the data — you review before {isExpense ? 'submitting' : 'saving'}</span>
+        <span className="sip-note">
+          Gemini extracts the data — you review before {isExpense ? 'submitting' : 'saving'}
+        </span>
       </div>
 
       {success && (
         <div className="sip-success">
           {success}
-          <button className="sip-again-btn" onClick={() => setSuccess(null)}>Upload another</button>
+          <button className="sip-again-btn" onClick={() => setSuccess(null)}>
+            Upload another
+          </button>
         </div>
       )}
 
@@ -494,14 +821,14 @@ export function ScholarIngestPanel({ id, type, scholarKey, sem, takePending = fa
             tabIndex={0}
             aria-label={`Drop ${dropLabel} here`}
             onClick={() => fileInputRef.current?.click()}
-            onKeyDown={e => e.key === 'Enter' && fileInputRef.current?.click()}
+            onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
           >
             <input
               ref={fileInputRef}
               type="file"
               accept={ACCEPTED_MIME.join(',')}
               style={{ display: 'none' }}
-              onChange={e => handleFileDrop(e.target.files?.[0])}
+              onChange={(e) => handleFileDrop(e.target.files?.[0])}
             />
             {file ? (
               <div className="nai-file-list">
@@ -511,7 +838,10 @@ export function ScholarIngestPanel({ id, type, scholarKey, sem, takePending = fa
                   <button
                     type="button"
                     className="nai-file-remove"
-                    onClick={e => { e.stopPropagation(); setFile(null); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFile(null);
+                    }}
                   >
                     ✕
                   </button>
@@ -540,8 +870,17 @@ export function ScholarIngestPanel({ id, type, scholarKey, sem, takePending = fa
 
           {loading && (
             <div className="nai-loading">
-              <span className="nai-loading-dot" /><span className="nai-loading-dot" /><span className="nai-loading-dot" />
-              <span style={{ marginLeft: 10, fontFamily: 'var(--ngs-mono)', fontSize: 12, color: 'var(--ngs-muted)' }}>
+              <span className="nai-loading-dot" />
+              <span className="nai-loading-dot" />
+              <span className="nai-loading-dot" />
+              <span
+                style={{
+                  marginLeft: 10,
+                  fontFamily: 'var(--ngs-mono)',
+                  fontSize: 12,
+                  color: 'var(--ngs-muted)',
+                }}
+              >
                 Gemini is reading your {isExpense ? 'receipt' : 'grade report'}…
               </span>
             </div>

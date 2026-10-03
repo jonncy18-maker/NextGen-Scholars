@@ -17,11 +17,11 @@ const QUICK_PROMPTS = [
 // is the same either way.
 export function ExpenseAskWidget({ scholarKey, sem, variant = 'fab' }) {
   const isCard = variant === 'card';
-  const [open,    setOpen]    = useState(false);
-  const [input,   setInput]   = useState('');
-  const [busy,    setBusy]    = useState(false);
-  const [error,   setError]   = useState(null);
-  const [review,  setReview]  = useState(null);  // { items, model }
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const [review, setReview] = useState(null); // { items, model }
   const [success, setSuccess] = useState(null);
   const inputRef = useRef(null);
 
@@ -58,8 +58,10 @@ export function ExpenseAskWidget({ scholarKey, sem, variant = 'fab' }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
-      if (data.status === 'not_configured') throw new Error('AI not configured — contact your mentor.');
-      if (data.status === 'error') throw new Error(data.error || 'Could not read that — try rephrasing.');
+      if (data.status === 'not_configured')
+        throw new Error('AI not configured — contact your mentor.');
+      if (data.status === 'error')
+        throw new Error(data.error || 'Could not read that — try rephrasing.');
       if (!Array.isArray(data.items) || data.items.length === 0) {
         throw new Error('No expense found in that. Try e.g. "₱850 on textbooks today".');
       }
@@ -139,7 +141,9 @@ export function ExpenseAskWidget({ scholarKey, sem, variant = 'fab' }) {
                 <span className="paw-badge">AI</span>
                 <span className="paw-title">Add an expense</span>
               </div>
-              <button className="paw-close" onClick={handleClose} aria-label="Close">✕</button>
+              <button className="paw-close" onClick={handleClose} aria-label="Close">
+                ✕
+              </button>
             </div>
 
             <div className="paw-body eaw-body">
@@ -147,7 +151,9 @@ export function ExpenseAskWidget({ scholarKey, sem, variant = 'fab' }) {
                 <div className="eaw-success">
                   <span className="eaw-success-tick">✓</span>
                   <p>{success}</p>
-                  <button className="eaw-again-btn" onClick={reset}>Add another</button>
+                  <button className="eaw-again-btn" onClick={reset}>
+                    Add another
+                  </button>
                 </div>
               ) : review ? (
                 <StudentReviewCard
@@ -161,44 +167,78 @@ export function ExpenseAskWidget({ scholarKey, sem, variant = 'fab' }) {
               ) : (
                 <>
                   <p className="eaw-hint">
-                    Type what you spent in plain language — AI drafts the expense for you to review and submit.
+                    Type what you spent in plain language — AI drafts the expense for you to review
+                    and submit.
                   </p>
                   <div className="paw-chips">
-                    {QUICK_PROMPTS.map(p => (
-                      <button key={p} type="button" className="paw-chip"
-                        onClick={() => { setInput(p); extract(p); }} disabled={busy}>
+                    {QUICK_PROMPTS.map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        className="paw-chip"
+                        onClick={() => {
+                          setInput(p);
+                          extract(p);
+                        }}
+                        disabled={busy}
+                      >
                         {p}
                       </button>
                     ))}
                   </div>
                   {busy && (
                     <div className="nai-loading" style={{ marginTop: 12 }}>
-                      <span className="nai-loading-dot" /><span className="nai-loading-dot" /><span className="nai-loading-dot" />
-                      <span style={{ marginLeft: 10, fontFamily: 'var(--ngs-mono)', fontSize: 12, color: 'var(--ngs-muted)' }}>
+                      <span className="nai-loading-dot" />
+                      <span className="nai-loading-dot" />
+                      <span className="nai-loading-dot" />
+                      <span
+                        style={{
+                          marginLeft: 10,
+                          fontFamily: 'var(--ngs-mono)',
+                          fontSize: 12,
+                          color: 'var(--ngs-muted)',
+                        }}
+                      >
                         Gemini is drafting your expense…
                       </span>
                     </div>
                   )}
-                  {error && <div className="nai-error" style={{ marginTop: 12 }}>{error}</div>}
+                  {error && (
+                    <div className="nai-error" style={{ marginTop: 12 }}>
+                      {error}
+                    </div>
+                  )}
                 </>
               )}
             </div>
 
             {!review && !success && (
-              <form className="paw-form" onSubmit={e => { e.preventDefault(); extract(input); }}>
+              <form
+                className="paw-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  extract(input);
+                }}
+              >
                 <input
                   ref={inputRef}
                   className="paw-input"
                   type="text"
                   placeholder="e.g. ₱850 on textbooks today…"
                   value={input}
-                  onChange={e => setInput(e.target.value)}
+                  onChange={(e) => setInput(e.target.value)}
                   disabled={busy}
                   autoComplete="off"
                   maxLength={500}
                 />
-                <button className="paw-submit" type="submit"
-                  disabled={!input.trim() || busy} aria-label="Draft expense">→</button>
+                <button
+                  className="paw-submit"
+                  type="submit"
+                  disabled={!input.trim() || busy}
+                  aria-label="Draft expense"
+                >
+                  →
+                </button>
               </form>
             )}
           </div>
