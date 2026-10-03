@@ -956,11 +956,8 @@ function ExpenseForm({ scholar, onLogout }) {
       identityRole="Expense Entry"
       onSignOut={onLogout}
     >
-      {/* ef-main keeps its own two-column layout at wide sizes, but that has
-          to key off the *content* width now, not the viewport — the shell
-          spends 248px on the sidebar (72px collapsed), so a viewport media
-          query would flip to two columns while the column itself was still
-          narrow. This wrapper is the query container; see entry.css. */}
+      {/* ef-main is a single full-width flex column (see entry.css); the shell
+          supplies the page width. */}
       <div className="ef-shellwrap" data-scholar={scholar.key}>
         <main className="ef-main">
           {expensesBySem !== null && (
@@ -1056,6 +1053,9 @@ function ExpenseForm({ scholar, onLogout }) {
                 <span className="ef-mode-card-label">Batch entry</span>
                 <span className="ef-mode-card-desc">Multiple items · spreadsheet style</span>
               </button>
+              {/* An option card, not a floating button: this page's one
+                  floating AI entry point is the scholar chat launcher. */}
+              <ExpenseAskWidget scholarKey={scholar.key} sem={currentSem} variant="card" />
             </div>
           )}
 
@@ -1321,20 +1321,13 @@ function ExpenseForm({ scholar, onLogout }) {
             sem={currentSem}
           />
         </main>
-
-        <ExpenseAskWidget scholarKey={scholar.key} sem={currentSem} />
       </div>
 
-      {/* Outside .ef-shellwrap on purpose. That wrapper sets
-          `container-type: inline-size` for the two-column container query,
-          which makes it a containing block for position:fixed descendants —
-          the launcher would scroll with the page instead of pinning to the
-          viewport. `raised` clears ExpenseAskWidget, which occupies the same
-          corner (.paw-root). */}
+      {/* The page's one floating AI launcher. Fixed, so it sits outside the
+          page column; .ds-content reserves bottom space for it. */}
       <ScholarChatPanel
         scholarKey={scholar.key}
         ingestionLabel="Upload receipt"
-        raised
         onGoToIngestion={() =>
           document.getElementById('scholar-expense-ingest')?.scrollIntoView({ behavior: 'smooth' })
         }

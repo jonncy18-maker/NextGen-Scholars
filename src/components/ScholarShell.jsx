@@ -119,13 +119,6 @@ export function ScholarShell({
   // isMentor drives a "Back to Navigator" way out plus a visible badge.
   const isMentor = identityRole === 'Mentor';
 
-  const defaultActions =
-    !isMentor && active !== 'finances' ? (
-      <Link className="ds-btn ds-btn--gold" href={`/entry?scholar=${scholarKey}`}>
-        + Log expense
-      </Link>
-    ) : null;
-
   return (
     <div className="sp-shell ds-shell">
       <TopBar
@@ -134,7 +127,7 @@ export function ScholarShell({
           label: 'NextGen Scholars',
         }}
         groups={scholarNavGroups(scholarKey, active, isMentor)}
-        actions={actions === undefined ? defaultActions : actions}
+        actions={actions}
         account={{
           // Signed-in identity, not the page's subject. Showing the
           // scholar's name over the word "Mentor" read as "you are Claire,

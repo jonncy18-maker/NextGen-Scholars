@@ -430,13 +430,12 @@ html[data-theme='dark'] .si-btn:not(:disabled):hover {
   display: flex;
   align-items: stretch;
   flex-wrap: wrap;
-  margin-bottom: 24px;
   background: var(--ds-surface);
   border: 1px solid var(--ds-rule);
-  border-radius: 8px;
+  border-radius: 14px;
   overflow: hidden;
   border-left: 3px solid var(--ngs-gold);
-  box-shadow: 0 1px 6px rgba(27, 42, 74, 0.05);
+  box-shadow: var(--ds-shadow);
 }
 [data-scholar='april'] .ef-summary {
   border-left-color: #4a7dc8;
@@ -484,69 +483,39 @@ html[data-theme='dark'] .si-btn:not(:disabled):hover {
   border-left: 1px solid var(--ds-rule);
 }
 
+/* Money › Expenses: one full-width column on a shared gap (--ds-gap, same as
+   Home). Order, top to bottom: summary strip, pending review, the AI receipt
+   drop zone (the primary action), the Single / Batch / Describe option cards
+   (secondary, an even row), then the expense table. `order` rather than JSX
+   moves keep the form-open states (the single/batch card replaces the option
+   row and sits above the drop zone) working with the same markup. */
 .ef-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-gap);
   flex: 1;
-  padding: 28px 20px;
-  max-width: 700px;
   width: 100%;
-  margin: 0 auto;
+  padding: 28px 0 0;
 }
-
-/* Query container for the wide layout below. Inside the shell the available
-   width is the viewport minus the sidebar (248px, or 72px collapsed), so a
-   viewport media query would flip to two columns while the content column
-   was still narrow — and would not react at all when the sidebar collapses.
-   A container query measures the thing that actually matters. */
-.ef-shellwrap {
-  container-type: inline-size;
-  container-name: efmain;
+.ef-shellwrap .ef-main > * {
+  margin: 0;
+  min-width: 0;
 }
-
-/* wide desktop: the single 700px reading column leaves most of a 1920px
-   monitor empty. Split into an "actions" rail (chat, add-expense form,
-   receipt upload) alongside a wider column for the pending list + expense
-   table, which are the parts that actually benefit from extra width.
-   880px of *content* width is the equivalent of the old 1200px viewport
-   breakpoint once the 248px sidebar and .ds-content's 2x32px padding are
-   taken out. Keeping the same effective trigger matters: PR #186 lowered
-   this from 1440 to 1200 specifically because real laptop displays, after OS
-   scaling / browser zoom, report a narrower CSS viewport than their physical
-   resolution — raising it again would undo that fix. Collapsing the sidebar
-   frees another 176px, so the two-column layout arrives sooner, which a
-   viewport query could never express. */
-@container efmain (min-width: 880px) {
-  .ef-main {
-    max-width: 1400px;
-    display: grid;
-    grid-template-columns: minmax(340px, 420px) 1fr;
-    grid-template-areas:
-      'pending pending'
-      'stats   stats'
-      'form    table'
-      'ingest  table';
-    column-gap: 28px;
-    align-items: start;
-  }
-  .ef-main > .ef-summary {
-    grid-area: stats;
-    margin-bottom: 0;
-  }
-  .ef-main > .ef-pending-section {
-    grid-area: pending;
-  }
-  .ef-main > .ef-mode-chooser,
-  .ef-main > .ef-entry-card {
-    grid-area: form;
-    margin-bottom: 0;
-  }
-  .ef-main > .ef-entries {
-    grid-area: table;
-    margin-top: 0;
-  }
-  .ef-main > .sip-panel {
-    grid-area: ingest;
-    margin-top: 0;
-  }
+.ef-main > .ef-summary {
+  order: 0;
+}
+.ef-main > .ef-pending-section {
+  order: 1;
+}
+.ef-main > .ef-entry-card,
+.ef-main > .sip-panel {
+  order: 2;
+}
+.ef-main > .ef-mode-chooser {
+  order: 3;
+}
+.ef-main > .ef-entries {
+  order: 4;
 }
 
 .ef-toast {
@@ -648,11 +617,10 @@ html[data-theme='dark'] .si-btn:not(:disabled):hover {
 /* ════════════════ ADD EXPENSE MODE CHOOSER ════════════════ */
 .ef-mode-chooser {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--ds-gap);
 }
-@media (max-width: 500px) {
+@media (max-width: 640px) {
   .ef-mode-chooser {
     grid-template-columns: 1fr;
   }
@@ -663,10 +631,11 @@ html[data-theme='dark'] .si-btn:not(:disabled):hover {
   flex-direction: column;
   align-items: flex-start;
   gap: 5px;
-  padding: 18px 20px;
-  border-radius: 8px;
-  border: 1.5px solid var(--ds-rule);
+  padding: 20px 22px;
+  border-radius: 14px;
+  border: 1px solid var(--ds-rule);
   background: var(--ds-surface);
+  box-shadow: var(--ds-shadow);
   cursor: pointer;
   transition:
     border-color 0.15s,
@@ -675,8 +644,8 @@ html[data-theme='dark'] .si-btn:not(:disabled):hover {
   text-align: left;
 }
 .ef-mode-card:hover {
-  border-color: var(--ds-ink);
-  box-shadow: 0 3px 14px rgba(27, 42, 74, 0.09);
+  border-color: var(--ngs-gold);
+  box-shadow: var(--ds-shadow-hover);
   transform: translateY(-2px);
 }
 [data-scholar='april'] .ef-mode-card:hover {
@@ -701,7 +670,7 @@ html[data-theme='dark'] .si-btn:not(:disabled):hover {
 }
 .ef-mode-card-desc {
   font-family: var(--ngs-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   color: var(--ds-muted);
   letter-spacing: 0.03em;
 }
@@ -710,11 +679,10 @@ html[data-theme='dark'] .si-btn:not(:disabled):hover {
 .ef-entry-card {
   background: var(--ds-surface);
   border: 1px solid rgba(201, 168, 76, 0.4);
-  border-radius: 8px;
+  border-radius: 14px;
   padding: 22px;
-  margin-bottom: 24px;
   animation: efIn 0.18s ease both;
-  box-shadow: 0 2px 12px rgba(27, 42, 74, 0.05);
+  box-shadow: var(--ds-shadow);
 }
 [data-scholar='april'] .ef-entry-card {
   border-color: rgba(74, 125, 200, 0.35);
@@ -890,11 +858,11 @@ html[data-theme='dark'] .si-btn:not(:disabled):hover {
 
 /* ════════════════ EXPENSE DETAIL TABLE ════════════════ */
 .ef-entries {
-  margin-top: 32px;
+  background: var(--ds-surface);
   border: 1px solid var(--ds-rule);
-  border-radius: 8px;
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 1px 6px rgba(27, 42, 74, 0.04);
+  box-shadow: var(--ds-shadow);
 }
 .ef-entries-header {
   display: flex;

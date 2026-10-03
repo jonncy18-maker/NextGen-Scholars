@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../lib/api.js';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { ScholarShell } from '../components/ScholarShell.jsx';
-import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
+import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
 import { useSessionExpired } from '../hooks/useSessionExpired.js';
 import '../styles/vacation-tracker.css';
 
@@ -192,7 +192,7 @@ export function VacationTracker({ scholarKey }) {
         )}
       </section>
 
-      <PublicAskWidget />
+      <ScholarChatPanel scholarKey={scholarKey} />
     </ScholarShell>
   );
 }

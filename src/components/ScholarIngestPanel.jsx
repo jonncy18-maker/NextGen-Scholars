@@ -507,8 +507,18 @@ export function ScholarIngestPanel({ id, type, scholarKey, sem }) {
               </div>
             ) : (
               <div className="nai-drop-prompt">
-                <span className="nai-drop-icon">⬆</span>
-                <span>Drop your {dropLabel} here</span>
+                <span className="nai-drop-icon" aria-hidden="true">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M12 16V4M12 4l-4.5 4.5M12 4l4.5 4.5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </span>
+                <span className="nai-drop-label">Drop your {dropLabel} here</span>
                 <span className="nai-drop-sub">JPEG · PNG · PDF · click to browse · or paste</span>
               </div>
             )}
