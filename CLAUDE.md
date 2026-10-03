@@ -449,6 +449,20 @@ between the two apps.
   lower-risk there only because the prompt body varies per request, but now
   explicitly `cache: 'no-store'` so a cached AI response can't reflect a stale
   DB-context snapshot.
+- **Subagent model selection — name the family, never a version.** Pick the model
+  per task; don't inherit by default. **Sonnet** is the default for building —
+  writing a feature, fixing a bug, a focused refactor, anything touching a handful
+  of files against a clear contract. **Haiku** for mechanical, verifiable,
+  low-consequence work — finding files, grepping for usages, summarizing output,
+  checking whether something exists. **Opus** only where being subtly wrong is
+  worse than being slow — architecture and scoping decisions, and audits whose
+  misses are expensive. Weigh the cost of a wrong answer, not the difficulty of the
+  task: a mechanically trivial job with no error tolerance (a verbatim move across
+  many files, a security-sensitive edit) is not a Haiku job. Write model families
+  here ("Sonnet", never "Sonnet 5.5"), so the rule keeps meaning the current Sonnet
+  without an edit. Application code is the opposite: `CLAUDE_MODEL` in
+  `lib/ai/claude.js` (and the other model constants) are API arguments and stay
+  pinned to an exact ID deliberately.
 
 ## Working in this environment
 
