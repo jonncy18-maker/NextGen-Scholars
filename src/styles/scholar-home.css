@@ -673,21 +673,136 @@ html[data-theme='dark'] .sp-shell .scp-bubble-user {
   }
 }
 
-/* ════════════════ SCHOLAR HOME (People-first redesign) ════════════════
-   Hero card (greeting, pathway ring, stage list) beside the stat cards and
-   lists. Reads the shell's --ds-* tokens, so light/dark follow the toggle. */
-.sh {
-  display: grid;
-  grid-template-columns: minmax(300px, 400px) minmax(0, 1fr);
-  gap: 24px;
-  padding-top: 30px;
-  align-items: start;
+/* ── Floating-launcher clearance ─────────────────────────────────────────────
+   The assistant launcher (.scp-fab) is pinned bottom-right (~46px tall, 24px
+   from the edge). Reserve its height + margin under every scholar page so the
+   last row of content can always scroll clear of it instead of sitting behind
+   it. Phones pin it 16px from the edge, so they need a little less. */
+.sp-shell .ds-content {
+  padding-bottom: 104px;
 }
-.sh-hero {
+@media (max-width: 720px) {
+  .sp-shell .ds-content {
+    padding-bottom: 92px;
+  }
+}
+
+/* ── AI badge / titles on the shell's surfaces ──
+   The default badge is navy-on-navy and the titles use true navy as TEXT, both
+   near-invisible on the dark card surface. Dark swaps to a gold-tinted badge
+   and the readable light-navy text role. */
+.sp-shell .sip-title,
+.sp-shell .sap-title {
+  color: var(--ngs-ink);
+}
+html[data-theme='dark'] .sp-shell .sap-badge,
+html[data-theme='dark'] .sp-shell .sip-badge {
+  background: rgba(201, 168, 76, 0.16);
+  border: 1px solid rgba(201, 168, 76, 0.55);
+  color: var(--ngs-gold-soft);
+}
+.sp-shell .sip-note {
+  margin-left: auto;
+  color: var(--ngs-muted);
+}
+
+/* ── Receipt / grade-report ingest card (ScholarIngestPanel) ── */
+.sp-shell .sip-panel {
+  padding: 22px 24px 24px;
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-rule);
+  border-radius: 16px;
+  box-shadow: var(--ds-shadow);
+}
+.sp-shell .nai-drop-zone {
+  min-height: 176px;
+  padding: 32px 20px;
+  border: 2px dashed color-mix(in srgb, var(--ngs-gold) 60%, var(--ds-rule));
+  border-radius: 14px;
+  background: var(--ds-surface-2);
+}
+.sp-shell .nai-drop-zone:hover,
+.sp-shell .nai-drop-zone.is-over {
+  border-color: var(--ngs-gold);
+  background: color-mix(in srgb, var(--ngs-gold) 10%, var(--ds-surface-2));
+}
+.sp-shell .nai-drop-zone.has-file {
+  border-style: solid;
+  border-color: var(--ngs-gold);
+}
+.nai-drop-prompt {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  padding: 28px;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+.nai-drop-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 4px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ngs-gold) 18%, transparent);
+  color: var(--ds-accent-text, var(--ngs-gold));
+  font-size: 0;
+}
+.nai-drop-icon svg {
+  display: block;
+}
+.sp-shell .nai-drop-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ngs-ink);
+}
+.sp-shell .nai-drop-sub {
+  font-family: var(--ngs-mono);
+  font-size: 12px;
+  color: var(--ngs-muted);
+}
+.sp-shell .nai-file-item {
+  color: var(--ngs-ink);
+}
+/* Extract button: gold when ready; when disabled it stays legible (muted text
+   on a quiet surface, >=3:1) instead of fading a navy fill into the card. */
+.sp-shell .sip-panel .nai-submit {
+  display: block;
+  padding: 11px 24px;
+  border: 1px solid var(--ngs-gold);
+  background: var(--ngs-gold);
+  color: var(--ngs-navy);
+  font-weight: 700;
+}
+.sp-shell .sip-panel .nai-submit:not(:disabled):hover {
+  background: var(--ngs-gold-soft);
+  opacity: 1;
+}
+.sp-shell .sip-panel .nai-submit:disabled {
+  opacity: 1;
+  background: var(--ds-surface-2);
+  border-color: var(--ds-rule);
+  color: var(--ds-muted);
+}
+
+/* ════════════════ SCHOLAR HOME (People-first redesign) ════════════════
+   Full-width header strip (greeting + next milestone + pathway), one row of
+   equal KPI tiles, then a 2-up Coming up | Recent row. Every gap is
+   --ds-gap, so rows never butt against each other and nothing is orphaned.
+   Reads the shell's --ds-* tokens, so light/dark follow the toggle. */
+.sh {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-gap);
+  padding-top: 30px;
+}
+.sh-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 420px);
+  align-items: center;
+  gap: 18px 32px;
+  padding: 26px 30px;
   background: var(--ds-surface);
   border: 1px solid var(--ds-rule);
   border-radius: 18px;
@@ -697,24 +812,32 @@ html[data-theme='dark'] .sp-shell .scp-bubble-user {
   margin: 0;
   font-family: var(--ngs-display);
   font-weight: 400;
-  font-size: 36px;
+  font-size: 38px;
   line-height: 1.05;
   color: var(--ds-ink);
 }
 .sh-stage {
   margin-top: 6px;
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--ds-muted);
 }
 .sh-tagline {
-  margin: 0;
+  margin: 10px 0 0;
   font-size: 15px;
   color: var(--ds-soft);
 }
+/* Pathway: ring + stage list share a full-width second row of the strip. */
+.sh-path {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding-top: 18px;
+  border-top: 1px solid var(--ds-rule);
+}
 .sh-ring {
-  width: 100%;
-  max-width: 240px;
-  align-self: center;
+  flex: none;
+  width: 150px;
 }
 .sh-ring-seg {
   fill: none;
@@ -731,11 +854,13 @@ html[data-theme='dark'] .sp-shell .scp-bubble-user {
 .sh-ring-seg.is-failed {
   stroke: var(--ds-bad);
 }
+/* The ring is drawn in a 240-unit viewBox but shown at 150px, so its text is
+   sized up here to land at a readable ~10px / ~19px. */
 .sh-ring-kicker {
   fill: var(--ds-muted);
   font-family: var(--ngs-mono);
-  font-size: 11px;
-  letter-spacing: 2px;
+  font-size: 16px;
+  letter-spacing: 1px;
 }
 .sh-ring-step {
   fill: var(--ds-ink);
@@ -744,20 +869,22 @@ html[data-theme='dark'] .sp-shell .scp-bubble-user {
 }
 .sh-steps {
   list-style: none;
+  flex: 1;
+  min-width: 0;
   margin: 0;
   padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  column-gap: 28px;
 }
 .sh-steps li {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 40px;
+  min-height: 38px;
   border-bottom: 1px solid var(--ds-rule);
   font-size: 14px;
   color: var(--ds-soft);
-}
-.sh-steps li:last-child {
-  border-bottom: 0;
 }
 .sh-step-dot {
   width: 10px;
@@ -794,41 +921,33 @@ html[data-theme='dark'] .sp-shell .scp-bubble-user {
 .sh-steps li.is-failed .sh-step-state {
   color: var(--ds-bad);
 }
+/* Next milestone — gold accent (tint + gold edge) rather than a neutral grey
+   box, which read as out-of-palette on the navy surface. */
 .sh-next {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 14px 16px;
+  gap: 4px;
+  padding: 14px 18px;
   border-radius: 12px;
-  background: var(--ds-gold-tint);
-  border: 1px solid rgba(201, 168, 76, 0.35);
-  font-size: 14px;
+  background: color-mix(in srgb, var(--ngs-gold) 12%, var(--ds-surface));
+  border: 1px solid color-mix(in srgb, var(--ngs-gold) 70%, transparent);
+  border-left: 4px solid var(--ngs-gold);
+  font-size: 15px;
+  font-weight: 600;
   color: var(--ds-ink);
 }
 .sh-next-lbl {
   font-family: var(--ngs-mono);
   font-size: 10.5px;
+  font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ds-accent-text);
 }
-/* The top bar hides its actions on phones, so the hero carries the one
-   action a scholar opens the app for. */
-.sh-log {
-  display: none;
-  height: 52px;
-  font-size: 15px;
-}
-.sh-side {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  min-width: 0;
-}
 .sh-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(var(--sh-cols, 4), minmax(0, 1fr));
+  gap: var(--ds-gap);
 }
 .sh-stat {
   display: flex;
@@ -897,8 +1016,8 @@ a.sh-stat:hover {
 .sh-lists {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
-  align-items: start;
+  gap: var(--ds-gap);
+  align-items: stretch;
 }
 .sh-panel {
   padding: 20px 22px;
@@ -907,12 +1026,19 @@ a.sh-stat:hover {
 .sh-panel-title {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+  gap: 12px;
   margin: 0 0 8px;
   font-family: var(--ngs-display);
   font-size: 22px;
   font-weight: 400;
   color: var(--ds-ink);
+}
+.sh-panel-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
 }
 .sh-panel-title .mh-link {
   flex-shrink: 0;
@@ -921,6 +1047,23 @@ a.sh-stat:hover {
   font-size: 13px;
   font-weight: 700;
   color: var(--ds-accent-text);
+}
+/* "+ Add" replaces the old top-bar "+ Log expense" button. */
+.sh-add {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--ngs-gold);
+  color: var(--ngs-navy);
+  font-family: var(--ngs-sans);
+  font-size: 13px;
+  font-weight: 700;
+  transition: background var(--dur-default);
+}
+.sh-add:hover {
+  background: var(--ngs-gold-soft);
 }
 .sh-row {
   display: flex;
@@ -959,19 +1102,31 @@ a.sh-stat:hover {
   font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 1100px) {
-  .sh {
+/* tablet: 2 tiles across; an odd last tile spans the row so there is no hole */
+@media (max-width: 1000px) {
+  .sh-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .sh-stats > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+  .sh-hero {
     grid-template-columns: 1fr;
   }
-  .sh-hero .sh-ring {
-    max-width: 220px;
+}
+@media (max-width: 760px) {
+  .sh-path {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .sh-ring {
+    align-self: center;
+  }
+  .sh-steps {
+    grid-template-columns: 1fr;
   }
 }
-@media (max-width: 999px) {
-  .sh-log {
-    display: inline-flex;
-  }
-}
+/* phone: one tile per row */
 @media (max-width: 640px) {
   .sh {
     padding-top: 18px;
@@ -980,15 +1135,15 @@ a.sh-stat:hover {
   .sh-hero {
     padding: 22px 20px;
   }
+  .sh-name {
+    font-size: 32px;
+  }
   .sh-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
   .sh-stat {
     padding: 16px;
-  }
-  .sh-stat-val {
-    font-size: 28px;
   }
   .sh-lists {
     grid-template-columns: 1fr;

@@ -6,7 +6,6 @@ import { NGS_DATA } from '../../scholars-data.js';
 import { ScholarShell } from '../components/ScholarShell.jsx';
 import { Sparkline } from '../components/ShellViz.jsx';
 import { ScholarChatPanel } from '../components/ScholarChatPanel.jsx';
-import { PublicAskWidget } from '../components/PublicAskWidget.jsx';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { CAT_TO_BUCKET } from '../constants.js';
 import { useSessionExpired } from '../hooks/useSessionExpired.js';
@@ -345,6 +344,11 @@ export function ScholarHome({ scholarKey }) {
   const budgetPct = semBudget > 0 ? Math.round((semSpent / semBudget) * 100) : null;
   const budgetLeft = Math.max(0, semBudget - semSpent);
 
+  // Tiles actually rendered below (GPA + Budget always; English for everyone
+  // but the expenses-only TESDA scholar; Rewards/Invested always). The grid
+  // sizes itself to this so a missing tile never leaves a hole.
+  const statCount = isExpensesOnly ? 3 : 4;
+
   if (!isKnownScholar) return null; // redirecting home, see effect above
 
   if (!authed) {
@@ -392,10 +396,21 @@ export function ScholarHome({ scholarKey }) {
               {config.track}
               {liveStage !== config.trackCode && ` · ${liveStage}`}
             </div>
+            {!journey && config.tagline && <p className="sh-tagline">{config.tagline}</p>}
           </div>
 
-          {journey ? (
-            <>
+          {(nextMil || journeyCurrent) && (
+            <div className="sh-next">
+              <span className="sh-next-lbl">Next milestone</span>
+              <span className="sh-next-val">
+                {nextMil ? nextMil.name : journeyCurrent?.label}
+                {nextMil?.sem ? ` · expected ${nextMil.sem}` : ''}
+              </span>
+            </div>
+          )}
+
+          {journey && (
+            <div className="sh-path">
               <PathwayRing steps={journey} current={journeyCurrent} />
               <ol className="sh-steps">
                 {journey.map((st) => (
@@ -417,152 +432,139 @@ export function ScholarHome({ scholarKey }) {
                   </li>
                 ))}
               </ol>
-            </>
-          ) : (
-            config.tagline && <p className="sh-tagline">{config.tagline}</p>
-          )}
-
-          {(nextMil || journeyCurrent) && (
-            <div className="sh-next">
-              <span className="sh-next-lbl">Next milestone</span>
-              <span>
-                {nextMil ? nextMil.name : journeyCurrent?.label}
-                {nextMil?.sem ? ` · expected ${nextMil.sem}` : ''}
-              </span>
             </div>
           )}
-
-          <Link className="ds-btn ds-btn--gold sh-log" href={config.expensesHref}>
-            + Log expense
-          </Link>
         </section>
 
-        <div className="sh-side">
-          <div className="sh-stats">
-            <Link className="sh-stat" href={`/grades/${scholarKey}`}>
-              <span className="sh-stat-lbl">
-                GPA{liveData?.latestGpaSem ? ` · ${liveData.latestGpaSem}` : ''}
-              </span>
-              <span className="sh-stat-val">
-                {latestGpa != null ? `${latestGpa.toFixed(1)}%` : '—'}
-              </span>
-              <Sparkline
-                values={(liveData?.gpaPoints || []).map((p) => p.gpa)}
-                width={120}
-                height={24}
-              />
-              <span
-                className={`sh-stat-note${latestGpa == null ? '' : latestGpa >= gpaFloor ? ' is-good' : ' is-bad'}`}
-              >
-                {latestGpa == null
-                  ? 'No grades recorded yet'
-                  : latestGpa >= gpaFloor
-                    ? `+${(latestGpa - gpaFloor).toFixed(1)} over the ${gpaFloor}% floor`
-                    : `${(gpaFloor - latestGpa).toFixed(1)} under the ${gpaFloor}% floor`}
-              </span>
-            </Link>
+        <div className="sh-stats" style={{ '--sh-cols': statCount }}>
+          <Link className="sh-stat" href={`/grades/${scholarKey}`}>
+            <span className="sh-stat-lbl">
+              GPA{liveData?.latestGpaSem ? ` · ${liveData.latestGpaSem}` : ''}
+            </span>
+            <span className="sh-stat-val">
+              {latestGpa != null ? `${latestGpa.toFixed(1)}%` : '—'}
+            </span>
+            <Sparkline
+              values={(liveData?.gpaPoints || []).map((p) => p.gpa)}
+              width={120}
+              height={24}
+            />
+            <span
+              className={`sh-stat-note${latestGpa == null ? '' : latestGpa >= gpaFloor ? ' is-good' : ' is-bad'}`}
+            >
+              {latestGpa == null
+                ? 'No grades recorded yet'
+                : latestGpa >= gpaFloor
+                  ? `+${(latestGpa - gpaFloor).toFixed(1)} over the ${gpaFloor}% floor`
+                  : `${(gpaFloor - latestGpa).toFixed(1)} under the ${gpaFloor}% floor`}
+            </span>
+          </Link>
 
-            {!isExpensesOnly && (
-              <Link className="sh-stat" href={`/english/${scholarKey}`}>
-                <span className="sh-stat-lbl">English</span>
-                <span className="sh-stat-val">{engDisplay != null ? `${engDisplay} h` : '—'}</span>
-                <span className="sh-stat-note">
-                  {liveData?.hasImmersionAccount
-                    ? liveData.englishTargetHours
-                      ? `of ${liveData.englishTargetHours} h target`
-                      : 'Logged in Immersion'
-                    : 'No Immersion account linked yet'}
-                </span>
-                {liveData?.englishStatus && (
-                  <span
-                    className={`sh-stat-note${liveData.englishStatus === 'AT_RISK' ? ' is-bad' : ' is-good'}`}
-                  >
-                    {ENG_STATUS[liveData.englishStatus] || liveData.englishStatus}
-                  </span>
-                )}
-              </Link>
-            )}
-
-            <Link className="sh-stat" href={config.expensesHref}>
-              <span className="sh-stat-lbl">Budget left</span>
-              <span className="sh-stat-val">{semBudget > 0 ? fmtPhpShort(budgetLeft) : '—'}</span>
-              {budgetPct != null && (
-                <span className="sh-bar">
-                  <span
-                    className={budgetPct >= 100 ? 'is-bad' : budgetPct >= 90 ? 'is-warn' : ''}
-                    style={{ width: `${Math.min(100, budgetPct)}%` }}
-                  />
-                </span>
-              )}
+          {!isExpensesOnly && (
+            <Link className="sh-stat" href={`/english/${scholarKey}`}>
+              <span className="sh-stat-lbl">English</span>
+              <span className="sh-stat-val">{engDisplay != null ? `${engDisplay} h` : '—'}</span>
               <span className="sh-stat-note">
-                {semBudget > 0
-                  ? `${budgetPct}% of ${fmtPhpShort(semBudget)} used`
-                  : `No budget set for ${liveStage}`}
+                {liveData?.hasImmersionAccount
+                  ? liveData.englishTargetHours
+                    ? `of ${liveData.englishTargetHours} h target`
+                    : 'Logged in Immersion'
+                  : 'No Immersion account linked yet'}
               </span>
-            </Link>
-
-            {isExpensesOnly ? (
-              <div className="sh-stat">
-                <span className="sh-stat-lbl">Invested in you</span>
-                <span className="sh-stat-val">{inv ? fmtPhpShort(inv.total) : '—'}</span>
-                <span className="sh-stat-note">Since you joined the program</span>
-              </div>
-            ) : (
-              <Link className="sh-stat" href={`/milestones/${scholarKey}`}>
-                <span className="sh-stat-lbl">Rewards</span>
-                <span className="sh-stat-val">{liveData?.rewardsCount ?? '—'}</span>
-                <span className="sh-stat-note">Unlocked so far</span>
-                {nextMil && <span className="sh-stat-note is-accent">Next: {nextMil.name}</span>}
-              </Link>
-            )}
-          </div>
-
-          <div className="sh-lists">
-            <div className="ds-card sh-panel">
-              <h2 className="sh-panel-title">Coming up</h2>
-              {!liveData?.upcomingDeadlines?.length && (
-                <div className="ds-empty">Nothing due — you're all caught up.</div>
+              {liveData?.englishStatus && (
+                <span
+                  className={`sh-stat-note${liveData.englishStatus === 'AT_RISK' ? ' is-bad' : ' is-good'}`}
+                >
+                  {ENG_STATUS[liveData.englishStatus] || liveData.englishStatus}
+                </span>
               )}
-              {(liveData?.upcomingDeadlines || []).map((d, i) => (
-                <div key={d.id ?? i} className="sh-row">
-                  <div>
-                    <div className="sh-row-title">{d.event}</div>
-                    <div className="sh-row-sub">{d.when_date}</div>
-                  </div>
-                  <span className={`sh-days${d.days <= 7 ? ' is-bad' : ''}`}>{d.days} days</span>
-                </div>
-              ))}
+            </Link>
+          )}
+
+          <Link className="sh-stat" href={config.expensesHref}>
+            <span className="sh-stat-lbl">Budget left</span>
+            <span className="sh-stat-val">{semBudget > 0 ? fmtPhpShort(budgetLeft) : '—'}</span>
+            {budgetPct != null && (
+              <span className="sh-bar">
+                <span
+                  className={budgetPct >= 100 ? 'is-bad' : budgetPct >= 90 ? 'is-warn' : ''}
+                  style={{ width: `${Math.min(100, budgetPct)}%` }}
+                />
+              </span>
+            )}
+            <span className="sh-stat-note">
+              {semBudget > 0
+                ? `${budgetPct}% of ${fmtPhpShort(semBudget)} used`
+                : `No budget set for ${liveStage}`}
+            </span>
+          </Link>
+
+          {isExpensesOnly ? (
+            <div className="sh-stat">
+              <span className="sh-stat-lbl">Invested in you</span>
+              <span className="sh-stat-val">{inv ? fmtPhpShort(inv.total) : '—'}</span>
+              <span className="sh-stat-note">Since you joined the program</span>
             </div>
-            <div className="ds-card sh-panel">
-              <h2 className="sh-panel-title">
-                Recent
+          ) : (
+            <Link className="sh-stat" href={`/milestones/${scholarKey}`}>
+              <span className="sh-stat-lbl">Rewards</span>
+              <span className="sh-stat-val">{liveData?.rewardsCount ?? '—'}</span>
+              <span className="sh-stat-note">Unlocked so far</span>
+              {nextMil && <span className="sh-stat-note is-accent">Next: {nextMil.name}</span>}
+            </Link>
+          )}
+        </div>
+
+        <div className="sh-lists">
+          <div className="ds-card sh-panel">
+            <h2 className="sh-panel-title">Coming up</h2>
+            {!liveData?.upcomingDeadlines?.length && (
+              <div className="ds-empty">Nothing due — you're all caught up.</div>
+            )}
+            {(liveData?.upcomingDeadlines || []).map((d, i) => (
+              <div key={d.id ?? i} className="sh-row">
+                <div>
+                  <div className="sh-row-title">{d.event}</div>
+                  <div className="sh-row-sub">{d.when_date}</div>
+                </div>
+                <span className={`sh-days${d.days <= 7 ? ' is-bad' : ''}`}>{d.days} days</span>
+              </div>
+            ))}
+          </div>
+          <div className="ds-card sh-panel">
+            <h2 className="sh-panel-title">
+              Recent
+              <span className="sh-panel-actions">
+                <Link className="sh-add" href={config.expensesHref}>
+                  + Add
+                </Link>
                 <Link className="mh-link" href={config.expensesHref}>
                   All expenses →
                 </Link>
-              </h2>
-              {!liveData?.recentExpenses?.length && (
-                <div className="ds-empty">No expenses yet.</div>
-              )}
-              {(liveData?.recentExpenses || []).map((e) => (
-                <div key={e.id} className="sh-row">
-                  <div>
-                    <div className="sh-row-title">{e.item || e.cat}</div>
-                    <div className="sh-row-sub">
-                      {e.cat} · {formatDate(e.date)}
-                    </div>
+              </span>
+            </h2>
+            {!liveData?.recentExpenses?.length && <div className="ds-empty">No expenses yet.</div>}
+            {(liveData?.recentExpenses || []).map((e) => (
+              <div key={e.id} className="sh-row">
+                <div>
+                  <div className="sh-row-title">{e.item || e.cat}</div>
+                  <div className="sh-row-sub">
+                    {e.cat} · {formatDate(e.date)}
                   </div>
-                  <span className="sh-amt">
-                    {fmtPhp((Number(e.amount) || 0) * (Number(e.qty) || 1))}
-                  </span>
                 </div>
-              ))}
-            </div>
+                <span className="sh-amt">
+                  {fmtPhp((Number(e.amount) || 0) * (Number(e.qty) || 1))}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
-      <PublicAskWidget />
-      {/* Renders as a fixed launcher, so it sits outside the page grid. */}
-      <ScholarChatPanel scholarKey={scholarKey} raised />
+      {/* The one floating AI entry point on this page. (PublicAskWidget, the
+          unauthenticated program-FAQ bot, used to stack under it — wrong
+          audience for a signed-in page.) Fixed launcher, so it sits outside
+          the page grid; .ds-content reserves bottom space for it. */}
+      <ScholarChatPanel scholarKey={scholarKey} />
     </ScholarShell>
   );
 }
