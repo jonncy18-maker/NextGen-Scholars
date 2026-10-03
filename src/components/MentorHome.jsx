@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { api } from '../lib/api.js';
 import { useData } from '../context/DataContext.jsx';
 import { SEMESTER_OPTIONS } from '../constants.js';
+import { TRACK_OPTIONS, TRACK_LABELS, normalizeTrack } from '../lib/pathway.js';
 import { allExpenses, daysSinceLastExpense, monthlySpendTrend } from '../utils.js';
 import { Sparkline } from './ShellViz.jsx';
 
@@ -127,6 +128,7 @@ export function MentorHome({
   pendingSubmissions = [],
   dbAlerts = [],
   onSemesterChange,
+  onTrackChange,
   unlocked = false,
 }) {
   const { D, scholarKeys } = useData();
@@ -299,6 +301,32 @@ export function MentorHome({
                   </select>
                 ) : (
                   <b>{SEM_DISPLAY[r.sem] || r.sem || '—'}</b>
+                )}
+              </label>
+
+              <label className="mh-sem">
+                <span>Track</span>
+                {onTrackChange ? (
+                  <select
+                    className="mh-sem-select"
+                    aria-label={`${name} program track`}
+                    value={normalizeTrack(r.s.track) ?? (r.s.track ? r.s.track : 'none')}
+                    onChange={(e) =>
+                      onTrackChange(r.key, e.target.value === 'none' ? null : e.target.value)
+                    }
+                  >
+                    {r.s.track && !normalizeTrack(r.s.track) && (
+                      <option value={r.s.track}>{r.s.track} (legacy)</option>
+                    )}
+                    {TRACK_OPTIONS.map((t) => (
+                      <option key={t} value={t}>
+                        {TRACK_LABELS[t]}
+                      </option>
+                    ))}
+                    <option value="none">Not on a track</option>
+                  </select>
+                ) : (
+                  <b>{r.s.track || 'Not on a track'}</b>
                 )}
               </label>
 

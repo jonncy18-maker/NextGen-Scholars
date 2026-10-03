@@ -6,6 +6,7 @@ import { loadFromSupabase, loadPendingSubmissions } from '../api-loader.js';
 import {
   writeExpense,
   writeSemester,
+  writeTrack,
   updateExpense,
   deleteExpense,
   markActivityRead,
@@ -584,6 +585,22 @@ export function Navigator({ slug = [] }) {
     }));
   }
 
+  function handleTrackChange(scholar, track) {
+    const prev = D.scholars[scholar]?.track ?? null;
+    const apply = (t) =>
+      setD((p) => ({
+        ...p,
+        scholars: { ...p.scholars, [scholar]: { ...p.scholars[scholar], track: t } },
+      }));
+    apply(track);
+    // Revert on a rejected write so the select never claims a track the
+    // database didn't accept.
+    writeTrack(scholar, track).catch(() => {
+      apply(prev);
+      setWriteError(true);
+    });
+  }
+
   const activeSection = SECTIONS.find((s) => s.key === section) || SECTIONS[0];
   const mentorName = D.config.mentorName || 'Mentor';
   const conn = CONN_LABEL[connStatus] || CONN_LABEL.static;
@@ -722,6 +739,7 @@ export function Navigator({ slug = [] }) {
                     pendingSubmissions={pendingSubmissions}
                     dbAlerts={dbAlerts}
                     onSemesterChange={handleSemesterChange}
+                    onTrackChange={handleTrackChange}
                     unlocked={unlocked}
                   />
                 </SectionErrorBoundary>
