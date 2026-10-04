@@ -12,6 +12,19 @@ body {
   line-height: 1.5;
   font-size: 15px;
 }
+html[data-theme='dark'] body {
+  background-color: var(--ngs-dark-canvas);
+  background-image:
+    radial-gradient(
+      ellipse 90% 650px at 50% -70px,
+      rgba(201, 168, 76, 0.08) 0%,
+      rgba(27, 42, 74, 0.35) 45%,
+      transparent 80%
+    ),
+    linear-gradient(180deg, #090e1c 0%, #05070e 100%);
+  background-attachment: fixed;
+  color: var(--ngs-dark-ink);
+}
 h1,h2,h3,h4 { margin: 0; font-weight: 500; letter-spacing: -0.01em; }
 p { margin: 0; }
 a { color: inherit; text-decoration: none; }

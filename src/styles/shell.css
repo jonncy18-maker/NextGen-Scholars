@@ -36,8 +36,21 @@
   font-family: var(--ngs-sans);
 }
 
-html[data-theme='dark'] .ds-shell {
+html[data-theme='dark'] .ds-shell,
+html[data-theme='dark'] .nav-app {
+  position: relative;
+  overflow-x: clip; /* not hidden: hidden would make the shell a scroll container and break sticky .ds-top */
   --ds-canvas: var(--ngs-dark-canvas);
+  background-color: var(--ds-canvas);
+  background-image:
+    radial-gradient(
+      ellipse 90% 650px at 50% -70px,
+      rgba(201, 168, 76, 0.08) 0%,
+      rgba(27, 42, 74, 0.35) 45%,
+      transparent 80%
+    ),
+    linear-gradient(180deg, #090e1c 0%, #05070e 100%);
+  background-attachment: fixed;
   --ds-surface: var(--ngs-dark-surface);
   --ds-surface-2: var(--ngs-dark-surface-2);
   --ds-rule: var(--ngs-dark-rule);
@@ -56,6 +69,100 @@ html[data-theme='dark'] .ds-shell {
   --ds-bad-tint: rgba(224, 106, 118, 0.13);
 }
 
+/* Living Aurora GPU-accelerated ambient moving mesh orbs */
+html[data-theme='dark'] .ds-shell::before,
+html[data-theme='dark'] .ds-shell::after {
+  content: '';
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform, opacity;
+}
+
+html[data-theme='dark'] .ds-shell::before {
+  width: 750px;
+  height: 750px;
+  top: -180px;
+  left: 15%;
+  filter: blur(120px);
+  -webkit-filter: blur(120px);
+  background: radial-gradient(
+    circle,
+    rgba(201, 168, 76, 0.2) 0%,
+    rgba(245, 158, 11, 0.07) 45%,
+    transparent 72%
+  );
+  animation: ngsFloatGold 24s ease-in-out infinite alternate;
+}
+
+html[data-theme='dark'] .ds-shell::after {
+  width: 900px;
+  height: 900px;
+  top: -120px;
+  right: 5%;
+  filter: blur(130px);
+  -webkit-filter: blur(130px);
+  background: radial-gradient(
+    circle at 40% 40%,
+    rgba(37, 99, 235, 0.25) 0%,
+    rgba(14, 165, 233, 0.14) 40%,
+    transparent 70%
+  );
+  animation: ngsFloatNavy 30s ease-in-out infinite alternate;
+}
+
+@keyframes ngsFloatGold {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(90px, 80px) scale(1.15);
+  }
+  66% {
+    transform: translate(-70px, 110px) scale(0.92);
+  }
+  100% {
+    transform: translate(50px, -30px) scale(1.08);
+  }
+}
+
+@keyframes ngsFloatNavy {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-110px, 90px) scale(1.12);
+  }
+  66% {
+    transform: translate(70px, 130px) scale(0.94);
+  }
+  100% {
+    transform: translate(-50px, -20px) scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme='dark'] .ds-shell::before,
+  html[data-theme='dark'] .ds-shell::after {
+    animation: none;
+  }
+}
+
+/* Keep the static glow on small screens but skip the GPU-heavy animation */
+@media (max-width: 768px) {
+  html[data-theme='dark'] .ds-shell::before,
+  html[data-theme='dark'] .ds-shell::after {
+    animation: none;
+    will-change: auto;
+  }
+}
+
+.ds-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
 /* ── top bar (TopBar.jsx) ── */
 .ds-top {
   position: sticky;
@@ -65,6 +172,11 @@ html[data-theme='dark'] .ds-shell {
   padding-top: env(safe-area-inset-top, 0px);
   background: var(--ds-canvas);
   border-bottom: 1px solid var(--ds-rule);
+}
+html[data-theme='dark'] .ds-top {
+  background: rgba(6, 8, 17, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 .ds-top-inner {
   display: flex;
@@ -700,6 +812,23 @@ a.ds-card:hover {
   flex-direction: column;
   gap: 24px;
   padding-top: 30px;
+}
+.mh-avatar-link {
+  display: inline-flex;
+  text-decoration: none;
+  transition: transform 180ms ease;
+}
+.mh-avatar-link:hover .mh-avatar {
+  transform: scale(1.06);
+  box-shadow: 0 0 14px rgba(201, 168, 76, 0.4);
+}
+.mh-name-link {
+  color: inherit;
+  text-decoration: none;
+}
+.mh-name-link:hover .mh-card-name {
+  color: var(--ds-accent-text);
+  text-decoration: underline;
 }
 .mh-head {
   display: flex;

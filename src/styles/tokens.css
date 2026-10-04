@@ -59,15 +59,17 @@
    scholar-home.css / shell.css key off html[data-theme='dark']). The values
    live here so both trees share one palette. */
 html[data-theme='dark'] {
-  /* Canvas is pushed well below the card surfaces (2026-10 contrast pass) so
-     cards read as raised panels, not as a faint border on the same navy. */
-  --ngs-dark-canvas: #080d1a;
-  --ngs-dark-surface: #1b2747;
-  --ngs-dark-surface-2: #25345b;
-  --ngs-dark-rule: #3d4e78;
-  --ngs-dark-ink: #eef1f8;
-  --ngs-dark-ink-soft: #c5cde0;
-  --ngs-dark-muted: #9eaac6;
-  --ngs-card-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 6px 18px -6px rgba(0, 0, 0, 0.7);
-  --ngs-card-shadow-hover: 0 12px 28px -8px rgba(0, 0, 0, 0.8);
+  /* Option A: Elevated Neutral Slate / Charcoal (2026-10 contrast redesign)
+     Shifts cards from monotone navy to neutral slate so cards clearly float
+     off the deep canvas, reserving brand navy and gold for accents. */
+  --ngs-paper: #060811;
+  --ngs-dark-canvas: #060811;
+  --ngs-dark-surface: #141a29;
+  --ngs-dark-surface-2: #1b2336;
+  --ngs-dark-rule: #2a364e;
+  --ngs-dark-ink: #f0f4fc;
+  --ngs-dark-ink-soft: #cbd4e6;
+  --ngs-dark-muted: #8b9bb8;
+  --ngs-card-shadow: 0 10px 28px -4px rgba(0, 0, 0, 0.75), 0 1px 3px rgba(0, 0, 0, 0.4);
+  --ngs-card-shadow-hover: 0 14px 34px -6px rgba(0, 0, 0, 0.85);
 }
