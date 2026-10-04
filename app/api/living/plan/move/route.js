@@ -41,51 +41,73 @@ export const POST = withErrorHandling(async (request) => {
     throw new AuthError(role === 'mentor' ? 400 : 403, 'scholar required');
   }
 
-  const rows = await sql`
-    select category_id, planned_php, note from living_plan
+  // Pre-read only to produce the friendly "nothing planned" message. The writes
+  // below re-read the source inside the transaction, so a source edit landing
+  // between this check and the transaction cannot be half-copied or deleted.
+  const [{ n }] = await sql`
+    select count(*)::int as n from living_plan
     where scholar = ${target} and month = ${from}
   `;
-  if (rows.length === 0) {
+  if (n === 0) {
     return json({ error: `Nothing planned in ${from} to ${mode}.` }, { status: 400 });
   }
 
-  // Overwrite the destination for the categories being moved (on conflict
-  // update), rather than refusing when the destination already has amounts.
-  // Refusing would strand her: the usual case is a destination holding a
-  // half-typed guess she wants replaced by the real plan.
-  for (const r of rows) {
-    await sql`
+  // Everything is written in ONE transaction, using set-based INSERT ... SELECT
+  // from the source month so the copy sees a single consistent snapshot. Any
+  // failure rolls the whole thing back: the destination keeps its old totals
+  // and breakdown, and the source is never deleted without the copy landing.
+  // (sql.transaction is non-interactive, hence statements rather than reads.)
+  const client = sql;
+  const results = await client.transaction([
+    // 0. Overwrite the destination for the categories being moved (on conflict
+    //    update), rather than refusing when the destination already has amounts.
+    //    Refusing would strand her: the usual case is a destination holding a
+    //    half-typed guess she wants replaced by the real plan.
+    client`
       insert into living_plan (scholar, month, category_id, planned_php, note)
-      values (${target}, ${to}, ${r.category_id}, ${r.planned_php}, ${r.note})
+      select scholar, ${to}, category_id, planned_php, note
+      from living_plan
+      where scholar = ${target} and month = ${from}
       on conflict (category_id, month) do update set
         planned_php = excluded.planned_php,
         note        = excluded.note,
         updated_at  = now()
-    `;
-    // The destination's own breakdown must not survive being overwritten by a
-    // different month's total — it would contradict the number now sitting
-    // above it. Cleared first, then replaced below if the source had one.
-    await sql`
+      returning planned_php
+    `,
+    // 1. The destination's own breakdown must not survive being overwritten by
+    //    a different month's total — it would contradict the number now sitting
+    //    above it. Cleared for the moved categories, then replaced below if the
+    //    source had one.
+    client`
       delete from living_plan_item
-      where scholar = ${target} and month = ${to} and category_id = ${r.category_id}
-    `;
-  }
-
-  const movedItems = await sql`
-    select category_id, name, qty, unit_php, basis, sort_order
-    from living_plan_item
-    where scholar = ${target} and month = ${from}
-  `;
-  for (const it of movedItems) {
-    await sql`
+      where scholar = ${target} and month = ${to}
+        and category_id in (
+          select category_id from living_plan
+          where scholar = ${target} and month = ${from}
+        )
+    `,
+    // 2. Copy the source breakdown across.
+    client`
       insert into living_plan_item (scholar, month, category_id, name, qty, unit_php, basis, sort_order)
-      values (${target}, ${to}, ${it.category_id}, ${it.name}, ${it.qty}, ${it.unit_php}, ${it.basis}, ${it.sort_order})
-    `;
-  }
-
-  if (mode === 'move') {
-    await sql`delete from living_plan_item where scholar = ${target} and month = ${from}`;
-    await sql`delete from living_plan where scholar = ${target} and month = ${from}`;
+      select scholar, ${to}, category_id, name, qty, unit_php, basis, sort_order
+      from living_plan_item
+      where scholar = ${target} and month = ${from}
+      returning id
+    `,
+    // 3-4. Move only: drop the source, items before totals.
+    ...(mode === 'move'
+      ? [
+          client`delete from living_plan_item where scholar = ${target} and month = ${from}`,
+          client`delete from living_plan where scholar = ${target} and month = ${from}`,
+        ]
+      : []),
+  ]);
+  const rows = results[0];
+  const movedItems = results[2];
+  // The source emptied between the pre-read and the transaction: every
+  // statement above was a no-op, so report it like the pre-read would have.
+  if (rows.length === 0) {
+    return json({ error: `Nothing planned in ${from} to ${mode}.` }, { status: 400 });
   }
 
   return json({
