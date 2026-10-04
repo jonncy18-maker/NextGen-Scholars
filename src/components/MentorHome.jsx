@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '../lib/api.js';
 import { useData } from '../context/DataContext.jsx';
