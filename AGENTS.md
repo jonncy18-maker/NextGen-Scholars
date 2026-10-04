@@ -111,6 +111,9 @@ Three rules hold this together — break any one and the safety story is gone:
 parity contract — a new write endpoint without a tool entry silently makes the two
 surfaces diverge again. Tools that write to expenses must derive `bucket` from
 `CAT_TO_BUCKET` (see the `EXPENSE_CATS` rule below — same corruption risk).
+One deliberate exclusion (John, 2026-10-03): the scholar's living budget
+(`/api/living/**`) has no Tier 4 tools. Its AI is `ask-budget`, which only proposes
+operations that the client applies through the same `/api/living/**` routes.
 
 ### MCP server
 
