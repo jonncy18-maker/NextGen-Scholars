@@ -271,9 +271,17 @@ export function MentorHome({
               className={`mh-card${status.cls === 'is-bad' ? ' is-flagged' : ''}`}
             >
               <div className="mh-card-head">
-                <span className="ds-avatar mh-avatar">{name[0].toUpperCase()}</span>
+                <Link
+                  href={`/home/${r.key}`}
+                  className="mh-avatar-link"
+                  title={`View ${name}'s dashboard`}
+                >
+                  <span className="ds-avatar mh-avatar">{name[0].toUpperCase()}</span>
+                </Link>
                 <div className="mh-card-who">
-                  <div className="mh-card-name">{name}</div>
+                  <Link href={`/home/${r.key}`} className="mh-name-link">
+                    <div className="mh-card-name">{name}</div>
+                  </Link>
                   <div className="mh-card-sub">
                     {r.s.track || '—'}
                     {r.stage ? ` · ${r.stage.label}` : ''}
