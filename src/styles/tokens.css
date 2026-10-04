@@ -62,7 +62,6 @@ html[data-theme='dark'] {
   /* Option A: Elevated Neutral Slate / Charcoal (2026-10 contrast redesign)
      Shifts cards from monotone navy to neutral slate so cards clearly float
      off the deep canvas, reserving brand navy and gold for accents. */
-  --ngs-paper: #060811;
   --ngs-dark-canvas: #060811;
   --ngs-dark-surface: #141a29;
   --ngs-dark-surface-2: #1b2336;
