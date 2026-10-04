@@ -88,20 +88,25 @@ export const PUT = withErrorHandling(async (request) => {
   // none of them can leave the two out of step. The itemised path does NOT go
   // through this route — app/api/living/items writes items and their rolled-up
   // total together in one call.
-  await sql`
-    delete from living_plan_item
-    where category_id = ${cat.id} and month = ${month}
-  `;
-
-  const [row] = await sql`
-    insert into living_plan (scholar, month, category_id, planned_php, note)
-    values (${cat.scholar}, ${month}, ${cat.id}, ${planned}, ${note})
-    on conflict (category_id, month) do update set
-      planned_php = excluded.planned_php,
-      note        = excluded.note,
-      updated_at  = now()
-    returning *
-  `;
+  // The delete and the upsert run as one transaction: if the upsert fails the
+  // old breakdown is restored instead of being lost with no new total behind it.
+  const client = sql;
+  const results = await client.transaction([
+    client`
+      delete from living_plan_item
+      where category_id = ${cat.id} and month = ${month}
+    `,
+    client`
+      insert into living_plan (scholar, month, category_id, planned_php, note)
+      values (${cat.scholar}, ${month}, ${cat.id}, ${planned}, ${note})
+      on conflict (category_id, month) do update set
+        planned_php = excluded.planned_php,
+        note        = excluded.note,
+        updated_at  = now()
+      returning *
+    `,
+  ]);
+  const [row] = results[1];
 
   return json(row);
 });
