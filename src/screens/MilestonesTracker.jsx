@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../lib/api.js';
 import { ScholarAuthGate } from '../components/ScholarAuthGate.jsx';
 import { ScholarShell } from '../components/ScholarShell.jsx';
