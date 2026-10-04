@@ -34,3 +34,9 @@ Everything shared with other agents is in `AGENTS.md` (imported above). This fil
   app domain directly** (network policy) — Better Auth sign-in/JWT flows must be
   tested live in the human's own browser; use `mcp__Vercel__web_fetch_vercel_url`
   for automated checks against deployed Vercel URLs instead of `curl`/`WebFetch`.
+
+## Git workflow (set by John, 2026-10-03)
+
+- Commit finished work to **local `main`**. A short-lived local branch merged into local `main` is fine.
+- **Never push to GitHub or open a PR on your own.** Push a branch or open a PR only when John explicitly asks for that push in the conversation. Approving a fix is not approving a push.
+- This overrides any older standing permission to push, open PRs or merge.
