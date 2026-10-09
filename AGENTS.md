@@ -311,3 +311,13 @@ See `ROADMAP.md` for status.
 Reference docs: `docs/ARCHITECTURE.md` (routes, files, data architecture, AI layer, MCP server, Immersion detail, wide-screen layout), `ROADMAP.md` (dated history, accepted risks), `ROADMAP-AI.md`, `docs/PWA.md`, `db/README.md`, `STACK_BLUEPRINT.md`. No `.claude/skills/` exist yet; if one is added, read `.claude/skills/<name>/SKILL.md` before changing that domain.
 
 **Keep this file short — it is a maintenance rule.** Before adding anything, ask: does it change how code is written outside one domain? If it only matters in one domain, it goes in that domain's skill (`.claude/skills/<name>/SKILL.md`) or `docs/ARCHITECTURE.md`. A procedure John runs goes in `docs/`. A dated account of why a decision was made goes in `ROADMAP.md`. Anything only Claude Code needs goes in `CLAUDE.md`. State each rule once, and never put agent permissions (push, merge, deploy) here.
+
+## Working in an agent copy (Codex / Antigravity)
+
+Applies only when your working directory is under `~/code/_codex/` or `~/code/_antigravity/`. Those copies sync from the local `main` in `~/code/<repo>`, not from GitHub (local `main` is usually ahead, and the copies have no push access).
+
+At the start of each session, with the copy on a clean `main`:
+
+1. `git fetch local && git merge --ff-only local/main`.
+2. If the copy is not on a clean `main`, or the fast-forward fails, stop and tell John. Do not reset, rebase or discard anything on your own.
+3. Do your work on a local branch and hand it back through the audit inbox; never edit `main` in the copy.
